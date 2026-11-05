@@ -36,6 +36,7 @@
 
 use super::*;
 use crate::network::nerve::Coordinate;
+use crate::transducer::cga::Conjugacy;
 
 /// The TUniversal lanes, in the lane order {S, G, T, H}.
 pub const LANES: [&str; 4] = ["S", "G", "T", "H"];

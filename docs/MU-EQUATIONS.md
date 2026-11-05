@@ -77,7 +77,7 @@ different `n` compose in the larger algebra by exact inclusion. The largest
 `n` is `MAX_N = usize::BITS − 3`.
 
 Sources: MU-RECURSION A4, BQ3, 71.2(3). Code:
-`src/transducer/cga/multivector.rs` (`E1`, `E2`, `E3`, `EP`, `EM`,
+`algebra/src/multivector.rs` (`E1`, `E2`, `E3`, `EP`, `EM`,
 `base_axis`, `blades`, `pseudo`, `MAX_N`).
 
 #### 1.3 The null basis
@@ -150,7 +150,7 @@ The metric enters only through `e₋² = −1`; no generator of the orthonormal
 basis is null.
 
 Sources: MU-RECURSION A4, 71.2. Code:
-`src/transducer/cga/multivector.rs::Mv::geo` (`reorder_sign`, `metric_sign`).
+`algebra/src/multivector.rs::Mv::geo` (`reorder_sign`, `metric_sign`).
 
 #### 2.2 Reverse, involution and the twisted adjoint
 
@@ -164,7 +164,7 @@ The twisted adjoint is the action of an even or odd versor on `x`. For an
 even `M` it equals the sandwich; for an odd `M` it is the sandwich
 negated, which is the reflection of the vector.
 
-Sources: MU-RECURSION 78.28(1). Code: `src/transducer/cga/multivector.rs::Mv::reverse`,
+Sources: MU-RECURSION 78.28(1). Code: `algebra/src/multivector.rs::Mv::reverse`,
 `::involute`, `::twisted`.
 
 #### 2.3 The sandwich
@@ -178,7 +178,7 @@ is defined up to the scale `V Ṽ`. Every rigid motion, dilation and
 reflection in the tree acts this way.
 
 Sources: MU-RECURSION A4; MU-ANTI-FLATTENING item 2. Code:
-`src/transducer/cga/multivector.rs::Mv::sandwich`.
+`algebra/src/multivector.rs::Mv::sandwich`.
 
 #### 2.4 Inner square, weight and the versor test
 
@@ -199,7 +199,7 @@ of the test, not the test.
 
 Sources: MU-RECURSION 78.28(1), (2), (3). Code:
 `src/transducer/cga/group.rs::is_versor`, `::weight_of`;
-`src/transducer/cga/multivector.rs::Mv::norm2`.
+`algebra/src/multivector.rs::Mv::norm2`.
 
 #### 2.5 Projective equality and the canonical form
 
@@ -218,8 +218,8 @@ coefficient in mask order and fixes its sign to `+1`. It carries a value
 between minds. Identity is the projective equality.
 
 Sources: MU-RECURSION A4, EQ1, 78.12, 17.2. Code:
-`src/transducer/cga/group.rs::projective_ratio`;
-`src/transducer/cga/multivector.rs::Mv::projective_eq`, `::canonical`,
+`algebra/src/ray.rs::projective_ratio`;
+`algebra/src/multivector.rs::Mv::projective_eq`, `::canonical`,
 `::put_canonical`, `::key`.
 
 #### 2.6 The conformal embedding of a point
@@ -362,8 +362,8 @@ transvection; `I₂ ≠ 0` a helicoidal screw. A mode is nilpotent only where
 4-vector in this signature.
 
 Sources: MU-RECURSION 54.7 (ruled 2026-09-21), 78.68. Code:
-`src/transducer/cga/multivector.rs::Mv::class_invariants`, `::holonomy_key`,
-`::class_key`.
+`src/transducer/cga/conjugacy.rs` (`Conjugacy::class_invariants`,
+`::holonomy_key`, `::class_key` on `Mv`).
 
 #### 2.14 Flow points: one composition law for every kind of plane
 
@@ -482,7 +482,7 @@ of the inversive product `s · e` of a sphere and an enclosure (both at
 `π = s − e` the radical plane.
 
 Sources: MU-RECURSION 54.7 B8, 78.2 EN1, 78.15(4) DF1, 78.30. Code:
-`src/transducer/cga/multivector.rs::Mv::wedge_vector`;
+`algebra/src/multivector.rs::Mv::wedge_vector`;
 `src/transducer/cga/dual.rs::wedge`, `::dual_frame`, `::contract_to_face`;
 `src/transducer/cga/enclosure.rs::centre_point`, `::enclosure`,
 `::containment`, `::nesting`.
@@ -753,7 +753,7 @@ non-commuting factors the bracket adds generators to
 
 Sources: MU-RECURSION 78.68 (ruled 2026-10-02; amended by 78.75 and U15);
 MU-CLIENT §4.1. Code: `src/transducer/sentence/compose.rs`;
-`src/transducer/cga/flow.rs::FlowPoint`; `src/transducer/cga/multivector.rs::Mv::class_invariants`.
+`src/transducer/cga/flow.rs::FlowPoint`; `src/transducer/cga/conjugacy.rs::Conjugacy::class_invariants`.
 
 #### 3.9 The letter as a triad
 
@@ -849,7 +849,8 @@ order, so a prefix of a key is a coarser stratum. A digest of a
 mathematical structure cannot satisfy it and does not exist in cognition.
 
 Sources: MU-RECURSION law 2, A21, 15.1, 13.4. Code:
-`src/transducer/cga/multivector.rs::Mv::key`; `src/transducer/address.rs`.
+`algebra/src/multivector.rs::Mv::key`; `algebra/src/address.rs` (`Address`);
+`src/transducer/address.rs`.
 
 ---
 
@@ -2081,7 +2082,7 @@ id is a hosted shell's own.
 | L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
 | Concordance (`CONCORDANCE_HASH`) | 4 (the agreement's version); identified today by a hash of its bytes, a defect; each clause is to be identified by its content and signed by adjudicated reading (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes, until B2 | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
-| `FORMS-PASSAGE` | 2 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v2, [proposal 78.172](proposals/78.172-law-passage.md) (the one-sided product `q ↦ v_k·q`; v1's `2H − R` struck 2026-11-05); ROADMAP track 24 B3 | `forms::passage` (the refusal of a moved reach, the share read from a plane's other axis); the product and its fixtures in the multivector algebra (`transducer::cga::Clifford::product`; `src/transducer/cga/tests/passage.rs`), which `forms` cannot reach; fixtures agreed by mycelium, netstratum and xylarium (2026-11-05) |
+| `FORMS-PASSAGE` | 3 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v2, [proposal 78.172](proposals/78.172-law-passage.md) (the one-sided product `q ↦ v_k·q`; v1's `2H − R` struck 2026-11-05); ROADMAP track 24 B3. Version 3 holds the product in the shell; the law is unchanged | `forms::passage` (`pass`, the product, refusing `NotDirection`, `NotEven` and `Mismatched`; the refusal of a moved reach; the share read from a plane's other axis), over the exact algebra `algebra::Clifford`; the four fixtures in `forms/src/tests/crossing.rs`, agreed by mycelium, netstratum and xylarium (2026-11-05) |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `LAW-WAVEFRONT` | 1 | netstratum `docs/111` §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |
 

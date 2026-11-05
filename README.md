@@ -213,7 +213,8 @@ directory, the ports and the number of tasks.
 | **Hypha** (court) | `mycelium-server` | Admits signed acts, reconstructs submitted work, rules on it, settles payments, keeps a hash-chained receipt ledger, folds the ledger into eras, and exchanges digests and co-signatures with peer hyphae. |
 | **Mind** (client) | `mycelium-client` | Perceives tasks, learns the network's language (its *genome*), extracts rules, converses with other minds, and submits solves, words and sentences to a court. A mind can hold a *seat* in a house run by another kernel. |
 | **Soak harness** | `mycelium-soak` | Long-running load and durability runs against a mesh. |
-| **Law forms** | `forms/` (crate) | The exact law forms shared with the other kernels that join the mesh, depending only on exact rationals. |
+| **Exact algebra** | `algebra/` (crate) | The multivectors of `Cl(p, q)` over ℚ, each carrying its signature: the product, the signature's refusals, a value's wire writing and key. Below both the law forms and the library, depending only on exact rationals; the library re-exports it at `transducer::cga`. |
+| **Law forms** | `forms/` (crate) | The exact law forms shared with the other kernels that join the mesh, depending only on exact rationals and the exact algebra. |
 
 Each component's scope, and the terms that belong to it, are set out in
 [GLOSSARY › Components and scope](GLOSSARY.md#components-and-scope). A
@@ -711,6 +712,7 @@ src/
                 perception of samples (family/), rule elements
   voice/        voice identity and signing
 examples/       durable_drill.rs
+algebra/        the exact algebra Cl(p, q)(ℚ) (workspace member crate)
 forms/          shared exact law forms (workspace member crate)
 sdk/            mycelium-sdk: the client SDK crate, and examples/client.rs
                 (a complete client)
@@ -742,7 +744,8 @@ cargo test --lib <module path>   # scoped suites, e.g. transducer::family::tests
 The gate (`xtask/`) takes four readings and reports each one, so a
 failure in the first does not hide the others:
 - **Reading bound** (`xtask/lint/length.rs`): no source file under `src/`,
-  `forms/src/`, `sdk/src/` or `xtask/` longer than 2500 lines.
+  `algebra/src/`, `forms/src/`, `sdk/src/` or `xtask/` longer than 2500
+  lines.
 - **Euclidean vocabulary** (`xtask/lint/euclidean.rs`): refuses grid
   indexing shapes (Morton and space-filling curves, bit interleaving,
   bounding boxes, subdivision trees, spatial hashes, voxels) named in code
@@ -752,8 +755,8 @@ failure in the first does not hide the others:
   `REGISTERED:`), and every underived one is named in the open-physics
   register (MU-DERIVATIONS D1.4; MU-STANDARDS 2.12).
 - **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
-  --workspace --all-targets -- -D warnings`, over `mycelium`, `forms`,
-  `mycelium-sdk` and `mycelium-source-arc-agi`.
+  --workspace --all-targets -- -D warnings`, over `mycelium`, `algebra`,
+  `forms`, `mycelium-sdk` and `mycelium-source-arc-agi`.
 
 Test suites are run by module path. The core library reads no corpus; the
 suites that run corpus tasks are the decoder's

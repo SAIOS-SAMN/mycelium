@@ -10,8 +10,8 @@
 //! numbers gate refuses a register entry with no site.
 //!
 //! A claim is proved one of two ways:
-//! - [`Proof::Test`]: a `#[test]` fn of that name under `src/`, `sdk/src/`,
-//!   `forms/src/` or `tests/`.
+//! - [`Proof::Test`]: a `#[test]` fn of that name under `src/`,
+//!   `algebra/src/`, `sdk/src/`, `forms/src/` or `tests/`.
 //! - [`Proof::CompileFail`]: a doc comment naming the claim in backticks,
 //!   followed in the same comment by a fence opened ```` ```compile_fail ````.
 //!
@@ -42,7 +42,7 @@ pub struct Guard {
 }
 
 /// The roots a guarding type and a claim are read under.
-const ROOTS: [&str; 4] = ["src", "sdk/src", "forms/src", "tests"];
+const ROOTS: [&str; 5] = ["src", "algebra/src", "sdk/src", "forms/src", "tests"];
 
 /// THE REGISTER. Only guards that are built stand here; a specified guard
 /// enters with its type and its claim.

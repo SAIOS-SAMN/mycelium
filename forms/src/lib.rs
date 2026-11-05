@@ -30,6 +30,11 @@
 //! grid, which rounds a reading off and cannot be undone (ruled
 //! 2026-10-21). Joint reads compare exact values.
 
+/// The exact algebra the forms compute in: the multivectors of `Cl(p, q)`
+/// over ℚ, each carrying its signature (`algebra::Clifford`), so a kernel
+/// that links this crate builds a form's arguments from the same crate.
+pub use algebra;
+
 pub mod frame;
 pub mod passage;
 pub mod shares;

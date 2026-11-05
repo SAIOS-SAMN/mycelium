@@ -6,11 +6,11 @@
 //! An [`Address`] is an M2 address, a listing key, or a class key. It is
 //! not a chain's bytes, not a socket string, and not a verifying key.
 
-use std::ops::Deref;
 
 pub const TAG_ROTOR: u8 = 1;
-/// FORMAT: versor address tag byte.
-pub const TAG_VERSOR: u8 = 2;
+/// THE ADDRESS CARRIER, the citation it fits, the tag reader and the versor
+/// tag stand with the exact algebra, whose values are keyed by them (A21).
+pub use algebra::address::{tag_of, Address, Cited, TAG_VERSOR};
 /// FORMAT: word address tag byte.
 pub const TAG_WORD: u8 = 3;
 /// FORMAT: form address tag byte.
@@ -89,120 +89,6 @@ pub const TAG_MEET: u8 = 22;
 /// FORMAT: law address tag byte.
 pub const TAG_LAW: u8 = 23;
 
-/// Canonical A21 coordinates of a form, listing, or class. Coarse-first:
-/// a proper prefix is a coarser stratum of the same kind, never a sibling.
-/// Equality is Address-to-Address only: not a chain's bytes, not a socket
-/// string, not a verifying key.
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-/// Z4c — AN ADDRESS OWNS ITS BYTES ONCE AND SHARES THEM.
-///
-/// The address IS the object's coordinates written out (law 2, A21), and
-/// for a form that is megabytes: `form_vertex_key` writes every vertex,
-/// member and gauge, 7.3 MB on the 590-vertex rule. Every carrier that
-/// names the form by it held a separate copy — the wells trie, `dirty`,
-/// `ordinals`, the Čech complex's sections — and a hold paid for all of
-/// them.
-///
-/// `Arc<[u8]>` changes WHO OWNS THE BYTES and nothing else. The coordinates
-/// are the same coordinates, `as_bytes` is the same slice, and a reader
-/// that compares, peels or descends on it cannot tell the difference —
-/// which is the point: the compression is by CITATION, one object written
-/// once and named everywhere by reference, not by shortening a coordinate,
-/// which would make it a stratum and not the object.
-pub struct Address(std::sync::Arc<[u8]>);
-
-impl Address {
-    pub fn new(bytes: Vec<u8>) -> Address {
-        Address(bytes.into())
-    }
-
-    /// The one copy, to hand a carrier that files by this address
-    /// (`Keyed::insert_shared`).
-    pub fn shared(&self) -> std::sync::Arc<[u8]> {
-        std::sync::Arc::clone(&self.0)
-    }
-
-    pub fn from_bytes(bytes: impl AsRef<[u8]>) -> Address {
-        Address(std::sync::Arc::from(bytes.as_ref()))
-    }
-
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.0
-    }
-
-    pub fn into_vec(self) -> Vec<u8> {
-        self.0.to_vec()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn tag(&self) -> Option<u8> {
-        tag_of(&self.0)
-    }
-
-    pub fn starts_with(&self, prefix: &[u8]) -> bool {
-        self.0.starts_with(prefix)
-    }
-}
-
-impl Deref for Address {
-    type Target = [u8];
-    fn deref(&self) -> &[u8] {
-        &self.0
-    }
-}
-
-/// AN ADDRESS THAT FITS ITS CITATION: one whose length writes into the
-/// u16 prefix every tape cites an address through. [`Address::cited`] is
-/// its only constructor, so a value of this type IS the proof that
-/// [`put_cited`] is total — and a key built from cited addresses needs no
-/// refusal of its own.
-///
-/// The refusal it replaces was a `?` inside `Element::address`, which had
-/// no answer but the form tag; 47.1 takes it at the constructor instead,
-/// where an element that cannot be cited is simply not built.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Cited(Address);
-
-impl Cited {
-    pub fn address(&self) -> &Address {
-        &self.0
-    }
-
-    pub fn into_address(self) -> Address {
-        self.0
-    }
-}
-
-impl Deref for Cited {
-    type Target = Address;
-    fn deref(&self) -> &Address {
-        &self.0
-    }
-}
-
-impl AsRef<[u8]> for Cited {
-    fn as_ref(&self) -> &[u8] {
-        self.0.as_bytes()
-    }
-}
-
-impl Address {
-    /// This address as a citation, or `None` where it does not fit the
-    /// prefix: an address too long to cite is one no tape can name, and
-    /// the element that would cite it is refused where it is built.
-    pub fn cited(&self) -> Option<Cited> {
-        u16::try_from(self.0.len()).ok()?;
-        Some(Cited(self.clone()))
-    }
-}
-
 /// Write a citation. TOTAL: the type is the proof that the length fits.
 pub fn put_cited(out: &mut Vec<u8>, c: &Cited) {
     let b = c.address().as_bytes();
@@ -215,36 +101,6 @@ pub fn put_cited(out: &mut Vec<u8>, c: &Cited) {
 /// it writes back whole.
 pub fn take_cited(b: &[u8], p: &mut usize) -> Option<Cited> {
     take_address(b, p)?.cited()
-}
-
-impl AsRef<[u8]> for Address {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
-    }
-}
-
-impl std::borrow::Borrow<[u8]> for Address {
-    fn borrow(&self) -> &[u8] {
-        &self.0
-    }
-}
-
-impl From<Vec<u8>> for Address {
-    fn from(v: Vec<u8>) -> Address {
-        Address(v.into())
-    }
-}
-
-impl From<&[u8]> for Address {
-    fn from(v: &[u8]) -> Address {
-        Address(std::sync::Arc::from(v))
-    }
-}
-
-impl From<Address> for Vec<u8> {
-    fn from(a: Address) -> Vec<u8> {
-        a.0.to_vec()
-    }
 }
 
 /// A mathematical coordinate with a canonical, self-delimiting boundary (Rule 6).
@@ -329,19 +185,6 @@ impl CanonicalCoordinate for Address {
     }
 }
 
-/// THE TAG a key or a tape opens with. A21 puts the stratum tag at offset
-/// zero, so byte zero is the tape's own coordinate and not the byte that
-/// happened to arrive first (rule 15). One carrier for that offset:
-/// [`Address::tag`] reads through it, and so does every reader that holds
-/// the bytes before they are an [`Address`].
-pub fn tag_of(b: &[u8]) -> Option<u8> {
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 15 — wire tag offset: A21 writes the stratum tag at offset zero, and this is the one reader of it"
-    )]
-    b.first().copied()
-}
-
 /// A COUNT IN ONE BYTE, or a refusal. `len().min(255) as u8` wrote 255
 /// for any larger count and the writer then emitted 255 members, so the
 /// reader took a frame that ended in the middle of the next field and
@@ -391,74 +234,10 @@ pub fn put_u32_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
     Some(())
 }
 
-/// A KEY COMPONENT: a coordinate written into a key, never a record a reader
-/// frames at a fixed width (STD1 3c-2, ruled (d)).
-///
-/// ITS LENGTH IS WRITTEN BY ITS OWN COORDINATE: LEB128, seven bits a byte,
-/// the high bit saying more follows. Exact for any length, so the writer is
-/// total with no cast and no width wall — an address held once is
-/// legitimately megabytes, and the only wall against a blob is the
-/// citation's u16 (LD0). Minimal and prefix-free, so the key is injective by
-/// construction; and a component under 128 bytes takes one length byte, not
-/// four.
-pub fn put_key_bytes(out: &mut Vec<u8>, b: &[u8]) {
-    put_key_count(out, b.len());
-    out.extend_from_slice(b);
-}
-
-/// A COUNT IN A KEY, written by its own coordinate (STD1 3c-2, ruled (d)):
-/// LEB128, seven bits a byte, minimal. A count in a key is a coordinate of
-/// the key exactly as a component's length is, so it has no width wall.
-pub fn put_key_count(out: &mut Vec<u8>, mut n: usize) {
-    loop {
-        let low = n.to_le_bytes()[0] & 0x7f;
-        n >>= 7;
-        if n == 0 {
-            out.push(low);
-            break;
-        }
-        out.push(low | 0x80);
-    }
-}
-
-/// A key count read back. `None` where the spelling is not minimal (a key
-/// has one spelling) or the count does not fit a `usize`.
-pub fn take_key_count(b: &[u8], p: &mut usize) -> Option<usize> {
-    let mut n = 0usize;
-    let mut shift = 0u32;
-    loop {
-        let byte = *b.get(*p)?;
-        *p += 1;
-        let v = usize::from(byte & 0x7f);
-        let placed = v.checked_shl(shift)?;
-        // Bits shifted past the carrier are a count no usize holds.
-        if placed >> shift != v {
-            return None;
-        }
-        n |= placed;
-        if byte & 0x80 == 0 {
-            // A final zero byte after the first is an over-long spelling.
-            if byte == 0 && shift > 0 {
-                return None;
-            }
-            return Some(n);
-        }
-        shift += 7;
-    }
-}
-
-/// A key component read back: its LEB128 length, then that many bytes.
-/// `None` where the length is not minimal, does not fit a `usize`, or runs
-/// past the key.
-pub fn take_key_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
-    let n = take_key_count(b, p)?;
-    if n > b.len().checked_sub(*p)? {
-        return None;
-    }
-    let out = b.get(*p..*p + n)?.to_vec();
-    *p += n;
-    Some(out)
-}
+/// A KEY COMPONENT AND ITS LENGTH, each by its own coordinate (STD1 3c-2,
+/// ruled (d)): the exact algebra's writing, which a value's coefficients
+/// take on the wire.
+pub use algebra::component::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 
 /// A byte string behind a four-byte length, or a refusal: the `as u32` this
 /// wrote truncated the length of a blob past 4 GiB and left its bytes whole
@@ -501,9 +280,9 @@ pub fn take_address(b: &[u8], p: &mut usize) -> Option<Address> {
     if n > b.len().checked_sub(*p)? {
         return None;
     }
-    let s = std::sync::Arc::from(b.get(*p..*p + n)?);
+    let s = Address::from(b.get(*p..*p + n)?);
     *p += n;
-    Some(Address(s))
+    Some(s)
 }
 
 /// A19 class record: class key ‖ order (0 = infinite, else ℓ).

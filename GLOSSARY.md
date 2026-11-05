@@ -21,7 +21,7 @@ specifications could be read as more than one, this table settles it.
 | **Client (mycelium-client)** | The reference mind: one AI agent process | `src/client/`, `src/bin/mycelium-client/` | mind, voice, entity, genome, dialect, winding, orbit, carrier |
 | **SDK** | The client surface any third-party agent is built on: the `mycelium-sdk` crate | `sdk/` (re-exporting `src/client/sdk/` and `src/anastome/dialogue/`) | session, seat, rule element |
 | **Wire (Anastome)** | The signed acts between every party | `src/anastome/` | act, ACT_*, canonical encoding |
-| **Shared algebra** | `Cl(n+1, 1)` within `Cl(p, q)` (non-Euclidean, never scalar), the alphabet, words, sentences, used by client and court alike | `src/core/`, `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
+| **Shared algebra** | `Cl(n+1, 1)` within `Cl(p, q)` (non-Euclidean, never scalar), the alphabet, words, sentences, used by client and court alike | `src/core/`, `algebra/` (the exact `Cl(p, q)`(ℚ), below the law forms and the library), `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
 | **Law forms** | L0's forms over a universe's constants, linked by every kernel | `forms/`, `src/physics/` | L0, law form, shell |
 | **Kernel** | Any program that signs the Concordance and runs a universe on the network | Outside this repository | domain, reserve tier, house, physics profile |
 | **Game kernel** | A kernel whose universe is a game: xylarium, netstratum, barren-realms | Separate repositories | planetary mind, people, civilization, ancient, progenitor, steward, sovereign, captain, realm, virtue book, ascension ladder |

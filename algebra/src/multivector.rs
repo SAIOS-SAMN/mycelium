@@ -33,11 +33,17 @@
 //! §3.7). Every value made here — every constructor, every product of two of
 //! them, every value read off the wire — carries `e₋` alone, so it is in
 //! `Cl(n+1, 1)` exactly as before. A value of another signature is made and
-//! composed only as a [`super::Clifford`], whose compositions refuse two
+//! composed only as a [`crate::Clifford`], whose compositions refuse two
 //! signatures that disagree on a generator both algebras hold; so the
 //! product here never meets two signatures that disagree.
+//!
+//! A VALUE'S KEY is its canonical writing under the versor tag (A21,
+//! [`Mv::key`]). Its conjugacy class, the coordinate the library's carriers
+//! answer, is the library's (`transducer::cga::Conjugacy`).
 
-use super::group::{projective_ratio, weight_of};
+use crate::address::{tag_of, Address, TAG_VERSOR};
+use crate::component::{put_key_bytes, take_key_bytes};
+use crate::ray::projective_ratio;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{One, Signed, Zero};
@@ -108,7 +114,7 @@ pub fn pseudo(n: u8) -> Option<usize> {
 /// The smallest `n` whose algebra holds every generator of `mask`: the
 /// highest base axis it names.
 #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: an axis of a machine-word blade mask, below usize::BITS ≤ 64")]
-pub(super) fn n_of_mask(mask: usize) -> u8 {
+pub(crate) fn n_of_mask(mask: usize) -> u8 {
     // The highest set bit is the highest generator; e₊, e₋ name no axis.
     let mut rest = mask & !(EP | EM);
     let mut n = 0usize;
@@ -148,13 +154,16 @@ impl PartialEq for Mv {
 }
 impl Eq for Mv {}
 
-pub(super) fn zero() -> BigRational {
+/// The exact zero of ℚ.
+pub fn zero() -> BigRational {
     BigRational::zero()
 }
-pub(super) fn one() -> BigRational {
+/// The exact one of ℚ.
+pub fn one() -> BigRational {
     BigRational::one()
 }
-pub(super) fn half() -> BigRational {
+/// The exact half of ℚ.
+pub fn half() -> BigRational {
     BigRational::new(BigInt::from(1), BigInt::from(2))
 }
 
@@ -244,8 +253,8 @@ impl Mv {
 
     /// A SINGLE BLADE UNDER THE NEGATIVE MASK `neg`, in the smallest algebra
     /// holding its generators and every generator `neg` names. Made only for
-    /// [`super::Clifford`], which bounds both masks by [`MAX_N`] first.
-    pub(super) fn blade_under(neg: usize, mask: usize, v: BigRational) -> Self {
+    /// [`crate::Clifford`], which bounds both masks by [`MAX_N`] first.
+    pub(crate) fn blade_under(neg: usize, mask: usize, v: BigRational) -> Self {
         Self::of_terms(n_of_mask(mask).max(n_of_mask(neg)), neg, vec![(mask, v)])
     }
 
@@ -335,15 +344,15 @@ impl Mv {
 
     /// Canonical coefficients written out (A21). None when the element is
     /// zero (no canonical form).
-    pub fn key(&self) -> Option<crate::transducer::address::Address> {
+    pub fn key(&self) -> Option<Address> {
         let n = self.canonical()?;
-        let mut buf = vec![crate::transducer::address::TAG_VERSOR];
+        let mut buf = vec![TAG_VERSOR];
         n.to_bytes(&mut buf);
-        Some(crate::transducer::address::Address::new(buf))
+        Some(Address::new(buf))
     }
 
     pub fn from_key(k: &[u8]) -> Option<Mv> {
-        if crate::transducer::address::tag_of(k) != Some(crate::transducer::address::TAG_VERSOR) {
+        if tag_of(k) != Some(TAG_VERSOR) {
             return None;
         }
         let mut p = 1usize;
@@ -453,108 +462,6 @@ impl Mv {
         self.geo(v).grade(g + 1)
     }
 
-    /// THE CONJUGACY INVARIANTS OF A TRANSITION, READ OFF ITS GRADE-2
-    /// GENERATOR (54.7, as ruled 2026-09-21).
-    ///
-    /// A transition is `Ω = R · T(τ)` and its generator is the bivector
-    /// `B = ⟨Ω⟩₂`. In `Cl(n+1,1)` that bivector is NOT one kind of thing:
-    ///
-    /// ```text
-    ///     B = B_ell + B_hyp ,   B_ell = Σ b_ij (eᵢ∧eⱼ)
-    ///                           B_hyp = Σ b_i₋ (eᵢ∧e₋)
-    /// ```
-    ///
-    /// `B_ell` generates an ELLIPTIC rotation stabilising a timelike
-    /// geodesic; `B_hyp` generates a HYPERBOLIC transvection, a pure
-    /// geodesic translation; a null `B` generates a PARABOLIC limit
-    /// rotation stabilising a point on the asymptotic sphere. The three are
-    /// not conjugate to one another, and the sign of
-    ///
-    /// ```text
-    ///     I₁ = ⟨B²⟩₀ = ‖B_ell‖² − ‖B_hyp‖²
-    /// ```
-    ///
-    /// is what tells them apart.
-    ///
-    /// WHY THIS CANNOT BE DONE IN `Cl(4,0)`. `Rotor::class_invariants` reads
-    /// `c[0]` and `c[15]` — grade 0 and grade 4 — and discards all six
-    /// bivector components. That is not an oversight there: `Cl(4,0)` is
-    /// POSITIVE DEFINITE, every bivector squares negative, every plane is
-    /// carried to every other by a conjugation, and the conjugacy classes of
-    /// `Spin(4)` genuinely are the two angles alone.
-    ///
-    /// It adds everything here. Under a signature with `e₋² = −1` the sign
-    /// of `I₁` is a real coordinate, and a rotation, a boost and a limit
-    /// rotation are three classes rather than one — which is why the
-    /// transition's two halves must be composed into ONE element before the
-    /// class is taken.
-    ///
-    /// ```text
-    ///     I₂ = ‖⟨B²⟩₄‖²      the screw coupling, 2(B_ell · B_hyp) squared
-    /// ```
-    ///
-    /// `I₂ = 0` is a planar rotation or a pure transvection; `I₂ ≠ 0` is a
-    /// helicoidal screw, the two halves coupled.
-    ///
-    /// EXACT AND SCALE-FREE. `B ↦ λB` sends `⟨B²⟩₀ ↦ λ²⟨B²⟩₀` and
-    /// `w = ΩΩ̃ ↦ λ²w`, so `I₁/w` is invariant; `‖⟨B²⟩₄‖² ↦ λ⁴‖·‖²`, so
-    /// `I₂/w²` is. `None` when `Ω` is not a versor, which is a refusal and
-    /// never a zero class (rule 11).
-    pub fn class_invariants(
-        &self,
-    ) -> Option<(BigRational, BigRational, crate::network::nerve::coord::BivectorKind)> {
-        // `I₁/w`, `I₂/w²`: scale-free ratios read as the class (Axiom C).
-        let w = weight_of(self)?;
-        if w.is_zero() {
-            return None;
-        }
-        let b = self.grade(2);
-        let bb = b.geo(&b);
-        let i1 = bb.scalar_part() / &w;
-        let quad = bb.grade(4);
-        let i2 = quad.geo(&quad.reverse()).scalar_part() / (&w * &w);
-        // THE SIGN IS THE TYPE. With `eᵢ² = +1` for every generator but
-        // `e₋² = −1`, all anticommuting:
-        //
-        //   ELLIPTIC   B = e₁∧e₂ :  B² = −1  < 0
-        //   HYPERBOLIC B = eᵢ∧e₋ :  B² = +1  > 0
-        //   PARABOLIC  B = −½ d e_∞ : e_∞² = 0 and d ⊥ e_∞, so B² = 0
-        //
-        // TRIVIAL IS NOT PARABOLIC (54.7): the identity turns nothing, and
-        // `I₁ = 0` alone cannot tell the two apart, so the bivector itself
-        // is asked.
-        use crate::network::nerve::coord::BivectorKind;
-        let kind = if b.is_zero() {
-            BivectorKind::Trivial
-        } else if i1.is_negative() {
-            BivectorKind::Elliptic
-        } else if i1.is_positive() {
-            BivectorKind::Hyperbolic
-        } else {
-            BivectorKind::Parabolic
-        };
-        Some((i1, i2, kind))
-    }
-
-    /// 54.7 R4 — THE HOLONOMY CLASS OF A MOTION, AS THE COORDINATE THE
-    /// TORSION AND AXIS CARRIERS ANSWER. The same bytes as
-    /// [`Mv::class_key`], declared as `coord::Holonomy`.
-    pub fn holonomy_key(&self) -> Option<crate::network::nerve::coord::Holonomy> {
-        let (i1, i2, kind) = self.class_invariants()?;
-        Some(crate::network::nerve::coord::Holonomy { i1, i2, kind })
-    }
-
-    /// The class as canonical coordinates — written by the coordinate
-    /// itself, so the bytes here and the bytes a carrier is keyed by are
-    /// one construction and not two agreeing (rule 12).
-    pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
-        use crate::network::nerve::Coordinate;
-        let h = self.holonomy_key()?;
-        Some(crate::transducer::address::Address::from_bytes(
-            h.encode().as_bytes(),
-        ))
-    }
-
     /// The grade-`g` part.
     pub fn grade(&self, g: u32) -> Self {
         let c = self.c.iter().filter(|(m, _)| grade_of(*m) == g).cloned().collect();
@@ -574,7 +481,8 @@ impl Mv {
     // element and its free reverse, the quotient `B·A⁻¹` is the ray `B Ã`,
     // a site that asked whether an element inverts asks whether it is a
     // versor (`is_versor`), and a site whose quotient's SCALE is content
-    // divides by [`super::group::weight_of`] and says so in its comment.
+    // divides by the library's `transducer::cga::weight_of` and says so in
+    // its comment.
 
     /// The versor SANDWICH `V x Ṽ` — the exact action of a rigid motion on a
     /// whole volume in one step.
@@ -601,7 +509,7 @@ impl Mv {
     /// at that `n`. It carries the value; it never identifies it. The wire
     /// carries no signature: every `Mv` is in `Cl(n+1, 1)` (module
     /// documentation), and [`Mv::from_bytes`] reads every value back there.
-    /// A [`super::Clifford`] of another signature has no writing.
+    /// A [`crate::Clifford`] of another signature has no writing.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         let m = self.narrowed();
         out.push(m.n);
@@ -637,8 +545,8 @@ impl Mv {
                 num_bigint::Sign::Plus => 1,
             });
             // Each length by its own coordinate (STD1 3c-2, ruled (a)).
-            crate::transducer::address::put_key_bytes(out, &nb);
-            crate::transducer::address::put_key_bytes(out, &db);
+            put_key_bytes(out, &nb);
+            put_key_bytes(out, &db);
         }
     }
 
@@ -665,8 +573,8 @@ impl Mv {
         for mask in 0..span {
             let sign = *b.get(*pos)?;
             *pos += 1;
-            let nb = crate::transducer::address::take_key_bytes(b, pos)?;
-            let db = crate::transducer::address::take_key_bytes(b, pos)?;
+            let nb = take_key_bytes(b, pos)?;
+            let db = take_key_bytes(b, pos)?;
             let s = match sign {
                 2 => num_bigint::Sign::Minus,
                 1 => num_bigint::Sign::Plus,
