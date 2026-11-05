@@ -98,8 +98,9 @@ The rulings the model still needs are listed in MU-ECONOMY §12.
 
 **2. Waiting on an operator ruling.** Do not start these until the ruling
 is recorded:
-- Concordance draft 5 (MU-CONCORDANCE §12, held for netstratum's
-  pole-basis wording of 2.11).
+- Concordance draft 5 (MU-CONCORDANCE §12): 2.11 restated on
+  LAW-PASSAGE v3 (adopted by both operators 2026-11-05), held until
+  xylarium reads 78.172's fixtures.
 - B1: carrying line mouth offers and tier handoff offers in the reserve's
   act, which amends rulings 78.126 and 78.136.
 - The proposed name `AddressOnly`.
@@ -1271,8 +1272,8 @@ adjudicated reading (B2). Each phase is one commit:
    change: `ACT_LAWS` modes 6, 7 and 8):
    - Each clause is identified by its content (its law form and
      joint-read fixtures), never by a hash of the text's bytes. The
-     register (`src/physics/laws/clauses/`) holds `FORMS-PASSAGE` v3 (the
-     four fixtures of LAW-PASSAGE v2) and `FORMS-COORDINATE` v2 (the
+     register (`src/physics/laws/clauses/`) holds `FORMS-PASSAGE` v4 (the
+     five fixtures of LAW-PASSAGE v3, eight passes) and `FORMS-COORDINATE` v2 (the
      order, eight sexagesimal sectors, seven `within` readings and two
      ranges of LAW-COORDINATE v1), with the hypha's own reconstruction of
      each fixture through `forms` (`ConcordanceClause`,
@@ -1351,31 +1352,39 @@ adjudicated reading (B2). Each phase is one commit:
      a statement state no transition; their existing checks stand
      (MU-HOSTING §5a.5). A motion stated as turns (`verify_turns`) has no
      wire writing yet and rides the crossing record (track 25, X1). No
-     crossing states a core form's object, and LAW-PASSAGE waits on its
-     v3.
-   - The first shared crossing law is **LAW-PASSAGE v2**: a body's state
-     is an even multivector `q`, plane `k`'s direction is
-     `v_k = H_k·e_Zk + R_k·e_Qk` (`e_Zk² = +1`, `e_Qk² = −1`), and one
-     crossing is the one-sided product `q ↦ v_k·q`, never a sandwich;
-     null at the horizon, so one-way there; passages in different planes
-     anticommute ([proposal 78.172](docs/proposals/78.172-law-passage.md);
+     crossing states a core form's object. No crossing kind states a
+     passage yet (a mouth's frames are read as versors of its spaces, not
+     as a frame state `H·n_Z + R·n_Q`), so none is reconstructed under
+     LAW-PASSAGE v3's `Poles::cross`; a crossing that states one is the
+     admission claims below.
+   - The first shared crossing law is **LAW-PASSAGE v3** (adopted by
+     both operators 2026-11-05): the passage is the pole swap, the
+     reflection in the throat's unit `e₊`. A frame state
+     `H·n_Z + R·n_Q` (hold and reach, `n_Z = e₊ + e₋`, `n_Q = e₊ − e₋`)
+     goes by `x ↦ e₊·x·e₊`, its span `H − R` reversed and its whole kept;
+     the riding state goes one-sided, `q ↦ e₊·q`; one passage writes
+     `T ↦ T − 2·(H − R)`; two passes are the identity; at a pole the
+     passage is one-way ([proposal 78.172](docs/proposals/78.172-law-passage.md);
      requested by netstratum PR #40, derived in netstratum docs/114
-     §9–§10). Version 1's linear passage `R ↦ 2H − R` was struck on
+     §9–§10 and docs/117 §10, §12). Version 2's product `q ↦ v_k·q` is
+     retired as the passage; version 1's `R ↦ 2H − R` was struck on
      2026-11-05.
-   - **What `forms` holds** (v0.4.0; no wire or layout change):
-     `forms/src/passage.rs`, shell id `FORMS-PASSAGE` v3, the law whole.
-     `pass(v, q)` is the one-sided product over the exact algebra
+   - **What `forms` holds** (v0.4.0): `forms/src/passage.rs`, shell id
+     `FORMS-PASSAGE` v4, the law whole. `Poles` holds a plane by its two
+     units (`NotUnit`, `WrongSign`); `swap`, `cross` (to a `Crossing`
+     with `S` and `T`) and `ride` are exact over the algebra
      (`algebra::Clifford`, a crate below both `forms` and the library),
-     refusing a `v` that is not degree 1 `PassageRefusal::NotDirection`,
-     a `q` that is not even `NotEven`, and two values whose signatures
-     disagree `Mismatched`, each with the reading that caused it.
-     `Throat::verify` refuses a crossing that states a moved reach (the
-     throat sphere's `H²/R` among them) `PassageRefusal::NotLawful`,
-     carrying the `Breach` (`claimed`, `reconstructed`, the reach carried
-     in); `pass_share` reads a share from a plane's other axis,
-     `1 − δ`. The four fixtures are claims on `pass` in
-     `forms/src/tests/crossing.rs`, with the horizon one-way and two
-     planes anticommuting over every frame plane the algebra holds.
+     refusing a frame state off the plane `NotFrame`, a riding state of
+     both parities `MixedParity`, and two signatures that disagree
+     `Mismatched`. `Frame` reads hold, reach, whole, span, the face
+     `δ = H/(H + R)` (`NoWhole`, `NotShare`) and the `Place` (throat,
+     pole, interior). `Throat::verify` refuses a crossing that states a
+     moved reach (`2H − R` and `H²/R` among them)
+     `PassageRefusal::NotLawful`, carrying the `Breach`; `pass_share`
+     reads the face from the other pole, `1 − δ`. The five fixtures and
+     the roles' exchange are claims in `forms/src/tests/crossing.rs`;
+     v2's algebra facts stand as claims on `Clifford::product`
+     (`src/transducer/cga/tests/product.rs`).
    - **The signature is data** (v0.4.0; no wire or layout change): the
      multivector carries the mask of its negative generators beside its
      `n` (`Mv::negatives`), and the product reads each square from it.
@@ -1389,8 +1398,9 @@ adjudicated reading (B2). Each phase is one commit:
      (`clauses::writing::put_clifford`), where a kernel signs the passage
      by reconstructing them (B2). Open: the admission at the vertex,
      below.
-   - Claims (admission, open): `crossing_is_one_sided_product`,
-     `crossing_at_horizon_is_one_way`,
+   - Claims (admission, open, once a crossing states a passage):
+     `crossing_is_the_pole_swap_with_its_flux_on_t`,
+     `crossing_at_a_pole_is_one_way`,
      `crossing_stating_moved_reach_is_refused_not_lawful`.
    - The shared coordinate is **LAW-COORDINATE v1**, ruled by both
      operators on 2026-11-05 from netstratum's docs/120

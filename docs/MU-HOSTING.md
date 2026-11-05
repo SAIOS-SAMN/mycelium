@@ -566,7 +566,7 @@ state with no exact representation does not cross.
 | L0 applied at admission to the transitions a crossing states: a fold carries its transitions (`TierFold::transitions`, signed written out), and each, its carried lines' included, is reconstructed under L0 at `LAW_VERSION` (`verify_sized`) inside `Reconstructed::fold`; a breach is refused `Uplinked::NotLawful` (the fold's path, the transition's index, every breach with its law), a law unread answered `Uplinked::Unread` (neither admitted nor refused) | **Built** (v0.4.0, B3) | `court::admission::Reconstructed::fold`, `anastome::dialogue::uplink`; claims `crossing_refused_by_the_law_it_breaks`, `lawful_crossing_admitted` |
 | Motions stated as turns at admission (`verify_turns`) | **Specified**: a turn has no wire writing (its fields are read only by landing, MU-ANTI-FLATTENING 12); it rides the crossing record | Track 25, X1 |
 | Core-shell forms applied at admission | **Specified**: no crossing kind states a core form's object yet | §5a.9, B3 |
-| Draft-4 shared laws at the boundary | **Specified**; draft 4 approved 2026-11-05 (Concordance version 5). LAW-PASSAGE is held pending its v3, so no crossing is reconstructed under it yet | Concordance §11, §12 |
+| Draft-4 shared laws at the boundary | **Specified**; draft 4 approved 2026-11-05 (Concordance version 5). LAW-PASSAGE v3 (`FORMS-PASSAGE` v4, `Poles::cross`) is the first; no crossing kind states a passage yet (a mouth's frames are versors of its spaces), so none is reconstructed under it | Concordance §11, §12; ROADMAP track 24 B3 |
 
 ### 5a.4 Regulation: the Concordance signed
 

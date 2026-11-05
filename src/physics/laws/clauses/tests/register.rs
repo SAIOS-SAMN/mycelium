@@ -50,23 +50,62 @@ fn degrees(x: &Clifford) -> Vec<u32> {
     d
 }
 
-/// LAW-PASSAGE's FOUR FIXTURES REACHED: `v·v·q = 0` at the horizon, `v·q`
-/// on degrees 1 and 3 only, `[e_Z1Q1, e_Z1Q2] = −2·e_Q1Q2`, and
-/// `(e_Z1Z2 + e_Q1Z2)² = 0`.
+/// The same value of `Cl(p, q)`: one signature, the same terms.
+fn same(a: &Clifford, b: &Clifford) -> bool {
+    a.negatives() == b.negatives() && a.terms().eq(b.terms())
+}
+
+/// The frame state on plane 1 with `c₊` on `e₊₁` and `c₋` on `e₋₁`.
+fn on_plane(plus: Q, minus: Q) -> Clifford {
+    let (p, n) = (base_axis(1).expect("e₊₁"), base_axis(2).expect("e₋₁"));
+    let sig = EM | n;
+    Clifford::blade(sig, p, plus).and_then(|a| a.sum(&Clifford::blade(sig, n, minus)?)).expect("a blade the algebra holds")
+}
+
+/// LAW-PASSAGE v3's FIVE FIXTURES REACHED, each pass its own entry:
+/// (1) span `3/5` across gives `S = −3/5`, `T = −6/5`, and back `S = 3/5`,
+/// `T = 0`; (2) the throat changes nothing; (3) the pole `4/5·n_Z` swaps
+/// to `4/5·n_Q`; (4) the even state's pass is odd, and the second pass
+/// returns it; (5) a general frame state's two passes are the identity.
 #[test]
 fn register_reaches_stated_passage_objects() {
-    let reached = clause(forms::passage::LAW_ID).reached;
+    let held = clause(forms::passage::LAW_ID);
+    let crossing = |o: &Object| match o {
+        Object::Crossing { frame, span, flux } => (frame.clone(), span.clone(), flux.clone()),
+        other => panic!("a crossing, not {other:?}"),
+    };
     let value = |o: &Object| match o {
         Object::Multivector(x) => x.clone(),
         other => panic!("a multivector, not {other:?}"),
     };
-    let [one, two, three, four] = reached.as_slice() else { panic!("four fixtures") };
-    assert!(value(one).is_zero(), "v·v·q = 0");
-    assert_eq!(degrees(&value(two)), [1, 3]);
-    let (q1, q2) = (base_axis(2).expect("e_Q1"), base_axis(4).expect("e_Q2"));
-    let turning = Clifford::blade(EM | q1 | q2, q1 | q2, q(-2, 1)).expect("a blade the algebra holds");
-    assert!(value(three).difference(&turning).expect("one signature").is_zero(), "−2·e_Q1Q2");
-    assert!(value(four).is_zero(), "the null pair squares to zero");
+    let input = |f: &Fixture| match f {
+        Fixture::Crossed { frame, .. } => frame.clone(),
+        Fixture::Ridden { state, .. } => state.clone(),
+        other => panic!("a passage fixture, not {other:?}"),
+    };
+    let [one, back, throat, pole, ride, ride_back, general, general_back] = held.reached.as_slice() else { panic!("eight passes") };
+    let (frame, span, flux) = crossing(one);
+    assert!(same(&frame, &on_plane(q(1, 1), q(-3, 5))), "1/5·n_Z + 4/5·n_Q");
+    assert_eq!((span, flux), (q(-3, 5), q(-6, 5)));
+    let (frame, span, flux) = crossing(back);
+    assert!(same(&frame, &input(&held.clause.fixtures[0])), "the return");
+    assert_eq!((span, flux), (q(3, 5), q(0, 1)));
+    let (frame, span, flux) = crossing(throat);
+    assert!(same(&frame, &input(&held.clause.fixtures[2])), "the throat changes nothing");
+    assert_eq!((span, flux), (q(0, 1), q(0, 1)));
+    let (frame, span, flux) = crossing(pole);
+    assert!(same(&frame, &on_plane(q(4, 5), q(-4, 5))), "4/5·n_Q");
+    assert_eq!((span, flux), (q(-4, 5), q(-8, 5)));
+    assert_eq!(degrees(&input(&held.clause.fixtures[4])), [0, 2]);
+    assert_eq!(degrees(&value(ride)), [1, 3]);
+    assert!(same(&value(ride), &input(&held.clause.fixtures[5])), "e₊·q as fixture 4 states it");
+    assert!(same(&value(ride_back), &input(&held.clause.fixtures[4])), "e₊·e₊·q = q");
+    let (frame, span, flux) = crossing(general);
+    assert!(same(&frame, &input(&held.clause.fixtures[7])));
+    assert_eq!((span, flux), (q(-7, 3), q(-11, 3)));
+    let (frame, span, flux) = crossing(general_back);
+    assert!(same(&frame, &input(&held.clause.fixtures[6])), "the sandwich twice is the identity");
+    assert_eq!((span, flux), (q(7, 3), q(1, 1)));
 }
 
 /// LAW-COORDINATE's FIXTURES REACHED: the bodies in canonical order, the

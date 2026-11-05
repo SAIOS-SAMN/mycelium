@@ -1,14 +1,19 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 // MU-RELEASE §3a step 3 — THE JOINT-READ FIXTURES' INPUTS, as the proposals
-// state them: LAW-PASSAGE v2's four (78.172 §5, agreed 2026-11-05) and
-// LAW-COORDINATE v1's (78.173 §5), each an exact input.
+// state them: LAW-PASSAGE v3's five (78.172 §5, adopted 2026-11-05, for the
+// joint read) and LAW-COORDINATE v1's (78.173 §5), each an exact input.
 //
 //! The generators of the passage's fixtures are named by role, as the
-//! fixtures write them: plane `k`'s closed pole `e_Zk` (squaring to +1) is
-//! base axis `2k − 1`, its open pole `e_Qk` (squaring to −1) base axis
-//! `2k`, beside the conformal pair's `e₋` (as `forms`' own claims name them,
-//! `forms/src/tests/crossing.rs`). The coordinate's fixtures stand at the
+//! fixtures write them: plane `k`'s positive unit `e₊ₖ` (squaring to +1,
+//! the throat's unit) is base axis `2k − 1`, its negative unit `e₋ₖ`
+//! (squaring to −1) base axis `2k`, beside the conformal pair's `e₋` (as
+//! `forms`' own claims name them, `forms/src/tests/crossing.rs`). A
+//! fixture's two passes are two entries, the second's input the first's
+//! object, so each pass is read on its own. The face `δ = H/(H + R)` of
+//! 78.172 §5's fixture 6 is a reading of fixture 1's frame states and has
+//! no operation in `Fixture` or reading in `Object`: it is read in `forms`
+//! alone. The coordinate's fixtures stand at the
 //! root `R` (genesis `6a` × 32, epoch `0x92`). Fixture 1b's writings and
 //! fixture 3's nesting (a claim over every depth, not an input and an
 //! object) are read in `forms` alone, as are fixtures 7–10 (the advance,
@@ -27,20 +32,20 @@ fn q(n: i64, d: i64) -> Q {
     Q::new(n.into(), d.into())
 }
 
-/// Plane `k`'s closed pole `e_Zk`.
-fn closed(k: usize) -> Option<usize> {
+/// Plane `k`'s positive unit `e₊ₖ`.
+fn positive(k: usize) -> Option<usize> {
     base_axis(2 * k - 1)
 }
 
-/// Plane `k`'s open pole `e_Qk`.
-fn open(k: usize) -> Option<usize> {
+/// Plane `k`'s negative unit `e₋ₖ`.
+fn negative(k: usize) -> Option<usize> {
     base_axis(2 * k)
 }
 
-/// The signature of the frame planes `1..=m`: each open pole negative,
-/// beside `e₋`.
+/// The signature of the frame planes `1..=m`: each negative unit
+/// negative, beside `e₋`.
 fn signature(m: usize) -> usize {
-    (1..=m).filter_map(open).fold(EM, |s, g| s | g)
+    (1..=m).filter_map(negative).fold(EM, |s, g| s | g)
 }
 
 /// `c` times the product of the generators `gens`, in the order written,
@@ -58,22 +63,43 @@ fn sum(words: Vec<Option<Clifford>>) -> Option<Clifford> {
     it.try_fold(first, |s, w| s.sum(&w?).ok())
 }
 
-/// The direction `h·e_Zk + r·e_Qk` of plane `k`, under the planes `1..=m`.
-fn direction(m: usize, k: usize, h: Q, r: Q) -> Option<Clifford> {
-    sum(vec![word(m, h, &[closed(k)]), word(m, r, &[open(k)])])
+/// The frame state `h·n_Z + r·n_Q = (h + r)·e₊₁ + (h − r)·e₋₁` on plane 1,
+/// under the planes `1..=m`.
+fn frame(m: usize, h: Q, r: Q) -> Option<Clifford> {
+    sum(vec![word(m, &h + &r, &[positive(1)]), word(m, h - r, &[negative(1)])])
 }
 
-/// LAW-PASSAGE v2's four fixtures (78.172 §5), in order: the horizon
-/// one-way, even to odd, two boosts leaving a turning, a null pair. `None`
-/// where the algebra holds no generator a fixture names.
+/// One crossing of the frame state at hold `h` and reach `r` on plane 1,
+/// with `t` on `T`.
+fn crossed(h: Q, r: Q, t: Q) -> Option<Fixture> {
+    Some(Fixture::Crossed { positive: word(1, q(1, 1), &[positive(1)])?, negative: word(1, q(1, 1), &[negative(1)])?, frame: frame(1, h, r)?, flux: t })
+}
+
+/// The riding state's pass on plane 1, under the planes `1..=3`.
+fn ridden(state: Clifford) -> Option<Fixture> {
+    Some(Fixture::Ridden { positive: word(3, q(1, 1), &[positive(1)])?, negative: word(3, q(1, 1), &[negative(1)])?, state })
+}
+
+/// LAW-PASSAGE v3's five fixtures (78.172 §5), in order, each pass its own
+/// entry: (1) span `3/5` across and back; (2) the throat; (3) a pole;
+/// (4) the riding state's parity, across and back; (5) a general frame
+/// state across and back. `None` where the algebra holds no generator a
+/// fixture names.
 pub fn passage_fixtures() -> Option<Vec<Fixture>> {
-    // Fixture 2's state, `q = 3 + 2·e_Z2Z3 + e_Z1Q2`, over three planes.
-    let state = sum(vec![word(3, q(3, 1), &[]), word(3, q(2, 1), &[closed(2), closed(3)]), word(3, q(1, 1), &[closed(1), open(2)])])?;
+    // Fixture 4's even state, `q = 3 + 2·e₊₂e₊₃ + e₊₁e₋₂`, and `e₊₁·q =
+    // 3·e₊₁ + 2·e₊₁e₊₂e₊₃ + e₋₂`, over three planes.
+    let state = sum(vec![word(3, q(3, 1), &[]), word(3, q(2, 1), &[positive(2), positive(3)]), word(3, q(1, 1), &[positive(1), negative(2)])])?;
+    let carried =
+        sum(vec![word(3, q(3, 1), &[positive(1)]), word(3, q(2, 1), &[positive(1), positive(2), positive(3)]), word(3, q(1, 1), &[negative(2)])])?;
     Some(vec![
-        Fixture::PassedTwice { v: direction(3, 1, q(1, 1), q(1, 1))?, q: state.clone() },
-        Fixture::Passed { v: direction(3, 1, q(1, 1), q(2, 1))?, q: state },
-        Fixture::Commutator { a: word(2, q(1, 1), &[closed(1), open(1)])?, b: word(2, q(1, 1), &[closed(1), open(2)])? },
-        Fixture::Square { x: sum(vec![word(2, q(1, 1), &[closed(1), closed(2)]), word(2, q(1, 1), &[open(1), closed(2)])])? },
+        crossed(q(4, 5), q(1, 5), q(0, 1))?,
+        crossed(q(1, 5), q(4, 5), q(-6, 5))?,
+        crossed(q(1, 2), q(1, 2), q(0, 1))?,
+        crossed(q(4, 5), q(0, 1), q(0, 1))?,
+        ridden(state)?,
+        ridden(carried)?,
+        crossed(q(2, 1), q(-1, 3), q(1, 1))?,
+        crossed(q(-1, 3), q(2, 1), q(-11, 3))?,
     ])
 }
 

@@ -19,6 +19,7 @@ mod motor;
 mod roots;
 mod period;
 mod perturbation;
+mod product;
 mod rank_n;
 mod signature;
 mod twist;

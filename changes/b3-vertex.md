@@ -33,4 +33,8 @@
 - **Not yet reconstructed under a law, listed:** anchors, maps, mouths,
   conversions out, manifests and statements state no transition; a motion
   stated as turns has no wire writing (track 25, X1); no crossing states a
-  core form's object; LAW-PASSAGE waits on its v3.
+  core form's object; no crossing kind states a passage yet, so none is
+  reconstructed under LAW-PASSAGE v3's `Poles::cross`. ROADMAP's open
+  admission claims for the passage are renamed for v3
+  (`crossing_is_the_pole_swap_with_its_flux_on_t`,
+  `crossing_at_a_pole_is_one_way`).

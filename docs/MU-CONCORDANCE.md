@@ -17,7 +17,7 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
   - **To sign a clause, a kernel reconstructs its fixtures.** The kernel presents, signed under its key, its reconstruction of each of the clause's joint-read fixtures. The hypha reconstructs the same fixtures and admits the signature only where the kernel reached the same exact objects (MU-SCIENCE §5.0).
   - **A kernel that cannot read a clause is denied.** A kernel whose reconstructions do not reach the fixtures' objects is refused by name, naming the clause and the fixture (`NotSignatory`). That is a lack of the reading the clause requires, and a signature on its own never stands in for the reading.
   - **The rest stands:** signing is clause by clause (§11), the network clauses cannot be vetoed, and a changed clause is read as signed until the new version is read and signed.
-  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), the signing, for the clauses with joint-read fixtures: LAW-PASSAGE v2 (`FORMS-PASSAGE` v3, proposal 78.172's four fixtures) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v2, proposal 78.173). The clause text of draft 5's 2.11 is not built into this agreement and is not in force (§12): it is held pending LAW-PASSAGE v3, netstratum's pole-swap proposal of 2026-11-05. The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
+  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), the signing, for the clauses with joint-read fixtures: LAW-PASSAGE v3 (`FORMS-PASSAGE` v4, proposal 78.172's five fixtures, adopted by both operators 2026-11-05 and posted for the joint read) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v2, proposal 78.173). The clause text of draft 5's 2.11, restated on LAW-PASSAGE v3, is not built into this agreement and is not in force (§12): it is held until xylarium reads 78.172's fixtures. The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
 - CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
   agreement, by its content address and its reconstructed fixtures (§0
   SIGNING BY ADJUDICATED READING), never by a hash of its bytes, enabled or
@@ -535,19 +535,23 @@ UNCHANGED, and why:
 - **1.14, 2.2, 2.10.** The universal laws and each universe's own shell
   are as stated; the amendment says where the two meet.
 
-## 12. Proposed amendment (draft 5), 2026-11-05: LAW-PASSAGE v2
+## 12. Proposed amendment (draft 5), 2026-11-05: LAW-PASSAGE v3
 
-**Proposed amendment (draft 5): not signed, not in force.** 2.11 is held
-pending LAW-PASSAGE v3, netstratum's pole-swap proposal of 2026-11-05;
-the hypha's register serves `FORMS-PASSAGE` v3 for signing (§0), which
-puts no clause text in force. Mycelium proposes it under §0 AMENDING, for
-the maintainer's approval, from:
-- the operators' rulings of 2026-11-05: the passage law, and the
-  algebra's signature as data;
+**Proposed amendment (draft 5): not signed, not in force.** 2.11 is
+restated on LAW-PASSAGE v3, the pole swap, adopted by both operators on
+2026-11-05 (netstratum docs/117 §10 and §12), and is held until xylarium
+reads 78.172's fixtures. The hypha's register serves `FORMS-PASSAGE` v4
+for signing (§0), which puts no clause text in force. Mycelium proposes
+it under §0 AMENDING, for the maintainer's approval, from:
+- the operators' rulings of 2026-11-05: the passage law (v3, the pole
+  swap, replacing v2's product `q ↦ v_k·q`), and the algebra's signature
+  as data;
 - the joint read of proposal
-  [78.172](proposals/78.172-law-passage.md), whose four fixtures were
-  agreed by mycelium, netstratum and xylarium on 2026-11-05 (MU-RELEASE §3a,
-  step 4).
+  [78.172](proposals/78.172-law-passage.md), whose five fixtures are
+  posted for it: reached by mycelium (`forms`), stated by netstratum
+  (docs/117 §12), not yet read by xylarium (MU-RELEASE §3a, step 3).
+  v2's four fixtures, agreed by all three on 2026-11-05, are retired as
+  the law.
 
 It is independent of draft 4. If approved, it is written into §2 as a new
 clause and an amended 2.10, and binds a kernel when that kernel signs
@@ -564,36 +568,48 @@ PROPOSED, 2.10 (the innermost shell's algebra; two phrases amended):
 >   disagree on a generator both hold is refused by name.
 
 PROPOSED, 2.11 (a new clause):
-> 2.11 THE PASSAGE AT A CROSSING, LAW-PASSAGE v2 (ruled 2026-11-05;
-> fixtures agreed 2026-11-05).
-> - THE STATE AND THE PLANE. A body's state is an even multivector `q`.
->   Plane `k`'s direction is the degree-1 element
->   `v_k = H_k·e_Zk + R_k·e_Qk`, with `e_Zk² = +1` and `e_Qk² = −1`. The
->   metric is fixed per plane; which generator is `Z` is a labelling the
->   state carries.
-> - ONE CROSSING is the one-sided product `q ↦ v_k·q`, never a sandwich.
->   It takes even degrees to odd ones, so the crossing's two sheets are the
->   state's two parities. Where `v_k` is null, `v_k·v_k·q = 0`, and the
->   crossing is one-way. Passages in different planes anticommute, so
->   the order of crossings is held in the state's sign.
-> - NO REACH MOVES. A crossing's reach out is its reach in. A crossing
->   stating any other reach (`2H − R`, `H²/R`, or any other) is refused
->   `NotLawful`, naming the claim and the reach carried in. Nothing in the
->   law squares a reach.
-> - THE SHARE is read, never passed: `δ ↦ 1 − δ` is a plane's share read
->   from its other axis.
+> 2.11 THE PASSAGE AT A CROSSING, LAW-PASSAGE v3 (adopted by both
+> operators 2026-11-05; fixtures posted for the joint read).
+> - THE FRAME AND ITS POLES. A plane is held by its two units, `e₊`
+>   (`e₊² = +1`, the throat's unit) and `e₋` (`e₋² = −1`); its poles are
+>   `n_Z = e₊ + e₋` (closed) and `n_Q = e₊ − e₋` (open). A frame state is
+>   `H·n_Z + R·n_Q = (H + R)·e₊ + (H − R)·e₋`: the enclosure's hold `H`
+>   and the body's reach `R`. The span `H − R` is stored signed on `S`,
+>   and its sign is the sheet, read from the state, never a flag.
+> - ONE CROSSING is the pole swap, the reflection in `e₊`. The frame state
+>   goes by `x ↦ e₊·x·e₊`, so `n_Z ↔ n_Q` and `H − R ↦ R − H`, `|H − R|`
+>   kept. The roles exchange: a body at reach `R` about hold `H` stands,
+>   past the throat, at reach `H` about hold `R`; the whole `H + R` is
+>   kept, and the face inverts, `δ = H/(H + R) ↦ 1 − δ`. The riding state
+>   goes one-sided, `q ↦ e₊·q`, flipping its parity, never by the
+>   sandwich. Two passes are the identity on both, with no square read as
+>   a quantity.
+> - THE FLUX. One crossing writes `T ↦ T − 2·(H − R)`, the span before
+>   the pass: signed, first degree. A crossing and its immediate return
+>   cancel on `T`. At the throat (`H = R`) nothing is written. At a pole
+>   (`H = 0` or `R = 0`, null) the swap carries the state to the other
+>   pole, and the crossing is one-way: it never returns to the interior.
+> - NO REACH MOVES IN THE OLD FRAME. A crossing stating a reach moved
+>   inside the old frame (`2H − R`, `H²/R`, or any other) is refused
+>   `NotLawful`, naming the claim and the reach carried in. The re-origin
+>   across a throat is the coordinate's law, not this clause's.
 > - FIXTURES (every kernel reconstructs these exact objects to sign this
->   clause):
->   1. `v = e_Z1 + e_Q1` gives `v·v·q = 0` for the `q` of fixture 2.
->   2. `v = e_Z1 + 2·e_Q1` and `q = 3 + 2·e_Z2Z3 + e_Z1Q2`: `v·q` lies on
->      degrees 1 and 3 only.
->   3. `[e_Z1Q1, e_Z1Q2] = −2·e_Q1Q2`, the commutator unhalved
->      (`AB − BA`).
->   4. `(e_Z1Z2 + e_Q1Z2)² = 0`.
-> - NOT YET LAW: the size of a double pass off the horizon
->   (`v_k·v_k = H_k² − R_k²`, which squares) and the rule for ties of two
->   planes each at its horizon. Each enters as a new version of this clause,
->   with its own fixtures.
+>   clause; plane 1's units `e₊₁`, `e₋₁`):
+>   1. Span `3/5` (`H = 4/5`, `R = 1/5`) from `T = 0`: crossing gives
+>      `S = −3/5`, `T = −6/5`; crossing back gives `S = 3/5`, `T = 0`.
+>   2. At the throat (`H = R`, span 0), a crossing changes nothing.
+>   3. A pole, `H > 0`, `R = 0` (null), swaps to the other pole, `H·n_Q`.
+>   4. An even `q = 3 + 2·e₊₂e₊₃ + e₊₁e₋₂` gives `e₊₁·q` odd, and
+>      `e₊₁·e₊₁·q = q`.
+>   5. The sandwich applied twice is the identity on a general frame
+>      state.
+>   6. `(H, R) = (4/5, 1/5)` crossing stands at reach `4/5` about hold
+>      `1/5`; `H + R = 1` is kept; `δ` goes `4/5 ↦ 1/5`.
+> - THE DIRECTION `v_k` is not the passage operator; it stays the plane's
+>   direction in the advance.
+> - NOT YET LAW: the rule for ties of two planes each at its throat in one
+>   bell. It enters as a new version of this clause, with its own
+>   fixtures.
 
 PROPOSED, 0.1 (the scope map): 2.11 is a **Network** clause, enforced at
 the universal core tube: a crossing that depends on it is reconstructed
@@ -603,19 +619,25 @@ in the row it already holds.
 WHAT LANDING NEEDS, before it can be signed (Mycelium's engineering, not a
 term of the clause):
 - **B2, signing by adjudicated reading** (§0, ROADMAP track 24). **Done
-  (2026-11-05).** The hypha serves 2.11 as the clause `FORMS-PASSAGE` v3
-  with the four fixtures as exact inputs (`ACT_LAWS` mode 7), and admits a
-  kernel's signature on it only where the kernel's reconstruction of each
-  fixture is the hypha's own (mode 8), refusing `NotSignatory` otherwise.
-  No crossing is refused for an unsigned clause until B3.
+  (2026-11-05).** The hypha serves 2.11 as the clause `FORMS-PASSAGE` v4
+  with fixtures 1–5 as exact inputs, each pass its own entry (`ACT_LAWS`
+  mode 7), and admits a kernel's signature on it only where the kernel's
+  reconstruction of each fixture is the hypha's own (mode 8), refusing
+  `NotSignatory` otherwise. Fixture 6 is fixture 1's first crossing read
+  as hold and reach; its face `δ` has no operation in the register and is
+  read in `forms` alone (78.172 §5). No crossing is refused for an
+  unsigned clause until B3.
 - **The algebra in the core shell. Done (2026-11-05).** 2.10 puts the law
   forms in `forms`, which depends on the exact core alone. The
   signature-carrying algebra (`Mv`, `Clifford`, the product and the
   codec) now stands in the workspace crate `algebra`, below both `forms`
   and the library and depending on the exact rationals alone; the
   library re-exports it at `transducer::cga`. `forms::passage` holds the
-  passage whole: `pass(v, q)`, the one-sided product, with the four
-  fixtures as its claims (`FORMS-PASSAGE` v3; 78.172 §5).
+  passage whole: `Poles` with `swap`, `cross` and `ride`, and `Frame`'s
+  readings, with the fixtures as its claims (`FORMS-PASSAGE` v4; 78.172
+  §5).
+- **The joint read.** Xylarium reads 78.172's five fixtures and reaches
+  the same objects. Until then 2.11 stays held.
 - **B3, enforcement at the vertex.** The hypha reconstructs a crossing
   under 2.11 at the universal core tube.
 - **Release.** The clause activates at a TUniversal point in a signed
@@ -625,8 +647,8 @@ term of the clause):
 UNCHANGED, and why:
 - **1.2, 1.5, 2.6.** No flattening, exactness, and throat size as mass all
   stand. The passage moves a state, never a throat or a mass.
-- **A7 (divergent paths).** Every signatory read the four fixtures alike,
-  so there is no ruled divergence. LAW-PASSAGE v2 is L0's single law, in
-  the core shell.
+- **A7 (divergent paths).** Both operators adopted LAW-PASSAGE v3, so
+  there is no ruled divergence. It is L0's single law, in the core shell,
+  once the fixtures are read alike.
 
 (end of draft 5)

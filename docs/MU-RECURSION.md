@@ -6969,22 +6969,25 @@ exactly as before. A signature with more than one negative generator does
 not embed in `Cl(n+1, 1)` at any `n`, because there the largest
 negative-definite subspace has dimension 1.
 
-The passage across a horizon (78.172, with netstratum docs/114 §9–10) is
-the one-sided product `q ↦ v_k·q`. Here q is an even state and
-`v_k = H_k·e_Zk + R_k·e_Qk`, where e_Z squares to +1 and e_Q to −1. The
-passage takes even degrees to odd ones, is one-way where v_k is null, and
-anticommutes across planes. No square is read as a quantity.
+The passage at a crossing (78.172 v3, with netstratum docs/117 §10 and
+§12) is the pole swap, the reflection in the throat's unit e₊: a frame
+state `H·n_Z + R·n_Q` goes by `x ↦ e₊·x·e₊`, the riding state by
+`q ↦ e₊·q`, and one passage writes `T ↦ T − 2·(H − R)`; its claims are
+`forms::passage`'s (`forms/src/tests/crossing.rs`). The facts below,
+once LAW-PASSAGE v2's fixtures, are facts of the product alone, written in
+planes whose positive unit squares to +1 and negative unit to −1. No
+square is read as a quantity.
 
 | theorem | test (`transducer::cga::tests`) |
 |---|---|
 | the generalised product agrees with the conformal metric on every blade pair | `signature::geo_agrees_with_conformal_metric_on_every_blade_pair`, `signature::product_agrees_with_geo_on_conformal_values` |
 | the sign of a square is read from the negative mask | `signature::product_reads_square_sign_from_negatives` |
 | mismatched signatures never compose | `signature::product_refuses_mismatched_signatures` |
-| a null direction annuls a state passed twice (one-way) | `passage::product_of_null_direction_twice_annuls_state`, `passage::product_annuls_twice_at_every_horizon` |
-| a passage takes an even state to odd degrees | `passage::product_carries_even_state_to_odd_degrees` |
-| passages in different planes anticommute | `passage::product_anticommutes_across_planes` |
-| two boosts sharing an axis leave a turning | `passage::product_commutator_of_boosts_equals_open_turning` |
-| a null pair squares to zero | `passage::product_squares_null_pair_to_zero` |
+| a null vector annuls on a second product | `product::product_of_null_vector_twice_annuls` |
+| a vector times an even value is odd | `product::product_of_vector_and_even_value_is_odd` |
+| vectors of different planes anticommute | `product::product_anticommutes_across_planes` |
+| two boosts sharing an axis leave a turning | `product::product_commutator_of_boosts_equals_turning` |
+| a null pair squares to zero | `product::product_squares_null_pair_to_zero` |
 
 # Part VIII — Boundaries
 

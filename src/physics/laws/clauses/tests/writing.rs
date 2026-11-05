@@ -5,6 +5,7 @@ use crate::physics::laws::clauses::writing::*;
 use crate::physics::laws::clauses::*;
 use crate::transducer::address::put_key_count;
 use crate::transducer::alphabet::put_q;
+use algebra::Clifford;
 use forms::Q;
 
 fn held() -> Vec<Registered> {
@@ -66,11 +67,19 @@ fn take_clifford_refuses_second_writing() {
     }
 }
 
-/// A fixture or object tag no form names reads as none.
+/// A fixture or object tag no form names reads as none: past the last tag,
+/// and LAW-PASSAGE v2's retired tags 0–3, whatever follows them.
 #[test]
 fn take_fixture_refuses_unknown_tag() {
+    let mut product = Vec::new();
+    put_clifford(&mut product, &Clifford::blade(algebra::EM, algebra::E1, Q::from_integer(1.into())).expect("a blade"));
+    for tag in [0u8, 1, 2, 3, 10] {
+        let mut bytes = vec![tag];
+        bytes.extend_from_slice(&product);
+        bytes.extend_from_slice(&product);
+        let mut p = 0;
+        assert!(take_fixture(&bytes, &mut p).is_none(), "tag {tag}");
+    }
     let mut p = 0;
-    assert!(take_fixture(&[8], &mut p).is_none());
-    let mut p = 0;
-    assert!(take_object(&[5], &mut p).is_none());
+    assert!(take_object(&[6], &mut p).is_none());
 }
