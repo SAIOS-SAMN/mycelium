@@ -57,7 +57,7 @@ impl Factoring {
     /// each a turn of its own period. `None` where `s` is not a site of the
     /// phase.
     pub fn nested(&self, s: usize) -> Option<(Turn, Turn)> {
-        (s < self.extent()).then(|| (Turn::new(s / self.fine, self.coarse), Turn::new(s % self.fine, self.fine)))
+        (s < self.extent()).then(|| (Turn::of(s / self.fine, self.coarse), Turn::of(s % self.fine, self.fine)))
     }
 
     /// THE SITE'S TURN ON THE ONE PHASE, read back from the two nested
@@ -67,7 +67,7 @@ impl Factoring {
     pub fn joined(&self, coarse: Turn, fine: Turn) -> Option<Turn> {
         let i = coarse.lands(self.coarse).ok().filter(|&i| i < self.coarse)?;
         let j = fine.lands(self.fine).ok().filter(|&j| j < self.fine)?;
-        Some(Turn::new(i * self.fine + j, self.extent()))
+        Some(Turn::of(i * self.fine + j, self.extent()))
     }
 }
 

@@ -80,11 +80,11 @@ fn signed_permutations_generated_for_rank() {
             let periods: Vec<usize> = (0..n).map(|k| k + 2).collect();
             for corner in 0..(1usize << n) {
                 let turns: Vec<Turn> =
-                    periods.iter().enumerate().map(|(k, &p)| Turn::new(((corner >> k) & 1) * p, p)).collect();
+                    periods.iter().enumerate().map(|(k, &p)| Turn::of(((corner >> k) & 1) * p, p)).collect();
                 let moved = g.carry(&turns).expect("one rank");
                 assert!(moved.iter().all(Turn::is_seam), "{g:?} keeps the seams");
             }
-            let middle: Vec<Turn> = (0..n).map(|_| Turn::new(1, 2)).collect();
+            let middle: Vec<Turn> = (0..n).map(|_| Turn::of(1, 2)).collect();
             assert_eq!(g.carry(&middle), Ok(middle.clone()), "the turn of order two stands");
         }
     }
@@ -143,7 +143,7 @@ fn turn_90_onto_unequal_periods_refuses_off_site() {
     let periods = |p: Vec<usize>| Enclosure::new(p).expect("periods stand");
     assert_eq!(
         quarter().spoken_onto(&e, &periods(vec![4, 3])),
-        Err(TransductionRefusal::OffSite { turn: Turn::new(4, 5), period: 4 })
+        Err(TransductionRefusal::OffSite { turn: Turn::of(4, 5), period: 4 })
     );
     let moved = quarter().moved(&e).expect("the frame moves");
     let y = sample(&["000", "040", "300", "021"]);

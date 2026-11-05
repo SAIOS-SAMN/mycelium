@@ -89,6 +89,13 @@ pub const REGISTER: &[Guard] = &[
         claim: "vertex_admits_only_a_reconstructed_fold",
         proof: Proof::CompileFail,
     },
+    Guard {
+        regression: "a site past the sensor read as a grid index rather than lifted into turns of its frame's periods (MU-ANTI-FLATTENING 12)",
+        ruling: "operator rulings of 2026-10-31; ROADMAP T3 (#26)",
+        guard: "Turn",
+        claim: "turn_has_one_constructor",
+        proof: Proof::CompileFail,
+    },
 ];
 
 /// Every `.rs` file under `dir`.

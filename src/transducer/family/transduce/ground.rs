@@ -128,7 +128,7 @@ fn place_of(e: &Enclosed, body: usize) -> Vec<Turn> {
         });
     }
     match least {
-        Some(least) => least.iter().zip(e.enclosure.periods()).map(|(&i, &p)| Turn::new(i, p)).collect(),
+        Some(least) => least.iter().zip(e.enclosure.periods()).map(|(&i, &p)| Turn::of(i, p)).collect(),
         None => Vec::new(),
     }
 }

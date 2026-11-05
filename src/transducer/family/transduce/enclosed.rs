@@ -35,7 +35,7 @@ impl Band {
     /// The band's two boundary turns on each phase of `enclosure`, in axis
     /// order.
     pub fn turns(&self, enclosure: &Enclosure) -> Vec<(Turn, Turn)> {
-        self.spans.iter().zip(enclosure.periods()).map(|(&(a, b), &p)| (Turn::new(a, p), Turn::new(b, p))).collect()
+        self.spans.iter().zip(enclosure.periods()).map(|(&(a, b), &p)| (Turn::of(a, p), Turn::of(b, p))).collect()
     }
 }
 
