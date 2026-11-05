@@ -46,7 +46,7 @@ chart addresses may change (CHANGELOG › Unreleased).
 |---|---|---|
 | Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`) and the alphabet past `n = 3` |
 | Track 26 S4c: the hypha serves tasks of any rank; a claim of factorisation on the wire ([MU-SENSING](docs/MU-SENSING.md) §3.9, §6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Built on branch `s4c-rank-n-hypha`: the registry posts, serves and addresses tasks of any rank, the word machinery's readers on the section; the claim of factorisation as the solve's claim kind 1 (78.126), admitted by reconstruction, recorded and never paid (ruled); the mind speaks one claim per held factorisation of a task beyond the alphabet |
-| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 merged (PR #84, `spelled::SectionSample`); stage 2's readers merged (PR #86, `spelled::SectionSite`); stage 2b's planar tuples merged (PR #92, `SectionLink` and `PaintedSite`); stage 2c on branch `s4d3-chart-roles` (the chart's pairs, the anchor algebra and the clause tables held as section sites); stage 3 open; a rank-3 task stays `BeyondAlphabet` (Law VIII, MU-SENSING §5) |
+| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 merged (PR #84, `spelled::SectionSample`); stage 2's readers merged (PR #86, `spelled::SectionSite`); stage 2b's planar tuples merged (PR #92, `SectionLink` and `PaintedSite`); stages 2c and 3 merged (PR #96, the chart's pairs, the anchor algebra and the clause tables held as section sites; the rule language's coordinates by plane axis); stage 2d on branch `s4d2d-act-cells` (the act reading's cells, the frame acts and the spoken frame by plane axis; the act reading's planar carriers closed); a rank-3 task stays `BeyondAlphabet` (Law VIII, MU-SENSING §5) |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | With track 26 S4b's remainder |
 | Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
 
@@ -1917,10 +1917,8 @@ Each phase is one commit:
       - No wire, tape, task, word, chart or clause address change: every
         codec writes a section site in the plane's order
         (`SectionSite::put_canonical`).
-      - **Open:** the act reading's own index cells (`acts::cells_of`,
-        the residue's pieces, `owners`, the echoes, the bends), which
-        read extents through `statement::corners_of`; the frame acts
-        (panes, tiles, scaling) stay planar by their acts.
+      - The act reading's own index cells and the frame acts were left
+        open here; both are built in stage 2d below.
     - **Stage 3:** the rule-language's `About::Grid` and the remaining
       planar names renamed by function (track 11).
       - **Built** (coordinator decision; branch `s4d3-chart-roles`): the
@@ -1945,12 +1943,45 @@ Each phase is one commit:
         `painted_within_grid` is `painted_within_sample`, the SDK's
         `Step::grid_motion` is `Step::symmetry_motion` and
         `seat_mind::task::grid_steps` is `symmetry_steps`.
-      - **Open:** the frame acts' planar fields (`Act::Panes`'s
-        `along_rows`, `Act::Tile`'s `rows` and `cols`, which name the
-        lattice of blocks), the statement's output frame
-        (`Spoken.frame`, a pair of counts), the remaining test names and
-        comments that say "grid", and the measured `Frame` (MU-SENSING §8,
-        a defect).
+      - The frame acts' planar fields, the statement's output frame and
+        the "grid" test names were left open here; they are built in
+        stage 2d below.
+    - **Stage 2d, the last planar carriers in the act reading** (branch
+      `s4d2d-act-cells`; coordinator decision, convert all of it):
+      - **Built:** the act reading's own index cells hold painted sites
+        and section sites: a body's cells (`painted_of`), the residue and
+        its pieces (connected through a shared face, `sentence::faces_of`),
+        the owner of each site at its canonical offset (`acts::Owners`),
+        the connectors' ends along whichever plane axis a piece is straight
+        on, the echoes' shapes, offsets and doubled centre displacements
+        (written with `SectionSite::put_canonical`), the slide's ray and
+        the bends. The local adapter (`cells_of`, `extent`, `at`, `owners`,
+        the planar `step`) is removed.
+      - **Built:** the frame acts name the plane: `Act::Panes { along:
+        PlaneAxis, .. }` and `Act::Tile { blocks: [u8;
+        ALPHABET_SAMPLE_RANK], .. }`, one count per plane axis in the
+        plane's order; the codec keeps every byte
+        (`clause::panes_byte`: 1 the first axis, 0 the second). The act
+        reading reads extents along the plane (`whole_ratio`), speech
+        lays tiles at `statement::block_corner`, the square's symmetries
+        carry sites by `statement::turned`, and `scaled` reads blocks on
+        every axis alike. They stay rank 2, the letters' plane by their
+        mathematics. Claims
+        `frame_act_round_trips_and_reads_its_planar_bytes_by_axis`,
+        `extract_rule_reads_panes_along_first_plane_axis`.
+      - **Built:** `statement::Spoken.frame` is the output's extents per
+        plane axis. Claim `speak_clauses_frames_output_by_plane_axis`.
+      - **Built:** `Speech::grid` is `Speech::sample` (SDK surface, inside
+        v0.4.0's break); the tests' `grid(rows)` fixtures are
+        `digits(rows)`; `speech_sample_refuses_site_outside_frame`,
+        `germinate_refuses_unchanged_scenes`,
+        `slot_of_axis_stands_for_each_base_axis`.
+      - No wire, tape, task, word, chart or clause address change.
+      - **Remaining planar, outside the act reading:** `Speech.frame` and
+        `perceive::frame_of`, read with the measured `Frame` (MU-SENSING
+        §8, a defect, track 26 S4); the slide's and the line's ray
+        (`Act::Slide`/`Extend { ray: (i8, i8) }`), a clause field written
+        as a pair; and comments elsewhere that say "grid".
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
       letters never spell a rank-3 sample plane by plane, since planes
       are peeled, never iterated. A rank-3 task stays `BeyondAlphabet`
