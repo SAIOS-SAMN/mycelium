@@ -621,7 +621,7 @@ PROPOSED, 2.11 (a new clause):
 >   It takes even degrees to odd ones, so the crossing's two sheets are the
 >   state's two parities. Where `v_k` is null, `v_k·v_k·q = 0`, and the
 >   crossing is one-way. Passages in different planes anticommute, so
->   their order is held in the state's sign.
+>   the order of crossings is held in the state's sign.
 > - NO REACH MOVES. A crossing's reach out is its reach in. A crossing
 >   stating any other reach (`2H − R`, `H²/R`, or any other) is refused
 >   `NotLawful`, naming the claim and the reach carried in. Nothing in the
@@ -638,7 +638,7 @@ PROPOSED, 2.11 (a new clause):
 >   4. `(e_Z1Z2 + e_Q1Z2)² = 0`.
 > - NOT YET LAW: the size of a double pass off the horizon
 >   (`v_k·v_k = H_k² − R_k²`, which squares) and the rule for ties of two
->   planes at their horizons. Each enters as a new version of this clause,
+>   planes each at its horizon. Each enters as a new version of this clause,
 >   with its own fixtures.
 
 PROPOSED, 0.1 (the scope map): 2.11 is a **Network** clause, enforced at
