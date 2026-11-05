@@ -70,3 +70,7 @@
   under `signing::` (use `laws::`). A hidden `deferral` module keeps the
   three deferral items for `sdk/examples/house.rs` until that example
   reads them from `session`. The prelude is unchanged.
+- Two ceremonial assertions go: `FORM_LAW_IDS == forms::LAW_IDS` in
+  `sdk/tests/laws.rs` (equal by re-export) and `assert_eq!(w, w, …)` in
+  the sentence address tests. `sdk/tests/surface.rs` keeps its one import
+  per item: no smaller form fails the build by name when an item moves.
