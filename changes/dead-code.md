@@ -54,3 +54,19 @@
   ...), and the doc-named theorem, register and math readings, which stay
   in their files as proof objects so their documents' citations hold. No
   test loses a capability.
+- SDK surface change. The thin modules `deferral`, `mind` and `wire` are
+  folded: `Deferral`, `deferral_of` and `read_deferral` (the one deferral
+  reader), `Mind` and `GenomeReading` move to `mycelium_sdk::session`;
+  `WIRE_VERSION`, `ACT_TABLE`, `solve_kind`, `SOLVE_KIND_*`, `PENDING_CODE`
+  and `encode_deferral` stand at the crate root; `is_deferral` and
+  `deferral_lanes` leave the SDK. Duplicate re-exports are dropped so each
+  of these items has one path: `session::Voice` (use `voice::Voice`),
+  `house::{TPoint, Mv, Enclosure, ReserveReading, HyphaKey, Law, Served,
+  decode_register_reply, encode_register_request, MODE_*}` (use
+  `session::TPoint`, `rule::Mv`, `task::Enclosure`,
+  `readings::ReserveReading`, `voice::VoiceKey` and `laws::`),
+  `readings::{decode_clock_reply, encode_clock_request}` (use `house::`),
+  the Concordance codecs under `laws::` (use `signing::`) and the modes
+  under `signing::` (use `laws::`). A hidden `deferral` module keeps the
+  three deferral items for `sdk/examples/house.rs` until that example
+  reads them from `session`. The prelude is unchanged.

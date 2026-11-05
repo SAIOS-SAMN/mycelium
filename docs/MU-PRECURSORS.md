@@ -799,8 +799,9 @@ mapping from the spaces world models already declare.
   whose tests read the tree (the earlier `xtask`, outside the workspace,
   was removed).
 - The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
-  client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
-  `wallet`, `readings`, `mind`, `wire` (`WIRE_VERSION`, `ACT_TABLE`),
+  client surface in modules (the wire, `WIRE_VERSION` and `ACT_TABLE`,
+  at the crate root): `voice`, `session` (with the deferral and the
+  reference mind), `task`, `rule`, `seat`, `wallet`, `readings`,
   `laws` (the L0 register at `LAW_VERSION`, the `forms` law ids),
   `house` (a kernel's uplink: domain founding, the universe, the
   endowment's manifest and grant, the house side of seats, laws verify,

@@ -285,11 +285,11 @@ Decoded, a deferral is the outcome reply (`decode_outcome_reply`) with:
 It is 43 bytes. A pending outcome that carries a height, teaches, or has
 bytes after it is an answer, not a deferral.
 
-The SDK's `mycelium_sdk::deferral` carries it: `read_deferral(reply)`
-returns `Deferral { deficit }` off a reply's bytes; `Session::speak`
-recognises it itself and answers it as a `WouldBlock` refusal that
-`deferral_of(refusal)` reads back; `PENDING_CODE`, `is_deferral`,
-`deferral_lanes` and `encode_deferral` are the codec.
+The SDK's `mycelium_sdk::session` carries it: `read_deferral(reply)`,
+the one reader, returns `Deferral { deficit }` off a reply's bytes;
+`Session::speak` recognises it itself and answers it as a `WouldBlock`
+refusal that `deferral_of(refusal)` reads back; `PENDING_CODE` and
+`encode_deferral` stand at the crate root.
 
 `check_codecs` checks the deferral for every declared profile as the
 finding `DEFERRAL` (MUST): a deferral reads back with its exact deficit,

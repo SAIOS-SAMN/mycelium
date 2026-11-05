@@ -8,8 +8,13 @@
 #![expect(unused_imports, reason = "each import is the claim: it resolves, and is never used")]
 
 // The crate root.
+use mycelium_sdk::encode_deferral as _;
 use mycelium_sdk::forms as _;
+use mycelium_sdk::solve_kind as _;
 use mycelium_sdk::ACT_TABLE as _;
+use mycelium_sdk::PENDING_CODE as _;
+use mycelium_sdk::SOLVE_KIND_FACTORISATION as _;
+use mycelium_sdk::SOLVE_KIND_OUTPUTS as _;
 use mycelium_sdk::WIRE_VERSION as _;
 
 // voice
@@ -24,19 +29,14 @@ use mycelium_sdk::voice::Voice as _;
 use mycelium_sdk::voice::VoiceKey as _;
 
 // session
+use mycelium_sdk::session::deferral_of as _;
+use mycelium_sdk::session::read_deferral as _;
+use mycelium_sdk::session::Deferral as _;
+use mycelium_sdk::session::GenomeReading as _;
+use mycelium_sdk::session::Mind as _;
 use mycelium_sdk::session::Session as _;
 use mycelium_sdk::session::TPoint as _;
 use mycelium_sdk::session::TransportAperture as _;
-use mycelium_sdk::session::Voice as _;
-
-// deferral
-use mycelium_sdk::deferral::deferral_lanes as _;
-use mycelium_sdk::deferral::deferral_of as _;
-use mycelium_sdk::deferral::encode_deferral as _;
-use mycelium_sdk::deferral::is_deferral as _;
-use mycelium_sdk::deferral::read_deferral as _;
-use mycelium_sdk::deferral::Deferral as _;
-use mycelium_sdk::deferral::PENDING_CODE as _;
 
 // task
 use mycelium_sdk::task::decode_posted_samples as _;
@@ -159,14 +159,12 @@ use mycelium_sdk::wallet::StakeRefusal as _;
 use mycelium_sdk::wallet::Wallet as _;
 
 // readings
-use mycelium_sdk::readings::decode_clock_reply as _;
 use mycelium_sdk::readings::decode_lexicon_reply as _;
 use mycelium_sdk::readings::decode_parameters_reply as _;
 use mycelium_sdk::readings::decode_receipts_reply as _;
 use mycelium_sdk::readings::decode_reply as _;
 use mycelium_sdk::readings::decode_entries_reply as _;
 use mycelium_sdk::readings::decode_why_reply as _;
-use mycelium_sdk::readings::encode_clock_request as _;
 use mycelium_sdk::readings::encode_lexicon_request as _;
 use mycelium_sdk::readings::encode_parameters_request as _;
 use mycelium_sdk::readings::encode_query as _;
@@ -183,20 +181,8 @@ use mycelium_sdk::readings::Vocabulary as _;
 use mycelium_sdk::readings::Why as _;
 use mycelium_sdk::readings::WhyAsk as _;
 
-// mind
-use mycelium_sdk::mind::GenomeReading as _;
-use mycelium_sdk::mind::Mind as _;
-
-// wire
-use mycelium_sdk::wire::ACT_TABLE as _;
-use mycelium_sdk::wire::WIRE_VERSION as _;
-
 // laws
-use mycelium_sdk::laws::decode_concordance_reply as _;
 use mycelium_sdk::laws::decode_register_reply as _;
-use mycelium_sdk::laws::decode_signature_reply as _;
-use mycelium_sdk::laws::encode_concordance_request as _;
-use mycelium_sdk::laws::encode_signature_request as _;
 use mycelium_sdk::laws::CLAUSES as _;
 use mycelium_sdk::laws::MODE_CONCORDANCE as _;
 use mycelium_sdk::laws::MODE_SIGNATURE as _;
@@ -252,27 +238,19 @@ use mycelium_sdk::house::SignedClause as _;
 use mycelium_sdk::house::Signing as _;
 use mycelium_sdk::house::SigningRefusal as _;
 use mycelium_sdk::house::Standing as _;
-use mycelium_sdk::house::MODE_CONCORDANCE as _;
-use mycelium_sdk::house::MODE_SIGNATURE as _;
 
 // signing: the kernel's helper
 use mycelium_sdk::signing::reconstruct_fixture as _;
 use mycelium_sdk::signing::sign_concordance as _;
 use mycelium_sdk::signing::RegisterRefusal as _;
 
-// house: the register and the clock
+// house: the clock
 use mycelium_sdk::house::decode_clock_reply as _;
-use mycelium_sdk::house::decode_register_reply as _;
 use mycelium_sdk::house::encode_clock_request as _;
-use mycelium_sdk::house::encode_register_request as _;
 use mycelium_sdk::house::tuniversal::Origin as _;
 use mycelium_sdk::house::tuniversal::TPoint as _;
 use mycelium_sdk::house::CoreStamp as _;
-use mycelium_sdk::house::Served as _;
 use mycelium_sdk::house::Stamp as _;
-use mycelium_sdk::house::TPoint as _;
-use mycelium_sdk::house::MODE_CLOCK as _;
-use mycelium_sdk::house::MODE_REGISTER as _;
 
 // house: verification (L2)
 use mycelium_sdk::house::carried_body as _;
@@ -294,9 +272,7 @@ use mycelium_sdk::house::BodyState as _;
 use mycelium_sdk::house::Breach as _;
 use mycelium_sdk::house::Flow as _;
 use mycelium_sdk::house::Flux as _;
-use mycelium_sdk::house::Law as _;
 use mycelium_sdk::house::LawsRequest as _;
-use mycelium_sdk::house::Mv as _;
 use mycelium_sdk::house::Transition as _;
 use mycelium_sdk::house::TransitionVerdict as _;
 use mycelium_sdk::house::Undecomposed as _;
@@ -325,7 +301,6 @@ use mycelium_sdk::house::Founded as _;
 use mycelium_sdk::house::BigBangRecord as _;
 use mycelium_sdk::house::OriginReading as _;
 use mycelium_sdk::house::Reservation as _;
-use mycelium_sdk::house::ReserveReading as _;
 use mycelium_sdk::house::SignedBond as _;
 use mycelium_sdk::house::SignedDomain as _;
 use mycelium_sdk::house::SignedOrigin as _;
@@ -467,7 +442,6 @@ use mycelium_sdk::house::split_point as _;
 use mycelium_sdk::house::take_key_bytes as _;
 use mycelium_sdk::house::take_key_count as _;
 use mycelium_sdk::house::WireFrame as _;
-use mycelium_sdk::house::HyphaKey as _;
 use mycelium_sdk::house::Lane as _;
 use mycelium_sdk::house::BODY_BUDGET as _;
 use mycelium_sdk::house::POINTED as _;
@@ -525,7 +499,7 @@ fn surface_imports_every_item() {
 /// element read from its tape.
 #[test]
 fn surface_carries_associated_functions() {
-    let load_only: fn(&str) -> Option<mycelium_sdk::house::HyphaKey> = mycelium_sdk::house::HyphaKey::load_only;
+    let load_only: fn(&str) -> Option<mycelium_sdk::voice::VoiceKey> = mycelium_sdk::voice::VoiceKey::load_only;
     let from_voice: fn([u8; 32]) -> mycelium_sdk::voice::Voice = mycelium_sdk::voice::Voice::from_voice;
     let from_bytes: fn(&[u8], &mut usize) -> Option<mycelium_sdk::rule::Element> = mycelium_sdk::rule::Element::from_bytes;
     assert!(load_only("").is_none());

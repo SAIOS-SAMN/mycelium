@@ -538,7 +538,8 @@ fn reply_reads(act: &str, reply: &[u8]) -> Option<bool> {
 /// reads its bytes as a reply — a decoder that does is an ambiguity, and
 /// fails by the act's name.
 fn deferral(profiles: &[Profile]) -> Result<String, String> {
-    use crate::deferral::{encode_deferral, read_deferral, Deferral, PENDING_CODE};
+    use crate::session::{read_deferral, Deferral};
+    use crate::{encode_deferral, PENDING_CODE};
     let musts: Vec<ActRequirement> = STATEMENT.union(profiles).into_iter().filter(|a| a.need == Need::Must).collect();
     for deficit in [[0; 4], [1, 0, 2, 3]] {
         let bytes = encode_deferral(PENDING_CODE, &deficit);
