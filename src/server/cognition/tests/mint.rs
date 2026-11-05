@@ -200,7 +200,7 @@ assert_eq!(k.treasury().minted(), [0; 4], "seeded is not earned");
 
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)];
-k.basis_insert(from_canonical(&germinate(&a, &b).expect("coboundary")), [1; 32]);
+k.basis_insert(from_canonical(&germinate(&painted(&a), &painted(&b)).expect("coboundary")), [1; 32]);
 k.treasury().audit().expect("an install conserves");
 
 // Two voices docket the same residue, then the court rules on it.

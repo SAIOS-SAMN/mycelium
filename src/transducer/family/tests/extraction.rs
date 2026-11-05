@@ -438,7 +438,7 @@ let reference = apply_form(
 )
 .expect("the pair form speaks");
 assert!(
-    reference.painted.iter().any(|c| c.2 == 5),
+    reference.painted.iter().any(|c| c.symbol == 5),
     "B is spoken in frame in its own colour, got {:?}",
     reference.painted
 );
@@ -455,7 +455,7 @@ assert_eq!(
     "the rebased form speaks B's body with B's colours at B's placement"
 );
 assert!(
-    spoken.painted.iter().all(|c| c.2 != 3),
+    spoken.painted.iter().all(|c| c.symbol != 3),
     "B is never spoken through A's hue map, got {:?}",
     spoken.painted
 );

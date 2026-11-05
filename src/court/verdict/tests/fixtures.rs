@@ -7,7 +7,7 @@ use crate::network::nerve::Keyed;
 use crate::transducer::stalk::Stalks;
 
 pub fn clean_word() -> Element {
-    from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap())
+    from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 1)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 2), (0, 1, 2)])).unwrap())
 }
 
 pub fn stalks_of(fed: &[(crate::transducer::address::Address, Element)]) -> Stalks {

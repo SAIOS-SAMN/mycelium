@@ -26,7 +26,7 @@
 //!   pair's input field, and the output is read by where the transported
 //!   hues and light land — judged by replay against the observed output.
 
-use super::incongruence::{moments, Cell, Change, Moments};
+use super::incongruence::{moments, Change, Moments};
 use super::luminal::DIRECTIONS;
 use super::*;
 use crate::network::nerve::Keyed;
@@ -87,16 +87,16 @@ pub fn field(x: &SectionSample) -> Vec<SiteAxes> {
         let Some([r, c]) = site.indices() else { continue };
         {
             let [ri, ci] = site.coordinates();
-            let mut near: Vec<Cell> = Vec::new();
+            let mut near: Vec<PaintedSite> = Vec::new();
             if !ground.holds(&hue) {
-                near.push((ri, ci, hue));
+                near.push(PaintedSite::new(site, hue));
             }
             let mut ring = [255u8; 8];
             for (k, (dr, dc)) in DIRECTIONS.iter().enumerate() {
                 if let Some(h) = at(x, ri + dr, ci + dc) {
                     ring[k] = h;
                     if !ground.holds(&h) {
-                        near.push((ri + dr, ci + dc, h));
+                        near.push(PaintedSite::on_plane([ri + dr, ci + dc], h));
                     }
                 }
             }
@@ -170,7 +170,15 @@ pub fn transports(x: &SectionSample, y: &SectionSample) -> Option<Vec<Transport>
 pub fn body_regimes(changes: &[Change]) -> [u64; 5] {
     let mut n = [0u64; 5];
     for ch in changes {
-        let sites = |cells: &[Cell]| cells.iter().map(|x| (x.0, x.1)).collect::<Vec<_>>();
+        let sites = |cells: &[PaintedSite]| {
+            cells
+                .iter()
+                .map(|x| {
+                    let [r, c] = x.site.coordinates();
+                    (r, c)
+                })
+                .collect::<Vec<_>>()
+        };
         let (cin, _) = super::confluence::gathered(&sites(&ch.input));
         let (cout, _) = super::confluence::gathered(&sites(&ch.output));
         let at = match crate::transducer::cga::pair_regime(&[cin, cout], 0, 1) {
@@ -305,7 +313,7 @@ pub struct ReconstructionReport {
 fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<Transport>, axis: usize) -> Option<SectionSample> {
     let void = crate::transducer::raster::void().ok()?;
     let mut out = x.cleared(void);
-    let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
+    let mut emitted: Vec<PaintedSite> = Vec::new();
     for s in sites {
         let m = t.get(&key(s, axis))?;
         out.paint(SectionSite::on_plane([s.r, s.c]), m.to)?;
@@ -313,13 +321,13 @@ fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<Transport>, axis: us
             let (dr, dc) = *DIRECTIONS.get(usize::from(k))?;
             let mut step = 1i64;
             while at(x, s.r + step * dr, s.c + step * dc) == Some(void) {
-                emitted.push((s.r + step * dr, s.c + step * dc, h));
+                emitted.push(PaintedSite::on_plane([s.r + step * dr, s.c + step * dc], h));
                 step += 1;
             }
         }
     }
-    for (r, c, h) in emitted {
-        out.paint(SectionSite::on_plane([r, c]), h)?;
+    for p in emitted {
+        out.paint(p.site, p.symbol)?;
     }
     Some(out)
 }

@@ -7,7 +7,7 @@
 
 use crate::transducer::family::{carried_site, envelope_dilation};
 use crate::transducer::raster::*;
-use crate::transducer::spelled::{pairs_of, SectionSample, SectionSite};
+use crate::transducer::spelled::{pairs_of, PaintedSite, SectionSample, SectionSite};
 
 /// 78.56 — THE ENVELOPES' DILATION: two rasters of one extent correspond
 /// site for site; 3×3 onto 9×9 is s = 3, carrying each site's centre to
@@ -39,13 +39,18 @@ fn momentum_vanishes_only_without_drift() {
 }
 
 /// A raster's painted sites omit the ground the scope reads (here the
-/// fixture's declared 0), each kept as its two coordinates and its symbol.
+/// fixture's declared 0), each kept as its site of the section and its
+/// symbol.
 #[test]
-fn painted_of_omits_ground() {
+fn painted_sites_omits_ground() {
     stand_on(0);
-    let painted = painted_of(&SectionSample::from(vec![vec![0, 1], vec![2, 0]]));
-    assert_eq!(painted, vec![(0, 1, 1), (1, 0, 2)], "only novelty (off the ground)");
-    assert!(painted_of(&SectionSample::from(vec![vec![0, 0], vec![0, 0]])).is_empty(), "all ground → no painted site");
+    let painted = painted_sites(&SectionSample::from(vec![vec![0, 1], vec![2, 0]]));
+    assert_eq!(
+        painted,
+        vec![PaintedSite::on_plane([0, 1], 1), PaintedSite::on_plane([1, 0], 2)],
+        "only novelty (off the ground)"
+    );
+    assert!(painted_sites(&SectionSample::from(vec![vec![0, 0], vec![0, 0]])).is_empty(), "all ground → no painted site");
 }
 
 /// TRACK 26, S4, S4d — THE SAMPLE BRIDGE: a raster reaches the sensor as a
@@ -89,6 +94,24 @@ fn posted_task_round_trips_exact_samples() {
     let mut longer = bytes.clone();
     longer.push(0);
     assert_eq!(decode_posted_task(&longer), None, "nothing after the last pair");
+}
+
+/// TRACK 26 S4d, stage 2b — A PAINTED SITE IS A SITE OF THE SECTION AND ITS
+/// SYMBOL: a sample's painted sites, laid back on their span
+/// (`SectionSite::span_of`, `grid_of_painted`) at the scene's ground, are the
+/// sample's painted part read from the span's least corner; sites order by
+/// the site, then the symbol; and no site has no span.
+#[test]
+fn painted_sites_round_trip_through_their_span() {
+    stand_on(0);
+    let g = SectionSample::from(vec![vec![0, 0, 0], vec![0, 7, 8], vec![0, 9, 0]]);
+    let painted = painted_sites(&g);
+    assert!(painted.windows(2).all(|w| w[0] < w[1]), "canonical address order is the sites' order");
+    let span = SectionSite::span_of(painted.iter().map(|p| p.site));
+    assert_eq!(span, Some((SectionSite::on_plane([1, 1]), [2, 2])), "the least corner and the extents from it");
+    let laid = crate::transducer::family::grid_of_painted(&painted, 0).expect("a scene on the ground");
+    assert_eq!(laid, vec![vec![7, 8], vec![9, 0]], "the painted part, read from the corner");
+    assert_eq!(SectionSite::span_of(std::iter::empty()), None, "no site, no span");
 }
 
 /// TRACK 26 S4d, stage 2 — A SITE OF THE SECTION IS THE SAMPLE'S

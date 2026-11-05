@@ -112,6 +112,38 @@ impl SectionSite {
         Some(SectionSite(out))
     }
 
+    /// THE SPAN OF SITES ALONG THE PLANE: their least corner (the least
+    /// coordinate on each axis of the plane) and, per axis, one past the
+    /// farthest offset from it, the extents of the least sample that holds
+    /// every site read from the corner. `None` for no site, or where an
+    /// offset passes the machine word.
+    pub fn span_of(sites: impl Iterator<Item = SectionSite> + Clone) -> Option<(SectionSite, [usize; ALPHABET_SAMPLE_RANK])> {
+        let mut least: Option<[i64; ALPHABET_SAMPLE_RANK]> = None;
+        for s in sites.clone() {
+            match least.as_mut() {
+                None => least = Some(s.0),
+                Some(l) => {
+                    for (at, c) in l.iter_mut().zip(s.0) {
+                        if c < *at {
+                            *at = c;
+                        }
+                    }
+                }
+            }
+        }
+        let corner = SectionSite(least?);
+        let mut extents = [0usize; ALPHABET_SAMPLE_RANK];
+        for s in sites {
+            for (e, o) in extents.iter_mut().zip(s.offset_from(corner)?.indices()?) {
+                let past = o.checked_add(1)?;
+                if past > *e {
+                    *e = past;
+                }
+            }
+        }
+        Some((corner, extents))
+    }
+
     /// THE SITE ON THE FAMILY'S BASE (MU-SENSING §4): the plane's
     /// coordinates on the family site's plane and the sample's place in its
     /// family on the place axis, under the default perspective of a site of
@@ -139,6 +171,30 @@ impl SectionSite {
             *slot = site.axis(axis)?;
         }
         Some(SectionSite(out))
+    }
+}
+
+/// A PAINTED SITE OF THE SECTION (MU-SENSING §3.3, §3.6): a site of the
+/// section and the symbol the sample holds there, one byte, where that
+/// symbol is not the scene's ground. Ordered by the site, then the symbol.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PaintedSite {
+    /// Where the symbol stands on the section.
+    pub site: SectionSite,
+    /// The symbol painted there.
+    pub symbol: u8,
+}
+
+impl PaintedSite {
+    /// The site `site` painted `symbol`.
+    pub fn new(site: SectionSite, symbol: u8) -> PaintedSite {
+        PaintedSite { site, symbol }
+    }
+
+    /// The site of the section whose coordinates along the perspective's
+    /// plane are `coordinates`, painted `symbol`.
+    pub fn on_plane(coordinates: [i64; ALPHABET_SAMPLE_RANK], symbol: u8) -> PaintedSite {
+        PaintedSite { site: SectionSite(coordinates), symbol }
     }
 }
 

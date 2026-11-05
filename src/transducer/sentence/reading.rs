@@ -88,17 +88,17 @@ fn vertex_cites_by(
         return None;
     };
     let rotor = derivation.rotor();
-    let mut before: Vec<(i64, i64, u8)> = Vec::new();
+    let mut before: Vec<crate::transducer::spelled::PaintedSite> = Vec::new();
     let mut after: Keyed<u8> = Keyed::new();
     let mut out_support: Vec<(i64, i64)> = Vec::new();
     let ground = crate::transducer::raster::ground();
     for l in piece {
-        let [r, c] = l.site.coordinates();
         if !ground.holds(&l.before) {
-            before.push((r, c, l.before));
+            before.push(crate::transducer::spelled::PaintedSite::new(l.site, l.before));
         }
         if !ground.holds(&l.after) {
             after.insert(section_site_key(l.site), l.after);
+            let [r, c] = l.site.coordinates();
             out_support.push((r, c));
         }
     }
@@ -109,12 +109,19 @@ fn vertex_cites_by(
     before.dedup();
     out_support.sort_unstable();
     out_support.dedup();
-    let in_support: Vec<(i64, i64)> = before.iter().map(|&(r, c, _)| (r, c)).collect();
+    let in_support: Vec<(i64, i64)> = before
+        .iter()
+        .map(|p| {
+            let [r, c] = p.site.coordinates();
+            (r, c)
+        })
+        .collect();
     let shape_in = blade::shape_of_section(&in_support);
     let shape_out = blade::shape_of_section(&out_support);
     let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
     let v = blade::versor_carrying(&shape_in, &shape_out, &linear, budget).ok()?.versor;
-    for &(r, c, h) in &before {
+    for pb in &before {
+        let ([r, c], h) = (pb.site.coordinates(), pb.symbol);
         let p = element::carry_centre(&v, r, c, 0)?;
         let (tr, tc, tk) = element::site_of(&p)?;
         if tk != 0 {

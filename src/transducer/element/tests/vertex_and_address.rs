@@ -115,8 +115,9 @@ fn address_ignores_position_keeps_geometry() {
     // The same deformation transposed +7 rows, +5 cols.
     let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
     let b_far: Vec<_> = b.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
-    let here = from_canonical(&germinate(&a, &b).unwrap());
-    let far = from_canonical(&germinate(&a_far, &b_far).unwrap());
+    use crate::transducer::sentence::tests::fixtures::painted;
+    let here = from_canonical(&germinate(&painted(&a), &painted(&b)).unwrap());
+    let far = from_canonical(&germinate(&painted(&a_far), &painted(&b_far)).unwrap());
     assert_eq!(here.address(), far.address(), "same deformation, any position — ONE word");
     assert!(here.carriage(&far, &mut super::fixtures::budget()).is_some(), "one thought: a versor carries one onto the other");
     // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4

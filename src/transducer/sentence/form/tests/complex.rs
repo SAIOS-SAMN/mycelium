@@ -9,7 +9,7 @@ use crate::transducer::blade::Shape;
 use crate::transducer::element::{self, from_canonical, Element};
 use crate::transducer::germinate::germinate;
 use crate::transducer::sentence::*;
-use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::sentence::tests::fixtures::{link, painted};
 use crate::transducer::stalk::{self, Stalks};
 
 /// 50.3 — THE EDGE HOLONOMY DOES NOT TELESCOPE. The face transports of an
@@ -447,9 +447,9 @@ fn depth_of_equals_one_plus_max_glued() {
 /// with itself.
 #[test]
 fn deconstruct_at_cites_words_and_leaves_residue() {
-    let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
-    let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
+    let bar = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
+    let dot = from_canonical(&germinate(&painted(&[(0, 0, 3)]), &painted(&[(0, 0, 4)])).unwrap());
+    let bar_other = from_canonical(&germinate(&painted(&[(0, 0, 7), (0, 1, 7)]), &painted(&[(0, 0, 8), (0, 1, 8)])).unwrap());
     let words = vec![bar, dot, bar_other];
     let atlas = Stalks::over_elements(words.iter());
     // The language AT ITS COORDINATES: a word is reached by its address,
@@ -500,8 +500,8 @@ fn deconstruct_at_cites_words_and_leaves_residue() {
 /// cited body keeps its own width.
 #[test]
 fn deconstruct_at_records_multiplicity_per_body() {
-    let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
+    let bar = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
+    let dot = from_canonical(&germinate(&painted(&[(0, 0, 3)]), &painted(&[(0, 0, 4)])).unwrap());
     let words = vec![bar, dot];
     let atlas = Stalks::over_elements(words.iter());
     let mut at: Keyed<Element> = Keyed::new();
@@ -538,8 +538,8 @@ fn deconstruct_at_records_multiplicity_per_body() {
 /// not.
 #[test]
 fn seam_defect_at_agrees_with_is_flat() {
-    let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
+    let bar = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
+    let bar_other = from_canonical(&germinate(&painted(&[(0, 0, 7), (0, 1, 7)]), &painted(&[(0, 0, 8), (0, 1, 8)])).unwrap());
     let words = vec![bar, bar_other];
     let mut at: Keyed<Element> = crate::network::nerve::Keyed::new();
     for w in &words {

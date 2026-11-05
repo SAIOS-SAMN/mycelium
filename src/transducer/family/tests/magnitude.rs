@@ -5,7 +5,7 @@
 // module's tests (ROADMAP track 26, S1).
 
 use crate::transducer::family::magnitude::{family_cover, pair_magnitude};
-use crate::transducer::raster::painted_of;
+use crate::transducer::raster::painted_sites;
 
 /// 12.6: a bundle's pressure is the lane-wise SUM over its pairs, which
 /// are disjoint scenes — never a maximum. A maximum would report this
@@ -24,7 +24,7 @@ fn family_cover_sums_pairs_lane_wise() {
         assert!(cover[l] >= a[l].max(b[l]), "and therefore covers each pair");
     }
     let h = |p: &Pair| {
-        crate::transducer::germinate::germinate(&painted_of(&p.0), &painted_of(&p.1))
+        crate::transducer::germinate::germinate(&painted_sites(&p.0), &painted_sites(&p.1))
             .map(|c| c.len() as u64)
             .expect("measured")
     };

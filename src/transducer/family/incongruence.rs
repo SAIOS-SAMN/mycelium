@@ -55,15 +55,12 @@ use num_traits::Zero;
 
 type Q = BigRational;
 
-/// One compartment: its site and hue.
-pub type Cell = (i64, i64, u8);
-
 /// ONE CHANGE, BY ITS CONSTRUCTORS.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Difference {
     pub shared: u64,
-    pub accreted: Vec<Cell>,
-    pub extinguished: Vec<Cell>,
+    pub accreted: Vec<PaintedSite>,
+    pub extinguished: Vec<PaintedSite>,
     /// Shared sites whose hue changed, each a link from the input's hue to
     /// the output's.
     pub recoloured: Vec<crate::transducer::sentence::SectionLink>,
@@ -85,23 +82,25 @@ impl Difference {
 
 /// THE CONSTRUCTOR DIFFERENCE between an input body and the output body that
 /// stands on it, in place (the core motion the identity).
-pub fn difference(input: &[Cell], output: &[Cell], frame: &SectionSample) -> Difference {
-    let at = |cells: &[Cell], r: i64, c: i64| cells.iter().find(|x| x.0 == r && x.1 == c).map(|x| x.2);
+pub fn difference(input: &[PaintedSite], output: &[PaintedSite], frame: &SectionSample) -> Difference {
+    let at = |cells: &[PaintedSite], r: i64, c: i64| cells.iter().find(|x| x.site == SectionSite::on_plane([r, c])).map(|x| x.symbol);
     let mut d = Difference { shared: 0, accreted: Vec::new(), extinguished: Vec::new(), recoloured: Vec::new(), on_light: 0, runs: Vec::new(), carved: 0 };
-    for &(r, c, h) in output {
+    for &p in output {
+        let ([r, c], h) = (p.site.coordinates(), p.symbol);
         match at(input, r, c) {
             Some(g) => {
                 d.shared += 1;
                 if g != h {
-                    d.recoloured.push(crate::transducer::sentence::SectionLink::on_plane([r, c], g, h));
+                    d.recoloured.push(crate::transducer::sentence::SectionLink::new(p.site, g, h));
                 }
             }
-            None => d.accreted.push((r, c, h)),
+            None => d.accreted.push(p),
         }
     }
-    for &(r, c, h) in input {
+    for &p in input {
+        let [r, c] = p.site.coordinates();
         if at(output, r, c).is_none() {
-            d.extinguished.push((r, c, h));
+            d.extinguished.push(p);
             let interior = [(0, 1), (0, -1), (1, 0), (-1, 0)].iter().all(|(dr, dc)| at(input, r + dr, c + dc).is_some());
             d.carved += u64::from(interior);
         }
@@ -109,10 +108,11 @@ pub fn difference(input: &[Cell], output: &[Cell], frame: &SectionSample) -> Dif
     // The accretion as light: from each input cell along each of the eight
     // null directions, the run of accreted cells starting next to it.
     let mut lit: Vec<(i64, i64)> = Vec::new();
-    for &(r, c, _) in input {
+    for p in input {
+        let [r, c] = p.site.coordinates();
         for (dr, dc) in super::luminal::DIRECTIONS {
             let mut t = 1i64;
-            while d.accreted.iter().any(|x| x.0 == r + t * dr && x.1 == c + t * dc) {
+            while d.accreted.iter().any(|x| x.site == SectionSite::on_plane([r + t * dr, c + t * dc])) {
                 t += 1;
             }
             if t > 1 {
@@ -132,12 +132,15 @@ pub fn difference(input: &[Cell], output: &[Cell], frame: &SectionSample) -> Dif
     d
 }
 
-fn barycentre(cells: &[Cell]) -> Option<(Q, Q)> {
+fn barycentre(cells: &[PaintedSite]) -> Option<(Q, Q)> {
     let n = Q::from_integer(i64::try_from(cells.len()).ok()?.into());
     if n.is_zero() {
         return None;
     }
-    let (r, c) = cells.iter().fold((Q::zero(), Q::zero()), |(a, b), x| (a + Q::from_integer(x.0.into()), b + Q::from_integer(x.1.into())));
+    let (r, c) = cells.iter().fold((Q::zero(), Q::zero()), |(a, b), x| {
+        let [r, c] = x.site.coordinates();
+        (a + Q::from_integer(r.into()), b + Q::from_integer(c.into()))
+    });
     Some((r / &n, c / n))
 }
 
@@ -151,9 +154,12 @@ pub struct Relative {
     pub recolours: Vec<(u8, u8)>,
 }
 
-pub fn relative(input: &[Cell], d: &Difference) -> Option<Relative> {
+pub fn relative(input: &[PaintedSite], d: &Difference) -> Option<Relative> {
     let (br, bc) = barycentre(input)?;
-    let off = |x: &Cell| (Q::from_integer(x.0.into()) - &br, Q::from_integer(x.1.into()) - &bc, x.2);
+    let off = |x: &PaintedSite| {
+        let [r, c] = x.site.coordinates();
+        (Q::from_integer(r.into()) - &br, Q::from_integer(c.into()) - &bc, x.symbol)
+    };
     let mut accreted: Vec<(Q, Q, u8)> = d.accreted.iter().map(off).collect();
     let mut extinguished: Vec<(Q, Q, u8)> = d.extinguished.iter().map(off).collect();
     let mut recolours: Vec<(u8, u8)> = d.recoloured.iter().map(crate::transducer::sentence::SectionLink::transition).collect();
@@ -266,26 +272,26 @@ pub fn manifold(readings: &[(Relative, Vec<(u64, bool)>)]) -> Manifold {
 /// 4 — JUDGED BY THE PLANE: the manifold's core replayed on one reading's
 /// input body — its core accretion laid down, its core extinction removed,
 /// its core recolours applied — against the output body. Exact.
-pub fn reproduces(m: &Manifold, input: &[Cell], output: &[Cell]) -> Option<bool> {
+pub fn reproduces(m: &Manifold, input: &[PaintedSite], output: &[PaintedSite]) -> Option<bool> {
     let (br, bc) = barycentre(input)?;
-    let mut spoken: Vec<Cell> = input.to_vec();
+    let mut spoken: Vec<PaintedSite> = input.to_vec();
     for (dr, dc, h) in &m.core {
         let (r, c) = (&br + dr, &bc + dc);
         if !r.is_integer() || !c.is_integer() {
             return Some(false);
         }
-        let (r, c) = (r.to_integer().try_into().ok()?, c.to_integer().try_into().ok()?);
-        match spoken.iter().position(|x| x.0 == r && x.1 == c) {
+        let site = SectionSite::on_plane([r.to_integer().try_into().ok()?, c.to_integer().try_into().ok()?]);
+        match spoken.iter().position(|x| x.site == site) {
             // An extinguished constructor is on the input: it leaves.
             Some(i) => {
                 spoken.remove(i);
             }
-            None => spoken.push((r, c, *h)),
+            None => spoken.push(PaintedSite::new(site, *h)),
         }
     }
     for x in spoken.iter_mut() {
-        if let Some((_, to)) = m.core_recolours.iter().find(|(from, _)| *from == x.2) {
-            x.2 = *to;
+        if let Some((_, to)) = m.core_recolours.iter().find(|(from, _)| *from == x.symbol) {
+            x.symbol = *to;
         }
     }
     let mut a = spoken;
@@ -332,10 +338,10 @@ impl Moments {
 /// THE MOMENTS OF A BODY, from the sums its confluence sphere carries:
 /// spread = M·Σ|x|² − |Σx|², which is Σ_{s<t} d²ₛₜ exactly; the inertia
 /// form likewise by axes.
-pub fn moments(cells: &[Cell]) -> Moments {
+pub fn moments(cells: &[PaintedSite]) -> Moments {
     let mass = cells.len() as u64;
     let (sr, sc, srr, scc, src) = cells.iter().fold((0i128, 0i128, 0i128, 0i128, 0i128), |(a, b, p, q, x), cell| {
-        let (r, c) = (i128::from(cell.0), i128::from(cell.1));
+        let [r, c] = cell.site.coordinates().map(i128::from);
         (a + r, b + c, p + r * r, q + c * c, x + r * c)
     });
     let m = i128::from(mass);
@@ -343,9 +349,9 @@ pub fn moments(cells: &[Cell]) -> Moments {
     let spread = inertia[0] + inertia[1];
     let mut hues: Vec<(u8, u64)> = Vec::new();
     for x in cells {
-        match hues.iter_mut().find(|(h, _)| *h == x.2) {
+        match hues.iter_mut().find(|(h, _)| *h == x.symbol) {
             Some((_, n)) => *n += 1,
-            None => hues.push((x.2, 1)),
+            None => hues.push((x.symbol, 1)),
         }
     }
     hues.sort_unstable();
@@ -383,8 +389,9 @@ pub fn decided<K: PartialEq>(readings: &[(K, HueMap)]) -> Vec<Option<Option<HueM
 }
 
 /// A HUE MAP REPLAYED on an input body against the output body: exact.
-pub fn recolours_to(map: &[(u8, u8)], input: &[Cell], output: &[Cell]) -> bool {
-    let mut a: Vec<Cell> = input.iter().map(|&(r, c, h)| (r, c, map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t))).collect();
+pub fn recolours_to(map: &[(u8, u8)], input: &[PaintedSite], output: &[PaintedSite]) -> bool {
+    let mut a: Vec<PaintedSite> =
+        input.iter().map(|p| PaintedSite::new(p.site, map.iter().find(|(f, _)| *f == p.symbol).map_or(p.symbol, |(_, t)| *t))).collect();
     let mut b = output.to_vec();
     a.sort_unstable();
     b.sort_unstable();
@@ -398,8 +405,8 @@ pub fn recolours_to(map: &[(u8, u8)], input: &[Cell], output: &[Cell]) -> bool {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Change {
     pub pair: usize,
-    pub input: Vec<Cell>,
-    pub output: Vec<Cell>,
+    pub input: Vec<PaintedSite>,
+    pub output: Vec<PaintedSite>,
     pub difference: Difference,
     pub moments: Moments,
     pub output_moments: Moments,
@@ -411,8 +418,11 @@ pub struct Change {
     pub density_rank: Option<(u64, u64)>,
 }
 
-fn cells_of(b: &Body) -> Vec<Cell> {
-    b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?, l.hue))).collect()
+fn cells_of(b: &Body) -> Vec<PaintedSite> {
+    b.compartments
+        .iter()
+        .filter_map(|l| Some(PaintedSite::on_plane([l.site.axis(0)?, l.site.axis(1)?], l.hue)))
+        .collect()
 }
 
 /// EVERY SINGLE CHANGE of a family's remainder, pair by pair, in the order
@@ -423,26 +433,19 @@ pub fn single_changes(family: &[(SectionSample, SectionSample)], remainders: &[V
         if x.extents() != y.extents() {
             continue;
         }
-        let unsaid: Vec<(i64, i64)> = rem
-            .iter()
-            .filter(|l| l.after != 0)
-            .map(|l| {
-                let [r, c] = l.site.coordinates();
-                (r, c)
-            })
-            .collect();
+        let unsaid: Vec<SectionSite> = rem.iter().filter(|l| l.after != 0).map(|l| l.site).collect();
         if unsaid.is_empty() {
             continue;
         }
         let ins = perceive(x);
-        let in_cells: Vec<Vec<Cell>> = ins.iter().map(cells_of).collect();
+        let in_cells: Vec<Vec<PaintedSite>> = ins.iter().map(cells_of).collect();
         let in_moments: Vec<Moments> = in_cells.iter().map(|c| moments(c)).collect();
         for body in perceive(y) {
             let o = cells_of(&body);
-            if !o.iter().any(|c| unsaid.contains(&(c.0, c.1))) {
+            if !o.iter().any(|c| unsaid.contains(&c.site)) {
                 continue;
             }
-            let standing: Vec<usize> = (0..ins.len()).filter(|&i| in_cells[i].iter().any(|c| o.iter().any(|d| d.0 == c.0 && d.1 == c.1))).collect();
+            let standing: Vec<usize> = (0..ins.len()).filter(|&i| in_cells[i].iter().any(|c| o.iter().any(|d| d.site == c.site))).collect();
             let [i] = standing.as_slice() else { continue };
             let m = &in_moments[*i];
             let mass_rank = in_moments.iter().fold((0u64, 0u64), |(a, b), n| (a + u64::from(n.mass > m.mass), b + u64::from(n.mass < m.mass)));

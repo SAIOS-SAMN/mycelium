@@ -51,10 +51,16 @@ fn treasury_carriage_measures_award_flat_in_word() {
 fn of_chain_measures_nodes_by_kind_flat_in_word() {
     use crate::chronometry::{ActKind, Cite, ReceiptChain, Stamp};
     let small = crate::transducer::element::from_canonical(
-        &crate::transducer::germinate::germinate(&[(0, 0, 1u8)], &[(0, 0, 2u8)]).expect("a small word"),
+        &crate::transducer::germinate::germinate(
+            &[crate::transducer::spelled::PaintedSite::on_plane([0, 0], 1)],
+            &[crate::transducer::spelled::PaintedSite::on_plane([0, 0], 2)],
+        )
+        .expect("a small word"),
     );
-    let pairs: Vec<(i64, i64, u8)> = (0..40).map(|i| (i, i % 7, 1u8)).collect();
-    let after: Vec<(i64, i64, u8)> = (0..40).map(|i| (i, i % 7, 2u8)).collect();
+    let pairs: Vec<crate::transducer::spelled::PaintedSite> =
+        (0..40).map(|i| crate::transducer::spelled::PaintedSite::on_plane([i, i % 7], 1)).collect();
+    let after: Vec<crate::transducer::spelled::PaintedSite> =
+        (0..40).map(|i| crate::transducer::spelled::PaintedSite::on_plane([i, i % 7], 2)).collect();
     let large = crate::transducer::element::from_canonical(
         &crate::transducer::germinate::germinate(&pairs, &after).expect("a larger word"),
     );

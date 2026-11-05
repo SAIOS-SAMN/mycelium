@@ -130,8 +130,9 @@ fn sentence_of_mints_no_word_for_scale_alone() {
         let spoken = mycelium::transducer::family::statement::speak_clauses(&clauses, x, &mycelium::transducer::family::perceive(x))
             .expect("stated");
         let mut out = vec![vec![0u8; spoken.frame.1]; spoken.frame.0];
-        for &(r, c, h) in &spoken.painted {
-            out[usize::try_from(r).expect("a row")][usize::try_from(c).expect("a column")] = h;
+        for p in &spoken.painted {
+            let [r, c] = p.site.indices().expect("a site of the sample");
+            out[r][c] = p.symbol;
         }
         assert_eq!(out, y.raster(), "the scaled grid is the output");
     }

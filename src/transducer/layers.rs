@@ -115,7 +115,7 @@ pub struct Layer {
 /// painted sites.
 struct SectionLayer {
     kind: LayerKind,
-    painted: Vec<(i64, i64, u8)>,
+    painted: Vec<crate::transducer::spelled::PaintedSite>,
 }
 
 impl LayerKind {
@@ -158,9 +158,9 @@ impl LayerKind {
 /// Residue of the outline peel: the content still riding inward.
 struct OutlineStep;
 impl LayerStep for OutlineStep {
-    type Residue = Vec<(i64, i64, u8)>;
+    type Residue = Vec<crate::transducer::spelled::PaintedSite>;
     type Core = SectionLayer;
-    fn layer(&self, residue: &Vec<(i64, i64, u8)>) -> Option<(SectionLayer, Vec<(i64, i64, u8)>)> {
+    fn layer(&self, residue: &Vec<crate::transducer::spelled::PaintedSite>) -> Option<(SectionLayer, Vec<crate::transducer::spelled::PaintedSite>)> {
         if residue.is_empty() {
             return None;
         }
@@ -175,8 +175,8 @@ impl LayerStep for OutlineStep {
 
 struct CountGov(Option<usize>);
 impl ShrinkGovernor for CountGov {
-    type Residue = Vec<(i64, i64, u8)>;
-    fn read(&mut self, residue: &Vec<(i64, i64, u8)>) -> LayerMotion {
+    type Residue = Vec<crate::transducer::spelled::PaintedSite>;
+    fn read(&mut self, residue: &Vec<crate::transducer::spelled::PaintedSite>) -> LayerMotion {
         let n = residue.len();
         let motion = match (n == 0, self.0) {
             (true, _) => LayerMotion::Closed,
@@ -239,9 +239,13 @@ pub fn peel_body_scaled(
             .iter()
             .position(|compartment| compartment.2 != k)
             .map_or(by_frame.len(), |n| at + n);
-        let section: Vec<(i64, i64, u8)> = by_frame[at..end].iter().map(|&(r, c, _, h)| (r, c, h)).collect();
+        let section: Vec<crate::transducer::spelled::PaintedSite> =
+            by_frame[at..end].iter().map(|&(r, c, _, h)| crate::transducer::spelled::PaintedSite::on_plane([r, c], h)).collect();
         for layer in peel_section_scaled(&section, scale) {
-            let lifted = layer.painted.iter().map(|&(r, c, h)| (r, c, k, h));
+            let lifted = layer.painted.iter().map(|p| {
+                let [r, c] = p.site.coordinates();
+                (r, c, k, p.symbol)
+            });
             match out.iter_mut().find(|s| s.kind == layer.kind) {
                 Some(s) => s.compartments.extend(lifted),
                 None => out.push(Layer { kind: layer.kind, compartments: lifted.collect() }),
@@ -256,7 +260,7 @@ pub fn peel_body_scaled(
 }
 
 fn peel_section_scaled(
-    painted: &[(i64, i64, u8)],
+    painted: &[crate::transducer::spelled::PaintedSite],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Vec<SectionLayer> {
     if painted.is_empty() {

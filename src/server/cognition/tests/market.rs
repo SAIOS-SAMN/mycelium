@@ -202,14 +202,14 @@ let mut k = Court::new();
 // lists it as the book does.
 let c = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 1), (0, 3, 3)];
 let d = vec![(0, 0, 2u8), (0, 1, 2), (0, 2, 1), (0, 3, 4)];
-let chain = germinate(&c, &d).unwrap();
+let chain = germinate(&painted(&c), &painted(&d)).unwrap();
 k.book_list(element::from_canonical(&chain), [1; 32]);
 let target = k.quote().1[0].0.address();
 let chain = k.quote().1[0].0.sub().to_vec();
 assert_eq!(chain.len(), 3);
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
-k.basis_insert(element::from_canonical(&germinate(&a, &b).unwrap()), [2; 32]);
+k.basis_insert(element::from_canonical(&germinate(&painted(&a), &painted(&b)).unwrap()), [2; 32]);
 let _word = k.basis()[0].address();
 // The entity's reduction over the language: the word cited at the
 // origin, the far link left as the residue.
@@ -277,8 +277,8 @@ use crate::anastome::dialogue::ProbeClosure;
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
-let chain = germinate(&a, &b).unwrap();
-assert!(k.intake(&chain, &frame_of(&a, &b).expect("the extent fits")), "the corpus intake lists the body");
+let chain = germinate(&painted(&a), &painted(&b)).unwrap();
+assert!(k.intake(&chain, &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")), "the corpus intake lists the body");
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
 let rem = vec![link(0, 1, 1, 0)];
@@ -469,9 +469,9 @@ fn intake_prepared_computes_no_chart_under_hold() {
     let mut k = Court::new();
     let a = vec![(0, 0, 1u8), (0, 1, 1), (1, 0, 3)];
     let b = vec![(0, 0, 2u8)];
-    let chain = germinate(&a, &b).expect("the pair has a chain");
+    let chain = germinate(&painted(&a), &painted(&b)).expect("the pair has a chain");
     let before = charts_read();
-    let prepared = prepare_intake(&chain, &frame_of(&a, &b).expect("the extent fits"));
+    let prepared = prepare_intake(&chain, &frame_of(&painted(&a), &painted(&b)).expect("the extent fits"));
     assert!(!prepared.is_empty(), "the chain has a piece to list");
     assert_eq!(charts_read() - before, prepared.len() as u64, "each piece charted once, off the court");
     let before = charts_read();

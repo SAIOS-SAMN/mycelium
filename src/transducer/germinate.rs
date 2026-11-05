@@ -4,6 +4,8 @@
 //! per changed site over the union of the two supports, minted when no
 //! conformal-and-gauge element closes a body. Anonymous, addressed by form.
 
+use crate::transducer::spelled::{PaintedSite, SectionSite};
+
 /// A residue germ: sorted links of the section (a site of the section and
 /// the symbols before and after it) over the union of A's and B's painted
 /// sites. The scene's ground means the site is unpainted on that side.
@@ -15,36 +17,33 @@ pub type ResidueGerm = Vec<crate::transducer::sentence::SectionLink>;
 /// the chain read from a grid pair cannot put two transitions on one site
 /// and A5 has nothing to refuse here. The `None` answers the GRIDS — the
 /// two are equal and there is no coboundary to mint — and never A5.
-pub fn germinate(
-    a: &[(i64, i64, u8)],
-    b: &[(i64, i64, u8)],
-) -> Option<crate::transducer::element::PlacedChain> {
+pub fn germinate(a: &[PaintedSite], b: &[PaintedSite]) -> Option<crate::transducer::element::PlacedChain> {
     // Collect the union of sites with the sites' before/after symbols; a
     // side that does not paint a site holds the scene's ground there, the
     // one symbol the open scope writes for it (`raster::void`). Where the
     // scope has none (a vortex, no ground, no family open) a one-sided site
     // has no symbol to write and the chain is not minted: `None`, never 0.
     let void = crate::transducer::raster::void();
-    let mut sides: Vec<(i64, i64, Option<u8>, Option<u8>)> = Vec::new();
-    for (r, c, h) in a {
-        match sides.iter_mut().find(|(rr, cc, _, _)| rr == r && cc == c) {
-            Some(e) => e.2 = Some(*h),
-            None => sides.push((*r, *c, Some(*h), None)),
+    let mut sides: Vec<(SectionSite, Option<u8>, Option<u8>)> = Vec::new();
+    for p in a {
+        match sides.iter_mut().find(|(s, _, _)| *s == p.site) {
+            Some(e) => e.1 = Some(p.symbol),
+            None => sides.push((p.site, Some(p.symbol), None)),
         }
     }
-    for (r, c, h) in b {
-        match sides.iter_mut().find(|(rr, cc, _, _)| rr == r && cc == c) {
-            Some(e) => e.3 = Some(*h),
-            None => sides.push((*r, *c, None, Some(*h))),
+    for p in b {
+        match sides.iter_mut().find(|(s, _, _)| *s == p.site) {
+            Some(e) => e.2 = Some(p.symbol),
+            None => sides.push((p.site, None, Some(p.symbol))),
         }
     }
     let mut links: ResidueGerm = Vec::with_capacity(sides.len());
-    for (r, c, before, after) in sides {
+    for (site, before, after) in sides {
         let side = |h: Option<u8>| match h {
             Some(h) => Some(h),
             None => void.ok(),
         };
-        links.push(crate::transducer::sentence::SectionLink::on_plane([r, c], side(before)?, side(after)?));
+        links.push(crate::transducer::sentence::SectionLink::new(site, side(before)?, side(after)?));
     }
     // Keep only links that actually change (before != after); a net-zero
     // demand needs no germ.
@@ -62,13 +61,12 @@ pub fn germinate(
 /// Apply a residue germ to a scene: at each link's site, replace `before`
 /// with `after`. Reproduces the demand it was minted from — the germination
 /// closes.
-pub fn apply(germ: &[crate::transducer::sentence::SectionLink], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    let mut out: Vec<(i64, i64, u8)> = a.to_vec();
+pub fn apply(germ: &[crate::transducer::sentence::SectionLink], a: &[PaintedSite]) -> Vec<PaintedSite> {
+    let mut out: Vec<PaintedSite> = a.to_vec();
     for l in germ {
-        let [r, c] = l.site.coordinates();
-        out.retain(|&(rr, cc, _)| !(rr == r && cc == c)); // clear the site
+        out.retain(|p| p.site != l.site); // clear the site
         if !crate::transducer::raster::is_ground(l.after) {
-            out.push((r, c, l.after));
+            out.push(PaintedSite::new(l.site, l.after));
         }
     }
     out.sort_unstable();

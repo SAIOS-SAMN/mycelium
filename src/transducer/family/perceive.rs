@@ -9,11 +9,7 @@
 use super::*;
 use crate::transducer::base::Site;
 
-pub use crate::transducer::spelled::{SectionSample, SectionSite};
-
-/// A painted site of one frame's grid, the sensor's planar token:
-/// `(row, col, hue)`.
-pub(crate) type Painted = (i64, i64, u8);
+pub use crate::transducer::spelled::{PaintedSite, SectionSample, SectionSite};
 
 /// A compartment of a body's support: a site of the base and its hue (51.3, 71).
 pub type Compartment = crate::transducer::blade::Compartment;
@@ -23,35 +19,15 @@ pub type Compartment = crate::transducer::blade::Compartment;
 /// candidates. The symbol the unpainted sites hold is the caller's, named:
 /// never a ground this reader defaults to. `None` where the box's sites
 /// pass the machine word.
-pub fn grid_of_painted(painted: &[(i64, i64, u8)], void: u8) -> Option<SectionSample> {
-    // The head only SEEDS the bounding box; the box is folded over every
-    // site below, so no member is chosen here.
-    let [(r0, c0, _), ..] = painted else {
-        return SectionSample::filled([1, 1], void).ok();
+pub fn grid_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSample> {
+    // The span is read over every site, so no member is chosen here; no
+    // site at all is the one-site canvas.
+    let Some((corner, extents)) = SectionSite::span_of(painted.iter().map(|p| p.site)) else {
+        return SectionSample::filled([1; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK], void).ok();
     };
-    let (r0, c0) = (*r0, *c0);
-    let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
-    for &(r, c, _) in painted {
-        if r < min_r {
-            min_r = r;
-        }
-        if c < min_c {
-            min_c = c;
-        }
-        if r > max_r {
-            max_r = r;
-        }
-        if c > max_c {
-            max_c = c;
-        }
-    }
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box height, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
-    let h = (max_r - min_r + 1) as usize;
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
-    let w = (max_c - min_c + 1) as usize;
-    let mut g = SectionSample::filled([h, w], void).ok()?;
-    for &(r, c, hue) in painted {
-        g.paint(SectionSite::on_plane([r - min_r, c - min_c]), hue)?;
+    let mut g = SectionSample::filled(extents, void).ok()?;
+    for p in painted {
+        g.paint(p.site.offset_from(corner)?, p.symbol)?;
     }
     Some(g)
 }
@@ -170,7 +146,7 @@ pub fn perceive_at(grid: &SectionSample, k: i64) -> Vec<Body> {
 fn compartments_at(grid: &SectionSample, k: i64) -> Vec<Compartment> {
     crate::transducer::raster::painted_sites(grid)
         .into_iter()
-        .filter_map(|(s, hue)| Some(Compartment { site: s.on_family(k)?, hue }))
+        .filter_map(|p| Some(Compartment { site: p.site.on_family(k)?, hue: p.symbol }))
         .collect()
 }
 
@@ -806,9 +782,9 @@ pub(crate) fn frame_of(g: &SectionSample) -> (usize, usize) {
 /// Does everything a form spoke lie inside the grid it was spoken against?
 /// The test extraction's step 3 decides a glue by, and the same test a
 /// voice answers a demand by (L8q), so the two organs read one thing.
-pub fn painted_within_grid(painted: &[Painted], g: &SectionSample) -> bool {
+pub fn painted_within_grid(painted: &[PaintedSite], g: &SectionSample) -> bool {
     // A site off the sample carries no symbol, so it lies outside.
-    painted.iter().all(|&(r, c, h)| g.at(SectionSite::on_plane([r, c])) == Some(h))
+    painted.iter().all(|p| g.at(p.site) == Some(p.symbol))
 }
 
 /// The scene's bodies, each indexed by its own chart (Y4, 24.4, 20).

@@ -1,7 +1,7 @@
 // 24.1 — THE APERTURE: what the mind can afford to hold, what it sheds,
 // and that the cost of one word does not grow with the book.
 
-use super::fixtures::speak_pair;
+use super::fixtures::{painted, speak_pair};
 use crate::cognition::*;
 
 /// THE TWO-STROKE BREATHES: sustained germination depletes the reserve; a germ
@@ -140,7 +140,7 @@ let admit_after = |n: usize| -> u64 {
     let fill = |i: usize, k: &mut Court| {
         let a: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 1u8)).collect();
         let b: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 2u8)).collect();
-        if let Some(g) = germinate(&a, &b) {
+        if let Some(g) = germinate(&painted(&a), &painted(&b)) {
             k.basis_insert(from_canonical(&g), [1; 32]);
         }
     };

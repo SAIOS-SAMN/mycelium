@@ -356,7 +356,7 @@ pub(crate) fn tests_spoken(epi: &MindLanguage, rule: &SentenceRule, tests: &[cra
             let spoken = crate::transducer::family::speak_rule(rule, x, epi);
             if let Some(s) = &spoken {
                 if !s.remainder.is_empty() {
-                    chains.push(s.remainder.iter().map(|&(r, c, h)| crate::transducer::sentence::SectionLink::on_plane([r, c], h, h)).collect());
+                    chains.push(s.remainder.iter().map(|p| crate::transducer::sentence::SectionLink::new(p.site, p.symbol, p.symbol)).collect());
                 }
                 if !s.unreached.is_empty() {
                     let bodies = crate::transducer::family::perceive(x);

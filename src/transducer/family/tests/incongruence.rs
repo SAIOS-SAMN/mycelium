@@ -4,6 +4,7 @@
 // together as a manifold, contrasted, and its core judged by replay.
 
 use crate::transducer::family::incongruence::{contrast, decided, difference, manifold, moments, recolours_to, relative, reproduces};
+use crate::transducer::sentence::tests::fixtures::painted;
 use num_rational::BigRational;
 
 /// ONE CHANGE BY ITS CONSTRUCTORS: a single cell grows a ray of three to the
@@ -12,8 +13,8 @@ use num_rational::BigRational;
 #[test]
 fn difference_reads_constructors_and_light() {
     let frame = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 4]]);
-    let input = vec![(0, 0, 1)];
-    let output = vec![(0, 0, 2), (0, 1, 2), (0, 2, 2), (0, 3, 2)];
+    let input = painted(&[(0, 0, 1)]);
+    let output = painted(&[(0, 0, 2), (0, 1, 2), (0, 2, 2), (0, 3, 2)]);
     let d = difference(&input, &output, &frame);
     assert_eq!(d.shared, 1);
     assert_eq!(d.accreted.len(), 3);
@@ -31,10 +32,10 @@ fn difference_reads_constructors_and_light() {
 #[test]
 fn manifold_keeps_readings_core_judged_by_reconstruction() {
     let frame = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 8]; 3]);
-    let a_in = vec![(1, 1, 3)];
-    let a_out = vec![(1, 1, 3), (1, 2, 3)];
-    let b_in = vec![(0, 5, 3)];
-    let b_out = vec![(0, 5, 3), (0, 6, 3)];
+    let a_in = painted(&[(1, 1, 3)]);
+    let a_out = painted(&[(1, 1, 3), (1, 2, 3)]);
+    let b_in = painted(&[(0, 5, 3)]);
+    let b_out = painted(&[(0, 5, 3), (0, 6, 3)]);
     let ra = relative(&a_in, &difference(&a_in, &a_out, &frame)).expect("a reading");
     let rb = relative(&b_in, &difference(&b_in, &b_out, &frame)).expect("a reading");
     assert_eq!(ra, rb, "one rule on two bodies reads as one relative difference");
@@ -43,8 +44,8 @@ fn manifold_keeps_readings_core_judged_by_reconstruction() {
     assert!(m.moved[1].recognized, "the second reading is the first, recognized");
     assert_eq!(reproduces(&m, &a_in, &a_out), Some(true));
     assert_eq!(reproduces(&m, &b_in, &b_out), Some(true));
-    let c_in = vec![(2, 4, 3)];
-    let c_out = vec![(2, 4, 3), (2, 3, 3)];
+    let c_in = painted(&[(2, 4, 3)]);
+    let c_out = painted(&[(2, 4, 3), (2, 3, 3)]);
     let rc = relative(&c_in, &difference(&c_in, &c_out, &frame)).expect("a reading");
     let m = manifold(&[(ra.clone(), Vec::new()), (rc.clone(), Vec::new())]);
     assert!(m.core.is_empty() && m.edges == 2, "right against left: no core, two edges");
@@ -62,20 +63,20 @@ fn manifold_keeps_readings_core_judged_by_reconstruction() {
 /// replay reproduces it; the lone mass-1 reading has no other to decide by.
 #[test]
 fn moments_reads_density_and_decided_reconstructs() {
-    let bar = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)];
-    let ell = vec![(4, 4, 1), (4, 5, 1), (5, 4, 1)];
+    let bar = painted(&[(0, 0, 1), (0, 1, 1), (0, 2, 1)]);
+    let ell = painted(&[(4, 4, 1), (4, 5, 1), (5, 4, 1)]);
     let (mb, ml) = (moments(&bar), moments(&ell));
     assert_eq!((mb.mass, mb.spread), (3, 6));
     assert_eq!((ml.mass, ml.spread), (3, 4));
     assert_eq!(mb.density(), Some(BigRational::new(3.into(), 2.into())));
     assert_eq!(ml.density(), Some(BigRational::new(9.into(), 4.into())));
-    assert_eq!(moments(&[(2, 2, 7)]).density(), None, "a point has no spread to be dense over");
+    assert_eq!(moments(&painted(&[(2, 2, 7)])).density(), None, "a point has no spread to be dense over");
     assert_eq!(mb.hues, vec![(1, 3)]);
     let readings = vec![(3u64, vec![(1u8, 2u8)]), (3, vec![(1, 2)]), (1, vec![(1, 5)])];
     let p = decided(&readings);
     assert_eq!(p[1], Some(Some(vec![(1, 2)])));
     assert_eq!(p[2], None, "no other reading of mass 1");
-    let ell_out: Vec<_> = ell.iter().map(|&(r, c, _)| (r, c, 2)).collect();
+    let ell_out: Vec<_> = ell.iter().map(|p| crate::transducer::spelled::PaintedSite::new(p.site, 2)).collect();
     assert!(recolours_to(&[(1, 2)], &ell, &ell_out));
     assert!(!recolours_to(&[(1, 5)], &ell, &ell_out));
     let clash = vec![(3u64, vec![(1u8, 2u8)]), (3, vec![(1, 4)]), (3, vec![(1, 2)])];

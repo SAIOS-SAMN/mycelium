@@ -21,20 +21,23 @@ pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
     clippy::disallowed_methods,
     reason = "rule 4 — a scene's extent is the largest coordinate its painted sites occupy, content"
 )]
-pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<crate::transducer::element::Frame> {
+pub fn frame_of(
+    a: &[crate::transducer::spelled::PaintedSite],
+    b: &[crate::transducer::spelled::PaintedSite],
+) -> Option<crate::transducer::element::Frame> {
     // A scene's extent is its largest occupied coordinate plus one, which
     // the painted set determines (rule 4). An empty scene occupies no sites
     // and its extent is zero by measurement, not by default. An extent no
     // `usize` holds is refused, never truncated (STD1 3c-5).
-    let extent = |s: &[(i64, i64, u8)]| -> Option<(usize, usize)> {
+    let extent = |s: &[crate::transducer::spelled::PaintedSite]| -> Option<(usize, usize)> {
         let axis = |m: Option<i64>| match m {
             Some(x) if x > 0 => usize::try_from(x).ok(),
             _ => Some(0),
         };
-        Some((
-            axis(s.iter().map(|(r, _, _)| *r + 1).max())?,
-            axis(s.iter().map(|(_, c, _)| *c + 1).max())?,
-        ))
+        // The frame's two counts are the plane's two axes in the plane's
+        // order (`Frame`, a defect named in MU-SENSING §8).
+        let reach = |on: usize| s.iter().filter_map(|p| p.site.coordinates().get(on).map(|x| x + 1)).max();
+        Some((axis(reach(0))?, axis(reach(1))?))
     };
     let (hi, wi) = extent(a)?;
     let (ho, wo) = extent(b)?;

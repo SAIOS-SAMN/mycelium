@@ -403,8 +403,10 @@ fn expand_all_ignores_atlas_size() {
     let run = |n: usize| -> (u64, u64, u64) {
         let mut atlas = crate::transducer::stalk::Stalks::default();
         for i in 2..n + 2 {
-            let before: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 1u8)).collect();
-            let after: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 2u8)).collect();
+            let before: Vec<crate::transducer::spelled::PaintedSite> =
+                (0..i as i64).map(|c| crate::transducer::spelled::PaintedSite::on_plane([0, c], 1)).collect();
+            let after: Vec<crate::transducer::spelled::PaintedSite> =
+                (0..i as i64).map(|c| crate::transducer::spelled::PaintedSite::on_plane([0, c], 2)).collect();
             let w = from_canonical(&germinate(&before, &after).unwrap());
             atlas.admit(&stalk::invariant_of(&w), w.address());
         }

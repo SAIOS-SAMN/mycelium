@@ -3,6 +3,7 @@
 
 use super::fixtures::*;
 use crate::client::sdk::*;
+use crate::transducer::sentence::tests::fixtures::painted;
 
 /// THE C-STACK TERMINAL: a taught word enters the GENOME (inheritance via
 /// gene expression); a received utterance is COMPREHENDED — decomposed over
@@ -15,7 +16,7 @@ use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut epi = MindLanguage::new();
 // The mesh teaches a word down: first hearing is novel, then it is held.
-let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 4u8), (0, 1, 2)]).unwrap());
+let word = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 2)]), &painted(&[(0, 0, 4), (0, 1, 2)])).unwrap());
 assert!(matches!(epi.learn(&word.to_bytes().expect("the record writes"), &mut super::fixtures::budget()), Some(Comprehension::Novel { .. })));
 assert_eq!(epi.genome_len(), 1);
 // The same utterance again — COMPREHENDED as the held word; expression rises.
@@ -30,7 +31,7 @@ match epi.comprehend(&word, &mut super::fixtures::budget()) {
 assert_eq!(epi.peak_expression(), Some(1), "the dialect's recollection weight moved");
 // An unrelated utterance is heard as novel — a prospective, not a failure —
 // and the genome is untouched by hearing it.
-let other = from_canonical(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
+let other = from_canonical(&germinate(&painted(&[(0, 0, 5)]), &painted(&[(0, 0, 9)])).unwrap());
 assert!(matches!(epi.comprehend(&other, &mut super::fixtures::budget()), Comprehension::Novel { .. }));
 assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // 5a: the genome crystallizes and restores EXACTLY; the epigenome does
@@ -390,9 +391,9 @@ assert!(
 fn dialect_cochain_differs_from_one_obstruction() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let a = [(0, 0, 1u8), (0, 1, 2)];
-let b = [(0, 0, 2u8), (0, 1, 1)];
-let c = [(0, 0, 3u8), (0, 1, 4)];
+let a = painted(&[(0, 0, 1), (0, 1, 2)]);
+let b = painted(&[(0, 0, 2), (0, 1, 1)]);
+let c = painted(&[(0, 0, 3), (0, 1, 4)]);
 let one = from_canonical(&germinate(&a, &b).expect("a germ"));
 let two = from_canonical(&germinate(&a, &c).expect("a second germ"));
 assert!(!one.same_vertex(&two), "the fixture's two obstructions are two vertices");
@@ -530,7 +531,7 @@ fn learn_refuses_taught_word_failing_reconstruction() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let honest = from_canonical(
-    &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
+    &germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap(),
 );
 let mut fat = honest.clone();
 assert!(fat.set_magnitude([999, 0, 0, 0]), "a residue holds no section, so any lane fits");
@@ -554,7 +555,7 @@ fn take_learned_mu_measures_learned_page_per_lane() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let residue = from_canonical(
-    &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
+    &germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap(),
 );
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("learned-measured"));
 let _ = entity.absorb_taught(&residue.to_bytes().expect("the record writes"));
@@ -573,7 +574,7 @@ fn comprehend_closes_remainder_by_stood_word() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut epi = MindLanguage::new();
-let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+let word = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
 epi.stand_dialect_at(word.clone(), 1, 1);
 assert_eq!(epi.genome_len(), 0);
 let chain = crate::transducer::element::canonical_chain(word.sub())

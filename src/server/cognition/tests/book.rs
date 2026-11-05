@@ -58,10 +58,10 @@ use crate::transducer::germinate::germinate;
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
-k.basis_insert(element::from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
+k.basis_insert(element::from_canonical(&germinate(&painted(&a), &painted(&rot)).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-k.basis_insert(element::from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::transducer::element::Frame::new(4, 4, 8, 8)), [7; 32]);
+k.basis_insert(element::from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Frame::new(4, 4, 8, 8)), [7; 32]);
 assert_eq!(k.basis_len(), 2);
 k.optimize();
 assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
@@ -79,15 +79,15 @@ use crate::transducer::germinate::germinate;
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
-k.basis_insert(from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
+k.basis_insert(from_canonical(&germinate(&painted(&a), &painted(&rot)).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 k.basis_insert(
-    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::transducer::element::Frame::new(4, 4, 8, 8)),
+    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Frame::new(4, 4, 8, 8)),
     [7; 32],
 );
 k.basis_insert(
-    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::transducer::element::Frame::new(3, 3, 6, 6)),
+    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Frame::new(3, 3, 6, 6)),
     [8; 32],
 );
 assert!(k.basis_len() >= 2, "two distinct addresses remain");
@@ -111,14 +111,14 @@ let kept = k.basis_len();
 assert!(kept >= 1);
 let leak_a = vec![(9, 0, 2), (9, 1, 2)];
 let leak_b = vec![(9, 0, 3), (9, 1, 3)];
-let leaked = crate::transducer::element::from_canonical(&germinate(&leak_a, &leak_b).unwrap());
+let leaked = crate::transducer::element::from_canonical(&germinate(&painted(&leak_a), &painted(&leak_b)).unwrap());
 k.leak_unruled(leaked);
 assert_eq!(k.basis_len(), kept + 1);
 let dropped = k.prune_basis_to_ruled();
 assert_eq!(dropped, 1, "the leaked card leaves");
 assert_eq!(k.basis_len(), kept, "the ruled cover remains");
 k.leak_unruled(crate::transducer::element::from_canonical(
-    &germinate(&[(8, 0, 2), (8, 1, 2)], &[(8, 0, 5), (8, 1, 5)]).unwrap(),
+    &germinate(&painted(&[(8, 0, 2), (8, 1, 2)]), &painted(&[(8, 0, 5), (8, 1, 5)])).unwrap(),
 ));
 let snap = k.snapshot();
 let mut booted = Court::new();
@@ -154,10 +154,10 @@ fn language_append_shares_prior_word_arcs() {
     crate::transducer::raster::stand_on(0);
 let mut k = Court::new();
 let w0 = crate::transducer::element::from_canonical(
-    &germinate(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]).unwrap(),
+    &germinate(&painted(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)]), &painted(&[(0, 1, 1), (1, 0, 1), (1, 1, 1)])).unwrap(),
 );
 let w1 = crate::transducer::element::from_canonical(
-    &germinate(&[(4, 0, 2), (4, 1, 2), (5, 0, 2)], &[(4, 0, 3), (4, 1, 3), (5, 0, 3)]).unwrap(),
+    &germinate(&painted(&[(4, 0, 2), (4, 1, 2), (5, 0, 2)]), &painted(&[(4, 0, 3), (4, 1, 3), (5, 0, 3)])).unwrap(),
 );
 k.leak_unruled(w0);
 let first = k.language();
@@ -331,7 +331,7 @@ use crate::transducer::germinate::germinate;
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)];
-let w = from_canonical(&germinate(&a, &b).expect("a coboundary"));
+let w = from_canonical(&germinate(&painted(&a), &painted(&b)).expect("a coboundary"));
 let addr = w.address();
 let inv = crate::transducer::stalk::invariant_of(&w);
 
@@ -371,8 +371,8 @@ fn serve_syllabus_pays_served_magnitudes() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
-let w = from_canonical(&germinate(&[(0, 0, 1), (0, 1, 2)], &[(0, 0, 5), (0, 1, 2)]).expect("a coboundary"));
-let v = from_canonical(&germinate(&[(0, 0, 1)], &[(0, 0, 3)]).expect("a coboundary"));
+let w = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 2)]), &painted(&[(0, 0, 5), (0, 1, 2)])).expect("a coboundary"));
+let v = from_canonical(&germinate(&painted(&[(0, 0, 1)]), &painted(&[(0, 0, 3)])).expect("a coboundary"));
 let (addr, provisional) = (w.address(), v.address());
 let mag = w.magnitude();
 assert!(mag.iter().any(|&m| m > 0), "the word carries something to pay for: {mag:?}");

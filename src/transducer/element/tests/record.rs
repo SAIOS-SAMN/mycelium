@@ -6,7 +6,7 @@ use crate::core::Q;
 use crate::transducer::element::*;
 use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;
-use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::sentence::tests::fixtures::{link, painted};
 
 /// γ = (π, Δ): the anchor fibre survives serde exactly; pre-anchor bytes
 /// (no tail) parse to the ⊤ carrier — full backward compatibility.
@@ -134,8 +134,8 @@ fn from_bytes_reads_transition_gauge_as_ray() {
 #[test]
 fn from_bytes_round_trips_germ() {
     crate::transducer::raster::stand_on(0);
-    let residue = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
-    let swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
+    let residue = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 2)]), &painted(&[(0, 0, 1), (0, 1, 9)])).unwrap());
+    let swap = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)]), &painted(&[(0, 0, 1), (0, 1, 1), (0, 2, 1)])).unwrap());
     for g in [&residue, &swap] {
         let bytes = g.to_bytes().expect("the record writes");
         let mut pos = 0;
@@ -151,8 +151,8 @@ fn from_bytes_round_trips_germ() {
 /// thought still speaks the unwitnessed orbit member.
 #[test]
 fn from_bytes_round_trips_torsion() {
-    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
-    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let a = painted(&[(0, 0, 1), (0, 1, 2), (0, 2, 3)]);
+    let b = painted(&[(0, 0, 2), (0, 1, 3), (0, 2, 1)]);
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     t.torse();
@@ -172,8 +172,8 @@ fn from_bytes_round_trips_torsion() {
 /// would be the form tag and nothing else.
 #[test]
 fn from_bytes_refuses_zero_period_and_clashing_chain() {
-    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
-    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let a = painted(&[(0, 0, 1), (0, 1, 2), (0, 2, 3)]);
+    let b = painted(&[(0, 0, 2), (0, 1, 3), (0, 2, 1)]);
     let mut t = from_canonical(&germinate(&a, &b).expect("a germ"));
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     t.torse();
@@ -247,8 +247,8 @@ fn from_bytes_refuses_zero_period_and_clashing_chain() {
 /// filed — leaving the word as it was.
 #[test]
 fn from_bytes_refuses_lane_past_carrier() {
-    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
-    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let a = painted(&[(0, 0, 1), (0, 1, 2), (0, 2, 3)]);
+    let b = painted(&[(0, 0, 2), (0, 1, 3), (0, 2, 1)]);
     let mut t = from_canonical(&germinate(&a, &b).expect("a germ"));
     assert!(t.puncture(vec![(2, 3), (3, 1), (1, 2)]), "a section is spoken");
     let mut pos = 0;

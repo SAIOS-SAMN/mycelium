@@ -24,7 +24,7 @@ use super::family::transduce::{Ground, Unground};
 use super::family::{Family, Task};
 use super::alphabet::ALPHABET_SAMPLE_RANK;
 use super::sample::{Place, Sample, SampleRefusal};
-use super::spelled::{SectionSample, SectionSite};
+use super::spelled::{PaintedSite, SectionSample, SectionSite};
 
 /// THE WIDTH OF A RASTER. A raster is rectangular (every reader that takes
 /// one refuses a ragged one), so line zero is a COORDINATE of the raster
@@ -208,8 +208,8 @@ pub fn frame_fixed(task: Task) -> Task {
     let visible = task.train.iter().flat_map(|(a, b)| [a, b]).chain(task.test.iter().map(|(a, _)| a));
     for g in visible {
         let e = g.extents();
-        for (site, _) in painted_sites(g) {
-            let site = site.coordinates();
+        for p in painted_sites(g) {
+            let site = p.site.coordinates();
             for (axis, m) in moment.iter_mut().enumerate() {
                 let x = centred(site[axis], e[axis]);
                 let mut power = 1i128;
@@ -254,8 +254,8 @@ pub fn momentum_vanishes(train: &Family) -> bool {
         let moment = |g: &SectionSample| -> [i128; ALPHABET_SAMPLE_RANK] {
             let e = g.extents();
             let mut m = [0i128; ALPHABET_SAMPLE_RANK];
-            for (site, _) in painted_sites(g) {
-                let site = site.coordinates();
+            for p in painted_sites(g) {
+                let site = p.site.coordinates();
                 for (axis, at) in m.iter_mut().enumerate() {
                     *at += centred(site[axis], e[axis]);
                 }
@@ -276,9 +276,12 @@ pub fn momentum_vanishes(train: &Family) -> bool {
 /// sites (law 11's sensor clause); every reader here takes it. Every
 /// geometric reader here is written once per axis of the plane, never an
 /// axis by hand.
-pub fn painted_sites(g: &SectionSample) -> Vec<(SectionSite, u8)> {
+///
+/// The PERCEPTUAL convention: the scene's ground is omitted (the eye sees
+/// only novelty).
+pub fn painted_sites(g: &SectionSample) -> Vec<PaintedSite> {
     let ground = ground();
-    g.sites().filter(|(_, h)| !ground.holds(h)).collect()
+    g.sites().filter(|(_, h)| !ground.holds(h)).map(|(site, h)| PaintedSite::new(site, h)).collect()
 }
 
 /// A coordinate centred on its extent and doubled, so every centre is an
@@ -324,19 +327,6 @@ fn reoriented_of(g: &SectionSample, order: [usize; ALPHABET_SAMPLE_RANK], revers
         out.paint(at, h)?;
     }
     Some(out)
-}
-
-/// A section sample → its painted sites, the PERCEPTUAL convention: the
-/// scene's ground is omitted (the eye sees only novelty). The walk is the
-/// sample's own sites (a scene boundary), not a product of carriers.
-pub fn painted_of(g: &SectionSample) -> Vec<(i64, i64, u8)> {
-    painted_sites(g)
-        .into_iter()
-        .map(|(site, h)| {
-            let [a, b] = site.coordinates();
-            (a, b, h)
-        })
-        .collect()
 }
 
 // ── THE SAMPLE BRIDGE (ROADMAP track 26, S4; MU-SENSING §2) ────────────────

@@ -18,7 +18,7 @@ fn reconstruct_blind_refutes_tampered_words() {
 use crate::transducer::germinate::germinate;
 use crate::verdict::reconstruct_blind;
 let w = element::from_canonical(
-    &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
+    &germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 2)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 9)])).unwrap(),
 );
 assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "an honest derivation replays clean");
 // Tamper 1 CANNOT BE BUILT any more: A5's chain is the field's type, so

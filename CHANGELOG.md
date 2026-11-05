@@ -49,6 +49,23 @@ may change inside it.
   `section_link_holds_section_site_and_transition`. Every codec writes
   the coordinates in the plane's order and then the two symbols, so no
   wire, tape, task, word or chart address changes.
+- **`PaintedSite` holds the painted triple.** `(i64, i64, u8)`, its
+  alias `family::Painted` and `incongruence::Cell` are now
+  `spelled::PaintedSite { site, symbol }`, ordered as the triple was.
+  `raster::painted_sites` is the sensor's one reading and returns it;
+  `raster::painted_of` is retired. The shells, the layers, the orbit,
+  speech (`Speech.painted`, `remainder`, `statement::Spoken.painted`),
+  the germ (`germinate`, `apply`), the local section, the incongruence
+  reader and `cognition::frame_of` read it, and a scene's span is
+  `SectionSite::span_of`. Test fixtures write a scene once through
+  `sentence::tests::fixtures::painted`. Claim
+  `painted_sites_round_trip_through_their_span`; the test
+  `painted_of_omits_ground` is renamed `painted_sites_omits_ground`
+  with its unit. No wire, tape, task, word or chart address changes.
+- **Open:** the chart's coordinate pairs, the anchor's selection
+  algebra (footprint and scene together) and the clause reader's planar
+  tables. Stage 3 proposes naming the rule language's `Coord` variants
+  by perspective role (ROADMAP track 26 S4d).
 
 ### Track 11's last two names ruled (#55)
 - `ListingField` → `ListingCoherence`: "field" now names only the

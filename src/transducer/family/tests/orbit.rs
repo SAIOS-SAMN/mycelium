@@ -19,7 +19,7 @@ let word = |carriage: element::Versor, contact| {
         contact,
     )
 };
-let painted = vec![(0i64, 0i64, 1u8)];
+let painted = crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1)]);
 assert!(moves(&word(element::carriage(&one, &(zero.clone(), one.clone())), None), &painted), "a placement moves the body");
 assert!(!moves(&word(element::carriage(&one, &(zero.clone(), zero.clone())), None), &painted), "a still word has no orbit");
 let contact = Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 });

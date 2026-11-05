@@ -7,18 +7,19 @@
 // body, it reproduces the output or it does not. Data; nothing is decided.
 
 use mycelium::client::sdk::MindLanguage;
-use mycelium::transducer::family::incongruence::{contrast, difference, manifold, relative, reproduces, Cell};
+use mycelium::transducer::family::incongruence::{contrast, difference, manifold, relative, reproduces};
 use mycelium::transducer::family::{extract_rule_with, form_deflation, perceive};
+use mycelium::transducer::spelled::{PaintedSite, SectionSite};
 
 /// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 /// One reading of a subject: its input and output bodies, its relative
 /// difference, and its light's runs.
-type SubjectBodies =(Vec<Cell>, Vec<Cell>, mycelium::transducer::family::incongruence::Relative, Vec<(u64, bool)>);
+type SubjectBodies =(Vec<PaintedSite>, Vec<PaintedSite>, mycelium::transducer::family::incongruence::Relative, Vec<(u64, bool)>);
 
-fn cells(b: &mycelium::transducer::family::Body) -> Vec<Cell> {
-    b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?, l.hue))).collect()
+fn cells(b: &mycelium::transducer::family::Body) -> Vec<PaintedSite> {
+    b.compartments.iter().filter_map(|l| Some(PaintedSite::new(SectionSite::of_family(&l.site)?, l.hue))).collect()
 }
 
 pub(crate) fn report(dir: &str, names: &[String]) {
@@ -47,22 +48,15 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             if x.extents() != y.extents() {
                 continue;
             }
-            let unsaid: Vec<(i64, i64)> = rem
-                .iter()
-                .filter(|l| l.after != 0)
-                .map(|l| {
-                    let [r, c] = l.site.coordinates();
-                    (r, c)
-                })
-                .collect();
+            let unsaid: Vec<SectionSite> = rem.iter().filter(|l| l.after != 0).map(|l| l.site).collect();
             let ins = perceive(x);
             for out in perceive(y) {
                 let o = cells(&out);
-                if !o.iter().any(|c| unsaid.contains(&(c.0, c.1))) {
+                if !o.iter().any(|c| unsaid.contains(&c.site)) {
                     continue;
                 }
                 let standing: Vec<&mycelium::transducer::family::Body> =
-                    ins.iter().filter(|i| cells(i).iter().any(|c| o.iter().any(|d| d.0 == c.0 && d.1 == c.1))).collect();
+                    ins.iter().filter(|i| cells(i).iter().any(|c| o.iter().any(|d| d.site == c.site))).collect();
                 let [input] = standing.as_slice() else { continue };
                 let i = cells(input);
                 let d = difference(&i, &o, y);

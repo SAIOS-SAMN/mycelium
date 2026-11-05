@@ -3,7 +3,7 @@
 // whose word orbits, is a contact word; its placement leaves the form.
 
 use super::orbit::positions_of;
-use super::perceive::{frame_of, SectionSample, Painted};
+use super::perceive::{frame_of, PaintedSite, SectionSample};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
@@ -38,7 +38,7 @@ fn one_ring(family: &[(SectionSample, SectionSample)]) -> Option<u8> {
     let mut rings: Option<u8> = None;
     for (_x, y) in family {
         let fy = frame_of(y);
-        let outs: Vec<Painted> = crate::transducer::raster::painted_of(y);
+        let outs: Vec<PaintedSite> = crate::transducer::raster::painted_sites(y);
         let (Some(last_row), Some(last_col)) = (fy.0.checked_sub(1), fy.1.checked_sub(1)) else {
             return None;
         };
@@ -71,7 +71,7 @@ fn orbits_everywhere(v: &Vertex, family: &[(SectionSample, SectionSample)]) -> b
     if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
         return false;
     }
-    family.iter().all(|(x, _)| moves(v, &crate::transducer::raster::painted_of(x)))
+    family.iter().all(|(x, _)| moves(v, &crate::transducer::raster::painted_sites(x)))
 }
 
 /// Step 6 of chapter 21: a class whose placement differs across frames

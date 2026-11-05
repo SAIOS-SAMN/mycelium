@@ -1099,7 +1099,7 @@ fn vertex_move(
                         for (x, _) in fam {
                             // THE MOTION MOVES THE BODY, read by one exact
                             // application (78.62) — never a walk.
-                            if !family::moves(v, &crate::transducer::raster::painted_of(x)) {
+                            if !family::moves(v, &crate::transducer::raster::painted_sites(x)) {
                                 return Some(still());
                             }
                         }

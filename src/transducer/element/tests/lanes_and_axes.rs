@@ -3,7 +3,7 @@
 
 use crate::transducer::element::*;
 use crate::transducer::germinate::germinate;
-use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::sentence::tests::fixtures::{link, painted};
 use super::fixtures::*;
 
 /// ONE SEAT PER OPENED AXIS, HOWEVER OFTEN IT IS OPENED.
@@ -49,8 +49,8 @@ fn open_axis_answers_one_seat_when_repeated() {
 #[test]
 fn germinate_keeps_residue_as_coboundary_germ() {
     // (0,1): 2→9 with the rest fixed — not a rigid motion; a pure residue.
-    let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
-    let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
+    let a = painted(&[(0, 0, 1), (0, 1, 2), (1, 0, 3)]);
+    let b = painted(&[(0, 0, 1), (0, 1, 9), (1, 0, 3)]);
     let g = germinate(&a, &b).unwrap();
     let germ = from_canonical(&g);
     // A hue transition on a standing compartment measures as GAUGE content
@@ -73,8 +73,8 @@ fn germinate_keeps_residue_as_coboundary_germ() {
 #[test]
 fn germinate_keeps_canceling_swap_nonidentity() {
     crate::transducer::raster::stand_on(0);
-    let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
-    let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
+    let a = painted(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)]); // L
+    let b = painted(&[(0, 0, 1), (0, 1, 1), (0, 2, 1)]); // bar
     let l_to_bar = from_canonical(&germinate(&a, &b).unwrap());
     // One compartment vacates and one appears: SPATIAL content (mass moved)
     // alongside the two-link residue defect — measured, not defaulted.

@@ -6,7 +6,7 @@ use crate::transducer::element::{from_canonical, from_connection};
 use crate::transducer::germinate::germinate;
 use crate::transducer::element::{self, identity_versor, Element};
 use crate::transducer::stalk::*;
-use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::sentence::tests::fixtures::{link, painted};
 
 
 fn chain(sites: &[(i64, i64)]) -> element::CanonicalChain {
@@ -150,7 +150,7 @@ fn invariant_of_charts_connection_on_fibres() {
     assert_eq!(invariant_of(&a), invariant_of(&b), "two identical motions at different origins share the chart");
     assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");
     assert_eq!(invariant_of(&a).0[0], ChartAxis::Count(0), "the connection family's leading axis");
-    let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let word = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
     assert!(matches!(invariant_of(&word).0[0], ChartAxis::Count(n) if n >= 1), "a residue chart leads with its component count");
     // Congruence on connections: the fibre's representative and the transition.
     let stalks = Stalks::over_elements([&a, &c].into_iter());
@@ -188,10 +188,10 @@ fn connection_chart_reads_symbols_past_ten_and_refuses_records() {
 #[test]
 fn attach_adds_sibling_as_transported_section_once() {
     let mut base = from_canonical(
-        &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
+        &germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap(),
     );
     let sibling = from_canonical(
-        &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
+        &germinate(&painted(&[(0, 0, 3), (1, 0, 3)]), &painted(&[(0, 0, 4), (1, 0, 4)])).unwrap(),
     );
     let v = element::transition(sibling.sub(), base.sub(), &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("congruent");
     assert_eq!(base.attach(&sibling, &v), 1);

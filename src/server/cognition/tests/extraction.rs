@@ -1,7 +1,7 @@
 // 21 — extraction: what a spoken pair becomes when the court replays it,
 // and what a family does to an axis instead of minting a second card.
 
-use super::fixtures::speak_pair;
+use super::fixtures::{painted, speak_pair};
 use crate::cognition::*;
 
 /// A novel SUBSTANCE (here a rotation) germinates: one voice pends, a second
@@ -34,10 +34,10 @@ use crate::transducer::germinate::germinate;
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)]; // (0,0): 1→5
-k.basis_insert(from_canonical(&germinate(&a, &b).unwrap()), [1; 32]);
+k.basis_insert(from_canonical(&germinate(&painted(&a), &painted(&b)).unwrap()), [1; 32]);
 for hue in [6u8, 7] {
     let bx = vec![(0, 0, hue), (0, 1, 2)];
-    k.basis_insert(from_canonical(&germinate(&a, &bx).unwrap()), [9; 32]);
+    k.basis_insert(from_canonical(&germinate(&painted(&a), &painted(&bx)).unwrap()), [9; 32]);
 }
 assert_eq!(k.basis_len(), 3, "the un-condensed family");
 // One versor per stroke: the cursor traverses the stratum over strokes.
@@ -94,7 +94,7 @@ fn speak_pair_lists_extracted_form() {
 use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentence, NoCrystal};
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-let family = vec![(grid_of_painted(&a, 0).expect("a scene"), grid_of_painted(&b, 0).expect("a scene"))];
+let family = vec![(grid_of_painted(&painted(&a), 0).expect("a scene"), grid_of_painted(&painted(&b), 0).expect("a scene"))];
 let mut k = Court::new();
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = &k.quote().1;

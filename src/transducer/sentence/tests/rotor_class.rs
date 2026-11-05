@@ -87,7 +87,7 @@ fn pivot_orbit_opens_axis_for_undischarged_free_class() {
 fn record_cycle_refuses_unwitnessed_period() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-    let mut t = element::from_canonical(&crate::transducer::germinate::germinate(&a, &b).unwrap());
+    let mut t = element::from_canonical(&crate::transducer::germinate::germinate(&painted(&a), &painted(&b)).unwrap());
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     assert_eq!(t.torse(), 1, "the hue cycle is one torsion generator");
     let ws = crate::transducer::torsion_witness::witness_stored(&t);
