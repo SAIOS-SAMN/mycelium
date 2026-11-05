@@ -1547,7 +1547,7 @@ sentences as they are algorithmically aligned in non-Euclidean geometry.
 `measured_discharge` (the court's own evaluation, a reconstruction) is the court's one DECOMPRESSOR: a word's address expanded
 into its form (`from_element_form`), spoken onto each pair of the family it
 is bound to (`apply_form_on`), its citations decompressed through what the
-court holds at that moment, the spoken grid set against the pair's answer
+court holds at that moment, the spoken raster set against the pair's answer
 per lane, paid where it closes, its modes read on the closed pairs
 (`deflation.rs`, `DeflationRead.modes`). It is not static: the family, the
 placement, the court's held language and the stroke all enter it. Each

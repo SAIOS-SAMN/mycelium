@@ -92,10 +92,10 @@ Code: `src/transducer/alphabet/letters.rs` (`CAYLEY_ALPHABET_LEN`,
 ## 3. Words: composing letters
 
 A **word** is an ordered tape of letters. Its rotor is the product in tape
-order, and the last letter acts first. Familiar motions of a grid are
+order, and the last letter acts first. Familiar motions of a plane are
 words, never a table of cases:
 
-| Motion of the grid | Word |
+| Motion of the plane | Word |
 |---|---|
 | 90° turn | one 90° letter on the sensor plane |
 | 180° turn | two 90° letters on the sensor plane |

@@ -47,7 +47,7 @@ site's integer coordinates. The permitted readers are the functions of
 `transducer/blade/body.rs`, `transducer::alphabet::letters::rotor_pair`,
 the rotor transition `rotor_between` in `transducer/field/contemplation.rs`,
 and the base sites of `transducer::base`. Nothing else touches a site's
-integers, a centre's rationals or a grid. This is a review rule (§4.4),
+integers, a centre's rationals or a raster. This is a review rule (§4.4),
 not a gate.
 
 1.5 **Binaries are modules.** A binary lives in `src/bin/<name>/` with a

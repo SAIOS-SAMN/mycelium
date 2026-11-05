@@ -775,7 +775,7 @@ mapping from the spaces world models already declare.
 | Discrete space of `n` values | A coordinate in `0 … n−1`, exact integer |
 | Multi-discrete space | One integer coordinate per axis, each with its bound |
 | Box with float `low` and `high` | Rational bounds and a unit map: each axis an exact rational in `[low, high]` with a declared denominator; a value with no exact representation does not cross |
-| Image (RGB box) | A grid of exact integer channels, or a hue table |
+| Image (RGB box) | A sample of exact integer channels, or a hue table |
 | Dictionary of spaces | A named product of the above |
 | Episode reset with a seed | Founding from a seed recorded in the domain; the environment is rebuilt from it, a reproducible build, never a verification (MU-HOSTING §7.1) |
 | Step | One reported transition, checked by the profile's laws (track 15, H3) |
