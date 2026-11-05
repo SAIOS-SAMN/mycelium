@@ -26,6 +26,16 @@
 //!    every MUST act of the kernel profile, checked by decoded exact values;
 //!    an act the hypha deferred is reported deferred, with its deficit.
 //!
+//! A SEATED MIND'S SOLVE IS ITS OWN (Concordance 6.2a, keys for a key's own
+//! acts; MU-HOSTING §5a.6). This house founds a domain and seats no mind.
+//! A house that seats minds and sets tasks before them may read the seat's
+//! answer as the in-game call `FN_SOLVE` (fn 1) and relay its in-game calls
+//! as it likes. The court solve is not the house's to file: the court pays
+//! the key that signs a solve, and a seated mind files its own under the
+//! key it sat by and is paid itself. A house that files a seat's solve with
+//! the court under the house's key is paid to the house's key, never the
+//! seat's.
+//!
 //! A hypha whose worker pool is full answers any act with the deferral; the
 //! house reads it (`deferral::deferral_of`, `deferral::read_deferral`) and
 //! says so; the act is spoken again on a later run.

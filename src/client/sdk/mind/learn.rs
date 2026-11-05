@@ -117,12 +117,21 @@ impl Mind {
     /// (MU-SENSING §6). Under a vortex each candidate's claim is its own
     /// solve, held for the return apart from the others.
     pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[SectionSample], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
-        let stated = crate::transducer::raster::stated(ground);
         // 78.141 — a solve names its payee by the voice's signature: a
         // voice seated without its key sends none.
         let Some(key) = self.hypha.voice().signer().cloned() else {
             return Err(io::Error::new(io::ErrorKind::PermissionDenied, "a voice seated without its key signs no solve"));
         };
+        self.submit_solve_signed(&key, id, outputs, rule, ground)
+    }
+
+    /// [`Mind::submit_solve_rule`] SIGNED BY `key`: the court pays the key
+    /// that signs the solve (78.141; Concordance 6.2a, keys for a key's own
+    /// acts), so the key named here is the payee. A seated mind files the
+    /// solve of a task its house set before it this way, by the key it sat
+    /// by, its own (`Mind::file_seat_solve`).
+    pub(crate) fn submit_solve_signed(&mut self, key: &ed25519_dalek::SigningKey, id: &[u8; 32], outputs: &[SectionSample], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
+        let stated = crate::transducer::raster::stated(ground);
         // A rule whose record does not write is not sent as no rule (STD1 3c).
         let bytes = rule.to_bytes().ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidInput, "the rule's record passes a length its field writes")
@@ -131,7 +140,7 @@ impl Mind {
         // sent short: it is not sent (47.1). The spoken outputs go out as
         // samples, each at its place (track 26 S5).
         let spoken = dialogue::spoken_outputs(outputs).ok();
-        let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(&key, id, &s, Some(&bytes), stated.as_deref())) else {
+        let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(key, id, &s, Some(&bytes), stated.as_deref())) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "solve does not fit the lengths its frame writes",

@@ -1,4 +1,4 @@
-### The 2026-11-05 audits' confirmed defects are fixed: a lane past the four is refused, a mind's admission names its refusal, a clause-stated closure carries its modes
+### The 2026-11-05 audits' confirmed defects are fixed: a lane past the four is refused, a mind's admission names its refusal, a clause-stated closure carries its modes, a seated mind's solve is paid to its own key
 - **A lane past the four is refused by name, never wrapped**
   (`lane_past_the_four_refused_never_wrapped`). `HomeTrie` indexed its
   lanes with `(lane as usize) & 3`, so lane 5 was filed, read and rooted
@@ -44,3 +44,16 @@
   example `08ed6ac7`) also carries no modes, because each pair's modes are
   read at the S mass it carried, which a recolour does not move (§12
   item 4). No mode is invented for either.
+- **A seated mind's solve is filed under its own key and paid to it**
+  (`seated_mind_solve_paid_to_its_own_key`; Concordance 6.2a, 78.165). The
+  SDK's seat path (`solve_before`) sent a task's solve to the house alone,
+  as the in-game call `FN_SOLVE`, so a house that filed it with the court
+  did so under the house's key and was paid for the seat's work. The seat
+  path now files the court solve itself, signed by the key the mind sat by
+  (`Mind::file_seat_solve`, over the new `Mind::submit_solve_signed`, which
+  `submit_solve_rule` now calls with the voice's key), and still calls
+  `FN_SOLVE` for houses that want the seat's answer in their game. The
+  court pays the key that signs; `FN_SOLVE`'s docs, the house example and
+  MU-HOSTING §5a.6 say so. **Network contract: no wire change.** The solve
+  is the existing `ACT_SOLVE`; a seated mind now sends one per task it
+  solves, held for its return as every solve of the mind is.

@@ -735,6 +735,18 @@ The test is whose act it is, never who signs it: a key that is a
 universe's tier may solve for itself, and the same key's fold is refused
 `NotThroughCore` unless it is the reserve's or carried in the reserve's.
 
+**A seated mind's solve is filed under its own key** (Concordance 6.2a,
+78.165). A task a house sets before a seat is solved by the mind in the
+seat, and the court solve is that mind's own act: the SDK's seat path
+files it with the court signed by the key the mind sat by
+(`Mind::file_seat_solve`), and the mind is paid itself. The court pays
+the key that signs a solve, whoever relays it. A house may still read the
+seat's answer as the in-game call `FN_SOLVE` (fn 1) and relay its in-game
+calls; a house that files a seat's solve with the court under the house's
+key is paid to the house's key, never the seat's. `FN_SOLVE` stays for
+houses that want the seat's answer in their game (**Built**; claim
+`seated_mind_solve_paid_to_its_own_key`).
+
 ### 5a.7 How the boundary is observed
 
 An operator and any party read the boundary by typed readings, never by

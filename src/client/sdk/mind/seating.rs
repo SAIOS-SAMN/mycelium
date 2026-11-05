@@ -2,7 +2,8 @@
 // a game's house. Inflow — the mail the house posts to the mind's key: TAKEN,
 // PERCEPT, OUTCOME, and the listing of a seat's functions. Outflow — the
 // mind's calls: its own call at each beat, and the solve of a task set
-// before a seat.
+// before a seat, filed with the court under the mind's own key (Concordance
+// 6.2a; the court pays the key that signs) and told to the house as FN_SOLVE.
 //
 //! One mind may sit many seats: they share the
 //! mind's key and so one mailbox, read to its end page by page, each piece to
@@ -659,8 +660,11 @@ impl Mind {
     /// 78.146 — A TASK BEFORE THE SEAT, landed: its rule extracted and spoken
     /// as the court's tasks are, the tests spoken through it, the sentence
     /// minted at its span and crossed to pairs it never saw, checked at home
-    /// on the court-stamped words, then CALLED as fn 1 with the rule's tape,
-    /// the outputs and its steps, on the seat's carrier. A rule the house
+    /// on the court-stamped words, then FILED with the court under the key
+    /// the mind sat by (`file_seat_solve`: the court pays the key that
+    /// signs, so the mind is paid itself) and CALLED as fn 1 with the rule's
+    /// tape, the outputs and its steps, on the seat's carrier, for the
+    /// house's game. A rule the house
     /// refused is not posted again until its address changes. Read on the
     /// task's own ground (ruled 2026-10-18): the tests are
     /// spoken and the sentence minted where the demonstrations name it.
@@ -750,6 +754,14 @@ impl Mind {
         let ground = crate::transducer::raster::on_ground_of(&train, crate::transducer::raster::ground);
         let stated = crate::transducer::raster::stated(&ground);
         let Some(args) = solve_args(&crossed, &outs, stated.as_deref(), &steps) else { return Some(Stop::Unsubmitted) };
+        // THE COURT SOLVE IS THE MIND'S OWN ACT (Concordance 6.2a; 78.165):
+        // filed with the court under the key the mind sat by, so the court
+        // pays this mind. The house's FN_SOLVE call below tells the house
+        // the seat's answer in its game; a house that files it with the
+        // court under its own key is paid to its own key, never the seat's.
+        if self.file_seat_solve(key, id, &outs, &crossed, &ground).is_err() {
+            return Some(Stop::Unsubmitted);
+        }
         let (at, key, id, addr) = (seat.at, key.clone(), *id, crossed.address().as_bytes().to_vec());
         met(&mut seat.met.calls);
         let posted = args.clone();
@@ -762,5 +774,23 @@ impl Mind {
             }
         });
         Some(Stop::Sent)
+    }
+
+    /// 78.146, Concordance 6.2a — A SEATED MIND FILES ITS COURT SOLVE BY ITS
+    /// OWN KEY. The solve of a task the house set before a seat is the
+    /// mind's own act: signed by `key`, the key the mind sat by, and sent to
+    /// the court at the mind's return as every solve of the mind is
+    /// (`Mind::submit_solve_signed`). The court pays the key that signs, so
+    /// the mind is paid itself; the house may still relay the in-game call
+    /// (FN_SOLVE), and a solve it files under its own key is paid to it.
+    pub(crate) fn file_seat_solve(
+        &mut self,
+        key: &ed25519_dalek::SigningKey,
+        id: &[u8; 32],
+        outputs: &[crate::transducer::family::SectionSample],
+        rule: &crate::transducer::element::Element,
+        ground: &crate::transducer::family::transduce::Ground<u8>,
+    ) -> io::Result<()> {
+        self.submit_solve_signed(key, id, outputs, rule, ground)
     }
 }

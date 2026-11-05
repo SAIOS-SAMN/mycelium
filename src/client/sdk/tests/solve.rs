@@ -72,6 +72,83 @@ fn outcome_reads_seat_solve_learned_against_fn_one() {
     assert_eq!(m.outcome(&other), None);
 }
 
+/// A COURT THAT HANDS EACH SOLVE IT HEARS TO THE TEST, read whole, and
+/// answers it with a bare "not solved" receipt.
+fn solve_court() -> (String, std::sync::mpsc::Receiver<crate::anastome::dialogue::SolveAct>) {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the court listens");
+    let addr = listener.local_addr().expect("an address").to_string();
+    let (heard, solves) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        for conn in listener.incoming() {
+            let Ok(mut s) = conn else { continue };
+            loop {
+                let mut head = [0u8; 5];
+                if s.read_exact(&mut head).is_err() {
+                    break;
+                }
+                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
+                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
+                let mut body = vec![0u8; len];
+                if s.read_exact(&mut body).is_err() {
+                    break;
+                }
+                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
+                if let Some(act) = crate::anastome::dialogue::decode_solve(&body) {
+                    let _ = heard.send(act);
+                }
+                let receipt = crate::anastome::dialogue::encode_solve_receipt(crate::anastome::dialogue::SOLVE_NOTHING, &crate::economy::Mu::zero());
+                let reply = crate::network::wire::WireFrame { lane, body: receipt };
+                let _ = s.write_all(&reply.encode().expect("framed"));
+            }
+        }
+    });
+    (addr, solves)
+}
+
+/// Concordance 6.2a (keys for a key's own acts), 78.165 — A SEATED MIND'S
+/// SOLVE IS FILED UNDER ITS OWN KEY AND PAID TO IT. The solve of a task the
+/// house set before the seat is filed with the court by the seat path
+/// (`file_seat_solve`), signed by the key the mind sat by and never by the
+/// house's; at the mind's return it reaches the court, which reads its
+/// voice as that key, verifies the signature, and pays the closure to that
+/// key's account, the house's account untouched.
+#[test]
+fn seated_mind_solve_paid_to_its_own_key() {
+    let (addr, solves) = solve_court();
+    let seat_key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
+    let house = ed25519_dalek::SigningKey::from_bytes(&[21; 32]).verifying_key().to_bytes();
+    let own = seat_key.verifying_key().to_bytes();
+    let mut mind = Mind::open(&addr, Voice::from_key(seat_key.clone()));
+    mind.sit(house, None, crate::client::sdk::mind::seating::Sitting::Seats(vec![1]), seat_key.clone());
+    // The domino carried two columns along: the rule, minted on its pair.
+    let family = vec![(digits(&["1100200"]), digits(&["0011002"]))];
+    let [(x, y)] = family.as_slice() else { panic!("one pair") };
+    let form = crate::transducer::family::cipher_form(x, y);
+    let mag = crate::transducer::family::sentence_measure(&form, &family, &crate::transducer::family::NoCrystal, 0).expect("every body is spoken");
+    let rule = crate::transducer::sentence::as_element_form(&form, mag).expect("a tape");
+    let task = [0x5e; 32];
+    let ground = crate::transducer::raster::ground_of(&family);
+    mind.file_seat_solve(&seat_key, &task, std::slice::from_ref(y), &rule, &ground).expect("the solve is filed");
+    // It leaves at the mind's return (MU-CLIENT §4.4(4)): the return comes.
+    let held = mind.at_return.remove(&task).expect("held for the task's return");
+    for (_, say) in held {
+        say(&mut mind);
+    }
+    let act = solves.recv().expect("the court hears the solve");
+    assert_eq!(act.task, task, "the task the house set");
+    assert_eq!(act.voice, own, "filed under the seated mind's own key");
+    assert_ne!(act.voice, house, "never the house's");
+    assert!(act.signed, "signed by that key");
+    // The court pays the key that signs (78.141).
+    let mut k = crate::cognition::Court::new();
+    let crate::cognition::SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &family) else { panic!("the rule closes its pair") };
+    let paid = k.pay_solve(&act.task, act.voice, &rule, pay.clone(), true);
+    assert_eq!(paid, pay, "the first closure is paid its discharge");
+    assert_eq!(k.treasury.balance_mu(&own), pay, "paid to the seated mind's own key");
+    assert!(k.treasury.balance_mu(&house).is_zero(), "the house is paid nothing for the seat's solve");
+}
+
 /// THE DECLINATION (ruled 2026-10-23): a seat whose reading
 /// stops short of a solve calls fn 2 with the task's citation and its stop's
 /// code, and the call travels whole through the codec the house reads — a
