@@ -71,6 +71,30 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
 | Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
+**1b. Next, v0.5.0: the economy as motions.** The release's headline,
+ruled 2026-11-05 and specified in
+[`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md); §9 there lists the present
+implementation each item replaces. A wire and persisted-layout change,
+adopted by a recut (track 6). Items:
+- **`Modes` replaces `Mu`.** Every amount of μ is `economy::modes::Modes`,
+  on the wire and in the snapshot; `economy::Mu` is retired (§1, §9).
+- **Holdings as coordinates.** A key's holding is
+  `origin / h : S:G:T:H : K` with lanes as vectors of exact components
+  (§2.2), which needs the coordinate's v3 (proposal 78.173).
+- **Payments as events with cited causes.** Each payment is a receipt on
+  a signer's line citing the closure, the verifications and the payer's
+  act; the treasury's journal and entry kinds retire (§2.4, §5).
+- **Balances as readings.** A balance and the supply are read over the
+  cones at a TUniversal height, never stored or tallied (§6).
+- **One closure per network.** A closure is one point; a second mint of
+  it is an equivocation of the advance and is burned (§3.4, §11.4 F2b).
+- **The Note** between courts (track 1; MU-XSEPTUM), carrying modes.
+- **The economic law form with the peer kernels:** μ's modes, the
+  reserve and conversion at the universal core tube, with joint-read
+  fixtures, through MU-RELEASE §3a (proposal 78.174, to come; §10.4).
+
+The rulings the model still needs are listed in MU-ECONOMY §12.
+
 **2. Waiting on an operator ruling.** Do not start these until the ruling
 is recorded:
 - Concordance draft 5 (MU-CONCORDANCE §12, held for netstratum's
