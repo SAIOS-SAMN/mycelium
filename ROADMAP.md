@@ -65,11 +65,11 @@ None of these waits on a ruling:
 **3. Waiting on an operator ruling.** Do not start these until the ruling
 is recorded:
 - Concordance draft 4 (the shared laws, and the amendment proposed in
-  MU-CONCORDANCE §11). Track 24's B2 and B3 wait on it.
+  MU-CONCORDANCE §11). Track 24's B3, and B2's clause sets recorded per
+  domain, wait on it.
 - B1: carrying line mouth offers and tier handoff offers in the reserve's
   act, which amends rulings 78.126 and 78.136.
-- B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
-- Proposed names: `NotSignatory`, `AddressOnly`.
+- Proposed name: `AddressOnly`.
 - The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
 
 **4. Under investigation:**
@@ -1174,7 +1174,8 @@ signs the Concordance clause by clause, the network clauses never vetoed.
 Built today: the reserve-only fold, anchor, map, conversion out, manifest
 and statement (each refused `NotReserve`), lines carried inline, holonomy
 read on the rings of inner routes, L0 verify as a reading, and the
-Concordance hash served and signatures verified. Each phase is one commit:
+Concordance's clause register served and signatures admitted by
+adjudicated reading (B2). Each phase is one commit:
 
 1. **B0, replication by reconstruction** ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13),
    ruled 2026-11-02; **Built**): every hypha reconstructs each domain's
@@ -1230,20 +1231,37 @@ Concordance hash served and signatures verified. Each phase is one commit:
    its universe's vertex is not an event of that universe's cone at the
    hypha), never from a ruling on routes.
 3. **B2, signatories, clause by clause, by adjudicated reading**
-   (Concordance §0, ruled 2026-11-04):
+   (Concordance §0, ruled 2026-11-04; **Built**, v0.4.0, a network-contract
+   change: `ACT_LAWS` modes 6, 7 and 8):
    - Each clause is identified by its content (its law form and
-     joint-read fixtures), never by a hash of the text's bytes.
+     joint-read fixtures), never by a hash of the text's bytes. The
+     register (`src/physics/laws/clauses/`) holds `FORMS-PASSAGE` v3 (the
+     four fixtures of LAW-PASSAGE v2) and `FORMS-COORDINATE` v1 (the
+     order, eight sexagesimal sectors, seven `within` readings and two
+     ranges of LAW-COORDINATE v1), each a network clause, with the
+     hypha's own reconstruction of each fixture through `forms`. Mode 7
+     serves it.
    - A kernel signs a clause by presenting its reconstruction of the
-     clause's fixtures. The hypha admits the signature only on the same
-     exact objects, and a kernel that cannot read the clause is refused
-     `NotSignatory`, naming the clause and the fixture.
+     clause's fixtures (mode 8, `clauses::signing::Signing`). The hypha
+     admits the signature only on the same exact objects, and a kernel
+     that cannot read the clause is refused `NotSignatory`, naming the
+     clause and the fixture; a vetoed network clause is refused
+     `NetworkVetoed`.
    - `CONCORDANCE_HASH` (BLAKE3 over the file's bytes, computed in
-     `build.rs`) and the whole-text signature on mode 8 are retired.
-   - Claims: `signature_admitted_only_on_reconstructed_fixtures`,
-     `kernel_that_cannot_read_a_clause_is_not_signatory`,
-     `wording_change_changes_no_clause`.
+     `build.rs`), the whole-text signature on mode 8, `build.rs` itself and
+     the statement's hash are retired.
+   - The SDK's kernel helper: `mycelium_sdk::signing` (`reconstruct_fixture`
+     through `forms`, `sign_concordance`); the KERNEL profile's
+     `laws concordance` and `laws signature` rows read the register and
+     sign it by reconstruction, with a fixture presented wrong refused
+     `NotSignatory`.
+   - Claims (`physics::laws::clauses::tests`):
+     `admit_admits_only_reconstructed_fixtures`,
+     `admit_refuses_unreached_fixture_as_not_signatory`,
+     `register_equals_forms_law_versions` (a wording change changes no
+     clause), `admit_refuses_network_veto_and_names_kernel_veto`.
 
-   Then a kernel's signed clause set (each clause enabled or vetoed; the
+   Then (open) a kernel's signed clause set (each clause enabled or vetoed; the
    network clauses never vetoed) is recorded per domain; a domain's crossings refused `NotSignatory`
    until its reserve has signed every network clause of the version served
    (Concordance §0's next release); a tube between two universes carrying
@@ -1286,10 +1304,11 @@ Concordance hash served and signatures verified. Each phase is one commit:
      `transducer::cga::Clifford`, composed only through `product`, `sum`
      and `difference`, which refuse two signatures disagreeing on a
      generator both algebras hold `SignatureRefusal::Mismatched`. The
-     wire carries `Cl(n+1, 1)` values only; a `Clifford` has no writing
-     until the court reads one. A kernel does not yet sign by reconstructing
-     them: no clause is registered for reading until B2 lands. Open: the
-     admission at the vertex, below.
+     wire carries `Cl(n+1, 1)` values as acts; a `Clifford` is written only
+     as a clause fixture's input or object on `ACT_LAWS` modes 7 and 8
+     (`clauses::writing::put_clifford`), where a kernel signs the passage
+     by reconstructing them (B2). Open: the admission at the vertex,
+     below.
    - Claims (admission, open): `crossing_is_one_sided_product`,
      `crossing_at_horizon_is_one_way`,
      `crossing_stating_moved_reach_is_refused_not_lawful`.
