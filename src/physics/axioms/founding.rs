@@ -82,7 +82,7 @@ pub enum OpenKind {
 }
 
 /// ONE NUMBER STANDING WHERE A READING BELONGS, named until derived
-/// (MU-DERIVATIONS D1.4). The numbers gate (`xtask lint::numbers`, N5) reads
+/// (MU-DERIVATIONS D1.4). The numbers gate (`gate::numbers`, N5) reads
 /// every entry: its `site` is an item tagged `REGISTERED: <name>`, and its
 /// `value` is that item's initializer as written.
 #[derive(Debug, Clone, Copy)]

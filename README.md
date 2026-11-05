@@ -178,6 +178,8 @@ scripts/quickstart
 8. Runs a kernel's house (`sdk/examples/house.rs`) against the third
    hypha: it signs the Concordance hash, reads the clock, founds a domain
    and passes the kernel profile.
+9. Reads the mesh with `scripts/observer` and renders the client's traced
+   journal with `scripts/timeline`; either failing stops the run.
 
 The network keeps running, and the script prints the commands for reading
 it, until Ctrl-C. `scripts/quickstart DIR BASE_PORT TASKS` sets the home
@@ -409,7 +411,7 @@ Each proof is earned by a distinct client action. The reference mind
 | Proof | The client action | Reference mind | SDK |
 |---|---|---|---|
 | **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`sdk/examples/client.rs`). |
-| **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with the evidence for each, attests agreements and records convergences (`sdk::chatter`, `sdk/mind/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
+| **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with the evidence for each, attests agreements and records convergences (`sdk::chatter`, `src/client/sdk/mind/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
 | **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court reconstructs it and settles the compression yield. |
 
 **POWV is earned by node operators.** Every hypha that verifies a closure
@@ -711,7 +713,6 @@ src/
   transducer/   the algebra: Cl(n+1, 1)(ℚ), alphabet, elements, sentences,
                 perception of samples (family/), rule elements
   voice/        voice identity and signing
-examples/       durable_drill.rs
 algebra/        the exact algebra Cl(p, q)(ℚ) (workspace member crate)
 forms/          shared exact law forms (workspace member crate)
 sdk/            mycelium-sdk: the client SDK crate, and examples/client.rs
@@ -719,13 +720,13 @@ sdk/            mycelium-sdk: the client SDK crate, and examples/client.rs
 sources/        source decoders, kept outside the core (MU-SENSING §7):
                 arc-agi/ is the ARC-AGI-2 corpus's decoder, its
                 `mycelium-arc-agi` binary and its corpus tests
-xtask/          the gate: source-length bound, Euclidean-vocabulary check,
-                numbers check, and clippy with -D warnings
+gate/           the gate, as workspace tests over the source tree: reading
+                bound, Euclidean vocabulary, numbers, drift register,
+                shared-law table
 ops/            example systemd unit templates (edit the paths before use)
-scripts/        check (the local check before a pull request), ship-scoped
-                (clippy and scoped tests), quickstart, observer, timeline,
-                durable-drill
-tests/          integration tests
+scripts/        quickstart, observer, timeline
+tests/          integration tests, the durable-admission drill among them
+changes/        the unreleased CHANGELOG entries, one file per change
 docs/           design specifications
 ```
 
@@ -737,44 +738,27 @@ Rust 1.82 or later (developed on 1.95) on Linux.
 
 ```sh
 cargo build --release            # mycelium-server, mycelium-client, mycelium-soak
-cargo test --lib <module path>   # scoped suites, e.g. transducer::family::tests::elements
-(cd xtask && cargo run)          # the gate: reading bound, Euclidean vocabulary, numbers, clippy -D warnings
 ```
 
-The gate (`xtask/`) takes four readings and reports each one, so a
-failure in the first does not hide the others:
-- **Reading bound** (`xtask/lint/length.rs`): no source file under `src/`,
-  `algebra/src/`, `forms/src/`, `sdk/src/` or `xtask/` longer than 2500
-  lines.
-- **Euclidean vocabulary** (`xtask/lint/euclidean.rs`): refuses grid
-  indexing shapes (Morton and space-filling curves, bit interleaving,
-  bounding boxes, subdivision trees, spatial hashes, voxels) named in code
-  under the same directories.
-- **Numbers** (`xtask/lint/numbers.rs`): every numeric item that carries a
-  literal is classified (`EXACT:`, `FORMAT:`, `EXTERNAL:`, `MEASURED:` or
-  `REGISTERED:`), and every underived one is named in the open-physics
-  register (MU-DERIVATIONS D1.4; MU-STANDARDS 2.12).
-- **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
-  --workspace --all-targets -- -D warnings`, over `mycelium`, `algebra`,
-  `forms`, `mycelium-sdk` and `mycelium-source-arc-agi`.
-
-Test suites are run by module path. The core library reads no corpus; the
-suites that run corpus tasks are the decoder's
-(`cargo test -p mycelium-source-arc-agi`).
+A change is checked by the two commands of
+[AGENTS › Definition of done](AGENTS.md#definition-of-done): clippy over
+the workspace with warnings denied, and the workspace tests, the gate
+(`gate/`) among them.
 
 **Corpus.** The ARC-AGI-2 dataset from the ARC Prize Foundation is read
-only by its decoder, the workspace crate `sources/arc-agi`, at
-`data/arc-agi-2/{training,evaluation}/*.json` relative to the repository
-root, or under the directory named by `MYCELIUM_CORPUS`. A hypha, a
-client's feed and the soak read **posted tasks** (`<name>.task`,
-`dialogue::encode_posted_task`), which the decoder writes:
+only by its decoder, the workspace crate `sources/arc-agi`, from the
+corpus directory that
+[AGENTS › Definition of done](AGENTS.md#definition-of-done) names. The
+core library reads no corpus. A hypha, a client's feed and the soak read
+**posted tasks** (`<name>.task`, `dialogue::encode_posted_task`), which
+the decoder writes:
 
 ```sh
 cargo build --release -p mycelium-source-arc-agi
 target/release/mycelium-arc-agi decode data/arc-agi-2/training /srv/corpus/arc-agi-2/training [LIMIT]
 ```
 
-`scripts/quickstart` and `scripts/check` find the corpus the same way.
+`scripts/quickstart` finds the corpus the same way.
 
 **Lints.** The crate denies `unsafe_code`, float arithmetic, lossy casts,
 and `unwrap`/`expect`/`panic` outside tests. It also enforces a set of
@@ -901,7 +885,9 @@ as `peers`, copy the corpus manifests (step 4), and start without
 - **systemd.** `ops/mycelium-{server,client}@.service` are example
   user-unit templates; set the checkout path and the home path in them.
 - **Observing.** `scripts/observer HOME...` refreshes the minds' and the
-  courts' typed readings for the named hypha homes.
+  courts' typed readings for the named hypha homes (`once` for one frame);
+  `scripts/timeline UNIT` renders what each reader of a voice's stroke
+  cost, from its journal under `MYC_TRACE=1`.
 
 ### Node capabilities in 0.3.0-rc.3
 
@@ -1090,9 +1076,9 @@ target/release/examples/conformance --endpoint 127.0.0.1:7610 --profile kernel
 Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
-workflow, the standards and the gate. `scripts/check` runs the gate and
-the workspace tests and summarises both; it is the local check before a
-pull request. [ROADMAP.md](ROADMAP.md) lays out
+workflow and the standards;
+[AGENTS › Definition of done](AGENTS.md#definition-of-done) is the check
+before a pull request. [ROADMAP.md](ROADMAP.md) lays out
 the development tracks in order, each with its specification and where it
 lands in the code. In brief: the tracks begin with settlement (the
 xSEPTUM Note), compute leases, bond delegation, membership after genesis,

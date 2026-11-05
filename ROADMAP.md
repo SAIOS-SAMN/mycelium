@@ -40,7 +40,7 @@ xylarium pin it. The table below is kept as the record of what it closed.
 
 **1a. In progress: v0.4.0.** A new break, in which word, chart and task
 addresses, act layouts and signing domains may change (CHANGELOG ›
-Unreleased). Merged so far, each with its PR:
+Unreleased, held in `changes/`). Merged so far, each with its PR:
 - Track 26 S4b–S4d: rank-`n` perception, transduction as factorisation,
   the hypha serving any rank and the claim of factorisation (#80); the
   word machinery on `SectionSample`/`SectionSite`, `family::Grid` retired,
@@ -72,11 +72,34 @@ Unreleased). Merged so far, each with its PR:
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
 | Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
+**1b. Next, v0.5.0: the economy as motions.** The release's headline,
+ruled 2026-11-05 and specified in
+[`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md); §9 there lists the present
+implementation each item replaces. A wire and persisted-layout change,
+adopted by a recut (track 6). Items:
+- **`Modes` replaces `Mu`.** Every amount of μ is `economy::modes::Modes`,
+  on the wire and in the snapshot; `economy::Mu` is retired (§1, §9).
+- **Holdings as coordinates.** A key's holding is
+  `origin / h : S:G:T:H : K` with lanes as vectors of exact components
+  (§2.2), which needs the coordinate's v3 (proposal 78.173).
+- **Payments as events with cited causes.** Each payment is a receipt on
+  a signer's line citing the closure, the verifications and the payer's
+  act; the treasury's journal and entry kinds retire (§2.4, §5).
+- **Balances as readings.** A balance and the supply are read over the
+  cones at a TUniversal height, never stored or tallied (§6).
+- **One closure per network.** A closure is one point; a second mint of
+  it is an equivocation of the advance and is burned (§3.4, §11.4 F2b).
+- **The Note** between courts (track 1; MU-XSEPTUM), carrying modes.
+- **The economic law form with the peer kernels:** μ's modes, the
+  reserve and conversion at the universal core tube, with joint-read
+  fixtures, through MU-RELEASE §3a (proposal 78.174, to come; §10.4).
+
+The rulings the model still needs are listed in MU-ECONOMY §12.
+
 **2. Waiting on an operator ruling.** Do not start these until the ruling
 is recorded:
-- Concordance draft 4 (MU-CONCORDANCE §11; track 24's B3, and B2's
-  clause sets recorded per domain, wait on it) and draft 5 (§12, held for
-  netstratum's pole-basis wording of 2.11).
+- Concordance draft 5 (MU-CONCORDANCE §12, held for netstratum's
+  pole-basis wording of 2.11).
 - B1: carrying line mouth offers and tier handoff offers in the reserve's
   act, which amends rulings 78.126 and 78.136.
 - The proposed name `AddressOnly`.
@@ -262,7 +285,8 @@ Apache-2.0, a client conformance read, and bindings for other languages
 after it.
 
 1. **P1, workspace (Built):** `mycelium`, `forms` and `mycelium-sdk` as
-   members of one workspace, `xtask` outside it. *Accepted when* the gate
+   members of one workspace (the gate was then `xtask`, outside it; it is
+   now the member `gate`). *Accepted when* the gate
    passes on the workspace and the members share one lock file.
 2. **P2, the surface (Built):** `mycelium-sdk` re-exporting the surface, and
    the client example (`sdk/examples/client.rs`) depending on it alone. *Accepted when* the
@@ -404,10 +428,10 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `observe/fleet.rs` → `observe/phase.rs`.
    - Vague names:
      - `tuniversal/ops.rs` → `navigate.rs`;
-     - the 13 `tests/common.rs` → `tests/fixtures.rs`;
+     - the 13 module test files `common.rs` → `fixtures.rs`;
      - `cga/tests/generic.rs` → `rank_n.rs`;
-     - `tests/g_cga.rs` → `conformal_algebra.rs`;
-     - `tests/alpha_plan.rs` → `word_lifecycle.rs`.
+     - `g_cga.rs` → `tests/conformal_algebra.rs`;
+     - `alpha_plan.rs` → `tests/word_lifecycle.rs`.
    - **Metaphor module names become function names.** A doctrine term
      may stay as a type's name with its GLOSSARY row, never as a file's
      name. For example:
@@ -748,7 +772,8 @@ is open.
 **Test assurance**
 
 9. ~~Mutation audit~~ (**Retired** 2026-11-04, ruled theatre; the
-   catalogue and `gate mutate` are removed from `xtask`).
+   catalogue and `gate mutate` were removed from `xtask`, itself since
+   removed).
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
     Ten named fault classes (`InvalidSignature`, `Resend` (a valid act
@@ -1093,7 +1118,7 @@ Each phase is one commit:
    grid predicate and `push_grid`'s refusal (D4.3), each reply's own
    header length (D4.6), and `UNIT_BOND` deleted (D2.4).
 2. **NC2, the register and its gate** (D1.4): the `OpenNumber` carrier,
-   the NUMBERS lint in `xtask`, the class-tagging pass, then the
+   the NUMBERS lint in the gate (`gate/src/numbers.rs`), the class-tagging pass, then the
    inline-literal phase. From here no new constant lands.
 3. **NC3, entries with no open question blocking them**, among them the
    exact throat fit (D1.2 Phase A), the task address refusing an
@@ -1165,8 +1190,8 @@ computation, and μ minted on a branch.
 **Specified** in
 [`docs/MU-HOSTING.md` §5a](docs/MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)
 (the operator's ruling of 2026-11-02; MU-RECURSION 78.169), with the
-Concordance amendments (4.1, 6.2a, §0, 0.1) proposed in
-[MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02).
+Concordance amendments (4.1, 6.2a, §0, 0.1), approved 2026-11-05 as
+version 5 ([MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02)).
 
 The security model is topological and the hypha enforces it: each act is
 an event on the TUniversal ledger with a past cone (what it cites) and a
@@ -1367,8 +1392,9 @@ adjudicated reading (B2). Each phase is one commit:
 6. **B5, nested universes:** a sub-universe's acts only at its parent's
    vertex, with 78.155 R-3.
 
-Depends on: **draft 4** (the amendment's approval and signing; B3's
-shared laws, and B2's clause sets under its §0 SIGNING text). Issue #13
+Draft 4 was approved 2026-11-05 and is written into the Concordance as
+version 5; B3's shared laws and B2's clause sets under its §0 SIGNING
+text proceed as engineering, no longer a ruling dependency. Issue #13
 is no longer an outside dependency: its ruling, **replication by
 reconstruction**, is phase B0. Serves tracks 13, 14 and 15.
 
@@ -1405,10 +1431,10 @@ for each phase:
 3. Write the claims named below first, as statements of the algebra
    (MU-STANDARDS 3.1). Include the `compile_fail` doc tests that prove a
    wrong structure does not compile.
-4. Build the phase. Run the gate (`cd xtask && cargo run`), the scoped
-   tests of the touched modules (`cargo test --release -p <crate>
-   <module>`), and `scripts/check` before the pull request.
-5. Register each guard the phase builds in `xtask/lint/drift.rs`
+4. Build the phase, and hold it to
+   [AGENTS › Definition of done](AGENTS.md#definition-of-done) before the
+   pull request.
+5. Register each guard the phase builds in `gate/src/drift.rs`
    (regression, ruling, guarding type, claim); the gate refuses an entry
    whose type or claim is missing.
 6. Open the pull request with the template's drift checklist ticked. A
@@ -1435,7 +1461,7 @@ Each phase lands on its own branch, one item per commit:
      `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`,
      `Court::admit_backfill`, `ReceiptChain::admit_unreached`. The
      founding outcome once named `Reconstructed` is `FoundingEvent`.
-   - The register `xtask/lint/drift.rs` lists each guard (regression,
+   - The register `gate/src/drift.rs` lists each guard (regression,
      ruling, guarding type, claim). The gate refuses an entry whose type
      or claim is missing.
    - Claims: `address_has_no_equality`, `predecessor_has_no_equality`,
@@ -1530,8 +1556,8 @@ Each phase lands on its own branch, one item per commit:
    each body is held by its boundary; incidences are read between boundary arcs; a site
    lifts as turns in ℚ/ℤ. The transduction is **Built** (the v0.3.0
    transduction work, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25),
-   closed): `CommonRefinement` and `src/transducer/family/refine.rs` are
-   deleted. X5's guard remains to land, so that no common refinement
+   closed): `src/transducer/family/refine.rs` was removed with
+   `CommonRefinement`. X5's guard remains to land, so that no common refinement
    re-enters past the sensor.
    - Claims: `common_refinement_unreachable_from_cognition`
      (`compile_fail`), `site_lifts_to_turns_of_its_own_periods`,
@@ -1558,8 +1584,9 @@ so no file or identifier of the core library is named for a dataset. The
 hypha holds tasks as families of samples and knows no source.
 
 **How to build a phase:** as in track 25 (a branch; the specification read
-whole; the claims first; the gate; the scoped tests; one commit; a pull
-request that names #32). Run heavy builds one at a time.
+whole; the claims first; the
+[Definition of done](AGENTS.md#definition-of-done); one commit; a pull
+request that names #32).
 
 Each phase is one commit:
 

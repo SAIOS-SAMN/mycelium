@@ -1,0 +1,31 @@
+# AI-GENERATED CONTENT — see DISCLAIMER.md
+#
+# MU-STANDARDS 4.1 — THE GATE: the checks the compiler cannot read, as
+# workspace tests over the repository's source tree. The crate is read by
+# its tests alone (`cargo test --release --workspace`); nothing links it.
+[package]
+name = "gate"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+rust-version = "1.82"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+# MU-DERIVATIONS D1.4 — the numbers gate reads items with `syn`, never raw
+# lines; `span-locations` gives each hit its line.
+syn = { version = "2", features = ["full", "visit"] }
+quote = "1"
+proc-macro2 = { version = "1", features = ["span-locations"] }
+
+[dev-dependencies]
+tempfile = "3"
+# MU-EQUATIONS §11 — the shared-law table is read against the forms' own
+# law ids.
+forms = { path = "../forms" }
+
+[lints]
+workspace = true

@@ -43,11 +43,11 @@ and convergence or collision brings the branches back into alignment
 ## 2. What a change is
 
 - One phase per pull request where practical, each leaving the tree green:
-  gate and scoped tests pass, documentation in step, a CHANGELOG entry
-  under Unreleased.
+  the [Definition of done](../AGENTS.md#definition-of-done) holds,
+  documentation in step, a CHANGELOG fragment under `changes/`.
 - Commit form: an imperative subject of at most 72 characters; a body
   saying what changed and why, naming its ROADMAP track or issue; a
-  verification line ("Gate green; tests: …"); the Co-Authored-By trailer
+  verification line (the two commands' results); the Co-Authored-By trailer
   where an agent co-authored it.
 - External contributions arrive the same way and are reviewed by a
   maintainer.
@@ -115,7 +115,8 @@ from them.
 - A **production release** is a tag the operator has authorized after its
   candidate ran on the test mesh. Releases are scheduled: each names its
   candidate period and its activation point (§5) in advance.
-- Each release has a GitHub Release whose notes are its CHANGELOG section.
+- Each release has a GitHub Release whose notes are its CHANGELOG section,
+  assembled from the fragments under `changes/` when the release is cut.
 
 ## 5. Activation at a point of the clock
 
@@ -141,9 +142,8 @@ network's own clock:
 - Release tags are signed. The release states the build's hash, re-derivable
   by anyone from the tagged source and `Cargo.lock` (ROADMAP track 14, item
   5); a hypha's build attestation names it.
-- The release checklist lives in CONTRIBUTING: gate green on the tagged
-  tree, the full test set run once with its known exceptions named, the
-  CHANGELOG section final, the test-mesh run recorded, the operator's
+- The release checklist lives in CONTRIBUTING: the Definition of done
+  green on the tagged tree, the CHANGELOG section final, the test-mesh run recorded, the operator's
   authorization recorded in the release pull request.
 
 ---
@@ -243,7 +243,7 @@ The two sides stay comparable through what they share:
 | `MAINTAINERS.md`, PR template, release checklist in CONTRIBUTING | the repository | **Built** with this document |
 | Signed release tags, GitHub Releases from the CHANGELOG | the release process | Specified |
 | Test mesh: a genesis of its own for release candidates | `scripts/quickstart`, genesis | Specified |
-| `activates_at` per release: the law, wire and ledger version applied by final point | `src/physics/laws.rs` (`LAW_VERSION`), the door, `chronometry::tuniversal` | Specified |
+| `activates_at` per release: the law, wire and ledger version applied by final point | `src/physics/laws/mod.rs` (`LAW_VERSION`), the door, `chronometry::tuniversal` | Specified |
 | Versions advertised in the cover | `src/anastome/dialogue` cover codec | Specified |
 | BRANCH as an act: a branch origin citing the fork point (78.155 R-1) | `chronometry::tuniversal::navigate`, the court | Specified |
 | A sub-court bound to a branch origin, folding up by the tier fold (78.155 R-3) | `server/cognition` | Specified |

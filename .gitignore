@@ -1,7 +1,6 @@
 /target
 data/
 state/
-xtask/target/
 run/
 /var/
 # Operating notes of the development fleet (status log, session notes,

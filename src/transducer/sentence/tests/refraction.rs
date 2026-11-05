@@ -129,7 +129,7 @@ fn rebase_conjugates_by_versor_never_subtracts() {
 // It is not a close call on three counts. Its allow-list is by name, so
 // renaming a function silently changes what the gate permits. Its own
 // comment defers the real check — "the production check is `xtask lint`'s
-// squaring gate" — and `xtask/lint` holds `length.rs`, `warnings.rs` and
+// squaring gate" — and `xtask/lint` then held `length.rs`, `warnings.rs` and
 // `mod.rs`: that gate does not exist. And it fires on a line that has no
 // coordinate pair in it: `ClassVector.offplane` is the three conjugacy
 // invariants `(a²/w, p²/w, sign p)`, which the scan reads as a pair because

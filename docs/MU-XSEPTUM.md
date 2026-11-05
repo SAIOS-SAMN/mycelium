@@ -340,20 +340,20 @@ Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
   signed prefix is the receipt prefix of MU-RECURSION 47.1 followed by the
   act's fields (`challenge_signed_prefix`, `note_signed_prefix`,
   `receipt_signed_prefix`, `release_signed_prefix`).
-- `src/client/identity.rs`: `VoiceGroup` (FROST, RFC 9591) and the manifest
-  receipt.
+- `identity.rs`, new under `src/client/`: `VoiceGroup` (FROST, RFC 9591)
+  and the manifest receipt.
 - `src/economy/`: `Septum` ledger kind entries ("septum-escrow",
   "septum-release", "septum-revoke") on the existing `Entry`; no new
   balances.
-- `src/server/septum.rs`: the state machine keyed by `(listing_key, payer,
-  K_payer)` in a `Keyed<Septum>`; `price_request`, `accept_note`,
+- `septum.rs`, new under `src/server/`: the state machine keyed by
+  `(listing_key, payer, K_payer)` in a `Keyed<Septum>`; `price_request`, `accept_note`,
   `accept_receipt`, `expire(K)` called from the court
   stroke under its budget; `witness_sign` for the second signature of a
   release.
 - `src/bin/mycelium-server/judge/`: one file per act family, dispatched by `judge/dispatch.rs`.
 - `src/client/sdk/`: `Session::septum_note`, `septum_receipt`,
   `septum_release`.
-- `src/bin/mycelium-septum.rs`: the HTTP adapter. Listens on a local port,
+- `mycelium-septum`, a new binary under `src/bin/`: the HTTP adapter. Listens on a local port,
   maps `402` and the three headers to frames, holds no state beyond the
   current exchange. A service that already runs the client SDK does not
   need it.

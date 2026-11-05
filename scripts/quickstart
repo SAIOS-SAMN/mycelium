@@ -2,8 +2,14 @@
 # QUICK START — a Mycelium network on one machine: three hyphae (courts) and
 # one SDK client, provisioned and started from nothing, the client solving
 # tasks the courts adjudicate and pay; then the conformance read of both
-# profiles, and a kernel's house founding a domain. The network keeps running until
-# Ctrl-C, then every process stops; the homes stay in DIR for inspection.
+# profiles, a kernel's house founding a domain, the observer's frame of the
+# mesh (scripts/observer) and the timeline of the client's traced journal
+# (scripts/timeline). Where the observer or the timeline fails, the run
+# exits 1. The network keeps running until Ctrl-C, then every process
+# stops; the homes stay in DIR for inspection.
+#
+# The definition of done (AGENTS.md) requires this run for a change to the
+# wire or the mesh.
 #
 # Usage: scripts/quickstart [DIR] [BASE_PORT] [TASKS]
 #   DIR        where the homes are written (default: $TMPDIR/mycelium-quickstart,
@@ -105,8 +111,11 @@ done
 for h in a b c; do echo "$h: $("$SRV" --home "$DIR/$h" --check 2>/dev/null | grep '^  mesh:')"; done
 if [ "$adopted" != 1 ]; then echo "b and c did not adopt the genesis; see $DIR/b.log, $DIR/c.log"; exit 1; fi
 
-say "5. the SDK client works $TASKS tasks on hypha a"
-"$EX" "$DIR/client" "127.0.0.1:$PORT_a" "$TASKS"
+say "5. the SDK client works $TASKS tasks on hypha a (its journal, traced, in $DIR/client.log)"
+# MYC_TRACE: each reader of the voice's stroke writes its trace line, the
+# journal step 10 renders; everything else of the journal is shown here.
+MYC_TRACE=1 "$EX" "$DIR/client" "127.0.0.1:$PORT_a" "$TASKS" 2>"$DIR/client.log"
+grep -v '^  trace ' "$DIR/client.log"
 
 say "6. the conformance suite on hypha b (MU-CONFORMANCE): the mind profile, then the kernel profile"
 "$CONF" --endpoint "127.0.0.1:$PORT_b" --home "$DIR/conformance"
@@ -117,6 +126,12 @@ say "7. a kernel's house on hypha c: the Concordance signed, the clock read, a d
 
 say "8. the court's reading of what it judged"
 "$SRV" --console --home "$DIR/a" --reading judged 2>&1 | grep -vE 'OBSERVER|TUNIVERSAL|clock'
+
+say "9. the observer's frame of the mesh (scripts/observer)"
+MYCELIUM_SERVER="$SRV" scripts/observer once "$DIR/a" "$DIR/b" "$DIR/c" || { echo "the observer failed"; exit 1; }
+
+say "10. the timeline of the client's journal (scripts/timeline)"
+scripts/timeline "$DIR/client.log" || { echo "the timeline failed"; exit 1; }
 
 say "the network is running"
 cat <<EOF

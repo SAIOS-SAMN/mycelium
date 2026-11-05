@@ -5,16 +5,22 @@
 # hearer, with each pair's exact deviation. Typed readings only; no log is read.
 #
 # Usage: scripts/observer [SECONDS|once] HOME...
-#   HOME     a hypha's home directory; the first is asked for the minds'
-#            reading, and every one for its court's readings
+#   HOME     a hypha's home directory; the rendezvous beside the first
+#            (HOME/../chatter) is asked for the minds' reading, and every
+#            home for its court's readings
 #   SECONDS  a live pane, refreshed every SECONDS (default 5)
-#   once     one frame, then exit
+#   once     one frame, then exit: 0 where every reading answered, 1 where
+#            any did not (scripts/quickstart runs this)
 #   MYCELIUM_SERVER names the server binary (default
-#   <repository>/target/release/mycelium-server).
+#   $CARGO_TARGET_DIR/release/mycelium-server, CARGO_TARGET_DIR defaulting
+#   to <repository>/target).
+#
+# A mesh with no rendezvous has no mind posted: the frame says so and asks
+# none. A rendezvous whose minds do not answer is a failed reading.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-BIN="${MYCELIUM_SERVER:-$REPO/target/release/mycelium-server}"
+BIN="${MYCELIUM_SERVER:-${CARGO_TARGET_DIR:-$REPO/target}/release/mycelium-server}"
 
 usage() {
   echo "usage: scripts/observer [SECONDS|once] HOME..." >&2
@@ -27,19 +33,26 @@ case "${1:-}" in
 esac
 [ "$#" -gt 0 ] || usage
 
+# One frame; non-zero where any reading did not answer.
 frame() {
-  "$BIN" --console --minds --home "$1" --reading mind
+  failed=0
+  if [ -d "$(dirname "$1")/chatter" ]; then
+    "$BIN" --console --minds --home "$1" --reading mind || failed=1
+  else
+    echo "no rendezvous at $(dirname "$1")/chatter: no mind is posted"
+  fi
   for h in "$@"; do
     # The first question leaves it for the court's stroke; the second reads
     # what the stroke published, its age said beside it.
-    "$BIN" --console --home "$h" --reading asked >/dev/null
-    "$BIN" --console --home "$h" --reading acts
-    "$BIN" --console --home "$h" --reading agreements
+    "$BIN" --console --home "$h" --reading asked >/dev/null || failed=1
+    "$BIN" --console --home "$h" --reading acts || failed=1
+    "$BIN" --console --home "$h" --reading agreements || failed=1
   done
+  return "$failed"
 }
 
 if [ "$MODE" = "once" ]; then
-  frame "$@"
+  frame "$@" || exit 1
   exit 0
 fi
 exec watch -c -t -n "$MODE" "$(printf '%q ' "$0" once "$@")"

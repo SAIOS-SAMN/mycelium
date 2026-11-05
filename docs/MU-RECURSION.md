@@ -4433,8 +4433,8 @@ fibre of assignments a body can be spoken with; `residue.rs` A5's
 generation magic, the four tags, and the codec; `sensor.rs` the four
 functions permitted a coordinate pair (`site_of`, `carry_centre`,
 `carry_lamina`, `pullback`), named in the squaring gate's allow-list. Tests
-are under `element/tests/`, with `tests/fixtures.rs` holding the fixture
-constructors.
+are under `element/tests/`, with `src/transducer/element/tests/fixtures.rs`
+holding the fixture constructors.
 
 `Element` gains `depth: u16`, in `GEN2` after `mag` (`to_bytes`,
 `from_bytes`). The sentence description bytes are the `Form` tape
@@ -7213,8 +7213,8 @@ incremented by a cut that wipes ledgers under the same keys: a new
 genesis, the keys kept. `MeshRecord` carries `genesis: [u8; 32], epoch: u32`
 in place of `origin_unix`, signed as before. Both are in every signed prefix
 (47.1); a frame naming another genesis or epoch is `REFUSE_ORIGIN` in 47.2
-step 1, before any carrier is touched. The `tuniversal` file, `scripts/tu`,
-and every origin copy are deleted; a cut writes the new epoch's genesis on
+step 1, before any carrier is touched. The `tuniversal` file was removed, with `scripts/tu`
+and every origin copy; a cut writes the new epoch's genesis on
 one hypha and provisions it to every other node and the minds.
 
 The mesh record of a new node also carries the fold roots of the hyphae
@@ -9994,7 +9994,7 @@ half of it was occupancy entries and meets manufactured by dilation. That
 also retires the performance question the typed coordinates were suspected
 of — there was no regression; the stencil was the cost.
 
-AND A CONSTANT DECAYED SILENTLY. `tests/cover.rs` carried `STROKE = 4`,
+AND A CONSTANT DECAYED SILENTLY. `src/transducer/family/tests/cover.rs` carried `STROKE = 4`,
 "the smallest stroke on this fixture that both needs more than one and
 reaches the end". A site that yields a meet costs a read, so purging the
 stencil made the cover cheaper and four reads then covered the whole
@@ -14459,7 +14459,7 @@ worlds in a universe on the network.
 
 Code: `src/chronometry/chain/mod.rs` (`ReceiptChain::fold_before`,
 `ReceiptChain::prove_from_era`), `src/server/backfill.rs`,
-`src/client/sdk/voice.rs` (`Voice`), `src/client/sdk/mind.rs` (`Mind`).
+`src/client/sdk/voice.rs` (`Voice`), `src/client/sdk/mind/mod.rs` (`Mind`).
 
 ### 78.88 The frame at the sensor, the plexus read upward and across the family, and the progenitor's role
 
@@ -15432,7 +15432,7 @@ Code: `src/server/cognition/domain_passage.rs`, `src/server/cognition/handoff.rs
 
 Every write lands DURABLY: the line's append is synced, and a whole line or the snapshot is written to a synced sibling, renamed, and the directory synced. The court acts (`ACT_UPLINK`, `ACT_HANDOFF`, `ACT_CHALLENGE`, `ACT_DOMAIN`) are answered only after the line and snapshot they changed are on the disk; a write that does not land is not answered, the act stays due, and its resend is answered with its original receipt (nothing is sealed twice). Boot restores the last snapshot read whole, with no log re-executed (that would be replay, Concordance 1.4). Speech keeps its orbit-cadence persist, since words are re-heard by back-fill: a crash may lose unpersisted words, never an acknowledged court act. Should the measured cost approach the court's real act rate, the next form is an fsynced log of the sealed state deltas, read back at boot as a recovery read; the trigger is measured, never a declared size.
 
-Code: `src/chronometry/chain/line.rs` (`replace_durably`), `src/bin/mycelium-server/persist.rs` (`durable`); the drill `scripts/durable-drill` with `examples/durable_drill.rs`, and its negative control, the `drill-undurable` feature, which answers without the pre-reply sync and loses rounds.
+Code: `src/chronometry/chain/line.rs` (`replace_durably`), `src/bin/mycelium-server/persist.rs` (`durable`); the drill, the release-only test `tests/durable.rs`, and its negative control, the `drill-undurable` feature, which answers without the pre-reply sync and loses rounds.
 
 ### 78.138 Only the ancients uplink; a line is carried inline
 

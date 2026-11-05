@@ -452,8 +452,10 @@ MU-CLIENT §4.13 (C1–C3).
 **Status: Specified** (the operator's ruling of 2026-11-02; MU-RECURSION
 78.169; ROADMAP track 24). The parts already in the tree are marked
 **Built** in each part's table. The Concordance amendments this section
-needs are proposed in [MU-CONCORDANCE §11](MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02)
-and bind nothing until approved and signed.
+needs were proposed as draft 4 ([MU-CONCORDANCE §11](MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02))
+and approved by the maintainer on 2026-11-05, written into 4.1, 6.2a, §0
+and 0.1 as version 5. A kernel binds to them as it signs that version, at
+v0.4.0's release candidate.
 
 The ruling: the network's laws pass down through the Concordance and the
 universal physics. Each universe applies its own physics at the kernel
@@ -563,7 +565,7 @@ state with no exact representation does not cross.
 | L0 verify as a reading a kernel asks for (`ACT_LAWS` modes 1 and 2) | **Built** | `physics::laws::verify_sized`; `judge/laws.rs` |
 | L0 applied at admission to the transitions a crossing states; refused naming the law (proposed `NotLawful`, carrying the breaches) | **Specified** | §5a.9, B3 |
 | Core-shell forms applied at admission | **Specified** | §5a.9, B3 |
-| Draft-4 shared laws at the boundary | **Specified**, waits on the ruling of draft 4 | Concordance §11 |
+| Draft-4 shared laws at the boundary | **Specified**; draft 4 approved 2026-11-05 (Concordance version 5), B3 builds the enforcement | Concordance §11 |
 
 ### 5a.4 Regulation: the Concordance signed
 
@@ -759,7 +761,7 @@ logs:
    `ACT_LAWS` mode 1 or 2 for the verdict before sending; the boundary
    applies the same check at admission when B3 lands. Example: the peer
    kernel netstratum states its era-1 steps as such transitions
-   (netstratum `docs/113`).
+   (netstratum docs/113).
 5. **Keep its own physics inside.** Its shell, constants and compositions
    stay in its kernel; only exact crossings leave it.
 6. **Let minds' keys speak for themselves.** A seated mind keeps its own
@@ -804,8 +806,9 @@ Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
 
 Size: B0 about 200 lines, B1 about 300 (most of it the rename and the
 carried offers), B2 about 400, B3 about 400, B4 about 200; B5 rides
-78.155 R-3. ROADMAP track 24. B3's shared laws wait on draft 4, and B2's
-clause sets on its §0 SIGNING text.
+78.155 R-3. ROADMAP track 24. B3's shared laws build now that draft 4 is
+approved (2026-11-05, Concordance version 5); B2's clause sets stand on
+its §0 SIGNING text, now written into the Concordance.
 
 Every later phase stands on B0, **replication by reconstruction** (the
 operator's final ruling of 2026-11-02 on

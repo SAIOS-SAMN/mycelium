@@ -1,6 +1,6 @@
 // 78.127, 78.137 — A HOUSE'S ACTS ON ITS HYPHA: a domain founded, its
 // reserve designated, the reserve read back. House tooling beside the mind
-// (the durable-admission drill, `examples/durable_drill.rs`), never the mind's
+// (the durable-admission drill, `tests/durable.rs`), never the mind's
 // cognition (MU-CLIENT §2.3). Each goes through the raw act door with the
 // domain codec; a reply that does not decode is an error by name.
 
