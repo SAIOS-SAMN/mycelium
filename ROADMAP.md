@@ -1878,16 +1878,14 @@ Each phase is one commit:
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
-   - **Built, the sample as a manifold** (branch `sensing-sample-manifold`,
-     ruled 2026-11-06 on #32): the envelope read as a product of phase
-     circles (each period the circumference) and intervals with boundary,
-     or a fibration where an axis is taken apart; a fully periodic sample
-     reads as a torus `Tⁿ` (`transduce::SampleManifold`,
-     `PhaseManifold::{Circle, Interval}`, `AxisManifold::Fibred`). Claims
-     `periodic_sample_reads_as_a_torus`,
-     `aperiodic_phase_reads_as_an_interval`,
-     `nested_axis_reads_as_a_fibration`. A reading, never stored; no wire
-     or address change.
+   - **Built, letters past `n = 3`** (branch `sensing-section-letters`,
+     ruled 2026-11-06 on #32 (4)): never written by hand. A sample past
+     the alphabet's section is read through its section samples, one per
+     plane and coordinate of the rest (`transducer::sections::sections_of`);
+     a new letter enters only by the presentation's growth. No hand-coded
+     letter for a higher rank was found to remove. Claim
+     `letters_past_the_section_are_never_written_by_hand`. Open: the mind's
+     word path spelling each section of a rank-3 task.
    - **Built** (branch `sensing-dilation`): the envelopes' dilation, which
      squared the extents (law 11), is removed; the fibre map's carried
      site and the frame's momentum read the re-period of each phase
@@ -2031,19 +2029,6 @@ Each phase is one commit:
      `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
      the solve of outputs and speech stating a perspective (they read the
      section in its default).
-   - **Built, stage 5** (branch `sensing-ground-collapse`, ruled
-     2026-11-06 on #32 (3)): a ground's vortex collapses by a relation.
-     `Stands` (a body stands on the candidate on every train input) or
-     `PaintedOn` (every pair's residue changes only its sites), holding
-     for one candidate on every pair and for no other, collapses it
-     (`transduce::collapse_of`, `Ground::collapse`; `Ground::of` reads the
-     collapsed ground); otherwise the candidates stay superposed. A closing
-     rule is an observation per candidate and never collapses it. Claims
-     `ground_vortex_collapses_where_bodies_stand_on_one_candidate`,
-     `ground_vortex_collapses_where_residue_paints_one_candidate`,
-     `closing_rule_never_collapses_the_ground`. The ground of a family
-     whose vortex collapses changes, so the perception of such tasks
-     changes; no task address changes (identity reads no ground).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
