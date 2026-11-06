@@ -5,7 +5,7 @@
 //! glued by, and the class it was seeded from.
 
 use super::*;
-use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, Orbit, WellBody, WellStage};
+use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, Orbit, Precession, WellBody, WellStage};
 
 /// THE KEYED READ OF A HELD WORD'S SECTION BY ADDRESS: the rotation the
 /// chart names and the carriage it names it at. Both halves, because a
@@ -167,7 +167,7 @@ pub(crate) fn union_rem(a: &[SectionLink], b: &[SectionLink]) -> Vec<SectionLink
 ///
 /// IT STANDS ON THE FIELD'S CARRIER (ROADMAP track 26 S7 stage 2): its
 /// body ([`Well::body`]) is a held attractor at the chart its remainder
-/// stands on, its local orbit [`Well::orbit`] (flat where none is held),
+/// stands on, the geodesic orbit it binds [`Well::orbit`] (none: flat),
 /// its membrane its own enclosure, and its stage a coordinate. Its volume,
 /// potential, inflation, holonomy and precession are readings of what it
 /// holds, never stored beside it (law 12): no flag and no count is a field
@@ -201,9 +201,10 @@ pub struct Well {
     /// its glue. A well ON THE RING has charts still to meet; one RESTED has
     /// met what its last expansion could.
     pub stage: WellStage,
-    /// ROADMAP track 26 S7 stage 2 — THE WELL'S LOCAL ORBIT in the field's
-    /// atlas, where one is held: a lap through charts about its centre. None
-    /// is flat, and the well's precession is then refused `Loop`. The
+    /// ROADMAP track 26 S7 stage 2 — THE ORBIT THE WELL BINDS in the field's
+    /// atlas, where it binds one: a geodesic of the field's curvature, one
+    /// revolution through charts about its centre. None is flat, and the
+    /// well's holonomy and precession are then refused `Unbound`. The
     /// contemplation's orbits are attached here in S9a.
     pub orbit: Option<Orbit>,
     /// N4 — A PERCEPTION'S BODIES, by the chart each stands on, at its input
@@ -496,14 +497,16 @@ impl Well {
         WellBody::of(Self::planes()?, self.centre(), self.orbit.clone(), self.stage)
     }
 
-    /// THE HOLONOMY OF ITS LOCAL ORBIT PER LAP, read from the orbit held.
+    /// THE HOLONOMY OF ITS ORBIT PER REVOLUTION, the curvature around it,
+    /// read from the orbit it binds; refused `Unbound` where it binds none.
     pub fn holonomy(&self) -> Result<Holonomy, FieldRefusal> {
         self.body()?.holonomy()
     }
 
-    /// THE PRECESSION PER LAP (MU-SENSING §3.9): refused `Loop` where its
-    /// orbit returns exactly, as a well holding no orbit does.
-    pub fn precession(&self) -> Result<Holonomy, FieldRefusal> {
+    /// THE PRECESSION PER REVOLUTION (MU-SENSING §3.9): its orbit's
+    /// advance, or `Resonant` where the closed geodesic returns exactly;
+    /// refused `Unbound` where it binds no orbit.
+    pub fn precession(&self) -> Result<Precession, FieldRefusal> {
         self.body()?.precession()
     }
 

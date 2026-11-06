@@ -2,7 +2,8 @@
 //
 //! LAW-FIELD v1 §1–§3 (proposal 78.171; MU-SENSING §3.7) — THE ATLAS: the
 //! field's charts, its transitions as its connection, its attractors held
-//! with their local orbits and membranes, and curvature as holonomy per lap.
+//! with the geodesic orbits they bind and their membranes, and curvature as
+//! holonomy per revolution.
 
 use super::enclosing::Membrane;
 use super::holonomy::{Holonomy, Motion};
@@ -49,71 +50,116 @@ pub struct Transition {
     pub motion: Motion,
 }
 
-/// AN ORBIT'S LAP (78.171 §2, §3.3): a path through charts that returns to
-/// the chart it left on the base, with the transition at each step.
+/// AN ORBIT (78.171 §2, §3.3; MU-SENSING §3.9): a bound geodesic of the
+/// field's gravitational curvature, read over one revolution, a path
+/// through charts that returns to the chart it left on the base, with the
+/// transition at each step. A path whose every step is the identity runs
+/// through a flat region and binds no orbit: no `Orbit` holds one.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Orbit {
-    lap: Vec<Transition>,
+    revolution: Vec<Transition>,
+}
+
+/// THE PRECESSION PER REVOLUTION (78.171 §3.3; MU-SENSING §3.9), the
+/// residue of a revolution's transitions: an advance on the planes the
+/// holonomy turns on, or none, where the closed geodesic returns exactly
+/// in a curved field and the orbit is resonant, lawful and never refused.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Precession {
+    Advances(Holonomy),
+    Resonant,
 }
 
 impl Orbit {
-    /// THE LAP OF `transitions`, each leaving the chart the one before
-    /// reached and the last reaching the chart the first left. Refused
-    /// `NotLap` with the step that breaks the chain, or `0` for no step.
-    pub fn of(lap: Vec<Transition>) -> Result<Orbit, FieldRefusal> {
-        let steps = lap.len();
-        let broken = (0..steps).find(|&i| match (lap.get(i), lap.get((i + 1) % steps)) {
+    /// THE ORBIT OF ONE REVOLUTION through `revolution`'s transitions, each
+    /// leaving the chart the one before reached and the last reaching the
+    /// chart the first left. Refused `NotRevolution` with the step that
+    /// breaks the chain, or `0` for no step, and `Unbound` with the charts
+    /// where every step is the identity: a path through a flat region, no
+    /// attractor binding it.
+    pub fn of(revolution: Vec<Transition>) -> Result<Orbit, FieldRefusal> {
+        let steps = revolution.len();
+        let broken = (0..steps).find(|&i| match (revolution.get(i), revolution.get((i + 1) % steps)) {
             (Some(a), Some(b)) => a.to != b.from,
             _ => true,
         });
-        match (steps, broken) {
-            (0, _) => Err(FieldRefusal::NotLap { at: 0 }),
-            (_, Some(at)) => Err(FieldRefusal::NotLap { at: at + 1 }),
-            (_, None) => Ok(Orbit { lap }),
+        let flat = revolution.iter().all(|t| t.motion.turnings().is_empty());
+        match (steps, broken, flat) {
+            (0, _, _) => Err(FieldRefusal::NotRevolution { at: 0 }),
+            (_, Some(at), _) => Err(FieldRefusal::NotRevolution { at: at + 1 }),
+            (_, None, true) => Err(FieldRefusal::Unbound { charts: revolution.iter().map(|t| t.from.clone()).collect() }),
+            (_, None, false) => Ok(Orbit { revolution }),
         }
     }
 
-    /// The transitions, in the lap's order.
-    pub fn lap(&self) -> &[Transition] {
-        &self.lap
+    /// The transitions, in the revolution's order.
+    pub fn revolution(&self) -> &[Transition] {
+        &self.revolution
     }
 
-    /// The charts the lap leaves, in order.
+    /// The charts the revolution leaves, in order.
     pub fn charts(&self) -> Vec<Chart> {
-        self.lap.iter().map(|t| t.from.clone()).collect()
+        self.revolution.iter().map(|t| t.from.clone()).collect()
     }
 
-    /// THE HOLONOMY (78.171 §3.1): the product of the lap's transitions,
-    /// in order. Refused as [`Motion::then`] refuses.
+    /// THE HOLONOMY PER REVOLUTION (78.171 §3.1), the curvature the orbit
+    /// reads: the product of its transitions, in order. Refused as
+    /// [`Motion::then`] refuses.
     pub fn holonomy(&self) -> Result<Holonomy, FieldRefusal> {
-        self.lap.iter().try_fold(Motion::identity(), |m, t| m.then(&t.motion)).map(Holonomy::of)
+        self.revolution.iter().try_fold(Motion::identity(), |m, t| m.then(&t.motion)).map(Holonomy::of)
     }
 
-    /// THE PRECESSION PER LAP (78.171 §3.3; MU-SENSING §3.9): the residue
-    /// of the lap's transitions, its holonomy. Refused `Loop` with the
-    /// lap's charts where the holonomy is the identity on every plane
-    /// (`0°`, `K = 0`): a path that returns exactly is a loop, never an
-    /// orbit.
-    pub fn precession(&self) -> Result<Holonomy, FieldRefusal> {
+    /// THE PRECESSION PER REVOLUTION: the holonomy's advance where it turns
+    /// on some plane, `Resonant` where it is the identity on every plane
+    /// (`0°`, `K = 0`). Refused as [`Orbit::holonomy`] refuses.
+    pub fn precession(&self) -> Result<Precession, FieldRefusal> {
         let h = self.holonomy()?;
-        match h.turnings() {
-            [] => Err(FieldRefusal::Loop { charts: self.charts() }),
-            _ => Ok(h),
-        }
+        Ok(match h.turnings() {
+            [] => Precession::Resonant,
+            _ => Precession::Advances(h),
+        })
     }
 }
 
-/// AN ATTRACTOR HELD (78.171 §2, a well): the chart it stands at, its local
-/// orbit, and its membrane, the holding's own enclosure.
+/// AN ATTRACTOR HELD (78.171 §2, a well): the chart it stands at, the
+/// orbit it binds where it binds one (none in a flat region), and its
+/// membrane, the holding's own enclosure.
 #[derive(Clone, Debug)]
 pub struct Attractor {
     pub centre: Chart,
-    pub orbit: Orbit,
+    pub orbit: Option<Orbit>,
     pub membrane: Membrane,
 }
 
+impl Attractor {
+    /// THE HOLONOMY OF ITS ORBIT PER REVOLUTION, the curvature around it.
+    /// Refused `Unbound` with its centre where it binds no orbit.
+    pub fn holonomy(&self) -> Result<Holonomy, FieldRefusal> {
+        self.bound()?.holonomy()
+    }
+
+    /// THE PRECESSION OF ITS ORBIT PER REVOLUTION. Refused `Unbound` with
+    /// its centre where it binds no orbit.
+    pub fn precession(&self) -> Result<Precession, FieldRefusal> {
+        self.bound()?.precession()
+    }
+
+    /// The orbit it binds, or `Unbound` with its centre.
+    fn bound(&self) -> Result<&Orbit, FieldRefusal> {
+        self.orbit.as_ref().ok_or_else(|| FieldRefusal::Unbound { charts: vec![self.centre.clone()] })
+    }
+
+    /// The transitions of the orbit it binds, none where it binds none.
+    fn revolution(&self) -> &[Transition] {
+        match &self.orbit {
+            Some(o) => o.revolution(),
+            None => &[],
+        }
+    }
+}
+
 /// THE CURVATURE AROUND ONE ATTRACTOR (78.171 §2, a well): the holonomy
-/// of its local orbit per lap, or the refusal that reading met.
+/// of its orbit per revolution, or the refusal that reading met.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Curvature {
     pub centre: Chart,
@@ -167,7 +213,7 @@ impl Atlas {
     /// its membrane must stand on one of the frame's planes.
     pub fn hold(&mut self, attractor: Attractor) -> Result<(), FieldRefusal> {
         self.charted(&attractor.centre)?;
-        attractor.orbit.lap().iter().try_for_each(|t| self.charted(&t.from).and_then(|()| self.charted(&t.to)))?;
+        attractor.revolution().iter().try_for_each(|t| self.charted(&t.from).and_then(|()| self.charted(&t.to)))?;
         if attractor.membrane.plane() > self.frame.count() {
             return Err(FieldRefusal::PastFrame { plane: attractor.membrane.plane() });
         }
@@ -181,29 +227,31 @@ impl Atlas {
     pub fn connection(&self, from: &Chart, to: &Chart) -> Result<Motion, FieldRefusal> {
         self.attractors
             .iter()
-            .flat_map(|a| a.orbit.lap())
+            .flat_map(Attractor::revolution)
             .filter(|t| &t.from == from && &t.to == to)
             .try_fold(Motion::identity(), |m, t| m.then(&t.motion))
     }
 
-    /// THE LAP THROUGH `charts` IN THE FIELD (78.171 §3.1): each step's
-    /// transition read from the connection, the last step returning to the
-    /// first chart. Refused `NotCharted` for a chart the atlas does not
-    /// hold, and as [`Orbit::of`] refuses.
-    pub fn lap(&self, charts: &[Chart]) -> Result<Orbit, FieldRefusal> {
+    /// THE GEODESIC THROUGH `charts` IN THE FIELD, one revolution (78.171
+    /// §3.1): each step's transition read from the connection, the last
+    /// step returning to the first chart. Refused `NotCharted` for a chart
+    /// the atlas does not hold, and as [`Orbit::of`] refuses: `Unbound`
+    /// where the path runs through a flat region.
+    pub fn revolution(&self, charts: &[Chart]) -> Result<Orbit, FieldRefusal> {
         charts.iter().try_for_each(|c| self.charted(c))?;
         let steps = charts.len();
-        let lap = (0..steps)
+        let revolution = (0..steps)
             .filter_map(|i| Some((charts.get(i)?, charts.get((i + 1) % steps)?)))
             .map(|(from, to)| Ok(Transition { from: from.clone(), to: to.clone(), motion: self.connection(from, to)? }))
             .collect::<Result<Vec<_>, FieldRefusal>>()?;
-        Orbit::of(lap)
+        Orbit::of(revolution)
     }
 
     /// THE FIELD'S CURVATURE (78.171 §2): around each attractor held, the
-    /// precession of its local orbit per lap, in the order held. Flat
-    /// where nothing is held: no attractor, no curvature.
+    /// holonomy of its orbit per revolution, in the order held, refused
+    /// `Unbound` around one binding no orbit. Flat where nothing is held:
+    /// no attractor, no curvature.
     pub fn curvature(&self) -> Vec<Curvature> {
-        self.attractors.iter().map(|a| Curvature { centre: a.centre.clone(), holonomy: a.orbit.precession() }).collect()
+        self.attractors.iter().map(|a| Curvature { centre: a.centre.clone(), holonomy: a.holonomy() }).collect()
     }
 }

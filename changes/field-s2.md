@@ -10,10 +10,10 @@
   `Chart::of_invariant`, so a well's chart and a lifted body's chart are
   one kind of object.
 - **The well's body** (`carrier::WellBody`, `holding.rs`): a held
-  attractor at a chart, its local orbit (none held: flat), its membrane
+  attractor at a chart, the orbit it binds (none: flat), its membrane
   the throat of the last of its frame planes, its own enclosure; its
-  holonomy and precession per lap read from the orbit, a flat well's
-  precession refused; its inflation the gauge of the frame state
+  holonomy and precession per revolution read from the orbit, a flat
+  well's refused `Unbound`; its inflation the gauge of the frame state
   `H·n_Z + R·n_Q` on the membrane's pole basis, stood inside the membrane
   and read back with its place (`Inflation`).
 - **The well's stage is a coordinate** (`WellStage`: `WellLayer`
@@ -36,15 +36,29 @@
 - **A mind's well stated and reconstructed by a court**
   (`Well::put_statement`, `WellBody::put_statement`, `reconstruct_well`,
   `admit_well`): the statement writes the well's own atlas and its stage,
-  no reading; the court rebuilds it, derives the precession itself, and
-  admits a claim on a match, refusing `Differs` with the pair. Not on the
-  wire (S9).
+  no reading; the court rebuilds it, derives the curvature (the holonomy
+  per revolution) itself, and admits a claim on a match, refusing
+  `Differs` with the pair. Not on the wire (S9).
+- **Orbits are geodesics** (operator ruling 2026-11-06; 78.171 amendment
+  (f)): every path in the field is a geodesic of its gravitational
+  curvature, the wells its attractors, and a bound geodesic is an orbit
+  read per revolution (`Orbit::revolution`, `Atlas::revolution`; "lap"
+  retired). A closed geodesic with zero precession in a curved field is
+  resonant, lawful (`Precession::Resonant`, beside
+  `Precession::Advances`). A path through a flat region binds no orbit and
+  is refused `Unbound` (by `Orbit::of`); the `Loop` refusal is retired and
+  `NotLap` is `NotRevolution`. An attractor binds an orbit or none
+  (`Attractor.orbit: Option<Orbit>`); the field's curvature around it is
+  its holonomy per revolution, `Unbound` where it binds none. LAW-FIELD
+  fixture 2 is restated: a flat region binds no orbit.
 - **Claims:** `well_stands_on_its_attractor`,
   `well_membrane_is_its_enclosure`,
   `well_volume_and_potential_are_readings_per_lane`,
   `well_stage_is_a_coordinate_not_a_flag`,
   `mind_well_stated_and_reconstructed_by_a_court`,
-  `well_body_stated_and_admitted_by_its_precession`,
+  `well_body_stated_and_admitted_by_its_curvature`,
+  `flat_region_binds_no_orbit_refused_unbound`,
+  `closed_geodesic_with_zero_precession_is_resonant`,
   `reconstruct_well_refuses_an_atlas_of_two_attractors`,
   `chart_of_ratio_invariant_round_trips`; a `compile_fail` doc test on
   `Well.percept`.

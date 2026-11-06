@@ -4,7 +4,7 @@
 //! S4a): phases in degrees on turning planes, windings kept, charts invariant.
 
 use super::super::*;
-use super::fixtures::{atlas_holding, degrees, lap_turning, plane, sample_of, three_charts};
+use super::fixtures::{atlas_holding, degrees, plane, revolution_turning, sample_of, three_charts};
 use crate::transducer::family::transduce::{Enclosed, Sense, SignedPermutation};
 use forms::coordinate::Plane;
 use forms::passage::Place;
@@ -63,25 +63,25 @@ fn lift_charts_are_invariant_under_signed_permutation() {
     assert_eq!(charts(&x), charts(&y));
 }
 
-/// The field curves only where an orbit is held: a lap through the lift's
-/// three charts reads no holonomy on the flat atlas (refused `Loop`), and
-/// once an attractor holds its local orbit of three 30° steps on
-/// `e₊₁e₊₂`, the same lap read from the connection precesses by 90°.
+/// The field curves only where an orbit is held: a path through the lift's
+/// three charts binds no orbit on the flat atlas (refused `Unbound`), and
+/// once an attractor binds its orbit of three 30° steps on `e₊₁e₊₂`, the
+/// same revolution read from the connection precesses by 90°.
 #[test]
-fn atlas_lap_reads_holonomy_only_where_orbit_held() {
+fn atlas_revolution_reads_holonomy_only_where_orbit_held() {
     let (lifted, charts) = three_charts();
     let flat = lifted.atlas();
-    assert_eq!(flat.lap(&charts).and_then(|o| o.precession()), Err(FieldRefusal::Loop { charts: charts.clone() }));
+    assert_eq!(flat.revolution(&charts), Err(FieldRefusal::Unbound { charts: charts.clone() }));
     let p = plane(&lifted.frame, 1, 2);
-    let curved = atlas_holding(&lifted, lap_turning(&charts, &p, 30, 1));
-    let h = curved.lap(&charts).and_then(|o| o.precession()).expect("the held orbit curves the lap");
+    let curved = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
+    let h = curved.revolution(&charts).and_then(|o| o.holonomy()).expect("the held orbit curves the revolution");
     assert_eq!(h.angle().map(|t| t.degrees().clone()), Ok(degrees(90, 1)));
     assert_eq!(curved.curvature().len(), 1, "one attractor, one well");
 }
 
 /// The lift's membrane is the throat of its own plane, the frame state on
 /// `e₊` alone, never null; and the lift's atlas holds no attractor, so it
-/// is flat and a lap through its charts is refused `Loop`.
+/// is flat and a path through its charts binds no orbit (`Unbound`).
 #[test]
 fn lift_membrane_is_throat_and_atlas_is_flat() {
     let lifted = Lifted::of(&sample_of(&[3, 3], "111121111")).expect("lifts");
@@ -90,5 +90,5 @@ fn lift_membrane_is_throat_and_atlas_is_flat() {
     let atlas = lifted.atlas();
     assert!(atlas.curvature().is_empty(), "nothing held, no curvature");
     let charts = atlas.charts().to_vec();
-    assert_eq!(atlas.lap(&charts).and_then(|o| o.precession()), Err(FieldRefusal::Loop { charts }));
+    assert_eq!(atlas.revolution(&charts), Err(FieldRefusal::Unbound { charts }));
 }

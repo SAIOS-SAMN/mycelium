@@ -21,9 +21,9 @@ fn held_at(now: u64) -> (Contemplation, Vec<u8>) {
     (c, k)
 }
 
-/// A lap through the well's centre and two further charts, each step a
-/// turning by `degrees` on `e₊₁e₊₂` of the well's planes.
-fn lap_about(centre: &Chart, degrees: i64) -> Orbit {
+/// The orbit of one revolution through the well's centre and two further
+/// charts, each step a turning by `degrees` on `e₊₁e₊₂` of the well's planes.
+fn revolution_about(centre: &Chart, degrees: i64) -> Orbit {
     let planes = Well::planes().expect("the well's planes");
     let plane = TurningPlane::of(&planes, Square::Positive, 1, 2).expect("e₊₁e₊₂");
     let charts = [centre.clone(), Chart::of_invariant(&Invariant::counts(&[1])), Chart::of_invariant(&Invariant::counts(&[2]))];
@@ -31,13 +31,14 @@ fn lap_about(centre: &Chart, degrees: i64) -> Orbit {
         let turning = Turning::of(plane.clone(), crate::core::Q::from_integer(degrees.into())).expect("a turning");
         Transition { from: charts[i].clone(), to: charts[(i + 1) % 3].clone(), motion: Motion::of(vec![turning]).expect("a motion") }
     };
-    Orbit::of((0..3).map(step).collect()).expect("the lap closes")
+    Orbit::of((0..3).map(step).collect()).expect("the revolution closes and binds")
 }
 
 /// A WELL STANDS ON ITS ATTRACTOR: its body's one attractor is at the chart
-/// its remainder stands on, in its own atlas. Holding no orbit it is flat,
-/// its precession refused `Loop`; holding a lap of three 30° steps it
-/// precesses by 90° on `e₊₁e₊₂` per lap, read from the orbit, never stored.
+/// its remainder stands on, in its own atlas. Binding no orbit it is flat,
+/// its holonomy and precession refused `Unbound`; binding an orbit of three
+/// 30° steps it precesses by 90° on `e₊₁e₊₂` per revolution, read from the
+/// orbit, never stored.
 #[test]
 fn well_stands_on_its_attractor() {
     let (mut c, k) = held_at(0);
@@ -48,13 +49,15 @@ fn well_stands_on_its_attractor() {
     let atlas = body.atlas().expect("its own atlas");
     let [attractor] = atlas.attractors() else { panic!("one attractor, the well's") };
     assert_eq!(attractor.centre, centre);
-    assert_eq!(b.precession(), Err(FieldRefusal::Loop { charts: vec![centre.clone()] }), "flat: no orbit held");
+    let unbound = FieldRefusal::Unbound { charts: vec![centre.clone()] };
+    assert_eq!(b.precession(), Err(unbound.clone()), "flat: no orbit bound");
+    assert_eq!(b.holonomy(), Err(unbound));
     let b = c.wells.get_mut(&k).expect("held");
-    b.orbit = Some(lap_about(&centre, 30));
-    let h = b.precession().expect("an orbit precesses");
+    b.orbit = Some(revolution_about(&centre, 30));
+    let Ok(Precession::Advances(h)) = b.precession() else { panic!("an orbit precesses") };
     let angle = h.angle().expect("one plane");
     assert_eq!((angle.plane().key().written(), angle.degrees()), ("e_+1+2".to_string(), &crate::core::Q::from_integer(90.into())));
-    assert_eq!(b.holonomy(), Ok(h), "the holonomy per lap is the precession read");
+    assert_eq!(b.holonomy(), Ok(h), "the holonomy per revolution is the precession read");
 }
 
 /// A WELL'S MEMBRANE IS ITS OWN ENCLOSURE: the throat of the last of its
@@ -120,17 +123,19 @@ fn well_stage_is_a_coordinate_not_a_flag() {
 }
 
 /// A MIND'S WELL IS STATED AND RECONSTRUCTED BY A COURT: the statement
-/// writes the body and no reading; the court derives the precession and the
-/// stage from it and admits the mind's claim on a match.
+/// writes the body and no reading; the court derives the curvature (the
+/// holonomy per revolution), the precession and the stage from it and
+/// admits the mind's claim on a match.
 #[test]
 fn mind_well_stated_and_reconstructed_by_a_court() {
     let (mut c, k) = held_at(0);
     let b = c.wells.get_mut(&k).expect("held");
-    b.orbit = Some(lap_about(&b.centre(), 30));
+    b.orbit = Some(revolution_about(&b.centre(), 30));
     let mut stated = Vec::new();
     b.put_statement(&mut stated).expect("stated");
-    let claimed = Curvature { centre: b.centre(), holonomy: b.precession() };
+    let claimed = Curvature { centre: b.centre(), holonomy: b.holonomy() };
     let court = admit_well(&stated, &claimed).expect("the court admits");
     assert_eq!(court.stage(), b.stage, "the stage reconstructed");
     assert_eq!(court.centre(), &b.centre(), "at the well's chart");
+    assert_eq!(court.precession(), b.precession(), "the precession derived by the court");
 }

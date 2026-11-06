@@ -4,20 +4,23 @@
 //! input and its exact decoded output, on the plane `e₊₁e₊₂`.
 
 use super::super::*;
-use super::fixtures::{degrees, frame, lap_turning, plane, three_charts, turning};
+use super::fixtures::{degrees, frame, plane, revolution_turning, three_charts, turning};
 use crate::transducer::family::transduce::Factoring;
 use forms::passage::{Place, Pole};
 use num_bigint::BigInt;
 
-/// FIXTURE 1. One lap of an orbit through three charts whose transitions
-/// are turnings by 30° each on `e₊₁e₊₂`: the holonomy, the precession per
-/// lap, is the turning by 90° on `e₊₁e₊₂`, `K = 0`, of order 4, and its
-/// motion is the product of the three motions, `ζ₁₂³`, exact over `ℚ(ζ₁₂)`.
+/// FIXTURE 1. One revolution of an orbit through three charts whose
+/// transitions are turnings by 30° each on `e₊₁e₊₂`: the holonomy, the
+/// precession per revolution, is the turning by 90° on `e₊₁e₊₂`, `K = 0`,
+/// of order 4, and its motion is the product of the three motions, `ζ₁₂³`,
+/// exact over `ℚ(ζ₁₂)`.
 #[test]
 fn precession_of_three_thirty_degree_steps_equals_ninety_degrees() {
     let (lifted, charts) = three_charts();
     let p = plane(&lifted.frame, 1, 2);
-    let h = lap_turning(&charts, &p, 30, 1).precession().expect("the lap precesses");
+    let Ok(Precession::Advances(h)) = revolution_turning(&charts, &p, 30, 1).precession() else {
+        panic!("the orbit precesses")
+    };
     let angle = h.angle().expect("one plane");
     assert_eq!(angle.plane().key().written(), "e_+1+2", "the plane is named");
     assert_eq!(angle.degrees(), &degrees(90, 1));
@@ -30,15 +33,31 @@ fn precession_of_three_thirty_degree_steps_equals_ninety_degrees() {
     assert_eq!(angle.motion(), &Cyclotomic::root(12, 3).expect("ζ₁₂³"));
 }
 
-/// FIXTURE 2. A path through a flat region of the field, no orbit held:
-/// every step is the identity, the holonomy is 0° on every plane with
-/// `K = 0`, and the path is refused `Loop` with its charts.
+/// FIXTURE 2. A flat region binds no orbit: a path through it, no
+/// attractor held, is the identity at every step, and it is refused
+/// `Unbound` with its charts, never read as an orbit.
 #[test]
-fn precession_refuses_flat_path_as_loop() {
+fn flat_region_binds_no_orbit_refused_unbound() {
     let (lifted, charts) = three_charts();
-    let lap = lifted.atlas().lap(&charts).expect("the charts are the atlas's");
-    assert!(lap.holonomy().expect("composes").turnings().is_empty(), "0° on every plane");
-    assert_eq!(lap.precession(), Err(FieldRefusal::Loop { charts }));
+    assert_eq!(lifted.atlas().revolution(&charts), Err(FieldRefusal::Unbound { charts }));
+}
+
+/// A CLOSED GEODESIC WITH ZERO PRECESSION IN A CURVED FIELD IS RESONANT,
+/// never refused: three steps of 30°, 30° and −60° on `e₊₁e₊₂` compose to
+/// 0° on every plane, and the orbit reads `Resonant`, its holonomy the
+/// identity.
+#[test]
+fn closed_geodesic_with_zero_precession_is_resonant() {
+    let (lifted, charts) = three_charts();
+    let p = plane(&lifted.frame, 1, 2);
+    let step = |i: usize, n: i64| Transition {
+        from: charts[i].clone(),
+        to: charts[(i + 1) % 3].clone(),
+        motion: Motion::of(vec![turning(&p, n, 1)]).expect("a motion"),
+    };
+    let orbit = Orbit::of(vec![step(0, 30), step(1, 30), step(2, -60)]).expect("curved, so bound");
+    assert_eq!(orbit.precession(), Ok(Precession::Resonant));
+    assert!(orbit.holonomy().expect("composes").turnings().is_empty(), "0° on every plane, K = 0");
 }
 
 /// FIXTURE 3. A turning by 72° on `e₊₁e₊₂` composed five times: the motion

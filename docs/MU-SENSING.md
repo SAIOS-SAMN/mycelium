@@ -370,15 +370,16 @@ bubble (a thought bubble), renamed 2026-11-02.
   another is a **transition**, a versor (the refraction of A.16; the
   transitions of 25.12). The transitions are the field's connection.
 - **Curvature is the holonomy of an orbit through the atlas:** the
-  product of the transitions along one lap of the orbit, read by its
-  modes. Where the product is elliptic, it is an exact angle in degrees
-  on its named plane, held with its winding. This is the
-  holonomy of MU-RECURSION 10.3 and 12.6, already built. A path through
-  the charts is never a closed loop: it is an orbit, sheared by gravity
+  product of the transitions along one revolution of the orbit, read by
+  its modes. Where the product is elliptic, it is an exact angle in
+  degrees on its named plane, held with its winding. This is the
+  holonomy of MU-RECURSION 10.3 and 12.6, already built. Every path
+  through the charts is a geodesic of the field's gravitational
+  curvature, the wells its attractors; a bound geodesic is an orbit
   (§3.9). Curvature is gravity: it is produced by the field's orbits,
   local orbits shearing the orthogonal orbit class. Where nothing is held,
-  the transitions along every lap compose to the identity, and the field
-  is flat.
+  every transition is the identity, the field is flat, and a path there
+  binds no orbit (refused `Unbound`; ruled 2026-11-06).
 - **A well is the curvature around one attractor**, produced by its local
   orbit. A held percept and a held thought are one well at two stages
   (`transducer/field/`, MU-CLIENT §4).
@@ -441,14 +442,14 @@ bubble (a thought bubble), renamed 2026-11-02.
   Re-inflation toward the source's extents is speech (§5).
 
 - **Why.** `n` independent circles form a torus `Tⁿ`, which is flat.
-  A loop on it keeps its windings, one integer per circle (its class in
-  `H₁(Tⁿ) = ℤⁿ`, 78.44), but transports nothing. A geodesic on a flat
-  torus is a straight line wound around it. Untouched by gravity, it
+  A closed path on it keeps its windings, one integer per circle (its
+  class in `H₁(Tⁿ) = ℤⁿ`, 78.44), but transports nothing. A geodesic on a
+  flat torus is a straight line wound around it. Untouched by gravity, it
   squares the depth and volume of the manifold into one dimension, and
   with phases read mod 1, their windings dropped, it closes and returns
-  exactly: the loop a thought
-  must not be (MU-CLIENT 78.168). A field curved by its orbits is not
-  flat: the transitions around a loop compose to a motion in its own right,
+  exactly, bound by no attractor: the unbound path a thought must not be
+  (MU-CLIENT 78.168). A field curved by its orbits is not flat: the
+  transitions around a revolution compose to a motion in its own right,
   so a route's meaning is held as its holonomy (MU-RECURSION 10.3, 12.6;
   MU-ANTI-FLATTENING clause 6).
 - **Gravity curves the perception manifold.** It has two sources, and
@@ -493,7 +494,7 @@ bubble (a thought bubble), renamed 2026-11-02.
   tower of fibrations, never a flat product.
 - **Holonomy in degrees, exactly, the winding kept.** Perception moves in
   orbits through the charts. An orbit's holonomy is the product of the
-  transitions along one lap, read by its modes. An elliptic mode gives an
+  transitions along one revolution, read by its modes. An elliptic mode gives an
   exact angle in degrees on its named plane, held with its winding in ℤ
   (`K = ⌊|θ|/360⌋`, never dropped), and its order. There are no
   coordinates on a reference surface and no trigonometric value.
@@ -503,22 +504,25 @@ bubble (a thought bubble), renamed 2026-11-02.
   and rational points on a circle or a sphere would mean squaring, so
   neither is used. An angle the mind cannot carry exactly is a named
   residue (78.170).
-- **Orbits.** A thought's orbit lives in the fibration. It is a lap
-  through charts in the base together with a winding in the fibre. On
-  each lap, the base lap's holonomy, which is the curvature the
-  attractors' gravity puts along it, advances the fibre phase. That advance is the
-  orbit's **precession**: the orbit closes on the base but not in the
-  fibre, so it comes round held and never returns exactly. It reads as
-  one of MU-CLIENT 78.168's four readings:
+- **Orbits.** A thought's orbit lives in the fibration. It is a bound
+  geodesic: a revolution through charts in the base together with a
+  winding in the fibre. On each revolution, the base revolution's
+  holonomy, which is the curvature the attractors' gravity puts along
+  it, advances the fibre phase. That advance is the orbit's
+  **precession**: the orbit closes on the base, and where the advance is
+  not zero it does not close in the fibre, so it comes round held. It
+  reads as one of MU-CLIENT 78.168's four readings:
   - **held**: precessing and bound;
   - **closes**: returning at its period;
   - **open**: a mode escaping its attractor;
   - **unread**: not reached.
 
   The windings are kept as the fibres' classes, never lost.
-  An orbit with zero precession through flat space returns exactly and is
-  refused as a loop, never taken as settled. A precession of `360°·t/ℓ`
-  on its plane closes after `ℓ` laps, its winding counted. That full return is the orbit's own period, its
+  A closed geodesic with zero precession in a curved field is a lawful
+  **resonant** orbit, read as resonance (`Precession::Resonant`). A path
+  through flat space binds no orbit and is refused `Unbound` (ruled
+  2026-11-06). A precession of `360°·t/ℓ` on its plane closes after `ℓ`
+  revolutions, its winding counted. That full return is the orbit's own period, its
   age as distance along the orbit (78.43), read once and not repeated. A
   precession that no turn holds exactly is a named residue.
 - **Whose mind.** Perception and its orbits belong to the mind inside a
@@ -551,8 +555,9 @@ candidate forms (`Well.vortex`).
 
 - **A candidate's monodromy** over the family reads one of three ways
   (25.12):
-  - **Flat**, order 1: no twist, an exact return. As an orbit it is
-    refused as a loop (§3.9).
+  - **Flat**, order 1: no twist, an exact return. As an orbit in a
+    curved field it is resonant; through a flat region it binds no
+    orbit, refused `Unbound` (§3.9).
   - **Torsion**, order `ℓ`: the fibre twists by `ℓ` and closes after `ℓ`
     circuits. This is the precession of §3.7 and §3.9.
   - **Rupture**, infinite order: the candidate fails to close on that
@@ -588,24 +593,33 @@ deformation  =  motion  ∘  residue
 - **μ** is paid for the traversal, the share of the frame the change
   covers. The residue's meaning is never paid (§3.7).
 
-**Every path is an orbit, never a loop** (ruled 2026-11-04). A path of
-perception through the charts never closes on itself as a loop. It is an
-orbit about an attractor, and its shape is set by gravity:
+**Every path is a geodesic; a bound geodesic is an orbit** (ruled
+2026-11-04; amended 2026-11-06, the word "loop" and the `Loop` refusal
+retired). Every path of perception through the charts is a geodesic of
+the field's gravitational curvature, the wells its attractors. A bound
+geodesic is an orbit about an attractor: its holonomy per revolution is
+the curvature, its precession the residue per revolution, and its shape
+is set by gravity:
 - **Shear is gravitational alignment toward motion compellment.** An
   attractor compels a motion (its local orbit, the axiom it turns about),
   and the gravity it produces shears every orbit of the orthogonal class
   toward that motion (§3.7, axiomatic gravity). Shear is that alignment,
-  read per lap from the orbits held. It is never a stored force or a
-  constant.
-- **Precession is the residue per lap.** On each lap the shear advances
-  the orbit's phase by the residue of that lap's transitions. The orbit
-  comes round aligned a little further toward the compelled motion, held
-  and never repeating.
-- **A loop is refused.** A path with no shear (flat, no attractor)
-  returns exactly. That is a loop, the squaring a thought must not be,
-  and it is refused by name (`Loop`).
+  read per revolution from the orbits held. It is never a stored force or
+  a constant.
+- **Precession is the residue per revolution.** On each revolution the
+  shear advances the orbit's phase by the residue of that revolution's
+  transitions. The orbit comes round aligned a little further toward the
+  compelled motion, held.
+- **Zero precession in a curved field is resonance.** A closed geodesic
+  whose revolution composes to the identity, its steps curved, is a
+  lawful resonant orbit, never refused (`Precession::Resonant`).
+- **A flat region binds no orbit.** A path whose every step is the
+  identity (flat, no attractor) is bound by nothing, and it is refused by
+  name (`Unbound`).
+- **A relation is not a closed path.** Two derivations meeting at one
+  object are a relation, their holonomy recorded.
 - **Alignment is learning.** As shear brings an orbit's motion into line
-  with the motion its attractor compels, the residue per lap shrinks
+  with the motion its attractor compels, the residue per revolution shrinks
   toward the identity. The response is one of 78.73's three:
   - **elastic:** the residue is absorbed;
   - **plastic:** a held form is amended forward;
@@ -660,7 +674,8 @@ orbit about an attractor, and its shape is set by gravity:
   sample's bodies and each pair's factorisations, held under the task's
   citation (`Mind::perceive_envelope`) before the word path (claims
   `rank_three_task_is_perceived`, `rank_one_task_is_perceived`).
-- Shear, precession and the refusal of a `Loop` are S9's.
+- Shear and precession in the contemplation are S9's; the carrier reads
+  a resonant orbit and refuses an unbound path since S7 stage 2.
 
 **Built (track 26 S4c, v0.4.0 in progress).**
 - **A claim of factorisation on the wire**, a claim kind under the solve
@@ -1058,13 +1073,13 @@ track 26 S4c).
 | The chart of a section read as turns (§3.1, §3.7): the section's span is its frame, one phase per plane axis of the span's extent, and each site the turn `s/p` of its offset from the span's least corner (`Turn::of`); the cube complex reads the turns landed on their periods, and each second moment is read in the frame's own gauge, a turn's offset from the mean turn times the period, with each round's extent. The conformal lift (`lift`'s sphere, quartic moments and towers) is no longer read by the chart. Every chart reading is unchanged, axis for axis: claim `chart_reads_sections_as_turns` reads all 4 095 sections of a `3 × 4` window and four more, translated and in place, against the lift's chart, and the oracle golden reproduces | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)); routing a pair of unequal enclosures through it is open (MU-DERIVATIONS D3.2, O8) | `src/transducer/blade/section_turns.rs` (`SectionTurns`); `blade::section_moduli` |
 | A motion stated as turns (§3.7), read by the court's Conformal law in ℚ/ℤ where no exact versor exists (Niven): composed by addition mod 1, never a rotor; a turn off the frame's periods refused `LeavesPeriods` | **Built** (v0.4.0 T3); its wire form rides the crossing record (MU-HOSTING §5a.10, track 25 X1) | `src/physics/laws/turns.rs` (`verify_turns`) |
 | The well: a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built** | `transducer/field/well.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
-| The well's body (§3.7): a held attractor at the chart its remainder stands on (`Well::centre`, a `carrier::Chart` of the invariant's exact coordinates), its local orbit (`Well.orbit`, none held flat), its membrane its own enclosure (the throat of its own plane, the last of the section's rank plus the lift's), its inflation a gauge reading (the frame state `H·n_Z + R·n_Q` on the membrane's pole basis, `H` the charts its cover closed, `R` its sections' charts still open, stood inside the membrane); its stage a coordinate (`WellStage`: `WellLayer` perception/thought, `ExpansionRing` expanding/rested); its volume and potential readings per lane, its holonomy and precession per lap read from its orbit; the well stated as its body and reconstructed by a court that derives its precession (`Well::put_statement`, `admit_well`) | **Built** (track 26 S7, stage 2); the contemplation's orbits attached to wells are S9a's. The statement's layout changed, a recut | `src/transducer/field/carrier/holding.rs` (`WellBody`, `WellStage`, `Inflation`); `Well::{body, centre, inflation, volume, potential, holonomy, precession, put_statement}`; claims `well_stands_on_its_attractor`, `well_membrane_is_its_enclosure`, `well_volume_and_potential_are_readings_per_lane`, `well_stage_is_a_coordinate_not_a_flag`, `mind_well_stated_and_reconstructed_by_a_court` |
+| The well's body (§3.7): a held attractor at the chart its remainder stands on (`Well::centre`, a `carrier::Chart` of the invariant's exact coordinates), the geodesic orbit it binds (`Well.orbit`, none: flat, its holonomy and precession refused `Unbound`), its membrane its own enclosure (the throat of its own plane, the last of the section's rank plus the lift's), its inflation a gauge reading (the frame state `H·n_Z + R·n_Q` on the membrane's pole basis, `H` the charts its cover closed, `R` its sections' charts still open, stood inside the membrane); its stage a coordinate (`WellStage`: `WellLayer` perception/thought, `ExpansionRing` expanding/rested); its volume and potential readings per lane, its holonomy and precession per revolution read from its orbit; the well stated as its body and reconstructed by a court that derives its curvature (`Well::put_statement`, `admit_well`) | **Built** (track 26 S7, stage 2); the contemplation's orbits attached to wells are S9a's. The statement's layout changed, a recut | `src/transducer/field/carrier/holding.rs` (`WellBody`, `WellStage`, `Inflation`); `Well::{body, centre, inflation, volume, potential, holonomy, precession, put_statement}`; claims `well_stands_on_its_attractor`, `well_membrane_is_its_enclosure`, `well_volume_and_potential_are_readings_per_lane`, `well_stage_is_a_coordinate_not_a_flag`, `mind_well_stated_and_reconstructed_by_a_court` |
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
 | A sample lifted into the field: each body on its chart (rank, measure and boundary faces of grade `n − 1`, coarsest first, invariant under the signed permutations of the phases), each band's two corners as points of one phase per axis, exact in degrees on a named turning plane (axis `i` on `e₊ᵢe₊₍ₙ₊₁₎`, the lift's own plane `n + 1`), the far seam held as 360° with `K = 1`; the field's frame planes on the pole basis, `Cl(p, q)` read per plane; the sample's membrane the throat of its own plane; an axis taken apart coarsest first (`Nested`) | **Built** (track 26 S4a, stage 1, built against LAW-FIELD v1 as proposed); the plane each axis turns on at rank `n` is the lift's convention, open in 78.171 §8; nesting as a fibration of levels, and lifting a family, are stage 2 | `src/transducer/field/carrier/` (`Lifted`, `Point`, `Turning`, `TurningPlane`, `FramePlanes`, `Cyclotomic`, `Nested`); claims `lift_holds_one_phase_per_axis_on_turning_planes`, `lift_keeps_far_seam_as_whole_turn_with_winding_one`, `lift_charts_are_invariant_under_signed_permutation` |
-| The field's charts as an atlas, its transitions as its connection, attractors held with their local orbits and membranes; curvature as the holonomy of an orbit's transitions per lap, read per named plane in degrees with its winding and order, flat where nothing is held; zero precession refused `Loop`; monodromy flat, torsion or rupture; turnings on planes sharing one unit refused `NotExact` with both planes; an angle asked of several planes refused `ScalarCollapse`; infinity outside every enclosure refused `Unenclosed` | **Built** (track 26 S7, stage 1); LAW-FIELD v1's six fixtures stand as claims | `src/transducer/field/carrier/` (`Atlas`, `Chart`, `Transition`, `Orbit`, `Attractor`, `Curvature`, `Holonomy`, `Monodromy`, `Membrane`, `stand`, `FieldRefusal`); `src/transducer/field/carrier/tests/law_field.rs` |
-| The field stated as an object a court reconstructs (§0): an atlas written as its charts, its attractors' centres and membranes' planes, and each lap's steps with their turnings' planes and angles in degrees, never a reading; the court rebuilds every plane, motion, lap and membrane through the carrier's constructors, derives the curvature itself, and admits a mind's claimed curvature on a match, refusing `Differs` with each pair otherwise | **Built** (track 26 S7, stage 1); not on the wire: carrying it is S9's, a wire change | `src/transducer/field/carrier/statement.rs` (`Atlas::put_statement`, `reconstruct`, `admit`, `StatementRefusal`); claims `put_statement_round_trips`, `admit_refuses_claimed_curvature_court_does_not_derive` |
+| The field's charts as an atlas, its transitions as its connection, attractors held with the orbits they bind and their membranes; curvature as the holonomy of an orbit's transitions per revolution, read per named plane in degrees with its winding and order, flat where nothing is held; since stage 2 (ruled 2026-11-06) every path a geodesic, a path through a flat region refused `Unbound`, zero precession in a curved field read `Resonant` (`Precession`), the `Loop` refusal retired; monodromy flat, torsion or rupture; turnings on planes sharing one unit refused `NotExact` with both planes; an angle asked of several planes refused `ScalarCollapse`; infinity outside every enclosure refused `Unenclosed` | **Built** (track 26 S7, stage 1); LAW-FIELD v1's six fixtures stand as claims | `src/transducer/field/carrier/` (`Atlas`, `Chart`, `Transition`, `Orbit`, `Attractor`, `Curvature`, `Holonomy`, `Monodromy`, `Membrane`, `stand`, `FieldRefusal`); `src/transducer/field/carrier/tests/law_field.rs` |
+| The field stated as an object a court reconstructs (§0): an atlas written as its charts, its attractors' centres and membranes' planes, and each revolution's steps with their turnings' planes and angles in degrees, never a reading; the court rebuilds every plane, motion, revolution and membrane through the carrier's constructors, derives the curvature itself, and admits a mind's claimed curvature on a match, refusing `Differs` with each pair otherwise | **Built** (track 26 S7, stage 1); not on the wire: carrying it is S9's, a wire change | `src/transducer/field/carrier/statement.rs` (`Atlas::put_statement`, `reconstruct`, `admit`, `StatementRefusal`); claims `put_statement_round_trips`, `admit_refuses_claimed_curvature_court_does_not_derive` |
 | The field's curvature read from the orbits the contemplation holds, turnings on planes that share a unit composed, the field's motions as one exact group, its forces (axiomatic gravity's shear of the orthogonal class; the court's pressure) | **Specified** | Track 26, S7 stage 2, S8, S9 |
 | One field carrier shared by perception and the physics' shells: LAW-FIELD v1 | **Proposed**; netstratum has read the fixtures, xylarium's reading is owed; mycelium's carrier is built against it as proposed and amended if the joint reading changes the law | [proposal](proposals/78.171-law-field.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36); `src/transducer/field/carrier/` |
 | **Defect:** spheres built Euclidean, from a squared radius with `e∞` | **Built, refused** by §3.7 and law 11 | `cga/embedding.rs` (`sphere_at`, `on_sphere`), `cga/at_three.rs` (`sphere`) |

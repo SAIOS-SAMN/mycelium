@@ -5,9 +5,9 @@
 //! atlas, its membrane its own enclosure, its stage a coordinate, its
 //! inflation the gauge of a frame state read through its pole basis.
 
-use super::atlas::{Atlas, Attractor, Chart, Orbit, Transition};
+use super::atlas::{Atlas, Attractor, Chart, Orbit, Precession};
 use super::enclosing::{stand, Labels, Membrane};
-use super::holonomy::{Holonomy, Motion};
+use super::holonomy::Holonomy;
 use super::refusal::FieldRefusal;
 use super::turning::FramePlanes;
 use crate::core::Q;
@@ -79,9 +79,10 @@ pub struct Inflation {
 
 /// A WELL'S BODY (78.171 §2, a well): the curvature around one attractor.
 /// It holds the frame planes it stands on, the attractor (its centre, a
-/// chart; its local orbit; its membrane, the throat of the planes' own
-/// last plane, as a lifted sample's is), and its stage. No mass, radius or
-/// count is held: its holonomy, precession and inflation are readings.
+/// chart; the geodesic orbit it binds, none in a flat region; its
+/// membrane, the throat of the planes' own last plane, as a lifted
+/// sample's is), and its stage. No mass, radius or count is held: its
+/// holonomy, precession and inflation are readings.
 #[derive(Clone, Debug)]
 pub struct WellBody {
     planes: FramePlanes,
@@ -91,17 +92,10 @@ pub struct WellBody {
 
 impl WellBody {
     /// THE BODY OF A WELL AT `centre` on `planes`: its membrane the throat
-    /// of the planes' last plane, its local orbit `orbit`, or where none is
-    /// held the lap that stays at its centre by the identity (flat). Refused
-    /// as the membrane refuses its plane, and as the atlas refuses a chart
-    /// of the orbit (`NotCharted` cannot arise: the atlas is the body's own
-    /// charts).
+    /// of the planes' last plane, the orbit it binds `orbit` (none: flat).
+    /// Refused as the membrane refuses its plane.
     pub fn of(planes: FramePlanes, centre: Chart, orbit: Option<Orbit>, stage: WellStage) -> Result<WellBody, FieldRefusal> {
         let membrane = Membrane::of(&planes, planes.count())?;
-        let orbit = match orbit {
-            Some(o) => o,
-            None => Orbit::of(vec![Transition { from: centre.clone(), to: centre.clone(), motion: Motion::identity() }])?,
-        };
         WellBody::held(planes, Attractor { centre, orbit, membrane }, stage)
     }
 
@@ -117,7 +111,7 @@ impl WellBody {
     /// its planes, holding its one attractor.
     pub fn atlas(&self) -> Result<Atlas, FieldRefusal> {
         let mut charts = vec![self.attractor.centre.clone()];
-        charts.extend(self.attractor.orbit.charts());
+        charts.extend(self.attractor.orbit.iter().flat_map(Orbit::charts));
         let mut atlas = Atlas::of(self.planes, charts);
         atlas.hold(self.attractor.clone())?;
         Ok(atlas)
@@ -148,15 +142,18 @@ impl WellBody {
         self.stage
     }
 
-    /// THE HOLONOMY OF ITS LOCAL ORBIT PER LAP (78.171 §3.1).
+    /// THE HOLONOMY OF ITS ORBIT PER REVOLUTION (78.171 §3.1), the
+    /// curvature around it. Refused `Unbound` with its centre where it
+    /// binds no orbit.
     pub fn holonomy(&self) -> Result<Holonomy, FieldRefusal> {
-        self.attractor.orbit.holonomy()
+        self.attractor.holonomy()
     }
 
-    /// THE PRECESSION PER LAP (78.171 §3.3): refused `Loop` with the lap's
-    /// charts where the well's orbit returns exactly, as a flat well's does.
-    pub fn precession(&self) -> Result<Holonomy, FieldRefusal> {
-        self.attractor.orbit.precession()
+    /// THE PRECESSION PER REVOLUTION (78.171 §3.3): its orbit's advance, or
+    /// `Resonant` where the closed geodesic returns exactly. Refused
+    /// `Unbound` with its centre where it binds no orbit.
+    pub fn precession(&self) -> Result<Precession, FieldRefusal> {
+        self.attractor.precession()
     }
 
     /// THE INFLATION AT `hold` AND `reach`: the frame state built on the

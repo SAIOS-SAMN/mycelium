@@ -4,16 +4,16 @@
 //! ROADMAP track 10): the statement writes no reading, and the court derives each.
 
 use super::super::*;
-use super::fixtures::{atlas_holding, lap_turning, plane, three_charts};
+use super::fixtures::{atlas_holding, plane, revolution_turning, three_charts};
 
 /// A stated atlas reconstructs to the same charts and, derived afresh by
-/// the court, the same curvature around each attractor: the 90° precession
-/// of a lap of three 30° steps.
+/// the court, the same curvature around each attractor: the 90° holonomy
+/// of a revolution of three 30° steps.
 #[test]
 fn put_statement_round_trips() {
     let (lifted, charts) = three_charts();
     let p = plane(&lifted.frame, 1, 2);
-    let atlas = atlas_holding(&lifted, lap_turning(&charts, &p, 30, 1));
+    let atlas = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
     let mut stated = Vec::new();
     atlas.put_statement(&mut stated);
     let rebuilt = reconstruct(&stated).expect("reconstructs");
@@ -29,37 +29,37 @@ fn put_statement_round_trips() {
 fn admit_refuses_claimed_curvature_court_does_not_derive() {
     let (lifted, charts) = three_charts();
     let p = plane(&lifted.frame, 1, 2);
-    let atlas = atlas_holding(&lifted, lap_turning(&charts, &p, 30, 1));
+    let atlas = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
     let mut stated = Vec::new();
     atlas.put_statement(&mut stated);
     assert_eq!(admit(&stated, &atlas.curvature()), Ok(atlas.curvature()));
-    let other = atlas_holding(&lifted, lap_turning(&charts, &p, 45, 1)).curvature();
+    let other = atlas_holding(&lifted, revolution_turning(&charts, &p, 45, 1)).curvature();
     let expected = vec![(Some(other[0].clone()), Some(atlas.curvature()[0].clone()))];
     assert_eq!(admit(&stated, &other), Err(StatementRefusal::Differs { pairs: expected }));
 }
 
 /// A well's body is stated as its own atlas and its stage, and a court
-/// reconstructs it and derives its precession itself: the 90° of three 30°
-/// steps admitted, a claim of 135° refused `Differs` with the pair, and a
-/// flat well's `Loop` derived on both sides.
+/// reconstructs it and derives its curvature itself: the 90° of three 30°
+/// steps per revolution admitted, a claim of 135° refused `Differs` with
+/// the pair, and a flat well's `Unbound` derived on both sides.
 #[test]
-fn well_body_stated_and_admitted_by_its_precession() {
+fn well_body_stated_and_admitted_by_its_curvature() {
     let (lifted, charts) = three_charts();
     let p = plane(&lifted.frame, 1, 2);
-    let body = WellBody::of(lifted.frame, charts[0].clone(), Some(lap_turning(&charts, &p, 30, 1)), WellStage::perceived()).expect("the well stands");
+    let body = WellBody::of(lifted.frame, charts[0].clone(), Some(revolution_turning(&charts, &p, 30, 1)), WellStage::perceived()).expect("the well stands");
     let mut stated = Vec::new();
     body.put_statement(&mut stated).expect("stated");
-    let claimed = Curvature { centre: charts[0].clone(), holonomy: body.precession() };
+    let claimed = Curvature { centre: charts[0].clone(), holonomy: body.holonomy() };
     let admitted = admit_well(&stated, &claimed).expect("admitted");
     assert_eq!(admitted.stage(), WellStage::perceived(), "the stage is stated and read back");
-    let other = WellBody::of(lifted.frame, charts[0].clone(), Some(lap_turning(&charts, &p, 45, 1)), WellStage::perceived()).expect("stands");
-    let wrong = Curvature { centre: charts[0].clone(), holonomy: other.precession() };
+    let other = WellBody::of(lifted.frame, charts[0].clone(), Some(revolution_turning(&charts, &p, 45, 1)), WellStage::perceived()).expect("stands");
+    let wrong = Curvature { centre: charts[0].clone(), holonomy: other.holonomy() };
     assert_eq!(admit_well(&stated, &wrong).map(|_| ()), Err(StatementRefusal::Differs { pairs: vec![(Some(wrong.clone()), Some(claimed))] }));
     let flat = WellBody::of(lifted.frame, charts[1].clone(), None, WellStage::default()).expect("stands");
     let mut stated = Vec::new();
     flat.put_statement(&mut stated).expect("stated");
-    let loop_ = Curvature { centre: charts[1].clone(), holonomy: Err(FieldRefusal::Loop { charts: vec![charts[1].clone()] }) };
-    assert!(admit_well(&stated, &loop_).is_ok(), "a flat well's Loop is derived, never a stored reading");
+    let unbound = Curvature { centre: charts[1].clone(), holonomy: Err(FieldRefusal::Unbound { charts: vec![charts[1].clone()] }) };
+    assert!(admit_well(&stated, &unbound).is_ok(), "a flat well's Unbound is derived, never a stored reading");
 }
 
 /// A stated atlas holding two attractors is no well: refused `Malformed`.
@@ -67,8 +67,8 @@ fn well_body_stated_and_admitted_by_its_precession() {
 fn reconstruct_well_refuses_an_atlas_of_two_attractors() {
     let (lifted, charts) = three_charts();
     let p = plane(&lifted.frame, 1, 2);
-    let mut atlas = atlas_holding(&lifted, lap_turning(&charts, &p, 30, 1));
-    atlas.hold(Attractor { centre: charts[1].clone(), orbit: lap_turning(&charts, &p, 30, 1), membrane: lifted.membrane.clone() }).expect("held");
+    let mut atlas = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
+    atlas.hold(Attractor { centre: charts[1].clone(), orbit: Some(revolution_turning(&charts, &p, 30, 1)), membrane: lifted.membrane.clone() }).expect("held");
     let mut stated = Vec::new();
     atlas.put_statement(&mut stated);
     stated.extend([0, 0]);

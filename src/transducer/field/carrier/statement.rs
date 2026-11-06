@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! MU-SENSING §0, LAW-FIELD v1 §5 (proposal 78.171) — THE FIELD STATED: an
-//! atlas written as its objects (charts, attractors, laps, angles), never its
+//! atlas written as its objects (charts, attractors, revolutions, angles), never its
 //! readings, and reconstructed through the carrier's own constructors.
 
 use super::atlas::{Atlas, Attractor, Chart, Curvature, Orbit, Transition};
@@ -57,20 +57,25 @@ fn put_turning(out: &mut Vec<u8>, t: &Turning) {
 
 impl Atlas {
     /// THE FIELD STATED: the frame's plane count; the charts; then each
-    /// attractor's centre, its membrane's plane and its lap, each step's
-    /// two charts and its turnings (each plane's square and two indices,
-    /// and its angle in degrees, exact). No reading is written: the
-    /// holonomies, windings and orders are the reconstruction's to derive.
+    /// attractor's centre, its membrane's plane and the revolution of the
+    /// orbit it binds (no step where it binds none), each step's two charts
+    /// and its turnings (each plane's square and two indices, and its angle
+    /// in degrees, exact). No reading is written: the holonomies, windings
+    /// and orders are the reconstruction's to derive.
     pub fn put_statement(&self, out: &mut Vec<u8>) {
         put_key_count(out, self.frame().count() as usize);
         put_key_count(out, self.charts().len());
         self.charts().iter().for_each(|c| put_chart(out, c));
         put_key_count(out, self.attractors().len());
         for a in self.attractors() {
+            let revolution = match &a.orbit {
+                Some(o) => o.revolution(),
+                None => &[],
+            };
             put_chart(out, &a.centre);
             put_key_count(out, a.membrane.plane() as usize);
-            put_key_count(out, a.orbit.lap().len());
-            for t in a.orbit.lap() {
+            put_key_count(out, revolution.len());
+            for t in revolution {
                 put_chart(out, &t.from);
                 put_chart(out, &t.to);
                 put_key_count(out, t.motion.turnings().len());
@@ -138,13 +143,18 @@ impl Reader<'_> {
         for _ in 0..self.count()? {
             let centre = self.chart()?;
             let membrane = Membrane::of(&frame, self.index()?)?;
-            let mut lap = Vec::new();
+            let mut revolution = Vec::new();
             for _ in 0..self.count()? {
                 let (from, to) = (self.chart()?, self.chart()?);
                 let turnings = (0..self.count()?).map(|_| self.turning(&frame)).collect::<Result<Vec<_>, _>>()?;
-                lap.push(Transition { from, to, motion: Motion::of(turnings)? });
+                revolution.push(Transition { from, to, motion: Motion::of(turnings)? });
             }
-            atlas.hold(Attractor { centre, orbit: Orbit::of(lap)?, membrane })?;
+            // No step stated: the attractor binds no orbit.
+            let orbit = match revolution.as_slice() {
+                [] => None,
+                _ => Some(Orbit::of(revolution)?),
+            };
+            atlas.hold(Attractor { centre, orbit, membrane })?;
         }
         Ok(atlas)
     }
@@ -178,9 +188,9 @@ impl Reader<'_> {
 }
 
 /// THE FIELD RECONSTRUCTED FROM ITS STATEMENT: every plane, angle, motion,
-/// lap and membrane rebuilt through the carrier's constructors, so a
-/// motion is derived from its stated angle and a lap that does not close
-/// is refused as [`Orbit::of`] refuses it. Refused `Malformed` at the byte
+/// revolution and membrane rebuilt through the carrier's constructors, so
+/// a motion is derived from its stated angle and a revolution that does
+/// not close, or binds nothing, is refused as [`Orbit::of`] refuses it. Refused `Malformed` at the byte
 /// where the writing stops, or where bytes follow it.
 pub fn reconstruct(stated: &[u8]) -> Result<Atlas, FieldRefusal> {
     let mut r = Reader { b: stated, p: 0 };
@@ -192,7 +202,7 @@ pub fn reconstruct(stated: &[u8]) -> Result<Atlas, FieldRefusal> {
 impl WellBody {
     /// THE WELL STATED (ROADMAP track 26 S7 stage 2): its own atlas stated
     /// (its planes, its charts, its one attractor: centre, membrane plane
-    /// and lap), then its stage, the layer's byte (`0` perception, `1`
+    /// and the revolution of the orbit it binds), then its stage, the layer's byte (`0` perception, `1`
     /// thought) and the ring's (`0` expanding, `1` rested). No reading is
     /// written: the holonomy, precession and inflation are the court's to
     /// derive. Refused as [`WellBody::atlas`] refuses.
@@ -227,14 +237,14 @@ pub fn reconstruct_well(stated: &[u8]) -> Result<WellBody, FieldRefusal> {
 }
 
 /// THE COURT'S ADMISSION OF A STATED WELL: the well reconstructed, its
-/// curvature (the precession of its local orbit per lap, or the refusal
-/// that reading meets, `Loop` for a flat well) derived by the court and
-/// compared with the curvature the mind claims. Admitted with the
-/// reconstruction on a match; refused `Differs` with the pair, or
+/// curvature (the holonomy of its orbit per revolution, or the refusal
+/// that reading meets, `Unbound` for a well binding no orbit) derived by
+/// the court and compared with the curvature the mind claims. Admitted
+/// with the reconstruction on a match; refused `Differs` with the pair, or
 /// `Unreconstructed`.
 pub fn admit_well(stated: &[u8], claimed: &Curvature) -> Result<WellBody, StatementRefusal> {
     let body = reconstruct_well(stated).map_err(StatementRefusal::Unreconstructed)?;
-    let derived = Curvature { centre: body.centre().clone(), holonomy: body.precession() };
+    let derived = Curvature { centre: body.centre().clone(), holonomy: body.holonomy() };
     match &derived == claimed {
         true => Ok(body),
         false => Err(StatementRefusal::Differs { pairs: vec![(Some(claimed.clone()), Some(derived))] }),
