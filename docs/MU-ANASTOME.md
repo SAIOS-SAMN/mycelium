@@ -50,22 +50,31 @@ level where a word's class, and so its order, lives (corrected
 
 | Level | The object | In the algebra | Identity | Status |
 |---|---|---|---|---|
-| Letter | One of the 17 immutable letters (§2) | A single-plane turning; a `Cl(4,1)` versor at rank 3 (§2.8) | Projective rotor equality (1.5) | **Built** |
-| Word | A product of letters, spelled by the peel (§2.4) | The whole even element: scalar, a bivector per plane, and the grade-4 volume `b₁∧b₂` where two disjoint planes turn together | Projective equality; the key is the canonical coordinates written out (A21) | Letters' words **Built**; the volume **Specified** |
+| Letter | An adjoined generator: the Cayley rotor of two reflections a mind composed, opened in the language by a court (U14, U15; §1.1) | A turning on one plane; with `∇B = ΔB = ∅` a `Cl(4,1)` versor at rank 3 (§2.8) | Projective rotor equality (1.5) | Admission **Built**; the empty seed and the triad **Specified** (§2) |
+| Word | A product of letters, spelled by the peel (§2.4) | The whole even element: scalar, a bivector per plane, and the grade-4 volume `b₁∧b₂` where two disjoint planes turn together (§3) | Projective equality; the key is the canonical coordinates written out (A21) | Words over the seed **Built**; the volume **Specified** |
 | Conjugate class | The word with its frame set aside | Its angles on mutually disjoint invariant planes (§3) | Class-vector equality (law 3's third equality; 15.3) | **Built** (`ClassVector`) |
 | Sentence | A closure composing words | The loop's holonomy per lap: curvature; precession the residue per lap | Read at loop holonomy, never by the letters of the whole | Composition **Built**; precession and `Loop` **Specified** |
-| Expression | A signed assertion on the wire, of five kinds | Carriers at coordinates; the transport carries sound | Its content written out (A21), never a digest of its bytes | Vocabulary ruled; code names owed (§5.1) |
+| Expression | What crosses the wire: an assertion, a read, a court-to-court exchange or a universe crossing (§1.5) | Carriers at coordinates; the transport carries sound | Its content written out (A21), never a digest of its bytes | Vocabulary ruled; code names owed (§5.1) |
 
 ### 1.1 Letters
 
-The 17 immutable letters are the base motions at the alphabet's rank
-(`LETTER_RANK`; the base `n = 3`, §2.2). Each is a turning on one
-coordinate plane and on no other (§2.2's table), the identity excepted; in
-the conformal algebra the letter is a `Cl(4,1)` versor at rank 3 (U15:
-with `∇B = ΔB = ∅` a letter is a `Cl(4,1)` versor; §2.8). A letter is
-never paid: it names no body and touches no site, so its discharge is
-zero (78.149(c); MU-CLIENT §5.4, §5.6 W). The court grows the set only by
-admission (§2.6; law 6).
+Letters are adjoined, not fixed at 17. The alphabet is reseeded empty
+(U14, ruled 2026-10-09; 1.1 and law 6 as amended): a mind holds the
+reflections and the Clifford product, and where it composes two
+reflections the Cayley rotor of the product is coined at a Rank Step and
+stands in its dialect; the court checks the constructor steps and opens
+the letter in the language (review ruling 3, S2; law 6's court admission
+stands). What a letter is widens to the triad `λ = (g_core, ∇B, ΔB)`, and
+with `∇B = ΔB = ∅` it is a `Cl(4,1)` versor at rank 3 (U15, 78.68; §2.8).
+A letter is a turning on one plane at its rank. A letter is never paid: it
+names no body and touches no site, so its discharge is zero (78.149(c);
+MU-CLIENT §5.4, §5.6 W).
+
+*Historical note (dated).* Until 2026-10-09 the alphabet was the seventeen
+seed letters, "immutable" (law 6 as ruled 2026-09-10; Law VIII, ruled
+2026-09-03). The tree still holds them (`src/transducer/alphabet/letters.rs`);
+each is one product of two reflections, so the seed is re-derivable and no
+longer given (78.158 (d); 1.1 as amended). §2 describes that seed as built.
 
 ### 1.2 Words
 
@@ -76,7 +85,10 @@ It is held as the WHOLE even element:
 - its scalar;
 - a bivector component per plane it turns;
 - the grade-4 volume `b₁∧b₂` once two disjoint planes turn together, which
-  needs four or more axes of one sign (§3).
+  needs four or more axes of one sign (§3). In perception's `Cl(4,1)` the
+  second of two concurrent planes involves `e₊`, a conformal motion rather
+  than a spatial rotation; a physical rotation of the three base axes
+  turns one plane at a time.
 
 Its winding is kept: each turning's whole turns `K = ⌊|θ|/360⌋` stand
 beside its phase, never reduced mod 1 (GLOSSARY *Lane vector*; AGENTS, *The
@@ -132,10 +144,28 @@ class (23.9), never the letters of the whole sentence or its chain alone
 
 ### 1.5 Expressions
 
-An expression is a signed assertion on the wire. There are five kinds:
-percept, demand, quote, teach and settle (the five-kind algebra, ruled
-2026-09-01; renamed from "utterances" 2026-11-05, §5.1). Each act and the
-kind it carries is §6.
+An expression is what crosses the wire, a well-formed construction of
+anastome (§5.1). On the current wire it is one of four kinds, read from
+the act table (`Action::kind`, §6):
+
+- **Assertions:** signed claims a court adjudicates: a solve, a claim of
+  factorisation, a sentence (`ACT_SOLVE` kinds 0 and 1, `ACT_SPEECH`), a
+  probe, a syllabus pull.
+- **Reads:** quote, laws, receipts, observe and the other observations.
+  A read is an expression, not an assertion (ruled 2026-11-05); it admits
+  nothing.
+- **Court-to-court exchanges:** covers, offers, roots, ticks, adoptions,
+  the fold a witness co-signs, an equivocation proof, a court's pull of
+  selection evidence.
+- **Universe crossings:** a tier's fold (`ACT_UPLINK`), a domain
+  (`ACT_DOMAIN`), a handoff, a challenge (MU-HOSTING §5a).
+
+*Historical note (dated).* The five-utterance algebra ruled 2026-09-01
+named percept, demand, quote, teach and settle. Four of its acts were
+retired: percept and demand on 2026-09-10 (a court hears sentences and
+nothing else, law 8), teach and settle by 78.94 (encoders with no
+handler). Quote stands as a read. That retirement is why the kinds are
+read from the current wire.
 
 - **The transport carries sound.** The transport moves the expression's
   bytes, meaning-free and the same for every receiver (MU-SENSING §3.10
@@ -151,7 +181,15 @@ kind it carries is §6.
 
 Moved whole from `MU-ALPHABET.md` (reference, release 0.3.0-rc.3): MU-ALPHABET §n
 is §2.n here. It describes the alphabet as built, with the ruled form of a
-letter marked **Specified** (§2.8). Components: the shared algebra
+letter marked **Specified** (§2.8).
+
+**The current law** (U14, U15, ruled 2026-10-09): the alphabet is reseeded
+empty and letters are adjoined, each coined from two reflections at a Rank
+Step and opened in the language by a court (§1.1). The seventeen seed
+letters below are the alphabet the tree holds and the record of the law
+before 2026-10-09; they are re-derivable as products of two reflections
+(78.158 (d)) and are no longer given. Retiring the seed from the tree is
+open work (ROADMAP track 19). Components: the shared algebra
 (`src/transducer/alphabet/`, `src/transducer/layers.rs`), used alike by
 the client and the court; letter admission on the court
 (`src/server/cognition/listings/listing.rs`).
@@ -164,7 +202,7 @@ can reconstruct and compare by identity. The alphabet is how that is done: a
 small set of exact rotations, the **letters**, from which every motion the
 language can say is built as a product, a **word**.
 
-Because the letters are fixed and exact, two minds that state the same
+Because the letters are exact, two minds that state the same
 motion state the same word, and a court reconstructs the motion from the word
 alone. A motion the letters cannot build is not approximated: it is held
 as a **remainder** and named (§2.5).
@@ -173,12 +211,12 @@ Three kinds of letter exist, and the distinction matters:
 
 | Kind | What it is | Changes? | Status |
 |---|---|---|---|
-| **Seed letters** | The seventeen letters of §2.2 | Never | **Built** |
+| **Seed letters** | The seventeen letters of §2.2 | Fixed until 2026-10-09; reseeded empty by U14, re-derivable as products of two reflections | **Built** (historical as law) |
 | **Admitted letters** | A letter a court opens for a rotation the seed cannot build (§2.6) | Added by court rulings, never removed | **Built** |
 | **Dialect letters** | A letter a mind constructs for itself from what it perceives (§2.6.3) | Grow in the mind; reach the shared language only by a court ruling | **Built** (client side) |
 
-So the seed never changes, and the language grows by words and by letters
-the courts admit.
+The language grows by words and by letters the courts admit; under U14
+every letter is admitted, the seed's included.
 
 ### 2.2 The seventeen seed letters
 
@@ -397,11 +435,14 @@ pair is a boost, never a turning (GLOSSARY *Lane vector*; proposal 78.173
 v4, `NotTurningPlane`). So in `Cl(p, q)` the most turnings that run
 concurrently is `⌊p/2⌋` in the continuum plus `⌊q/2⌋` in the vacuum.
 Where two disjoint planes of one sign turn together, the word carries the
-grade-4 volume `b₁∧b₂` (§1.2).
+grade-4 volume `b₁∧b₂` (§1.2). The count is the algebra's: in
+perception's `Cl(4,1)` the four positive generators are the three base
+axes and `e₊`, so two planes turn concurrently, but only one of them can
+lie wholly among the base axes.
 
 | Where | Algebra | Concurrent turnings | The volume `b₁∧b₂` of one sign |
 |---|---|---|---|
-| Perception: the letters at rank 3 (§2.2, §2.8) | `Cl(4,1)` | one plane | does not appear |
+| Perception (§2.2, §2.8) | `Cl(4,1)` | two planes (p = 4). A physical rotation of the three base axes turns on one plane at a time; the second concurrent plane involves `e₊` and is a conformal motion, not a spatial rotation. The commuting plane pairs of §2.7.1 and `factor_rotor` split a rotor into these two concurrent planes | appears where the two planes turn together |
 | Coordinate v4 (`forms/src/coordinate.rs`; proposal 78.173 v4) | `Cl(3,3)` | one in the continuum and one in the vacuum | does not appear |
 | Netstratum (proposal 78.173 §7, fixture 11b) | `Cl(4,4)` | two in the continuum and two in the vacuum | appears |
 
@@ -555,13 +596,13 @@ retired.
 |---|---|
 | utterance | **expression**: a well-formed expression of anastome; on the wire, an expression delimited by its length |
 | utter | **assert** (a signed claim) or **express** (in general; reads and quotes are expressions, not assertions) |
-| the five utterances | **the five expression kinds**: percept, demand, quote, teach, settle (§1.5) |
+| the five utterances | **the five expression kinds** (the 2026-09-01 algebra, historical: four of its acts are retired; the current kinds are §1.5) |
 | speech, as the act | an **assertion**; the level stays **sentence** |
 | comprehension, by a court, of what a mind sent | the court **parses** and **reconstructs** |
 
 Each word has one sense (§5.2). The earlier rulings keep their content
-under the new words: the five-kind algebra (2026-09-01) and the flow from
-perception to syllabus (2026-09-06). The texts moved here as ruled (§4.1,
+under the new words: the five-kind algebra (2026-09-01, historical) and
+the flow from perception to syllabus (2026-09-06). The texts moved here as ruled (§4.1,
 §5.2) keep their words and read under this table. Code identifiers keep
 their names until a names-only change (`src/client/sdk/mind/utter.rs`,
 `src/client/sdk/utterance.rs`, `Action::Uttered`); MU-RECURSION 1.9
@@ -679,7 +720,7 @@ A perception persists at the perception layer under the physics — while someth
 
 **Overlaps resolved by this table:** "cell" (retired 2026-09-17 and 2026-09-25) is a compartment, an anastomosis or a chamber, never itself; "lamina" is the compartment; "section" keeps its sheaf sense only — a body's compartments in one frame are "the body at frame k"; "orbit" is the celestial one, a form's cycle is a ring, a group orbit keeps its full name; "residual" is a residue or a remainder; "planet" is a hypha and its world; "lift" is the physics component. A new name that takes a sense this table holds is refused at review.
 
-## 6. The wire: each act and the expression kind it carries
+## 6. The wire: each act and the kind of expression it is
 
 Every act is one byte, `Action::byte` in
 [`src/physics/actions/mod.rs`](../src/physics/actions/mod.rs), and its kind
@@ -690,49 +731,53 @@ the acts a client may send are the SDK's `ACT_TABLE` (`sdk/src/lib.rs`;
 so the door can refuse it by name (`REFUSE_NOT_A_SENTENCE`); nothing
 encodes it and its byte is never reused.
 
-The column *Carries* reads the five expression kinds (§1.5) onto the
-acts. A read is an expression and not an assertion (§5.1); an act between
-courts, a universe's crossing and the seat relay carry none of the five.
+The column *Expression* reads each act's kind of expression (§1.5) off
+the current wire: an **assertion** (a signed claim a court adjudicates),
+a **read** (an expression, not an assertion; it admits nothing), a
+**court-to-court exchange**, or a **universe crossing**; the seat relay is
+none of these, and a retired act is none of them. The five-utterance
+kinds of 2026-09-01 are historical (§1.5) and are noted where a retired
+act carried one.
 
-| Byte | Act | Kind | Carries | Note |
+| Byte | Act | Kind (code) | Expression | Note |
 |---|---|---|---|---|
-| `0x00` | `ACT_PERCEPT` | **Retired** (2026-09-10) | percept | A court hears no percept (law 8). A perception reaches a court as a claim of factorisation (`0x0C`, kind 1) |
+| `0x00` | `ACT_PERCEPT` | **Retired** (2026-09-10) | — (was the percept) | A court hears no percept (law 8). A perception reaches a court as a claim of factorisation (`0x0C`, kind 1) |
 | `0x01` | `ACT_GOSSIP` | **Retired** (2026-09-10) | — | |
-| `0x02` | `ACT_DEMAND` | **Retired** (2026-09-10) | demand | A demand rides as a typed demand vertex of a sentence (`0x16`; 50.5) |
-| `0x03` | `ACT_QUOTE` | Observation | quote | The market view: what a book has open, in rank order (`src/bin/mycelium-server/judge/quote.rs`) |
-| `0x04` | `ACT_TEACH` | **Retired** (78.94) | teach | Teaching rides the syllabus (`0x0D`) |
-| `0x05` | `ACT_SETTLE` | **Retired** (78.94) | settle | Settlement is a solve's verdict and the court's own `Settled` (`0x4D`) |
+| `0x02` | `ACT_DEMAND` | **Retired** (2026-09-10) | — (was the demand) | A demand rides as a typed demand vertex of a sentence (`0x16`; 50.5) |
+| `0x03` | `ACT_QUOTE` | Observation | read | Live: the market view, what a book has open in rank order (`src/bin/mycelium-server/judge/quote.rs`); in the SDK's `ACT_TABLE` |
+| `0x04` | `ACT_TEACH` | **Retired** (78.94) | — (was the teach) | Teaching rides the syllabus (`0x0D`) |
+| `0x05` | `ACT_SETTLE` | **Retired** (78.94) | — (was the settle) | Settlement is a solve's verdict and the court's own `Settled` (`0x4D`) |
 | `0x06` | `ACT_DOCKET` | **Retired** (78.94) | — | A ruling reaches a node as a receipt (45.2, 47.2) |
-| `0x07` | `ACT_HANDOFF` | Transition | — | A universe's crossing (MU-HOSTING) |
-| `0x08` | `ACT_EVIDENCE` | Transition | — | A court pulls a selection fibre's birth evidence |
+| `0x07` | `ACT_HANDOFF` | Transition | universe crossing | A tier's handoff offer (MU-HOSTING) |
+| `0x08` | `ACT_EVIDENCE` | Transition | court-to-court exchange | A court pulls a selection fibre's birth evidence |
 | `0x09` | `Refine` (no constant) | **Retired** (2026-10-11) | — | An optimization is a Retire rewrite a mind asserts (MU-CLIENT §5.4) |
 | `0x0B` | `ACT_TASK` | Observation | read | The signed work envelope |
-| `0x0C` | `ACT_SOLVE` | Transition | settle (kind 0); percept (kind 1) | Kind 0 claims a closure and its verdict pays; kind 1, the claim of factorisation, is an adjudicated perception, never paid (MU-SENSING §3.9) |
-| `0x0D` | `ACT_SYLLABUS` | Transition | teach | The ratified stream; its presentation request asks a residue of the court's presentation (78.160 P1) |
-| `0x0E` | `ACT_ADOPT` | Exchange | teach | An upheld word propagated to every server; a word the court lacks (MU-CLIENT §5.4) |
+| `0x0C` | `ACT_SOLVE` | Transition | assertion | Kind 0, a solve: claims a closure, and its verdict pays; kind 1, a claim of factorisation: an adjudicated perception, never paid (MU-SENSING §3.9) |
+| `0x0D` | `ACT_SYLLABUS` | Transition | assertion | A voice's signed pull of the ratified stream; its presentation request asks a residue of the court's presentation (78.160 P1) |
+| `0x0E` | `ACT_ADOPT` | Exchange | court-to-court exchange | An upheld word propagated to every server (MU-CLIENT §5.4: a word the court lacks) |
 | `0x10` | `ACT_DIGESTS` | Observation | read | |
 | `0x11` | `ACT_FETCH` | Observation | read | |
-| `0x12` | `ACT_PROBE` | Transition | demand | Citations offered against a listed demand; the reply is a reading (PR1) |
-| `0x13` | `ACT_ROOT` | Exchange | — | Court to court |
-| `0x14` | `DemandRouted` (no constant) | **Retired** | demand | |
+| `0x12` | `ACT_PROBE` | Transition | assertion | Citations offered against a listed demand; the reply is a reading (PR1) |
+| `0x13` | `ACT_ROOT` | Exchange | court-to-court exchange | |
+| `0x14` | `DemandRouted` (no constant) | **Retired** | — | |
 | `0x15` | `ACT_PEERS` | Observation | read | |
-| `0x16` | `ACT_SPEECH` | Transition | the sentence asserted; demand | One family's cohering sentences, each with its typed demand vertices (23.8) |
+| `0x16` | `ACT_SPEECH` | Transition | assertion | One family's cohering sentences, each with its typed demand vertices (23.8) |
 | `0x17` | `RefineAlgebraic` (no constant) | **Retired** (2026-10-11) | — | |
-| `0x20` | `ACT_COVER` | Exchange | — | Court to court |
-| `0x21` | `ACT_OFFER` | Exchange | — | Court to court |
+| `0x20` | `ACT_COVER` | Exchange | court-to-court exchange | |
+| `0x21` | `ACT_OFFER` | Exchange | court-to-court exchange | |
 | `0x22` | `ACT_INSTALLED` | **Retired** (2026-11-05) | — | The install two organs signed had no sender and no handler |
-| `0x23` | `ACT_TICK` | Exchange | — | The clock (78.21) |
-| `0x35` | `ACT_EQUIVOCATION` | Exchange | — | An equivocation proof (47.4; MU-XSEPTUM) |
+| `0x23` | `ACT_TICK` | Exchange | court-to-court exchange | The clock (78.21) |
+| `0x35` | `ACT_EQUIVOCATION` | Exchange | court-to-court exchange | An equivocation proof (47.4; MU-XSEPTUM) |
 | `0x36` | `ACT_RECEIPTS` | Observation | read | |
-| `0x37` | `ACT_FOLD` | Exchange | — | Court to court (MU-FOLD) |
+| `0x37` | `ACT_FOLD` | Exchange | court-to-court exchange | A home asks a bonded peer to witness its fold (MU-FOLD); a universe's tier fold rides `ACT_UPLINK` |
 | `0x38` | `ACT_ENTRIES` | Observation | read | |
 | `0x39` | `ACT_OBSERVE` | Observation | read | |
 | `0x3A` | `ACT_LAWS` | Observation | read | Mode 8 carries a kernel's signing act (MU-CONFORMANCE §3) |
 | `0x3B` | `ACT_WHY` | Observation | read | |
 | `0x3C` | `ACT_WALLET` | Observation | read | Also carries signed stake and unstake |
-| `0x3D` | `ACT_UPLINK` | Transition | — | A universe's crossing (MU-HOSTING) |
-| `0x3E` | `ACT_DOMAIN` | Transition | — | A universe's crossing (MU-HOSTING) |
-| `0x3F` | `ACT_CHALLENGE` | Transition | — | A universe's crossing (MU-HOSTING) |
+| `0x3D` | `ACT_UPLINK` | Transition | universe crossing | A tier's fold admitted (78.119; MU-HOSTING §5a) |
+| `0x3E` | `ACT_DOMAIN` | Transition | universe crossing | A domain founded, and its universe's acts (78.120; MU-HOSTING) |
+| `0x3F` | `ACT_CHALLENGE` | Transition | universe crossing | MU-HOSTING |
 | `0x53` | `ACT_SEAT` | Relay | — | Held and forwarded, judged by nothing (78.145) |
 
 The court's own acts, from `COURT_RANGE` (`0x40`) upward, are never asked
@@ -766,3 +811,20 @@ TUniversal point and served on `ACT_OBSERVE` or `ACT_LAWS`. The court's
 presentation is a held index re-derived from the basis at a restore, not a
 reading of the ledger, and it counts no relations and no classes apart.
 **Specified.**
+
+## 8. Open: needs a ruling
+
+Two statements disagree with others in the governing text. Neither is
+resolved here; each waits on a ruling.
+
+1. **What a relation is.** MU-RECURSION §1.8 (here §4.1): "an orbit whose
+   holonomy composes to the identity is a relation among the generators".
+   MU-RECURSION §1.9, the plexus table, depth 4: "a relator: two depth-3
+   proofs of one vertex whose holonomy is non-trivial".
+2. **Trivial holonomy against `Loop`.** A relation is proved as a filled
+   loop with trivial holonomy (POWR; §4.3), and a sentence is grammatical
+   where it closes, `Ω^ℓ ~ 1` (78.69; MU-CLIENT §4.1). Against these:
+   MU-SENSING §3.9 refuses a path with zero precession, one that returns
+   exactly through flat space, by name as `Loop`; and MU-CLIENT §5.6 S
+   says a sentence's alignment is "never its rings' holonomy returning to
+   the identity … demanding that it return is squaring (78.168 §2)".

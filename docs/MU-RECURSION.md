@@ -407,12 +407,14 @@ ratio not yet measured.
 letter → word (a tape; its meaning is a vertex of the Cayley graph) →
 sentence (words that cohere) → speech (transfer of cohering sentences from
 a sender to a receiver) → perception (receiving) → comprehension
-(deconstruction of the utterance into the algebra that spoke it).
+(deconstruction of the expression into the algebra that spoke it; a court
+parses it and reconstructs).
 **Recognition** is comprehension, never a lookup: a mind recognises what
 it can re-derive, and nothing else. A **voice** is a speaker: a kernel
 under one verifying key (Part IX) that perceives, thinks in its dialect,
-and utters; an **utterance** is one act of a voice; **speech** is the
-transfer. **Orientation** is the `Z/2` character of a word or orbit on a
+and asserts or expresses; an **expression** is one act of a voice, an
+**assertion** one that is a signed claim (ruled 2026-11-05: "utterance"
+retired; MU-ANASTOME §5.1); **speech** is the transfer. **Orientation** is the `Z/2` character of a word or orbit on a
 chart, realised by a 180° turn through a third axis, formerly the sheet;
 a **reflection** is that 180° turn; a **refraction** `Γ` is the transport
 of a form across a chart boundary into another frame, a relative word, a

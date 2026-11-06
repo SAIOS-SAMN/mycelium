@@ -29,8 +29,10 @@ corpus manifests (configuration) and the ledger or genome it writes
 
 ## 2. The language
 
-- **Alphabet** (`transducer/alphabet/`, `MU-ANASTOME.md` §2): seventeen
-  immutable Cayley letters as exact Cl(4,0) rotors. Words are oriented
+- **Alphabet** (`transducer/alphabet/`, `MU-ANASTOME.md` §2): the
+  seventeen seed Cayley letters the tree holds, as exact Cl(4,0) rotors;
+  by law the alphabet is reseeded empty and letters are adjoined (U14,
+  `MU-ANASTOME.md` §1.1). Words are oriented
   tapes; spelling is a peel; a motion the alphabet cannot spell is a
   remainder, never a word.
 - **Element** (`transducer/element/`): a word. Residue germs carry a
@@ -98,9 +100,10 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   - client work and language: `ACT_TASK`, `ACT_SOLVE`, `ACT_SPEECH`,
     `ACT_SYLLABUS`, `ACT_ADOPT`, `ACT_DIGESTS`, `ACT_FETCH`, `ACT_PROBE`,
     `ACT_PEERS`;
-  - readers any party may send, which admit nothing: `ACT_OBSERVE`,
-    `ACT_LAWS`, `ACT_WHY`, `ACT_WALLET` (which also carries signed stake
-    and unstake), `ACT_RECEIPTS`, `ACT_ENTRIES`;
+  - readers any party may send, which admit nothing: `ACT_QUOTE` (the
+    market view), `ACT_OBSERVE`, `ACT_LAWS`, `ACT_WHY`, `ACT_WALLET`
+    (which also carries signed stake and unstake), `ACT_RECEIPTS`,
+    `ACT_ENTRIES`;
   - hypha to hypha (the court organ and the clock): `ACT_COVER`,
     `ACT_OFFER`, `ACT_EVIDENCE`, `ACT_ROOT`, `ACT_TICK`,
     `ACT_FOLD`;
@@ -109,7 +112,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   - the seat surface for hosted games: `ACT_SEAT`;
   - xSEPTUM: `ACT_EQUIVOCATION` (`MU-RECURSION.md` 47.4) is built and the
     rest of its range is reserved;
-  - retired acts (`ACT_PERCEPT`, `ACT_GOSSIP`, `ACT_DEMAND`, `ACT_QUOTE`,
+  - retired acts (`ACT_PERCEPT`, `ACT_GOSSIP`, `ACT_DEMAND`,
     `ACT_TEACH`, `ACT_SETTLE`, `ACT_DOCKET`, `ACT_INSTALLED`), whose
     bytes stand only so the door can refuse them by name; the routed
     demand's byte (0x14) stands in `Action::DemandRouted` alone, with no
@@ -252,14 +255,15 @@ gate holds the first boundary: no transport source names a carrier type
 | Carrier | `Mv` (`Cl(p, q)`, carrying its `n` and signature; `algebra/src/multivector.rs`), `Sample` (rank `n`; `src/transducer/sample.rs`), `Modes` (μ per lane as vectors; `src/economy/modes.rs`), `Coordinate` (lanes as keyed vectors; `forms/src/coordinate.rs`), `SectionSite`, `Turn`, and the passage's hold and reach (`forms/src/passage.rs`) | Its own description: rank, signature, lane keys; its canonical writing | A projection to fewer dimensions: a scalar per lane, a fixed four, a floor, `==` on a digest as identity |
 | Coordinate | A body at `origin / h : S:G:T:H : K` (proposal 78.173); an event at a TUniversal height on a signer's line, at its position `i`; a site within a sample | Where a thing stands; the route to it | Identity: a coordinate locates and routes, and never names what stands there. TUniversal stamps an event and never drives an advance |
 
-**Composition.** The transport carries utterances: anastome acts, each
-its tag, its content, its signature and the TUniversal point its speaker
-read. An utterance's identity is its content written out
+**Composition.** The transport carries expressions: anastome acts, each
+its tag, its content, its signature and the TUniversal point its sender
+read. An expression's identity is its content written out
 (`MU-RECURSION.md` A21), never a digest of its bytes. Its carriers stand
-at coordinates. An admitted utterance is an event of the
+at coordinates. An admitted expression is an event of the
 multi-dimensional ledger (lane × layer × grade). What the transport
-carries is anastome: its expressions, their five kinds and each act's
-kind are [MU-ANASTOME](MU-ANASTOME.md) §1.5 and §6.
+carries is anastome: its expressions (assertions, reads, court-to-court
+exchanges and universe crossings) and each act's kind are
+[MU-ANASTOME](MU-ANASTOME.md) §1.5 and §6.
 
 **Sound is a case of the model** (MU-SENSING §3.10, stated there once).
 The transport carries sound's bytes meaning-free, the same for every
@@ -279,7 +283,7 @@ is refused as stale.
 | Violation | Where | Fix | When |
 |---|---|---|---|
 | The frame's lane byte: the transport labels meaning. Every act is written on `Lane::Spatial` and every reply echoes the request's lane; no reader decides on it | `src/network/wire.rs` (`Lane`, `WireFrame::lane`), `src/bin/mycelium-server/transport.rs`; about 77 `WireFrame` writes, among them `src/client/sdk/session.rs`; the SDK re-exports `Lane`, `read_lane` and `POINTED` (`sdk/src/house.rs`) | The envelope becomes a length and a body; the lane byte is removed | v0.5.0, a breaking wire release |
-| The TUniversal point rides the envelope: the pointed frame's flag bit and trailer (78.152 TU-7) | `src/network/wire.rs` (`POINTED`, `encode_at`, `split_point`), `src/network/noise.rs`, `src/bin/mycelium-server/transport.rs` | The point read moves into the utterance, beside its tag, content and signature; MU-CONCORDANCE 1.11 says "behind its body on the frame" and changes with it (*Network contract*) | v0.5.0, with the lane byte (proposed) |
+| The TUniversal point rides the envelope: the pointed frame's flag bit and trailer (78.152 TU-7) | `src/network/wire.rs` (`POINTED`, `encode_at`, `split_point`), `src/network/noise.rs`, `src/bin/mycelium-server/transport.rs` | The point read moves into the expression, beside its tag, content and signature; MU-CONCORDANCE 1.11 says "behind its body on the frame" and changes with it (*Network contract*) | v0.5.0, with the lane byte (proposed) |
 | The transport reads and writes content: the frame's encoder reads the act tag for the observer (`act_tag`), and the door writes a refusal body (`encode_outcome`) | `src/network/wire.rs`, `src/bin/mycelium-server/transport.rs` | The observer counts bytes by act above the transport; the refusal is spoken by the judge layer | Open (found by this audit) |
 | `Mu` as four scalar lanes | `src/economy/mu.rs` | `Modes` replaces `Mu` (ROADMAP 1b) | v0.5.0 |
 | `[u64; 4]` in quotes and deferrals | `src/anastome/dialogue/quote.rs` (`encode_outcome`, `encode_deferral`) | `Modes` on the wire | v0.5.0 |
@@ -301,7 +305,7 @@ counted under the meaning of their area, not apiece.
 
 | Meaning | Where (examples) | Code identifiers | Document phrases | Proposed name |
 |---|---|---|---|---|
-| The wire envelope: one act's bytes with their lane byte and length | `WireFrame`, `frame_budget`, `read_frame`, `write_frame`, `hear_frame`, `FrameOverBudget`, `PageEnd::Frame`, `Inflow::Frame`, `receipts_frame`, the era file's `append_frame` | about 254 | about 57 | An utterance delimited by its length: `Delimited` for the envelope, `BODY_BUDGET` alone for the budget, `read_delimited`, `PageEnd::Budget`; the era file's record is a `record` |
+| The wire envelope: one act's bytes with their lane byte and length | `WireFrame`, `frame_budget`, `read_frame`, `write_frame`, `hear_frame`, `FrameOverBudget`, `PageEnd::Frame`, `Inflow::Frame`, `receipts_frame`, the era file's `append_frame` | about 254 | about 57 | An expression delimited by its length: `Delimited` for the envelope, `BODY_BUDGET` alone for the budget, `read_delimited`, `PageEnd::Budget`; the era file's record is a `record` |
 | One sample of a family along `e₃` (78.75; the GLOSSARY's *Frame* today) | `Frames`, `frame_key`, `frame_spelling`, `put_frame`, `member_frames`, `section_of_frames`, `at_frame_zero`, `perceive_frames`, `edges_rederive_frames`, `HeldPose::OneFrame` | about 254 | about 44, and most of MU-RECURSION's 538 | The family's sample `k`: `sample_key`, `sample_spelling`, `samples_of_section`, `HeldPose::OneSample` |
 | The sample's own extent, read as a whole | `Layer::Frame`, `Vertex::Frame`, `VertexAt::Frame`, `frame_fixed_on_ground`, `frame_faces`, `frame_boundary`, `share_of_frame`, `ShapePeriods::InFrame`; "frame fixing" (MU-SENSING §6.1) | about 130 | about 44 | The enclosure, after `transduce::Enclosure`: `Layer::Enclosure`, `Vertex::Enclosure`, `enclosure_faces`, `share_of_enclosure`, "enclosure fixing" |
 | Perception's measured `Frame` defect: four counts of a pair, two planar axes fixed | `src/transducer/element/residue.rs` (`Frame { h_in, w_in, h_out, w_out }`), `from_canonical_framed`, `from_residue_framed`, `frame_ratio`, the "frame fibre" ρ | about 40 | about 24 | The re-period, per phase at rank `n`: `Reperiod`, after `Enclosure::reperiod` (track 26 S4 replaces the four counts) |

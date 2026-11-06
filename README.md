@@ -264,18 +264,33 @@ sequenceDiagram
 
 **Wire.** Nodes speak **Anastome** (`src/anastome/`), a closed set of
 signed speech acts whose payloads are exact geometric objects: canonical
-elements, coboundary chains and four-lane μ vectors. The protocol defines
-about forty act kinds, among them percept, task, solve, speech, docket,
-settle, offer, fold, fetch, syllabus, seat, handoff and challenge. Act
-payloads are exact objects; a refusal reply carries its named reason.
+elements, coboundary chains and four-lane μ vectors. Each act on the
+current wire is one of four kinds of expression (`docs/MU-ANASTOME.md`
+§1.5, §6):
+- **assertions**, signed claims a court adjudicates: solve (and its claim
+  of factorisation), speech, probe, syllabus;
+- **reads**, which admit nothing: task, quote, laws, receipts, entries,
+  observe, why, wallet, digests, fetch, peers;
+- **court-to-court exchanges**: cover, offer, root, tick, adopt, fold,
+  equivocation, evidence;
+- **universe crossings**: uplink (a tier's fold), domain, handoff,
+  challenge.
 
-**Language.** The language has three layers:
-- **Letters:** a fixed alphabet of seventeen Cayley letters
-  (`docs/MU-ANASTOME.md` §2).
+The seat relay is held and forwarded, judged by nothing. Retired acts
+(percept, gossip, demand, teach, settle, docket, installed) keep their
+bytes only to be refused by name. Act payloads are exact objects; a
+refusal reply carries its named reason.
+
+**Language.** The language has four levels (`docs/MU-ANASTOME.md` §1):
+- **Letters:** exact Cayley rotors, adjoined by court rulings; the tree
+  holds the seventeen seed letters, and by law (U14) the alphabet is
+  reseeded empty (`docs/MU-ANASTOME.md` §1.1, §2).
 - **Words:** products of letters. A word is a vertex whose meaning is its
   versor.
+- **Conjugate classes:** a word with its frame set aside, held as its
+  class vector with the conjugating element kept.
 - **Sentences:** forms built from words: vertices, faces and rings, glued
-  along shared overlaps.
+  along shared overlaps, read at their loops' holonomy.
 
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
