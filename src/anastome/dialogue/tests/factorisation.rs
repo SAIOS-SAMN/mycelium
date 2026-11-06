@@ -5,6 +5,7 @@
 use crate::anastome::dialogue::*;
 use crate::transducer::base::Site;
 use crate::transducer::family::transduce::{Enclosure, Motion, Sense, SignedPermutation};
+use crate::transducer::perspective::{Perspective, Role, SensorMotion};
 use crate::transducer::sentence::Link;
 
 fn key() -> ed25519_dalek::SigningKey {
@@ -14,6 +15,21 @@ fn key() -> ed25519_dalek::SigningKey {
 fn motion() -> Motion {
     let permutation = SignedPermutation::new(vec![(2, Sense::Kept), (0, Sense::Reversed), (1, Sense::Kept)]).expect("a signed permutation");
     Motion { permutation, onto: Enclosure::new(vec![3, 2, 2]).expect("an enclosure") }
+}
+
+/// The default perspective of rank 3.
+fn plain() -> Perspective {
+    Perspective::of_sample(3)
+}
+
+/// A perspective turned by a pose and with one axis recast: what the codec
+/// writes whole.
+fn turned() -> Perspective {
+    let pose = SignedPermutation::new(vec![(1, Sense::Reversed), (2, Sense::Kept), (0, Sense::Kept)]).expect("a signed permutation");
+    plain()
+        .shifted(&SensorMotion::Pose(pose))
+        .and_then(|p| p.shifted(&SensorMotion::Recast { axis: 2, role: Role::Value }))
+        .expect("a perspective of the rank")
 }
 
 fn residue() -> Vec<Link> {
@@ -30,7 +46,7 @@ fn residue() -> Vec<Link> {
 #[test]
 fn factorisation_claim_round_trips() {
     let cite = [5u8; 32];
-    let bytes = encode_factorisation(&key(), &cite, 3, &motion(), &residue(), Some(&[0, 0])).expect("the claim writes");
+    let bytes = encode_factorisation(&key(), &cite, 3, &motion(), &residue(), &turned(), Some(&[0, 0])).expect("the claim writes");
     let act = decode_factorisation(&bytes).expect("the claim reads");
     assert_eq!(
         act,
@@ -40,6 +56,7 @@ fn factorisation_claim_round_trips() {
             pair: 3,
             motion: motion(),
             residue: residue(),
+            perspective: turned(),
             ground: Some(vec![0, 0]),
             signed: true
         }
@@ -52,8 +69,9 @@ fn factorisation_claim_round_trips() {
     let solve = encode_solve(&key(), &cite, &outputs).expect("a solve writes");
     assert_eq!(solve_kind(&solve), Some(SOLVE_KIND_OUTPUTS));
     assert_eq!(decode_factorisation(&solve), None, "a solve of outputs is no claim of factorisation");
-    let bare = decode_factorisation(&encode_factorisation(&key(), &cite, 0, &motion(), &[], None).expect("writes")).expect("reads");
+    let bare = decode_factorisation(&encode_factorisation(&key(), &cite, 0, &motion(), &[], &plain(), None).expect("writes")).expect("reads");
     assert_eq!((bare.ground, bare.residue, bare.signed), (None, Vec::new(), true), "no ground stated reads none");
+    assert_eq!(bare.perspective, plain(), "the default perspective reads back as stated");
 
     let mut tampered = bytes.clone();
     tampered[40] ^= 1;
@@ -61,9 +79,9 @@ fn factorisation_claim_round_trips() {
     let mut longer = bytes.clone();
     longer.push(0);
     assert_eq!(decode_factorisation(&longer), None, "a byte past the signature is no claim");
-    assert_eq!(decode_factorisation(&encode_factorisation(&key(), &cite, 0, &motion(), &[], Some(&[])).expect("writes")), None, "an empty ground is no symbol");
+    assert_eq!(decode_factorisation(&encode_factorisation(&key(), &cite, 0, &motion(), &[], &plain(), Some(&[])).expect("writes")), None, "an empty ground is no symbol");
     // A permutation written with one source twice moves the seam set: no claim.
-    let mut oblique = encode_factorisation(&key(), &cite, 0, &motion(), &[], None).expect("writes");
+    let mut oblique = encode_factorisation(&key(), &cite, 0, &motion(), &[], &plain(), None).expect("writes");
     let at = 1 + 1 + 32 + 32 + 1 + 2; // act, kind, voice, task, pair, rank: the first source
     oblique[at + 3] = oblique[at];
     assert_eq!(decode_factorisation(&oblique), None, "no signed permutation, no claim");

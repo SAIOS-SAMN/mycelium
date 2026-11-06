@@ -195,3 +195,30 @@ fn from_connection_address_keys_carriage_not_pair() {
     let w2 = from_connection(&crate::transducer::alphabet::Word::identity(), &translator_versor(7, 0), &[], &Vec::new(), [1, 0, 0, 0]).expect("spells");
     assert_ne!(w.address(), w2.address());
 }
+
+/// TRACK 26 S4 — THE MEASURED RE-PERIOD IS READ PER PHASE, at any rank: the
+/// re-period every phase shares is read off the counts (a rank-3 pair
+/// doubled on every phase shares `2`); phases re-periodded apart share
+/// none, as two members of different rank are no re-period at all; and a
+/// framed word is its unframed shadow exactly where the phases share none
+/// or share `1`, and another word where they share `ρ ≠ 1`.
+#[test]
+fn reperiod_is_read_per_phase_at_any_rank() {
+    let two = Q::new(BigInt::from(2), BigInt::from(1));
+    assert_eq!(Reperiod::of_extents(&[2, 3, 4], &[4, 6, 8]).and_then(|r| r.shared()), Some(two));
+    assert_eq!(Reperiod::of_extents(&[2, 3], &[4, 3]).and_then(|r| r.shared()), None, "an anisotropic re-period shares none");
+    assert_eq!(Reperiod::of_extents(&[2, 3], &[2, 3, 1]), None, "two ranks are no re-period");
+    assert_eq!(Reperiod::of_extents(&[0, 3], &[0, 3]).and_then(|r| r.shared()), None, "an empty input re-periods nothing");
+    assert_eq!(Reperiod::of_extents(&[3, 4], &[6, 8]).map(|r| r.periods().to_vec()), Some(vec![(3, 6), (4, 8)]));
+    use crate::transducer::sentence::tests::fixtures::painted;
+    let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
+    let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
+    let chain = canonical_chain(&germinate(&painted(&a), &painted(&b)).unwrap()).expect("A5's chain");
+    let shadow = from_canonical_framed(&chain, &Reperiod::IDENTITY).address();
+    let still = Reperiod::of_extents(&[3, 3], &[3, 3]).expect("one rank");
+    let anisotropic = Reperiod::of_extents(&[3, 3], &[6, 3]).expect("one rank");
+    let doubled = Reperiod::of_extents(&[3, 3], &[6, 6]).expect("one rank");
+    assert_eq!(from_canonical_framed(&chain, &still).address(), shadow, "a re-period of 1 is the shadow");
+    assert_eq!(from_canonical_framed(&chain, &anisotropic).address(), shadow, "no dilator carries an anisotropic re-period");
+    assert_ne!(from_canonical_framed(&chain, &doubled).address(), shadow, "a shared re-period of 2 is another word");
+}
