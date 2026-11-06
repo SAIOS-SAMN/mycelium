@@ -35,3 +35,8 @@
   MU-HOSTING §5a.6 (what a seat carries in the language) link the section.
   GLOSSARY gains *Sensorium*, *Language's traversal*, *Congruence*,
   *Coherence*, *Cohesion* and *Contradiction*.
+- **Gate: `traversal_documented`.** MU-ANASTOME must hold the section's
+  heading and §9.4's, and MU-SENSING and MU-HOSTING must each link the
+  section's anchor (`documents::TRAVERSAL`, `lint_section`, `anchor_of`),
+  so removing the section, renaming its heading or dropping a link fails
+  CI. MU-CLIENT's link joins the check when its rewrite lands.
