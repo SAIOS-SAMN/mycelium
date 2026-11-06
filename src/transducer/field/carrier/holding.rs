@@ -9,6 +9,7 @@ use super::atlas::{Atlas, Attractor, Chart, Orbit, Precession};
 use super::enclosing::{stand, Labels, Membrane};
 use super::holonomy::Holonomy;
 use super::refusal::FieldRefusal;
+use super::shares::{frame_plane, Cohesion};
 use super::turning::FramePlanes;
 use crate::core::Q;
 use forms::passage::{Frame, Place};
@@ -173,5 +174,15 @@ impl WellBody {
         let place = stand(&state, poles, Labels::Standard, Some(membrane))?;
         let gauge = poles.read(&state).map_err(FieldRefusal::Passage)?;
         Ok(Inflation { gauge, place })
+    }
+
+    /// THE COHESION AT `hold` AND `reach` (MU-ANASTOME §9.4; #149): the
+    /// inflation's gauge read per plane it stands on, the membrane's frame
+    /// plane, as its held share `H/(H + R)`; a keyed reading, never stored
+    /// and never summed. Refused as [`WellBody::inflation`] and
+    /// [`Cohesion::of`] refuse.
+    pub fn cohesion(&self, hold: Q, reach: Q) -> Result<Cohesion, FieldRefusal> {
+        let gauge = self.inflation(hold, reach)?.gauge;
+        Cohesion::of(&[(frame_plane(self.membrane().plane())?, gauge)])
     }
 }

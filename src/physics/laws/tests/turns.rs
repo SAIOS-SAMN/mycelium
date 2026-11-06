@@ -21,8 +21,10 @@ fn place(turns: &[(usize, usize)]) -> Vec<Turn> {
 /// THE CONFORMAL LAW ACCEPTS A MOTION STATED AS TURNS: on the `6 × 4` frame
 /// the motion `(1/3, 1/4)` lands on both periods, and carries the place
 /// `(0, 1/4)` onto `(1/3, 1/2)` and `(5/6, 3/4)` across both seams onto
-/// `(1/6, 0)`. The turn `1/3` has no rotor over ℚ (Niven): it is admitted
-/// by its arithmetic in ℚ/ℤ alone, the same as the quarter turn beside it.
+/// `(1/6, 0)`: the carried place `(7/6, 1)` holds one whole turn on each
+/// phase, and a place is read by its phase. The turn `1/3` has no rotor
+/// over ℚ (Niven): it is admitted by turn arithmetic alone, the same as the
+/// quarter turn beside it.
 #[test]
 fn conformal_accepts_turn_valued_motion() {
     let t = TurnTransition {
