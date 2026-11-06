@@ -43,7 +43,6 @@ pub use embedding::{
     base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, membrane, membrane_at, point_at, rotator,
     rotator_on_blade, translator_at,
 };
-pub(crate) use embedding::sphere_at;
 pub use enclosure::{centre_point, containment, enclosure, nesting, Containment};
 pub use fixed::{centre_of, Centre, PoleAt};
 pub use flow::{FlowKind, FlowPoint};
