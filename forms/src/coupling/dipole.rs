@@ -6,7 +6,7 @@
 // a body's frames on each turning plane, founded by the even split.
 
 use super::{half_turn, share_of, CouplingRefusal};
-use crate::coordinate::{Key, Plane};
+use crate::coordinate::{FormRefusal, Key, Plane, Vector};
 use crate::Q;
 use num_traits::{One, Signed, Zero};
 
@@ -75,6 +75,13 @@ impl Parcel {
         Ok(Dipole { pole, open })
     }
 
+    /// THE HELD SHARE `c = A/(A + Q) = 1 − ν(t)`, the parcel's cohesion
+    /// (the viscosity; ruled 2026-11-06), read on its frames: the inversion
+    /// takes it to the open share.
+    pub fn held_share(&self) -> Result<Q, CouplingRefusal> {
+        share_of(&self.held, &self.open)
+    }
+
     /// THE INVERSION: the frames exchanged, `t ↦ 1/t`, so `o ↦ 1 − o` and
     /// `σ ↦ −σ`.
     pub fn inverted(&self) -> Parcel {
@@ -125,6 +132,30 @@ impl Parcels {
     /// The planes and their frames, in the order founded.
     pub fn planes(&self) -> &[(Key, Parcel)] {
         &self.planes
+    }
+
+    /// THE BODY'S COHESION, PER PLANE: each plane's held share
+    /// `c_k = z_k/(z_k + q_k)` ([`Parcel::held_share`]), a keyed vector
+    /// over its turning planes, its components never summed into one
+    /// another nor averaged.
+    pub fn cohesion(&self) -> Result<Vector, CouplingRefusal> {
+        self.per_plane(Parcel::held_share)
+    }
+
+    /// THE BODY'S FLUIDITY, PER PLANE: each plane's open share
+    /// `ν(t_k) = q_k/(z_k + q_k)` ([`Parcel::open_share`]), keyed as
+    /// [`Parcels::cohesion`] is and never summed.
+    pub fn fluidity(&self) -> Result<Vector, CouplingRefusal> {
+        self.per_plane(Parcel::open_share)
+    }
+
+    /// One reading per plane, keyed by the plane.
+    fn per_plane(&self, read: fn(&Parcel) -> Result<Q, CouplingRefusal>) -> Result<Vector, CouplingRefusal> {
+        let components = self.planes.iter().map(|(k, p)| Ok((k.clone(), read(p)?))).collect::<Result<Vec<_>, CouplingRefusal>>()?;
+        Vector::of(components).map_err(|e| match e {
+            FormRefusal::KeyRepeated { key } => CouplingRefusal::PlaneRepeated(key),
+            other => CouplingRefusal::Form(Box::new(other)),
+        })
     }
 
     /// The frames on `plane`, if the body holds it.
