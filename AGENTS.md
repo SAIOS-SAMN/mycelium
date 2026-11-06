@@ -98,7 +98,7 @@ cargo clippy --release --workspace --all-targets -- -D warnings
 cargo test --release --workspace
 ```
 
-CI (`.github/workflows/check.yml`, the `check` status) runs both commands on every pull request, with the corpus present; workers still run them locally before pushing, under the machine's memory cap.
+CI (`.github/workflows/definition-of-done.yml`, the required status `clippy and tests`) runs both commands on every pull request, with the corpus present; workers still run them locally before pushing, under the machine's memory cap.
 
 Nothing else is required, with one addition: a change to the wire or the
 mesh also runs `scripts/quickstart DIR BASE_PORT`. It brings up a

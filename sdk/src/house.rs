@@ -31,6 +31,10 @@
 //! | The universe | [`BigBangRecord`], [`Genesis`], [`Geometry`], [`encode_universe_read`], [`decode_universe_reading`], [`UniverseReading`], the statements |
 //! | The endowment | [`Manifest`], [`encode_manifest`], [`decode_grant_reply`], [`Granted`], [`encode_endowment_read`], [`decode_endowment_reading`] |
 //! | Seats | [`Post`], [`Seats`], [`Taken`], [`Percept`], [`Outcome`], [`HouseMail`], [`encode_post`], [`decode_seat_request`], the listing and the mail |
+//! | Handoff | [`SignedHandoff`], [`encode_handoff`], [`decode_handoff_reply`], [`encode_handoff_read`], [`decode_read_reply`], [`encode_loops_read`], [`decode_loops_reply`], [`encode_tube_read`], [`decode_tube_reading`] |
+//! | Traverse, ledger and map | [`encode_traverse`], [`decode_traverse_reply`], [`encode_ledger`], [`encode_ledger_read`], [`decode_ledger_reply`], [`decode_ledger_page`], [`encode_map`], [`encode_map_read`], [`decode_map_reply`], [`decode_map_reading`] |
+//! | Challenge and finality | [`encode_challenge`], [`decode_challenge_reply`], [`encode_finality_request`], [`decode_finality_reply`], [`encode_line_head_request`], [`decode_line_head_reply`], [`encode_obstructions_request`], [`decode_obstructions_reply`]; the fold sent up, [`encode_uplink`] |
+//! | Equivocation | [`equivocation_proof`], [`encode_equivocation`], [`decode_ruled`], [`ReceiptSection`] |
 //! | Framing and identity | [`WireFrame`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
 //! | Whole modules | [`domain`], [`universe`], [`endowment`], [`seat`], [`atlas`], [`uplink`], [`challenge`], [`commitment`], [`tuniversal`] |
 
@@ -158,6 +162,70 @@ pub use mycelium::transducer::address::{put_key_bytes, put_key_count, take_key_b
 /// The citation hash of exact bytes (BLAKE3): what a receipt, a manifest's
 /// grant and a call's reference cite.
 pub use mycelium::chronometry::payload_hash;
+
+/// HANDOFF (`ACT_HANDOFF`, MU-HOSTING §2.4): matter or a word crossing
+/// domains, a conversion of μ, a mouth or a tube — offered, accepted,
+/// refused or expired, each signed by its filer; the court's answer
+/// (`Handed`), a handoff's standing read, the open mouth loops and a mouth
+/// pair's tube, each read without sealing.
+pub use mycelium::anastome::dialogue::handoff::{
+    decode_handoff_reply, decode_loops_reply, decode_read_reply, encode_handoff, encode_handoff_read, encode_loops_read, encode_tube_read,
+    ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Loop, Mouth, Offer as HandoffOffer, SignedHandoff, State as HandoffState, Tariff,
+};
+/// A mouth pair's tube as the court reads it.
+pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeReading};
+
+/// TRAVERSE (`ACT_DOMAIN` kind 16, 78.154): a coordinate retrieval through
+/// a mapped wormhole, signed by the payer; the court's answer (`Crossed`):
+/// the crossing's hash, the gas and the map fee, or the refusal by name.
+pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, CrossRefusal, Crossed, Declaration, Gas, SignedTraverse, Traverse};
+
+/// A UNIVERSE'S LEDGER AND MAP (`ACT_DOMAIN` kinds 12–15, 78.154): an entry
+/// chained and sealed, never judged; the ledger read by pages; a map act
+/// (mouth, segment, local throat) posted by the sitting reserve and the map
+/// read.
+pub use mycelium::anastome::dialogue::atlas::{
+    decode_ledger_page, decode_ledger_reply, decode_map_reading, decode_map_reply, encode_ledger, encode_ledger_read, encode_map, encode_map_read,
+    LedgerEntry, LedgerPage, LedgerRefusal, Ledgered, MapAct, MapEntry, MapRecord, MapRefusal, Mapped, SignedLedger, SignedMap,
+};
+
+/// A FOLD CHALLENGED, AND ITS WINDOW READ (`ACT_CHALLENGE`, Concordance
+/// 4.5): the signed challenge and the court's answer; a fold's finality, a
+/// tier's line head and a domain's open obstructions, each read without
+/// sealing; where a fold stands on the court.
+pub use mycelium::anastome::dialogue::challenge::{
+    decode_challenge_reply, decode_finality_reading, decode_finality_reply, decode_line_head_reply, decode_obstructions_reply, encode_challenge,
+    encode_finality_request, encode_line_head_request, encode_obstructions_request, Challenge, ChallengeRefusal, Challenged, Finality,
+    FinalityReading, LineHead, OpenObstruction, SignedChallenge,
+};
+pub use mycelium::anastome::dialogue::uplink::FoldAt;
+
+/// A TIER'S FOLD SENT UP (`ACT_UPLINK`, 78.119): the fold signed by its tier.
+pub use mycelium::anastome::dialogue::uplink::{encode_uplink, SignedFold, TierFold};
+
+/// AN EQUIVOCATION PROVED (`ACT_EQUIVOCATION`, MU-HOSTING §5.3, MU-XSEPTUM:
+/// sendable by anyone): two receipt sections signed under one key at one
+/// place of its line, the court's answer read as [`Ruled`] (`Applied`, the
+/// bond burned; `Inert`, nothing left to burn; `Refused`, by name). The
+/// proof is built by [`equivocation_proof`].
+pub use mycelium::anastome::dialogue::{
+    decode_receipt_section, decode_ruled, encode_equivocation, encode_receipt_section, ReceiptSection, Ruled, EQUIVOCATION_VERSION,
+};
+
+/// THE PROOF OF AN EQUIVOCATION, OR NONE: where two receipt sections a
+/// client holds stand at ONE place of ONE signer's line — the same key, the
+/// same place — and their chain hashes differ, the act that presents them,
+/// `[ACT_EQUIVOCATION]…`; `None` where they are one receipt, stand at two
+/// places or under two keys, or do not frame. The court reconstructs both
+/// halves and judges; this only says the two are worth presenting.
+pub fn equivocation_proof(a: &ReceiptSection, b: &ReceiptSection) -> Option<Vec<u8>> {
+    use mycelium::court::admission::Predecessor;
+    let (sa, sb) = (&a.receipt.stamp, &b.receipt.stamp);
+    if sa.vk != sb.vk || sa.place() != sb.place() || !Predecessor::of(&a.receipt).forks(&Predecessor::of(&b.receipt)) {
+        return None;
+    }
+    encode_equivocation(a, b)
+}
 
 /// THE HOUSE'S WIRE MODULES WHOLE, each with every public encoder, decoder
 /// and type: the domain (founding, reserve, bond, origin), the universe's

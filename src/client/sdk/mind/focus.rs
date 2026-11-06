@@ -292,6 +292,7 @@ impl Mind {
                 self.board.corpus.remove(&item);
                 self.physics_mut().bump(&mag);
                 crate::physics::StrokeOutcome::add(&mut outcome.fed, &mag);
+                super::family::note_fed(&task.train, &mag);
                 self.board.feed_scenes.insert(&key, ());
                 // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the
                 // field. Its tests are the tests' INPUTS alone (ruled

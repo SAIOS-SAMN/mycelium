@@ -5,7 +5,7 @@
 # denied, then the workspace's tests, with the ARC-AGI-2 corpus present so
 # the corpus tests read it rather than refuse.
 
-name: check
+name: definition of done
 
 on:
   pull_request:
@@ -13,15 +13,15 @@ on:
     branches: [main]
 
 concurrency:
-  group: check-${{ github.ref }}
+  group: definition-of-done-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  check:
-    name: check
+  clippy-and-tests:
+    name: clippy and tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:

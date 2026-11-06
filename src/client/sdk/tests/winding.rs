@@ -74,6 +74,27 @@ fn comprehend_waiting_lapses_scene_with_last_thought() {
     assert!(held.comprehending.get(&id).is_some(), "it waits beside its thought");
 }
 
+/// 68.5, 78.7 VS1 — ONE STROKE'S LEDGER IS TAKEN INTO THE MIND'S OBSERVE
+/// READING. Two cauterizations and a viscous bend on 𝒽 stand on this
+/// thread's ledger; one winding takes the ledger whole at its booking, so the
+/// mind's reading carries them (entropy and the lane's viscosity, never
+/// summed with another lane) and the ledger the stroke leaves stands taken.
+#[test]
+fn stroke_reads_metabolism_into_observe() {
+    use crate::physics::metabolism;
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("ledger"));
+    let before = crate::observe::mind();
+    metabolism::note_cauterized();
+    metabolism::note_cauterized();
+    metabolism::note_viscous(3);
+    let stop = std::sync::atomic::AtomicBool::new(false);
+    let _ = mind.wind(&stop);
+    let after = crate::observe::mind();
+    assert!(after.entropy >= before.entropy + 2, "the stroke's entropy reached the reading");
+    assert!(after.viscous[3] > before.viscous[3], "the viscous bend on 𝒽 reached the reading, on its lane");
+    assert_eq!(metabolism::metabolism().viscous, [0; 4], "the ledger was taken, once, at the stroke's booking");
+}
+
 /// 78.167 D1 — A MEANING GIVEN WHOLE IS DERIVED ONCE THE WORDS BESIDE IT ARE
 /// KNOWN. A screw — 90° in the e₁e₂ plane carried along e₃ — answered as an
 /// atom is known as GIVEN. Knowing the turn alone leaves the slide as its

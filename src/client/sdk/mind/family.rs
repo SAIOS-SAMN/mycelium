@@ -41,6 +41,16 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
     mag
 }
 
+/// MU-DERIVATIONS (the readers), 78.170 O1 — A FAMILY TAKEN IN, READ TWICE
+/// BESIDE ITSELF on the mind's observe reading: its count (`mag`, what
+/// `family_magnitude` draws on the mind's metabolism, never μ) and the
+/// exact share of each frame its pairs change (`transduce::family_share`),
+/// or unread by name where a pair's record does not read whole.
+pub(crate) fn note_fed(train: &Family, mag: &[u64; 4]) {
+    let share = crate::transducer::family::transduce::family_share(train.iter().map(|(x, y)| (x.sample(), y.sample())));
+    crate::observe::note_mind(|m| m.fed(mag, share));
+}
+
 /// WHAT ONE PERSPECTIVE DISAGREED ABOUT, read whole: every kind present (in
 /// [`crate::observe::DISAGREE`]'s order), the sample the rule said, and the
 /// demands its form spoke nothing for, by kind.
@@ -146,6 +156,34 @@ pub(crate) struct Thought {
 /// A chain of painted sites, before and after: what a perception's
 /// remainder and a test's unreached bodies are held as.
 pub(crate) type Chain = Vec<crate::transducer::sentence::SectionLink>;
+
+/// 78.158a U1, U8 — ONE MINT REFUSAL, NAMED: its one line (34.3,
+/// `mint_refusal_line`: the arm, the proof, the kind and the demands' kinds,
+/// read off the typed refusal and the refused form), and what the refused
+/// form leaves withheld, classified (`Withheld`: its arm, its kind, whether
+/// the question was askable).
+#[derive(Clone, Debug)]
+pub(crate) struct MintRefused {
+    pub line: String,
+    pub withheld: crate::transducer::family::Withheld,
+}
+
+impl MintRefused {
+    /// The refusal as the observer prints it: its line, then the withheld
+    /// form's arm, kind and askability.
+    pub fn reading(&self) -> String {
+        format!(
+            "{} · withheld {} [{}] {}",
+            self.line,
+            self.withheld.arm(),
+            self.withheld.obstruction_kind().label(),
+            match self.withheld.is_askable() {
+                true => "asked",
+                false => "unaskable",
+            }
+        )
+    }
+}
 
 /// ONE PAIR PERCEIVED AS ITS FORM, off the mind's field (MU-CLIENT §7.1 R1):
 /// the form, the frames it was perceived on, the pair, and what it closes
@@ -457,9 +495,13 @@ impl Mind {
     ) -> Option<[u64; 4]> {
         let form = &rule.form;
         let deliberation = self.span_of(form)?;
-        let Ok(word) = crate::transducer::family::mint_sentence_why(rule, train, &self.language, deliberation.span()) else {
-            self.hold_perceived(form.clone(), frames, train, remainders, family, budget);
-            return None;
+        let word = match crate::transducer::family::mint_sentence_why(rule, train, &self.language, deliberation.span()) {
+            Ok(word) => word,
+            Err(why) => {
+                self.hold_mint_refusal(why, form, remainders, family);
+                self.hold_perceived(form.clone(), frames, train, remainders, family, budget);
+                return None;
+            }
         };
         if self.already_taught(&word) {
             self.remember_spoken(&word);
@@ -479,6 +521,26 @@ impl Mind {
             }
         });
         Some(mag)
+    }
+
+    /// 78.158a U1, U8 — THE MINT'S REFUSAL NAMED, NEVER DROPPED: the refusal
+    /// whole, its one line (`mint_refusal_line`: arm, proof, kind, the
+    /// demands' kinds), and what the form leaves withheld classified by its
+    /// coboundary before its residue (`withheld_of`), held under the task it
+    /// was spoken for — the latest refusal in the place of the last — and
+    /// read at the observer (`refusals`). Nothing in cognition reads it back.
+    pub(crate) fn hold_mint_refusal(
+        &mut self,
+        why: crate::transducer::sentence::ObstructionRefusal,
+        form: &crate::transducer::sentence::Form,
+        remainders: &[Chain],
+        family: &[u8],
+    ) {
+        let refused = MintRefused {
+            line: crate::transducer::family::mint_refusal_line(why, form),
+            withheld: crate::transducer::family::withheld_of(form, remainders),
+        };
+        self.mint_refused.insert(family, refused);
     }
 
     /// ONE PAIR PERCEIVED, WITHHELD under its scene: held with the frames it

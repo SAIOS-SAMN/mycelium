@@ -230,3 +230,34 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
     let mut budget = entity.stroke_n(1 << 16);
     assert_eq!(crate::court::verdict::reconstruct_blind(word, &mut budget), None, "the court's reconstruction of the word is clean");
 }
+
+/// 78.158a U1, U8 — THE MIND HOLDS THE MINT'S REFUSAL NAMED, NEVER DROPPED.
+/// A sentence whose every vertex is a demand is spoken on the live speech
+/// path; the mint refuses it as nothing acting, and the mind holds that
+/// refusal under the task: the refusal whole, its one line naming the arm,
+/// the proof, the kind and the demand's kind, and the withheld form
+/// classified — no trajectory, so the question was not askable (N). The
+/// observer's `refusals` call reads it.
+#[test]
+fn mind_holds_the_named_mint_refusal() {
+    use crate::client::sdk::*;
+    use crate::transducer::family::{demand_vertex, Withheld};
+    use crate::transducer::sentence::tests::fixtures::link;
+    use crate::transducer::sentence::{rule_of_form, Demand, Form, ObstructionKind};
+    let elsewhere = vec![link(5, 5, 0, 9)];
+    let chart = crate::transducer::stalk::invariant(&elsewhere);
+    let mut f = Form::default();
+    f.put_vertex(demand_vertex(Demand::Creation, &chart, elsewhere)).expect("a demand vertex has a coordinate");
+    f.reindex();
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("refused"));
+    let mut budget = entity.stroke_n(1 << 16);
+    let task = [9u8; 32];
+    assert_eq!(entity.speak_prepared((rule_of_form(f), [1, 0, 0, 0], Vec::new()), &Vec::new(), &Vec::new(), &task, &mut budget), None, "nothing uttered");
+    let held = entity.mint_refused.get(&task).expect("the refusal is held under its task");
+    assert_eq!(held.line, "mint refused (integrity): nothing in the form acts [N] demands [creation]");
+    assert_eq!(held.withheld, Withheld::NoTrajectory);
+    assert_eq!(held.withheld.obstruction_kind(), ObstructionKind::NoQuestion);
+    assert!(!held.withheld.is_askable(), "no trajectory: the question was not askable");
+    let read = entity.answer_call("refusals");
+    assert!(read.iter().any(|l| l.ends_with("withheld NO-TRAJECTORY [N] unaskable")), "the observer reads it: {read:?}");
+}

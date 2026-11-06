@@ -211,6 +211,7 @@ impl Mind {
         let Some((crate::anastome::dialogue::TaskSection { id, train, tests }, _)) = self.board.court.task.take() else { return };
         self.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
+        super::family::note_fed(&train, &mag);
         self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::SceneKind::Task });
     }
 
