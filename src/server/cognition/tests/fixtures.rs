@@ -7,6 +7,13 @@ use crate::transducer::element::Element;
 use crate::transducer::family::TrainPair;
 pub use crate::transducer::sentence::tests::fixtures::painted;
 
+/// Two lists of citations cite the same things, in order: each pair by
+/// `Cite::restates`, since a citation has no `==` (a fold root's hash is a
+/// `Predecessor`; ROADMAP track 25 X0).
+pub fn cites_restate(cites: &[crate::chronometry::Cite], held: &[crate::chronometry::Cite]) -> bool {
+    cites.len() == held.len() && cites.iter().zip(held).all(|(c, h)| c.restates(h))
+}
+
 /// A pair of painted scenes as the one-pair family a voice reads it as:
 /// each scene on its own plane, exactly as the eyes of the voice would (20),
 /// the fixtures' unpainted sites written `0`.

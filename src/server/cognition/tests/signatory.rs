@@ -94,7 +94,11 @@ fn signing_is_recorded_on_the_ledger_and_reads_converses() {
     assert_eq!(verdict, Ok(admitted.clone()));
     let r = head(&k);
     assert_eq!(r.kind, ActKind::Domain);
-    assert_eq!(r.cites, vec![Cite::Signing { kernel: vk(&kernel_key()), reserve: Some(vk(&domain_key())), verdict: Box::new(Ok(admitted)) }]);
+    assert!(
+        super::fixtures::cites_restate(&r.cites, &[Cite::Signing { kernel: vk(&kernel_key()), reserve: Some(vk(&domain_key())), verdict: Box::new(Ok(admitted)) }]),
+        "{:?}",
+        r.cites
+    );
     let a = aligned(&k);
     assert_eq!(a.reserve, Some(vk(&domain_key())));
     assert!(a.clauses.iter().all(|c| c.reading == ClauseReading::Converses { at: r.stamp }), "{a:?}");

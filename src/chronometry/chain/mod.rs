@@ -825,7 +825,7 @@ impl ReceiptChain {
             // The later root stands: a fold archives everything below it.
             let later = self.peer_roots.get(&at.vk).is_none_or(|held| held.at.place() < at.place());
             if later {
-                self.peer_roots.insert(at.vk, Parent { at: *at, hash: Predecessor::of_bytes(*hash) });
+                self.peer_roots.insert(at.vk, Parent { at: *at, hash: *hash });
             }
         }
     }
