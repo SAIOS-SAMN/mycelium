@@ -1,8 +1,17 @@
 ### `forms::coupling` holds LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane and the light ledger, exact over ℚ (proposal 78.175)
-- **Network contract: a new law form.** A new shell, `FORMS-COUPLING` v1,
-  joins `forms::LAW_IDS` (and the SDK's `FORM_LAW_IDS`), ruled by
-  netstratum's and mycelium's operators 2026-11-06 through MU-RELEASE §3a,
-  extending LAW-FIELD (netstratum docs/121 §9–§13, docs/122 §2).
+- **Network contract: a new law form and a new clause.** A new shell,
+  `FORMS-COUPLING` v1, joins `forms::LAW_IDS` (and the SDK's
+  `FORM_LAW_IDS`), ruled by netstratum's and mycelium's operators
+  2026-11-06 through MU-RELEASE §3a, extending LAW-FIELD (netstratum
+  docs/121 §9–§13, docs/122 §2). The clause register serves it as a third
+  clause, `FORMS-COUPLING` v1 at kernel standing (signable and vetoable),
+  on `ACT_LAWS` mode 7, and `CLAUSES` (and so the conformance statement)
+  names it. New writing: fixture tag 12 (`Fixture::Coupling`, an
+  operation byte 0–5 then its exact values) and object tag 9
+  (`Object::Coupling`, a reading byte 0–6). A kernel that signed the
+  register must reconstruct the new clause's 25 fixtures or veto it; no
+  act or ledger layout changes. The SDK reconstructs it through
+  `forms::coupling` (`reconstruct_fixture`).
 - **Shared degrees are round** (ruled 2026-11-06): rotation angles on
   Clifford turning planes; an L1 projection is a named reading
   (`hemisphere_l1`, `Parcel::arc_l1`).

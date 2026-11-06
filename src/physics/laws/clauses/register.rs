@@ -14,6 +14,7 @@
 //! reconstructs to sign the clause; [`reconstruct`] is the hypha's own
 //! reconstruction of each, through the law forms (`forms`).
 
+use super::coupling::{coupling_fixtures, reached, CouplingFixture, CouplingObject};
 use super::fixtures::{coordinate_fixtures, passage_fixtures};
 use algebra::Clifford;
 use forms::coordinate::{Bodies, Bounds, Coordinate, CoordinateRefusal, Interval, Key, Lane, Sector, Sides};
@@ -23,10 +24,12 @@ use forms::Q;
 /// THE CLAUSES THIS HYPHA ADJUDICATES, `(law id, version)`, in the
 /// register's order: each a law form of the innermost shell with joint-read
 /// fixtures (LAW-PASSAGE v3 as `FORMS-PASSAGE`, the form's version 4;
-/// LAW-COORDINATE v4 as `FORMS-COORDINATE`, the form's version 4).
+/// LAW-COORDINATE v4 as `FORMS-COORDINATE`, the form's version 4;
+/// LAW-COUPLING v1 as `FORMS-COUPLING`, the form's version 1).
 pub const CLAUSES: &[(&str, u16)] = &[
     (forms::passage::LAW_ID, forms::passage::LAW_VERSION),
     (forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
+    (forms::coupling::LAW_ID, forms::coupling::LAW_VERSION),
 ];
 
 /// A CONCORDANCE CLAUSE'S NAME: its law form's id and version. With the fixtures it is
@@ -98,6 +101,9 @@ pub enum Fixture {
     /// LAW-COORDINATE fixtures 6 and 12: the bodies of `held` in the range
     /// `interval` on component `key` of `lane` at `at`.
     Range { held: Vec<Coordinate>, at: Coordinate, lane: Lane, key: Key, interval: Interval },
+    /// LAW-COUPLING fixtures (78.175 §5): one operation of
+    /// `forms::coupling` on its exact inputs.
+    Coupling(CouplingFixture),
 }
 
 /// THE EXACT OBJECT A FIXTURE REACHES.
@@ -117,6 +123,9 @@ pub enum Object {
     /// A reading refused by name: two origins, two shapes, or a component
     /// not held.
     Refused(CoordinateRefusal),
+    /// A LAW-COUPLING reading: a dipole, a body's frames per plane, a
+    /// pull, a neighbour reading, light taken, a ledger or its refusal.
+    Coupling(CouplingObject),
 }
 
 /// THE SAME VALUE OF `Cl(p, q)`: the one signature, and the same terms,
@@ -140,6 +149,7 @@ impl PartialEq for Fixture {
             (Fixture::Range { held, at, lane, key, interval }, Fixture::Range { held: h, at: a, lane: l, key: k, interval: i }) => {
                 held == h && at == a && lane == l && key == k && interval == i
             }
+            (Fixture::Coupling(a), Fixture::Coupling(b)) => a == b,
             _ => false,
         }
     }
@@ -162,6 +172,7 @@ impl PartialEq for Object {
             (Object::Sector(a), Object::Sector(b)) => a == b,
             (Object::Sides(a), Object::Sides(b)) => a == b,
             (Object::Refused(a), Object::Refused(b)) => a == b,
+            (Object::Coupling(a), Object::Coupling(b)) => a == b,
             _ => false,
         }
     }
@@ -225,6 +236,7 @@ pub fn reconstruct(fixture: &Fixture) -> Option<Object> {
                 Err(refusal) => Object::Refused(refusal),
             })
         }
+        Fixture::Coupling(f) => reached(f).map(Object::Coupling),
     }
 }
 
@@ -245,8 +257,11 @@ fn registered(id: ConcordanceClauseId, standing: Standing, fixtures: Option<Vec<
 /// `FORMS-COORDINATE` stands at kernel standing, signable and
 /// vetoable, until 78.173's fixtures are joint-read agreed and its clause
 /// is drafted: a clause whose fixtures no other kernel has read is never
-/// made unvetoable (coordinator's decision, 2026-11-05).
+/// made unvetoable (coordinator's decision, 2026-11-05). `FORMS-COUPLING`
+/// stands at kernel standing likewise, until 78.175's fixtures are
+/// joint-read agreed (operators' ruling, 2026-11-06).
 pub fn register() -> Result<Vec<Registered>, RegisterRefusal> {
+    let coupling = coupling_fixtures().map(|f| f.into_iter().map(Fixture::Coupling).collect());
     Ok(vec![
         registered(ConcordanceClauseId::of(forms::passage::LAW_ID, forms::passage::LAW_VERSION), Standing::Network, passage_fixtures())?,
         registered(
@@ -254,5 +269,6 @@ pub fn register() -> Result<Vec<Registered>, RegisterRefusal> {
             Standing::Kernel,
             coordinate_fixtures(),
         )?,
+        registered(ConcordanceClauseId::of(forms::coupling::LAW_ID, forms::coupling::LAW_VERSION), Standing::Kernel, coupling)?,
     ])
 }
