@@ -244,7 +244,7 @@ impl Court {
         // The Fold node cites the root it leaves the line on, by stamp and
         // hash (78.24): a fold names no word and measured nothing.
         let at = Stamp::new(root.height, own_vk, root.at);
-        self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash.bytes() }], [0; 4], own_vk);
+        self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash }], [0; 4], own_vk);
         // THE EPOCH ROWS STAND AT THE ROOT they net to (78.65): the balance
         // the folded prefix leaves is the root's, so the journal stays in
         // line order and the next fold's nets below its cut count them. At
