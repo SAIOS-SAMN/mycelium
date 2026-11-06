@@ -230,7 +230,7 @@ pub fn readings(inputs: &[(String, Mv)]) -> Vec<String> {
         ));
         out.push(format!("boundary_dual {name}: {}", opt(cga::boundary_dual(m, 3))));
         out.push(format!("commutator {pair}: {}", opt(cga::transvection_commutator(m, next))));
-        out.push(format!("frame_base {name}: {}", opt(cga::frame_base_point(m))));
+        out.push(format!("frame_base {name}: {}", opt(cga::pose_point(m))));
         let key = m.key();
         out.push(format!(
             "key_roundtrip {name}: {}",

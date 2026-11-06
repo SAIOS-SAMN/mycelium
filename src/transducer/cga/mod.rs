@@ -38,7 +38,7 @@ mod twist;
 
 pub use constructors::{carry, construct, constructor_orbit, is_constructor, Constructed, ConstructorOrbit, NotConstructed, OrbitUnread};
 pub(crate) use constructors::{constructors_of_base_turn, TurnUnspelled};
-pub use dual::{contract_to_face, dual_frame, wedge, DualFrame};
+pub use dual::{contract_to_face, dual_frame, wedge, ReciprocalBasis};
 pub use embedding::{
     base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, membrane, membrane_at, point_at, rotator,
     rotator_on_blade, translator_at,
@@ -49,7 +49,7 @@ pub use fixed::{centre_of, Centre, PoleAt};
 pub use flow::{FlowKind, FlowPoint};
 pub use gram::{gram_form, pair_regime, read_gram, signature, vector_rank, GramReading, PairRegime};
 pub use group::{dilator, is_versor, projective_ratio, reflector, weight_of};
-pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole};
+pub use hyperboloid::{geodesic_transvection, hyperbolic_compartment, hyperboloid_pole, pose_point};
 pub use conjugacy::Conjugacy;
 pub use sphere::{sphere_base_point, sphere_pole};
 pub use linear::{ray_of, LinearFunction};

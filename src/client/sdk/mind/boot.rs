@@ -155,7 +155,7 @@ impl Mind {
         self.k
     }
 
-    /// AN ACT OF THIS MIND — a word stood, uttered, learned or refused
+    /// AN ACT OF THIS MIND — a word stood, asserted, learned or refused
     /// (78.49): it stands at the mind's K, which it answers. An act moves no
     /// clock: K moves by the orbits that return (`close_cycle`). Nothing is
     /// sealed: the court seals what it admits.

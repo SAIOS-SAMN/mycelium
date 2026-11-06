@@ -68,7 +68,7 @@ pub(super) fn signs(k: &mut Court, key: &SigningKey) {
 }
 
 /// THE COURT CALIBRATED AS A HYPHA SEALS ITS OWN (`Physics::calibrated`):
-/// the tube reads the alignment one read per receipt the court holds, on
+/// the tube reads the alignment one read per signing event it holds, on
 /// one stroke of the court's metabolism, and a harness that never seals a
 /// calibration strokes only the minimal stroke. Calibrated, the reading is
 /// never cut short by the harness.

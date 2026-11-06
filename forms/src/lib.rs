@@ -25,7 +25,7 @@
 //! OBSERVER (A6). A form fixes no direction or linearity; each is stated with
 //! its observer, and a reading moves between frames only by a named exact
 //! map, fixed by each universe's own dynamic before any joint read. That map
-//! is itself a form ([`frame`]): an exact, invertible conformal map that
+//! is itself a form ([`reference`]): an exact, invertible conformal map that
 //! bends, twists, stretches, expands and contracts — never a floor on a
 //! grid, which rounds a reading off and cannot be undone (ruled
 //! 2026-10-21). Joint reads compare exact values.
@@ -37,8 +37,8 @@ pub use algebra;
 
 pub mod coordinate;
 pub mod coupling;
-pub mod frame;
 pub mod passage;
+pub mod reference;
 pub mod shares;
 #[cfg(test)]
 mod tests;
@@ -47,7 +47,7 @@ mod tests;
 /// shell's own `LAW_ID` and `LAW_VERSION`: the rows the shared-law table
 /// (MU-EQUATIONS, *Shared laws*) names the forms by.
 pub const LAW_IDS: &[(&str, u16)] = &[
-    (frame::LAW_ID, frame::LAW_VERSION),
+    (reference::LAW_ID, reference::LAW_VERSION),
     (passage::LAW_ID, passage::LAW_VERSION),
     (shares::LAW_ID, shares::LAW_VERSION),
     (coordinate::LAW_ID, coordinate::LAW_VERSION),

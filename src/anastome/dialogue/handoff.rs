@@ -190,8 +190,8 @@ pub struct Mouth {
     pub from_tier: [u8; 32],
     pub to_tier: [u8; 32],
     pub keeper: [u8; 32],
-    pub from_frame: crate::transducer::cga::Mv,
-    pub to_frame: crate::transducer::cga::Mv,
+    pub from_chart: crate::transducer::cga::Mv,
+    pub to_chart: crate::transducer::cga::Mv,
     pub toll: crate::economy::Mu,
     pub nonce: [u8; 32],
     /// 78.133 — the per-unit toll and its split; `None` for a flat-toll
@@ -338,8 +338,8 @@ impl Mouth {
         for k in [&self.from_tier, &self.to_tier, &self.keeper] {
             out.extend_from_slice(k);
         }
-        self.from_frame.to_bytes(&mut out);
-        self.to_frame.to_bytes(&mut out);
+        self.from_chart.to_bytes(&mut out);
+        self.to_chart.to_bytes(&mut out);
         self.toll.put(&mut out);
         out.extend_from_slice(&self.nonce);
         out
@@ -371,15 +371,15 @@ impl Mouth {
     /// face); `None` where either is not.
     pub fn places(&self) -> Option<(crate::transducer::cga::Mv, crate::transducer::cga::Mv)> {
         let t = self.tube.as_ref()?;
-        Some((place_in(&t.from_space, &self.from_frame)?, place_in(&t.to_space, &self.to_frame)?))
+        Some((place_in(&t.from_space, &self.from_chart)?, place_in(&t.to_space, &self.to_chart)?))
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mouth> {
         let (from_tier, to_tier, keeper) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
-        let from_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
-        let to_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
+        let from_chart = crate::transducer::cga::Mv::from_bytes(b, p)?;
+        let to_chart = crate::transducer::cga::Mv::from_bytes(b, p)?;
         let toll = crate::economy::Mu::take_from(b, p)?;
-        Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)?, tariff: None, tube: None })
+        Some(Mouth { from_tier, to_tier, keeper, from_chart, to_chart, toll, nonce: key32(b, p)?, tariff: None, tube: None })
     }
 
     pub fn citation(&self) -> [u8; 32] {
@@ -391,7 +391,7 @@ impl Mouth {
     /// Each frame a versor, never zero: it carries a horizon sphere onto a
     /// sphere.
     pub fn frames_hold(&self) -> bool {
-        [&self.from_frame, &self.to_frame].iter().all(|f| !f.is_zero() && crate::transducer::cga::is_versor(f))
+        [&self.from_chart, &self.to_chart].iter().all(|f| !f.is_zero() && crate::transducer::cga::is_versor(f))
     }
 }
 
@@ -626,17 +626,17 @@ pub enum HandoffRequest {
     Signed(SignedHandoff),
     /// A handoff's standing, read; nothing sealed.
     Read([u8; 32]),
-    /// 78.128 — the open mouth loops whose holonomy is not the identity:
+    /// 78.128 — the open mouth orbits whose holonomy is not the identity:
     /// curvature recorded; nothing sealed.
-    Loops,
+    Orbits,
     /// 78.134 — a mouth pair's tube, read; nothing sealed.
     TubeRead([u8; 32]),
 }
 
 /// FORMAT: sub-kind byte of ACT_HANDOFF for a read.
 const KIND_READ: u8 = 4;
-/// FORMAT: sub-kind byte of ACT_HANDOFF for loops.
-const KIND_LOOPS: u8 = 10;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for orbits.
+const KIND_ORBITS: u8 = 10;
 /// FORMAT: sub-kind byte of ACT_HANDOFF for a tariffed mouth.
 const KIND_TARIFFED_MOUTH: u8 = 11;
 /// FORMAT: sub-kind byte of ACT_HANDOFF for a tube.
@@ -662,15 +662,15 @@ pub fn encode_tube_read(mouth: [u8; 32]) -> Vec<u8> {
 }
 
 /// `[ACT_HANDOFF][10]`.
-pub fn encode_loops_read() -> Vec<u8> {
-    vec![super::ACT_HANDOFF, KIND_LOOPS]
+pub fn encode_orbits_read() -> Vec<u8> {
+    vec![super::ACT_HANDOFF, KIND_ORBITS]
 }
 
-/// 78.128 — ONE MOUTH LOOP: the mouth pair whose opening closed a cycle of
+/// 78.128 — ONE MOUTH ORBIT: the mouth pair whose opening closed a cycle of
 /// domains, and the cycle's exact holonomy (its frame transitions composed
 /// in path order).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Loop {
+pub struct MouthOrbit {
     pub mouth: [u8; 32],
     pub holonomy: crate::transducer::cga::Mv,
     /// 78.134 — whether every mouth of the cycle is a tube; a cycle through
@@ -680,10 +680,10 @@ pub struct Loop {
 }
 
 /// `[count][(mouth 32, holonomy, tethered u8) …]`.
-pub fn encode_loops_reply(loops: &[Loop]) -> Vec<u8> {
+pub fn encode_orbits_reply(orbits: &[MouthOrbit]) -> Vec<u8> {
     let mut out = Vec::new();
-    crate::transducer::address::put_key_count(&mut out, loops.len());
-    for l in loops {
+    crate::transducer::address::put_key_count(&mut out, orbits.len());
+    for l in orbits {
         out.extend_from_slice(&l.mouth);
         l.holonomy.to_bytes(&mut out);
         out.push(u8::from(l.tethered));
@@ -691,10 +691,10 @@ pub fn encode_loops_reply(loops: &[Loop]) -> Vec<u8> {
     out
 }
 
-pub fn decode_loops_reply(b: &[u8]) -> Option<Vec<Loop>> {
+pub fn decode_orbits_reply(b: &[u8]) -> Option<Vec<MouthOrbit>> {
     let mut p = 0;
     let n = crate::transducer::address::take_key_count(b, &mut p)?;
-    let loops = (0..n)
+    let orbits = (0..n)
         .map(|_| {
             let mouth = key32(b, &mut p)?;
             let holonomy = crate::transducer::cga::Mv::from_bytes(b, &mut p)?;
@@ -704,10 +704,10 @@ pub fn decode_loops_reply(b: &[u8]) -> Option<Vec<Loop>> {
                 _ => return None,
             };
             p += 1;
-            Some(Loop { mouth, holonomy, tethered })
+            Some(MouthOrbit { mouth, holonomy, tethered })
         })
         .collect::<Option<Vec<_>>>()?;
-    (p == b.len()).then_some(loops)
+    (p == b.len()).then_some(orbits)
 }
 
 /// `[ACT_HANDOFF][kind][who 32][body][sig 64]`.
@@ -739,7 +739,7 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
     };
     let request = match *kind {
         KIND_READ => HandoffRequest::Read(id(b, &mut p)?),
-        KIND_LOOPS => HandoffRequest::Loops,
+        KIND_ORBITS => HandoffRequest::Orbits,
         KIND_TUBE_READ => HandoffRequest::TubeRead(id(b, &mut p)?),
         k => {
             let who = id(b, &mut p)?;

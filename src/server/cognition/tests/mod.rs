@@ -53,6 +53,7 @@ mod bond;
 mod origin;
 mod founding;
 mod signatory;
+mod signing_index;
 mod boundary;
 mod reach;
 mod sphere;

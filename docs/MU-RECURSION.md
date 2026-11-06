@@ -8089,7 +8089,7 @@ followed by the same address uttered unchanged.
 **Binding.** `anastome/dialogue/speech.rs`: `Adjudication` on the speech
 reply; `server/cognition/book/speech.rs` `perceive_speech`: the court's one entry point for
 an utterance, answering an adjudication per sentence and verifying a cited
-contraction; `client/sdk/mind/utter.rs`: `receive_adjudication`, the
+contraction; `client/sdk/mind/express.rs`: `receive_adjudication`, the
 sealed set on the utterance index, the contraction certificate on the
 next utterance; `sentence/form/contract.rs`: the six moves on a held
 idea's form (`contract`) and the court's reader of each
@@ -9234,7 +9234,7 @@ edge_of:    Transport { word, carriage: d.geo(&t), gauge }   d, t peeled from ga
 meet_edge:  edge.carriage = r                                r = 1 - v_b v_a
 ```
 
-`frame_base_point(s)` maps a versor to a POINT `V v0 V~`, and a point has
+`pose_point(s)` maps a versor to a POINT `V v0 V~`, and a point has
 no orientation, so the overwrite replaces a carriage carrying gamma's own
 dilator and transvection with one built from two orientation-free centres.
 The comment's hedge names it: "edge_of's own carriage stands" — only on
@@ -12672,7 +12672,7 @@ Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` 
 
 **No orbit collides.** Each kernel's orbit is the fibre over its key in its star's field (73.15), distinct by construction, with no assignment, slot or table. A collision is prevented, never named after the fact: at the orbit boundary, before the closing act is stamped, the orbit's frame is compared lane by lane, exactly, against the frames of the peers admitted at that tick; where it would coincide, the close is WITHHELD for one stroke (never evicted or re-slotted) while the planet takes a separating transport, and it closes one stroke on at a frame that differs. The distance between two planets' frames at a tick is the per-lane difference, sign-first and exact, never a root and never summed, and the count of orbits withheld for separation is a line of the clock.
 
-**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. *(Ruled 2026-11-05: `K` means closed orbits everywhere, so a `k`-step is one orbit closed and `K` is never a receipt index; within the stamp `h : vk : K : i`, `i` is the receipt's index in its orbit.)* Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain/mod.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
+**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. *(Ruled 2026-11-05: `K` means closed orbits everywhere, so a `k`-step is one orbit closed and `K` is never a receipt index; within the stamp `h : vk : K : i`, `i` is the receipt's index in its orbit.)* Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain/mod.rs` (`ReceiptChain::orbit_measure`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
 
 ### 78.24 The ledger is a partial order carried as one, never a serialized tape
 
@@ -13145,7 +13145,7 @@ frame reads the identical samples, mints the identical word and receives the
 identical verdict and price. As amended by 78.56, the frame is fixed only
 for a task whose centre-of-mass displacement vanishes; where it does not,
 the orientation is physical and kept. Code: `src/transducer/raster.rs`
-(`frame_fixed`, composed in `frame_fixed_on_ground`, which a source's
+(`frame_fixed`, composed in `enclosure_fixed_on_ground`, which a source's
 decoder hands every task through; ROADMAP track 26, S1).
 
 ### 78.55 The colour words compose: a mind derives a colour relation its ruled words imply
@@ -13167,7 +13167,7 @@ re-deriving the witnessing task from its own copy of the family or by
 composing the installed words it cites; unproven, it waits as dialect.
 Code: `src/transducer/element/residue.rs` (`compose_fibre`,
 `invert_fibre`, `derived_colour_word`, `colour_citation`),
-`src/client/sdk/mind/utter.rs` (`speak_colour_theorem`),
+`src/client/sdk/mind/express.rs` (`speak_colour_theorem`),
 `src/server/cognition/book/speech.rs` (`colour_proof`).
 
 ### 78.56 Three questions the physics already answers, and four closures
@@ -15218,7 +15218,7 @@ Code: `src/server/cognition/convert.rs` (`reserve_of`, `slash`), `src/client/sdk
 
 Domains share no space (78.126 as amended), so nothing crosses between them without a physical connection; a WORMHOLE is that connection. Its mouth pair (`ACT_HANDOFF` kind 7) is offered by one domain's reserve tier and accepted (kind 1) by the other's within `W`: a black-hole mouth in one domain and a white-hole mouth in the other, each placed in its domain's chart by an exact Cl(4,1) versor (`Degenerate` otherwise), a KEEPER (one of the two reserves) and a flat TOLL of μ per traversal; either reserve closes it (kind 8), returning traversals in flight and refunding the traversals' tolls. A *traversal* (kind 9) is a 78.126 offer citing an open mouth joining its two domains (`NoMouth`, `NotTheMouth` otherwise); its toll is escrowed from the sender at the offer, released to the keeper on acceptance and refunded on refusal, expiry or close, a μ transfer with Σ = 0. The open mouths are gauge edges between domains carrying the chart transition `to_frame · from_frame⁻¹`: a cycle whose holonomy is not the identity is RECORDED with its exact holonomy (kind 10), never refused, read and never stored (law 12). Amended by 78.133 (tariffs), 78.134 (every new mouth is a tube) and 78.136 (a progenitor line may build).
 
-Code: `src/anastome/dialogue/handoff.rs`, `src/server/cognition/domain_passage.rs` (`mouth_loops`).
+Code: `src/anastome/dialogue/handoff.rs`, `src/server/cognition/domain_passage.rs` (`mouth_orbits`).
 
 ### 78.129 Bonds and the slash: each tier backed by its domain's reserve
 
@@ -15256,9 +15256,9 @@ Code: `src/anastome/dialogue/handoff.rs` (`Tariff`), `src/server/cognition/domai
 
 ### 78.134 Mouths as tubes on curved space
 
-A mouth is a tube, never two free frames (the anti-flattening rule). Every new mouth pair is offered as kind 12 carrying `Tube { mass, from_r, to_r, supersedes }` (`Untethered` otherwise); its frames must be motions of curved space, elements of `Spin⁺(3,1)` inside Cl(4,1) (even, a versor, commuting with `e₊`, orthochronous: `is_spin_plus_31`; `NotIsometry` otherwise), and each mouth stands at its frame's base point on its domain's sheet (`frame_base_point`), never at a flat point. The throat's size is its mass: each end's horizon is the level set `{p : p·v = −c}` at hyperbolic radius `2m/R` in that end's curvature radius `R`, so `c = cosh(2m/R)`, taken as the upper bound of the certified enclosure on the grid `2^-64` (never undersized), derived on every read and never stored. The mouth gauge's coefficient is a motion alone (`Moved`), the chart transition composed in path order; a loop is TETHERED where the tubes alone close it to the same holonomy, and a cycle through an untethered mouth reads as history. Mouths opened before tubes stay readable and working; a tube may SUPERSEDE one, closing it at the tube's acceptance and returning what was in flight. Amended by 78.140 (torus faces) and by 78.162 (5): a throat's mass is never a scalar; it is owed re-derivation as a round of Cl(4,1).
+A mouth is a tube, never two free frames (the anti-flattening rule). Every new mouth pair is offered as kind 12 carrying `Tube { mass, from_r, to_r, supersedes }` (`Untethered` otherwise); its frames must be motions of curved space, elements of `Spin⁺(3,1)` inside Cl(4,1) (even, a versor, commuting with `e₊`, orthochronous: `is_spin_plus_31`; `NotIsometry` otherwise), and each mouth stands at its frame's base point on its domain's sheet (`pose_point`), never at a flat point. The throat's size is its mass: each end's horizon is the level set `{p : p·v = −c}` at hyperbolic radius `2m/R` in that end's curvature radius `R`, so `c = cosh(2m/R)`, taken as the upper bound of the certified enclosure on the grid `2^-64` (never undersized), derived on every read and never stored. The mouth gauge's coefficient is a motion alone (`Moved`), the chart transition composed in path order; a loop is TETHERED where the tubes alone close it to the same holonomy, and a cycle through an untethered mouth reads as history. Mouths opened before tubes stay readable and working; a tube may SUPERSEDE one, closing it at the tube's acceptance and returning what was in flight. Amended by 78.140 (torus faces) and by 78.162 (5): a throat's mass is never a scalar; it is owed re-derivation as a round of Cl(4,1).
 
-Code: `src/anastome/dialogue/tube.rs` (`Tube`, `is_spin_plus_31`), `src/transducer/cga/hyperboloid.rs` (`frame_base_point`), `src/server/cognition/domain_passage.rs` (`throat_level`), `src/transducer/cech/coefficient.rs` (`Moved`).
+Code: `src/anastome/dialogue/tube.rs` (`Tube`, `is_spin_plus_31`), `src/transducer/cga/hyperboloid.rs` (`pose_point`), `src/server/cognition/domain_passage.rs` (`throat_level`), `src/transducer/cech/coefficient.rs` (`Moved`).
 
 ### 78.135 The throat's bank: fed, drawn, returned, never retired
 
@@ -16185,7 +16185,7 @@ The operator's rulings on the entry's open questions, all of 2026-10-31:
   is one call site per reader. *Amended forward (ruled 2026-11-01), wired:*
   S and G are exact shares of the frame's `h·w` (S the sites changed
   between ground and painted, G from one painted hue to another;
-  `Transduction::lane_shares`, `transduce::share_of_frame`); H stays its
+  `Transduction::lane_shares`, `transduce::share_of_enclosure`); H stays its
   shell count, topological and already resolution-free; T is the flux over
   the carried mass, taken as a share of the frames' mass. A discharge with
   no frame (a rewrite's magnitude, a listing bound to no family) keeps its

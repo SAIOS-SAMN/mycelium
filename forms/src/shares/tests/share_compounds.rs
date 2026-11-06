@@ -50,7 +50,7 @@ fn after_opens_new_run_on_changed_share() {
 /// back by the inverse frame returns bit for bit; no floor is taken.
 #[test]
 fn read_in_round_trips_through_frame() {
-    use crate::frame::{Move, ReadIn, Reference};
+    use crate::reference::{Move, ReadIn, Reference};
     let r = Remaining::whole().after(&q(1, 4), 3).and_then(|r| r.after(&q(2, 9), 5)).expect("shares");
     let frame = Reference::identity().then(Move::Contract(q(3, 1))).then(Move::Twist(vec![q(1, 1)])).then(Move::Bend(vec![q(2, 5)]));
     let there = r.read_in(&frame).expect("carried");

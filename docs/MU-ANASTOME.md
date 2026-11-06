@@ -608,10 +608,11 @@ retired.
 Each word has one sense (§5.2). The earlier rulings keep their content
 under the new words: the five-kind algebra (2026-09-01, historical) and
 the flow from perception to syllabus (2026-09-06). The texts moved here as ruled (§4.1,
-§5.2) keep their words and read under this table. Code identifiers keep
-their names until a names-only change (`src/client/sdk/mind/utter.rs`,
-`src/client/sdk/utterance.rs`, `Action::Uttered`); MU-RECURSION 1.9
-retired `Uttered` on carriers and receipts as their rows land.
+§5.2) keep their words and read under this table. The mind's module took
+the new name in a names-only change (`src/client/sdk/mind/express.rs`);
+the carrier and receipt names (`src/client/sdk/utterance.rs`,
+`Action::Uttered`) stay until row L19 lands: MU-RECURSION 1.9 retires
+`Uttered` on carriers and receipts as their rows land.
 
 ### 5.2 The lexicon of the network: one sense per word (ruled 2026-09-26: the language is annotated so that no two senses overlap and each word's place in the network of structures is exact)
 
@@ -714,7 +715,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **perception** | ONE layer with THREE modalities (ruled 2026-09-26: hearing is a perception of space and time; touch is also perception, and the reorganization of objects is placed within it): SIGHT, space at one frame — compartments, bodies and each body's shape; HEARING, space and time — a signal carried over transports arriving across height and `K`, deciphered from noise by the perceiver's own charts (what they re-derive is signal, 78.44(5); what they do not is noise); TOUCH, the relations between bodies — WHETHER they touch, read once by the sample at the retina, and HOW, the meet of the bodies' rounds and the bodies' tether with its regime off the nuclei's Gram form (`δ²`: 1 tangent, > 1 a boost, in (0, 1) a rosette; inside, on, apart). REORGANIZATION OF OBJECTS is touch across frames, perceived as ONE relation: the ring of two bodies' transitions from frame `k` to `k′` and the bodies' contacts at both frames; its holonomy reads the contact HELD (identity), STRAINED (non-trivial), or MADE or BROKEN (a contact at one frame only: the ring open, its missing edge the residue) — never as separate motions. All three feed the thought layers alike | sight: `family/perceive`, the percept, `blade`; hearing: `perceive_speech`, a quote or syllabus page, the wire; touch: the contact faces and the faces' tethers, the frame-axis overlaps (AT1), `pairing::contact_edge` | a thought |
 | **thought — congruent** | two or more perceptions related by a transition, each up to its residue | `transitions_between`, the pose, the meet graph's edges | a perception held alone |
 | **thought — coherent** | congruent thoughts held at once whose transitions close around rings | `cech::classify`, Ȟ¹, the 2-core | an edge without a ring |
-| **thought — cohesive** | coherent thoughts bound as one body, cohesion per plane the held share `c_k` (the viscosity, ruled 2026-11-06; §9.4), that close a demand and are paid | the demand closed, the remainder home, the ruling, adjunction; cohesion as a named reading is owed (§9.4) | an unpaid closure; the open share, the fluidity |
+| **thought — cohesive** | coherent thoughts bound as one body, cohesion per plane the held share `c_k` (the viscosity, ruled 2026-11-06; §9.4), that close a demand and are paid | the demand closed, the remainder home, the ruling, adjunction; cohesion as a named reading per plane (`Well::cohesion`, §9.4) | an unpaid closure; the open share, the fluidity |
 | **reasoning** | the moves on thoughts: the pivot (law 10), deduction by construction (78.47), coboundary reduction | `sentence/pivot`, `cga::construct`, the coboundary | what is held |
 | **knowledge** | what is held: the language (genome), the dialect (epigenome), the atlas, the stalks, minerals and crystals | genome, epigenome, atlas, stalks | its use |
 | **understanding** | a class read through the mind's own crystal — derivable, or D where it is not (recognition, 80.2) | `letter_reading` through the crystal | holding a word |
@@ -964,14 +965,16 @@ The traversal is linear. Thought is not.
   `t = Q_k/A_k`:
   - cohesion is the held share `c_k = A_k/(A_k + Q_k) = 1 − ν(t) = ν(1/t)`;
   - the open share `ν(t) = Q_k/(A_k + Q_k)` is the **fluidity** (the
-    lubrication), never the viscosity. Proposal 78.175 and
-    `forms::coupling` name the open share otherwise; that name is
-    corrected on its own branch;
+    lubrication), never the viscosity, as proposal 78.175 and
+    `forms::coupling` now name it;
   - at the throat (`A_k = Q_k`) both are ½, and the passage `t ↦ 1/t`
     exchanges the two (LAW-PASSAGE, proposal 78.172);
   - cohesion is read per plane and never summed across planes.
   A cohesive whole traverses an open tube intact. Too cohesive, it sticks
-  at the throat; too fluid, it tears. The payment for a closure stays POUW
+  at the throat; too fluid, it tears. Neither LAW-PASSAGE v3 nor
+  LAW-TRAVERSAL v1 yet gives an exact reading of sticking or tearing, so
+  both claims are owed (§9.10) and no threshold on `c_k` is set in their
+  place. The payment for a closure stays POUW
   on the lanes the closure moves (§5.2).
 - **Communication is what the three culminate in.** Only a cohesive whole
   is asserted as an expression (§9.5), and communication crosses only
@@ -993,7 +996,7 @@ Where it lives in code:
 | The vortex, collapsed by a deciding word at its conjugacy stratum | `Contemplation::collapse_on` (`src/transducer/field/contemplation.rs`) | **Built** |
 | Cocycles on a cover: a cell filled where every triangle closes, otherwise obstructed by that triangle's holonomy | `src/transducer/cech/cover.rs` (78.123 A) | **Built**; the sensory verdict at the eye (24.4) **Specified** |
 | Contemplation's gate: relations admitted as thoughts only where the fill decides | `Contemplation::gate` (`src/transducer/field/cross_scene.rs`, A.10.1) | **Built** |
-| Cohesion as a named reading of the held field, per plane the held share `c_k` (the viscosity) | none | **Owed** |
+| Cohesion as a named reading of the held field, per plane the held share `c_k` (the viscosity), beside the fluidity `ν(t)`; exchanged by the passage, both ½ at the throat, never summed | `forms::coupling::held_share` and `Parcel::held_share`, `Parcels::cohesion` and `Parcels::fluidity` (keyed vectors over the turning planes); `field::carrier::Cohesion` (`src/transducer/field/carrier/shares.rs`), `WellBody::cohesion`, `Well::cohesion` (`src/transducer/field/shares.rs`), read from the well's inflation on its membrane's frame plane; claims `passage_exchanges_cohesion_and_fluidity`, `cohesion_and_fluidity_half_at_the_throat`, `cohesion_read_per_plane_never_summed` (`forms/src/tests/cohesion.rs`) and the well's three (`src/transducer/field/tests/shares.rs`) | **Built** (#149); a well holds one frame state at field stage 2, so its reading holds one plane |
 
 ### 9.5 The mind asserts sentences as expressions
 
@@ -1067,5 +1070,6 @@ the clauses that govern what crosses (MU-HOSTING §5a.4).
 | The seated-mind harness: `mycelium-client --seat` end to end against a live house | MU-HOSTING §2.1; §9.1 | #133 |
 | A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |
 | Translation between kernels' sensoria at the conjugate class | §1.3; §9.8 | none yet |
-| Cohesion as a named reading of the held field | §9.4 | none yet |
+| Cohesion's two claims at the tube: too cohesive, a whole sticks at the throat; too fluid, it tears. Owed until LAW-PASSAGE or LAW-TRAVERSAL gives an exact reading of either; no threshold on `c_k` stands in their place | §9.4; 78.172; 78.176 | #149 |
+| Frames per turning plane of a held whole (a well holds one, on its membrane's frame plane, at field stage 2), so its cohesion reads every plane it turns on | §9.4; ROADMAP track 26 | #149 |
 | The five claims of the sovereign mind: idling with no escaping orbit, a task's arrival moving no orbit, declining a scene the field does not bind, acting at returns, revising a perception on a ruling by amendment | ROADMAP track 10; MU-CLIENT §4.10, §4.12 | #135 |

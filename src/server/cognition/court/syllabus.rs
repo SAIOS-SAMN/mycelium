@@ -26,8 +26,8 @@ pub enum PageEnd {
     /// The order after the cursor was exhausted within the window.
     #[default]
     Order,
-    /// The frame's bytes would be passed by the next word.
-    Frame,
+    /// The body budget would be passed by the next word.
+    Budget,
     /// The wire's count (`u8`) was reached.
     Count,
 }
@@ -222,7 +222,7 @@ impl Court {
         }
         let end = match page.end {
             PageEnd::Order => "ended: order",
-            PageEnd::Frame => "ended: frame",
+            PageEnd::Budget => "ended: frame",
             PageEnd::Count => "ended: count",
         };
         count(t, &SYLLABUS, end);
@@ -270,7 +270,7 @@ impl Court {
                         page.deferred.push((address.clone(), depleted));
                     }
                     Learner::Frame => {
-                        page.end = PageEnd::Frame;
+                        page.end = PageEnd::Budget;
                         return page;
                     }
                     Learner::Missed => page.missed.push(address.clone()),
@@ -313,7 +313,7 @@ impl Court {
             let width = crate::chronometry::Stamp::LEN + 4 + tape.len();
             if used + width > bytes {
                 self.physics.reserve.restore(mag);
-                page.end = PageEnd::Frame;
+                page.end = PageEnd::Budget;
                 return page;
             }
             self.deferred_words.remove(address);

@@ -114,7 +114,7 @@ pub fn geodesic_transvection(va: &Mv, vb: &Mv) -> Option<Mv> {
 /// on `v² = −1` — one exact rational division, no root. THE SCALE IS THE
 /// POINT'S OWN COORDINATE (78.28(2), VA1 Q3): a point of the sheet is the
 /// vector with `v² = −1`, not its ray, so this division is content.
-pub fn frame_base_point(v: &Mv) -> Option<Mv> {
+pub fn pose_point(v: &Mv) -> Option<Mv> {
     let w = super::group::weight_of(v)?;
     if w.is_zero() {
         return None;

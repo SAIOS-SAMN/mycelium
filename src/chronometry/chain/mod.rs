@@ -71,6 +71,10 @@ pub struct ReceiptChain {
     /// holds and the mark of its last change, so a published reading of
     /// the line is re-read only where the line moved.
     tallies: Keyed<LineTally>,
+    /// Issue #118 — `kernel‖stamp‖n`: WHERE EACH SIGNING EVENT A HELD NODE
+    /// CARRIES STANDS, coordinates only (`signing.rs`). Kept where a node is
+    /// filed and where it leaves, rebuilt at restore from the nodes.
+    signings: Keyed<()>,
 }
 
 /// 78.151 — ONE SIGNER'S LINE AS A PUBLISHER READS IT: the nodes filed new
@@ -96,6 +100,7 @@ pub fn next_mark() -> u64 {
 
 mod line;
 mod node;
+pub(crate) mod signing;
 pub use line::{replace_durably, LineWrite};
 
 /// A PEER NODE'S TWO COORDINATES against this chain's own line, as the
@@ -204,7 +209,7 @@ impl ReceiptChain {
     /// frames its acts measured before `before` — lanes never mixed (law
     /// 5), a close's own frame never counted in. `None` where a lane passes
     /// its u64: an unmeasured frame, never a saturated one (rule 11).
-    pub fn orbit_frame(&self, signer: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
+    pub fn orbit_measure(&self, signer: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
         let mut frame = [0u64; 4];
         for (at, n) in self.orbit_acts(signer, k) {
             if at.place() >= before || n.kind == ActKind::Orbit {
@@ -226,7 +231,7 @@ impl ReceiptChain {
             return None;
         }
         let at = self.next_place();
-        Some((at, self.orbit_frame(&self.vk, at.k, at)?))
+        Some((at, self.orbit_measure(&self.vk, at.k, at)?))
     }
 
     /// EVERY ORBIT CLOSED AT ONE TICK, read off the close nodes in
@@ -280,7 +285,7 @@ impl ReceiptChain {
     /// a height is. Any other kind is not a close and passes.
     pub fn close_rederives(&self, r: &KStepReceipt) -> bool {
         r.kind != ActKind::Orbit
-            || (r.stamp.i > 0 && self.orbit_frame(&r.stamp.vk, r.stamp.k, r.stamp.place()) == Some(r.mu))
+            || (r.stamp.i > 0 && self.orbit_measure(&r.stamp.vk, r.stamp.k, r.stamp.place()) == Some(r.mu))
     }
 
     /// The orbit the next act stands in — the current `K`.
@@ -614,8 +619,10 @@ impl ReceiptChain {
             operator_at: _,
             journal: _,
             tallies,
+            signings,
         } = self;
         c.count("chain.tallies", tallies.len());
+        c.count("chain.signings", signings.len());
         c.count("chain.nodes", nodes.len());
         c.count("chain.lines", lines.len());
         c.count("chain.tops", tops.len());
@@ -782,6 +789,7 @@ impl ReceiptChain {
         self.placed.insert(&key, Placed { own_in, reach });
         self.file_on_line(&r.stamp);
         self.journal.filed(&key);
+        self.file_signings(&r);
         let n = self.pack(r);
         self.nodes.insert(key, n);
     }
@@ -1041,6 +1049,7 @@ impl ReceiptChain {
         self.mark_reached(k, &r.parents);
         self.file_on_line(&stamp);
         self.journal.filed(&stamp.key());
+        self.file_signings(&r);
         let n = self.pack(r.clone());
         self.nodes.insert(stamp.key(), n);
         self.head = Some(stamp);
@@ -1136,6 +1145,7 @@ impl ReceiptChain {
         } else {
             self.file_peer_root(&r);
         }
+        self.file_signings(&r);
         let n = self.pack(r);
         self.nodes.insert(key, n);
         Some(())
