@@ -258,15 +258,18 @@ impl Mind {
         // moves or this mind is paid (`CourtPace::starved`).
         // The court's root locates its stratum (address sense, MU-HOSTING
         // §5a.10): a rest holds while the root it rested at still locates
-        // the court's stratum. A root that is not 32 bytes locates nothing.
-        let locator = |root: &[u8]| <[u8; 32]>::try_from(root).ok().map(crate::court::admission::Locator::of_bytes);
+        // the court's stratum. The root is typed at its source
+        // (`StratumDigest::root`).
         let earned = self.board.court.earned;
         let strata: Vec<_> = all
             .into_iter()
             .filter(|d| {
-                let rests = self.board.court.starved.get(d.inv.key().as_bytes()).is_some_and(|(root, at)| {
-                    locator(&d.root).is_some_and(|now| root.locates(&now)) && *at == earned
-                });
+                let rests = self
+                    .board
+                    .court
+                    .starved
+                    .get(d.inv.key().as_bytes())
+                    .is_some_and(|(root, at)| root.locates(&d.root) && *at == earned);
                 !rests
             })
             .collect();
@@ -274,8 +277,8 @@ impl Mind {
             self.board.court.syncing = false;
             return;
         }
-        let roots: Vec<(Vec<u8>, Option<crate::court::admission::Locator>)> =
-            strata.iter().map(|d| (d.inv.key().as_bytes().to_vec(), locator(&d.root))).collect();
+        let roots: Vec<(Vec<u8>, crate::court::admission::Locator)> =
+            strata.iter().map(|d| (d.inv.key().as_bytes().to_vec(), d.root)).collect();
         // One exchange per contact: every discordant chart with this
         // genome's have-list, the request and the reply each filled to the
         // carrier. A wide discordance converges over contacts.
@@ -291,12 +294,11 @@ impl Mind {
                 // Each stratum asked that brought no word rests at the root
                 // it was asked at; one that brought any leaves the rest.
                 for (chart, root) in roots {
-                    match (brought.contains(&chart), root) {
-                        (false, Some(root)) => {
+                    match brought.contains(&chart) {
+                        false => {
                             entity.board.court.starved.insert(&chart, (root, entity.board.court.earned));
                         }
-                        // Brought a word, or rests at no root that locates.
-                        _ => {
+                        true => {
                             entity.board.court.starved.remove(&chart);
                         }
                     }

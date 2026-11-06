@@ -303,20 +303,20 @@ pub fn dilator_of(v: &Versor) -> Option<Versor> {
     }
 }
 
-/// A.13 — THE CHART'S INVERSION `I`: reflection in the unit sphere about the
-/// origin, `sphere_at(o, 1) = e_o − ½e_∞ = −e₊`, from the one producer of a
-/// sphere. It exchanges the chart's two poles — `I(o) = ∞`, `I(∞) = o` —
-/// and conjugates the translation generator `eᵢ ∧ e_∞` onto the
-/// transversion's `eᵢ ∧ e_o`: one generator seen from the opposite pole.
+/// A.13 — THE CHART'S INVERSION `I`: reflection in the membrane at the
+/// origin, the throat's fixed sphere `−e₊ = e_o − ½e_∞` (`cga::membrane`,
+/// 78.171 amendment (d)). It exchanges the chart's two poles — `I(o) = ∞`,
+/// `I(∞) = o` — and conjugates the translation generator `eᵢ ∧ e_∞` onto
+/// the transversion's `eᵢ ∧ e_o`: one generator seen from the opposite pole.
 ///
-/// ITS BASE IS THE CHART'S OWN. The sphere is centred where the translation
+/// ITS BASE IS THE CHART'S OWN. The membrane stands where the translation
 /// is read from (the origin `origin_image` reads), so the two halves are
-/// read at the same two poles; its squared radius is the lattice's unit, the
-/// scale `translator_versor` steps by. Another radius `r` gives the same
-/// transversion group with `b` read as `b/r²` — a change of unit, never of
-/// content. `I² = 1` exactly: `I` is its own reverse and its own inverse.
+/// read at the same two poles; its gauge is the lattice's unit, the scale
+/// `translator_versor` steps by. Another gauge `ρ` gives the same
+/// transversion group with `b` read in that gauge — a change of unit, never
+/// of content. `I² = 1` exactly: `I` is its own reverse and its own inverse.
 pub fn inversion() -> Versor {
-    crate::transducer::cga::sphere_at(&[], &Q::one())
+    crate::transducer::cga::membrane()
 }
 
 /// A.13 — A CONFORMAL VERSOR READ AT BOTH POLES:

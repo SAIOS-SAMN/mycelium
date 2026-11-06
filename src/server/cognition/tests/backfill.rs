@@ -228,7 +228,7 @@ fn hear_proves_citation_into_closed_era() {
     let era = e.line_between(&evk, None, shut.stamp.place(), 64);
     let e0 = e.at_place(crate::chronometry::Place::GENESIS).expect("e's first act, by its place");
     let (_, root) = e.fold_before(shut.stamp.place()).expect("the orbit folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, evk, root.at), hash: root.hash.bytes() }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, evk, root.at), hash: root.hash }];
     let folded = e.append(ActKind::Fold, [0; 4], cites, [0; 32], Vec::new()).expect("the fold node");
     // c back-fills e's line, and e's signed fold sheds what lies below the
     // root.

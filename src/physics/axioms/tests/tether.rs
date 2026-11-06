@@ -55,8 +55,8 @@ fn tether_is_product_of_conformal_spheres() {
     for a in &bodies {
         for b in &bodies {
             let v = tether(a, b).expect("both centroids read");
-            let sa = cga::sphere_at(&a.centroid().expect("a"), &a.radius2());
-            let sb = cga::sphere_at(&b.centroid().expect("b"), &b.radius2());
+            let sa = a.nucleus().expect("a");
+            let sb = b.nucleus().expect("b");
             assert_eq!(v.scalar_part(), sa.geo(&sb).scalar_part(), "⟨V⟩₀ = s_a · s_b");
             assert_eq!(v.geo(&v.reverse()).scalar_part(), a.radius2() * b.radius2(), "⟨VṼ⟩₀ = r_a² r_b²");
         }
@@ -76,7 +76,7 @@ fn tether_regime_is_invariant_under_common_motor() {
         blade::shape_of(&[(4, 7, 0), (5, 7, 0), (4, 8, 0)]).blade,
         blade::shape_of(&[(-3, 2, 0)]).blade,
     ];
-    let nucleus = |b: &blade::Blade| cga::sphere_at(&b.centroid().expect("a centroid"), &b.radius2());
+    let nucleus = |b: &blade::Blade| b.nucleus().expect("a centroid");
     let motor = cga::at_three::translator(&q(11), &q(-4), &q(2)).geo(&cga::rotator(&q(1), &q(1)));
     // A RAY, NOT A UNIT: `rotator(1,1) = 1 + e₁₂` has `M M̃ = 2`, and the
     // sandwich scales the inner product by `λ² = 4` (57.2).
@@ -120,7 +120,7 @@ fn sandwich_keeps_contact_side_under_negative_norm_motor() {
         blade::shape_of(&[(0, 9, 0), (1, 9, 0)]).blade,
         blade::shape_of(&[(0, 1, 0)]).blade,
     ];
-    let nucleus = |b: &blade::Blade| cga::sphere_at(&b.centroid().expect("a centroid"), &b.radius2());
+    let nucleus = |b: &blade::Blade| b.nucleus().expect("a centroid");
     for a in &bodies {
         for b in &bodies {
             let (sa, sb) = (nucleus(a), nucleus(b));

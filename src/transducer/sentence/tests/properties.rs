@@ -617,14 +617,14 @@ fn classify_files_turn_at_four_and_screw_at_zero() {
 /// in the circle `x = 3, y² + z² = 16`. A point off the witness moves.
 #[test]
 fn interface_between_fixes_contact_witness() {
-    use crate::transducer::cga::{point_at, sphere_at};
+    use crate::transducer::cga::{membrane_at, point_at};
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let applied = |i: &Interface, p: &crate::transducer::cga::Mv| i.v.geo(p).geo(&i.v.reverse());
-    let tangent = Interface::between(&sphere_at(&[q(0), q(0), q(0)], &q(1)), &sphere_at(&[q(2), q(0), q(0)], &q(1)), 0)
-        .expect("a tether");
+    let sphere = |x: i64, rho: i64| membrane_at(&[q(x), q(0), q(0)], &q(rho)).expect("a positive gauge");
+    let tangent = Interface::between(&sphere(0, 1), &sphere(2, 1), 0).expect("a tether");
     let at = point_at(&[q(1), q(0), q(0)]);
     assert!(applied(&tangent, &at).projective_eq(&at), "the point of tangency is fixed");
-    let crossing = Interface::between(&sphere_at(&[q(0), q(0), q(0)], &q(25)), &sphere_at(&[q(6), q(0), q(0)], &q(25)), 1)
+    let crossing = Interface::between(&sphere(0, 5), &sphere(6, 5), 1)
         .expect("a tether");
     for w in [[3, 4, 0], [3, 0, 4], [3, -4, 0], [3, 0, -4]] {
         let p = point_at(&w.map(q));

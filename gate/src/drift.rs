@@ -70,6 +70,20 @@ pub const REGISTER: &[Guard] = &[
         proof: Proof::CompileFail,
     },
     Guard {
+        regression: "a fold root's hash compared as bytes inside a citation, read as a receipt chain's order (MU-ANTI-FLATTENING 13)",
+        ruling: "operator ruling of 2026-11-02; MU-HOSTING 5a.10; ROADMAP track 25 X0",
+        guard: "Cite",
+        claim: "cite_has_no_equality",
+        proof: Proof::CompileFail,
+    },
+    Guard {
+        regression: "a stratum's root held as bare bytes, read as an address (MU-ANTI-FLATTENING 13)",
+        ruling: "operator ruling of 2026-11-02; MU-HOSTING 5a.10; ROADMAP track 25 X0",
+        guard: "StratumDigest",
+        claim: "stratum_digest_has_no_equality",
+        proof: Proof::CompileFail,
+    },
+    Guard {
         regression: "a commitment compared before its object is reconstructed (MU-ANTI-FLATTENING 13)",
         ruling: "operator ruling of 2026-11-02; MU-HOSTING 5a.10",
         guard: "Commitment",
