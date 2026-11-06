@@ -182,6 +182,15 @@ pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeRead
 /// the crossing's hash, the gas and the map fee, or the refusal by name.
 pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, CrossRefusal, Crossed, Declaration, Gas, SignedTraverse, Traverse};
 
+/// RETRIEVE (`ACT_DOMAIN` kind 19, 78.154 (4), #159): a coordinate
+/// retrieval of the receipts at a final point's tick, signed by the staker
+/// and priced from its stake ([`Session::retrieve`](crate::session::Session));
+/// the answer carries the court's signed section over its head, which the
+/// retriever checks with [`verify_retrieved`].
+pub use mycelium::anastome::dialogue::retrieve::{
+    decode_retrieve_reply, encode_retrieve, verify_retrieved, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
+};
+
 /// A UNIVERSE'S LEDGER AND MAP (`ACT_DOMAIN` kinds 12–15, 78.154): an entry
 /// chained and sealed, never judged; the ledger read by pages; a map act
 /// (mouth, segment, local throat) posted by the sitting reserve and the map

@@ -318,6 +318,46 @@ kinds and a firmament heavy enough for the galaxies requested (§3a.6). A
 kernel may select it, adapt it, or found from its own physics; it is
 never imposed (Concordance A7).
 
+### 3a.8 The domain acts and the coordinate retrieval (Built)
+
+The sub-kinds of `ACT_DOMAIN` past a domain's founding, its reserve and
+its bond:
+
+| Sub-kind | Act | Signed by | Ruling |
+|---|---|---|---|
+| 8–11 | GEOMETRY, BASKET, JOIN, READ-UNIVERSE | the sitting reserve (reads unsigned) | MU-RECURSION 78.139 |
+| 12, 13 | LEDGER, READ-LEDGER | the sitting reserve (read unsigned) | 78.154 |
+| 14, 15 | MAP, READ-MAP | the sitting reserve (read unsigned) | 78.154 |
+| 16 | TRAVERSE | the payer | 78.154 |
+| 17, 18 | MANIFEST, READ-ENDOWMENT | the sitting reserve (read unsigned) | §3a.1–3a.3 |
+| 19 | RETRIEVE | the staker | 78.154 (4), #159 |
+
+**RETRIEVE (19)** is a coordinate retrieval: the receipts this court holds
+at a final point's tick (78.152 TU-6 PINPOINT), read from a domain's ledger
+and priced at the court's read price, one unit of information on H per
+receipt, drawn from the staker's stake as a claim held to the window. The
+draw is the act's price, never a wallet act. Any staker may ask, a mind or
+a kernel (`Session::retrieve`).
+- **Request:** `[ACT_DOMAIN][domain 32][0x80 0x00][19][staker 32][point]
+  [cited final point][nonce 32][sig 64]`, the staker's signature over
+  `"mycelium retrieve v1" ‖ domain ‖ staker ‖ point ‖ cited ‖ nonce`.
+- **Reply:** `[1][fee μ⃗][count u32][receipt …][section]`. The receipts
+  are in the `ACT_RECEIPTS` page codec, each carrying its stamp. The
+  section is the court's own 47.1 position over its head at the answer,
+  signed over `"mycelium retrieved v1" ‖` the request's signed bytes. A
+  refusal is `[0][code]`: unsigned, unknown domain, not final, origins (two
+  origins, or the point above the cited one), folded, short, overflow.
+- **The retriever's check** (`retrieve::verify_retrieved`): the section
+  verifies under the court's key, is one claim with its head receipt, and
+  signs over this request; every receipt re-derives, stands at the point's
+  tick and at or below the signed head's height. A served answer that does
+  not stand is the court's signed claim, presentable as its own.
+- **What stays in process.** PINPOINT, UNPACK and UNROLL are served only
+  through this priced retrieval; a free read invites flooding. A tick this
+  court has folded is refused `Folded` and is read through `ACT_RECEIPTS`'s
+  replay arm. **Owed:** that arm priced at the same read price, which needs
+  a staker and a signature on the `ACT_RECEIPTS` request.
+
 ---
 
 ## 4. The flat-world archetype: agent social networks
@@ -1108,12 +1148,12 @@ proposed with the boundary reading (B4).
 | Item | Status | Where |
 |---|---|---|
 | Receipt chain links compared by digest, each record reconstructed (`rederives`) | **Built** | `src/chronometry/chain/mod.rs` |
-| A domain's stratum root recomputed from its members before comparison, and compared in the address sense (`Locator::locates`, `locates_stratum`); a mind's rest on a stratum fetched for nothing held at the court's root as a `Locator` (`CourtPace::starved`) | **Built** | `src/server/cognition/court/glue.rs`, `src/client/sdk/mind/learn.rs` |
+| A domain's stratum root recomputed from its members before comparison, and compared in the address sense (`Locator::locates`); the root typed at its source, `StratumDigest::root` a `Locator` (`sheaf::stratum_root`), so a stratum digest has no `==` and a digests reply naming a root that is not 32 bytes is refused whole; a mind's rest on a stratum fetched for nothing held at the court's root as a `Locator` (`CourtPace::starved`) | **Built** | `src/transducer/sheaf.rs`, `src/server/cognition/court/glue.rs`, `src/client/sdk/mind/learn.rs`; track 25, X0 |
 | A back-filled receipt, admitted by its chain's links, read by no reader (depth, alias, ruling reconstruction, fold shed, founding, equivocation burn, restore) until a frame its signer signed at or above it is admitted (§5a.9, #73) | **Built** | `src/server/cognition/reach.rs` |
 | The Concordance's clauses served by content and signatures admitted by reconstruction of their fixtures; the text's digest retired | **Built** (v0.4.0) | `src/physics/laws/clauses/`, `ACT_LAWS` modes 6–8 |
 | Digests typed by sense (`Locator`, `Predecessor`, `Commitment`), with no bare equality, at the admission sites converted first: the receipt line's checks, the signed prefix's claim, the equivocation proof, the signed-reach gate, the ledger's `holds`, `height_of` and era walk, the back-fill chase, a folded citation's recall, and the endowment's manifests | **Built** | `src/court/admission/digest.rs`; track 25, X0 |
 | The record fields typed by sense, so no bare comparison of them can be written: `Parent::hash`, `KStepReceipt::chain_hash`, a fold `Root::hash` and the arms of `Admitted::Equivocation` are `Predecessor`; `SignedPrefix::prev_receipt_hash` and `KStepReceipt::prev_hash` are `Commitment`. `Parent`, `KStepReceipt`, `SignedPrefix`, `Root`, `Era` and `Admitted` have no `==`: a receipt is compared by `Predecessor::cites` over `Parent::of`, a root by `Root::restates`, and an era in the archive by its locator | **Built** | `src/chronometry/receipt.rs`, `src/chronometry/era.rs`; track 25, X0 |
-| `Cite::Root`'s hash typed by sense (it would drop `==` from `Cite`) | **Specified** | Track 25, X0 (later stage) |
+| `Cite::Root`'s hash typed by sense, a `Predecessor`: `Cite` has no `==`, and two citations are compared by `Cite::restates` (two roots in the link sense, any other pair by its canonical writing) | **Built** | `src/chronometry/receipt.rs`; track 25, X0 |
 | Admission taking only a reconstructed object (`Reconstructed<T>`): `admission::admit`, `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`, `Court::admit_backfill`, `ReceiptChain::admit_unreached`; a fold root as `Reconstructed<RootProof>` (`Reconstructed::root`), taken by `ReceiptChain::adopt_root` and `Court::reach_by_root` (#88) | **Built** | `src/court/admission/reconstructed.rs`; track 25, X0 |
 | The vertex's admissions (`Court::admit_uplink`, `admit_chained`, `admit_domain`) and `ReceiptChain::admit` taking `Reconstructed<T>`: a tier's fold and a domain's genesis are reconstructed by re-writing their signed bytes from their own coordinates and verifying the signature over them (`Reconstructed::fold`, `Reconstructed::domain`); `Court::hear_uplink` and `Court::hear_domain` reconstruct the act as heard and refuse `Unsigned` | **Built** | `src/court/admission/reconstructed.rs`, `src/server/cognition/cite.rs`; track 25, X0 |
 | A motion stated as turns, read by the Conformal law: one turn per phase of the frame, composed by addition with each phase's winding kept beside its phase (`Turn::plus`, `Turn::winding`; LAW-FIELD amendment (c)), each place carried phase by phase and a disagreement held as the residue `t_claim − t_rec` per phase (`TurnBreach::NotCarried`). No turn is converted to a rotor: only multiples of a quarter turn have exact rotors over ℚ (Niven), and every turn is checked as a turn. A turn whose index on its phase's period is no whole site leaves the frame's periods and is refused `LeavesPeriods`; a count of turns other than the frame's rank is refused `Rank` (`PlaceRank` for a place). In process and through the SDK; the wire is unchanged, and the motion as turns rides the crossing record (X1). Claims `conformal_accepts_turn_valued_motion`, `turn_motion_composes_by_addition`, `composed_turns_keep_their_winding`, `verify_turns_refuses_turn_leaving_frame_periods`, `verify_turns_names_residue_of_uncarried_place` | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)) | `src/physics/laws/turns.rs` (`verify_turns`, `TurnMotion`, `TurnTransition`, `TurnBreach`); `src/transducer/family/transduce/turn.rs` |
