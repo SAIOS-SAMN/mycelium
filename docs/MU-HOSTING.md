@@ -696,8 +696,9 @@ alignment reading. Each kernel signs the v0.4.0 register at its release
 candidate.
 
 **`NotSignatory` at the vertex (Built, B4).** Each universe act reads its
-domain's sitting reserve's alignment (one read per receipt held, on the
-act's stroke) before it seals; a key's own acts are never read. **Next:**
+domain's sitting reserve's alignment (one read per signing event of the
+reserve, never per receipt held, on the act's stroke; #118) before it
+seals; a key's own acts are never read. **Next:**
 the tube between two universes bounded by the clauses both enabled (a
 mouth's far-end acceptance is not yet read), an act read under a changed
 clause as signed, and the boundary reading under `ACT_OBSERVE`.

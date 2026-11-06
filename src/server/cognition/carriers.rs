@@ -46,6 +46,7 @@ impl Court {
             root_proofs,
             proofs_mark: _,
             era_tallies,
+            folded_signings,
             fold_pending: _,
             court_head: _,
             retire_gen: _,
@@ -273,6 +274,8 @@ impl Court {
         // 78.147 — the fold roots held, each with its two signatures, by signer.
         c.count("root_proofs", root_proofs.len());
         c.count("era_tallies", era_tallies.len());
+        // Issue #118 — the signing events read once from this court's own eras.
+        c.count("folded_signings", folded_signings.len());
         c.count("pending_parents", pending_parents.len());
         c.count("admitted_at", admitted_at.len());
         c.count("held_at", held_at.len());
