@@ -2,7 +2,7 @@
 //
 // MU-RELEASE §3a step 3 — THE JOINT-READ FIXTURES' INPUTS, as the proposals
 // state them: LAW-PASSAGE v3's five (78.172 §5, adopted 2026-11-05, for the
-// joint read) and LAW-COORDINATE v3's (78.173 §5), each an exact input.
+// joint read) and LAW-COORDINATE v4's (78.173 §5), each an exact input.
 //
 //! The generators of the passage's fixtures are named by role, as the
 //! fixtures write them: plane `k`'s positive unit `e₊ₖ` (squaring to +1,
@@ -15,8 +15,9 @@
 //! no operation in `Fixture` or reading in `Object`: it is read in `forms`
 //! alone. The coordinate's fixtures stand at the root `R` (genesis `6a` ×
 //! 32, epoch `0x92`), its one-component lanes keyed `e_S1`, `e_G1`, `e_T1`
-//! and H's frame plane `e_Z1Q1`, H's two-plane bodies on `e_Z1Q1` and
-//! `e_Z2Q2`, in degrees. Fixture 1b's writings and fixture 3's nesting (a
+//! and H's turning about axis 1, `e₊₂e₊₃` (`e_+2+3`), H's two-plane bodies
+//! on the turnings about axes 1 and 2, `e₊₂e₊₃` and `e₊₃e₊₁`, in degrees
+//! (`FORMS-COORDINATE` v4). Fixture 1b's writings and fixture 3's nesting (a
 //! claim over every depth, not an input and an object) are read in `forms`
 //! alone, as are fixtures 7–10 and 13–16 (the advance, an event's bell,
 //! the merger and fission, the re-origin, dilation, the lane set):
@@ -27,7 +28,7 @@
 
 use super::register::Fixture;
 use algebra::{base_axis, Clifford, EM};
-use forms::coordinate::{Axis, Bounds, Coordinate, Interval, Key, Lane, Lanes, Local, Origin, Vector};
+use forms::coordinate::{Axis, Bounds, Coordinate, Interval, Key, Lane, Lanes, Local, Origin, Square, Vector};
 use forms::Q;
 use num_bigint::BigInt;
 
@@ -116,16 +117,17 @@ fn on(letter: char, index: u32) -> Option<Key> {
     Some(Key::axis(Axis::of(letter, index).ok()?))
 }
 
-/// The generator of the plane of the axes `a` and `b`.
-fn plane(a: (char, u32), b: (char, u32)) -> Option<Key> {
-    Key::generator(Axis::of(a.0, a.1).ok()?, Axis::of(b.0, b.1).ok()?).ok()
+/// The continuum's turning `e₊ₖe₊ₗ`, in that orientation (FORMS-COORDINATE
+/// v4: H stands only on turning planes).
+fn turning(k: u32, l: u32) -> Option<Key> {
+    Key::generator(Axis::unit(Square::Positive, k).ok()?, Axis::unit(Square::Positive, l).ok()?).ok()
 }
 
 /// The one-component lanes `S:G:T:H`, keyed `e_S1`, `e_G1`, `e_T1` and
-/// `e_Z1Q1`, with `s` on S, `g` on G, and T and H at 0.
+/// `e₊₂e₊₃`, with `s` on S, `g` on G, and T and H at 0.
 fn lanes(s: Q, g: Q) -> Option<Lanes> {
     let one = |k: Option<Key>, v: Q| Some(Vector::one(k?, v));
-    Lanes::base(one(on('S', 1), s)?, one(on('G', 1), g)?, one(on('T', 1), q(0, 1))?, one(plane(('Z', 1), ('Q', 1)), q(0, 1))?).ok()
+    Lanes::base(one(on('S', 1), s)?, one(on('G', 1), g)?, one(on('T', 1), q(0, 1))?, one(turning(2, 3), q(0, 1))?).ok()
 }
 
 /// The lanes with `s` on S alone.
@@ -143,10 +145,10 @@ fn enclosed() -> Option<Origin> {
     Some(Origin { enclosures: vec![Local { h: 3, lanes: on_s(q(2, 1))?, k: vec![0] }], ..root() })
 }
 
-/// The body at `R`, bell 5, S = G = T = 0 and H on the frame planes
-/// `e_Z1Q1` and `e_Z2Q2`, in degrees (fixtures 11 and 12).
+/// The body at `R`, bell 5, S = G = T = 0 and H on the turnings about axes
+/// 1 and 2, `e₊₂e₊₃` and `e₊₃e₊₁`, in degrees (fixtures 11 and 12).
 fn planar(h1: Q, h2: Q) -> Option<Coordinate> {
-    let h = Vector::of(vec![(plane(('Z', 1), ('Q', 1))?, h1), (plane(('Z', 2), ('Q', 2))?, h2)]).ok()?;
+    let h = Vector::of(vec![(turning(2, 3)?, h1), (turning(3, 1)?, h2)]).ok()?;
     let zero = |k: Option<Key>| Some(Vector::one(k?, q(0, 1)));
     let lanes = Lanes::base(zero(on('S', 1))?, zero(on('G', 1))?, zero(on('T', 1))?, h).ok()?;
     Some(Coordinate { origin: root(), local: Local { h: 5, lanes, k: vec![0, 0] } })
@@ -218,7 +220,7 @@ pub fn coordinate_fixtures() -> Option<Vec<Fixture>> {
         held: vec![a, b, c, d],
         at: planar(q(0, 1), q(0, 1))?,
         lane: Lane::H,
-        key: plane(('Z', 1), ('Q', 1))?,
+        key: turning(2, 3)?,
         interval: span(q(1, 3), q(1, 2)),
     });
     Some(fixtures)
