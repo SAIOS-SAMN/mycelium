@@ -63,8 +63,10 @@ pub use mycelium::anastome::dialogue::decode_solve_receipt;
 /// signed by the voice; the court reconstructs the motion, derives the
 /// residue and answers a [`FactorVerdict`]. The pair's factorisations are
 /// read by [`factorisations`]; each holds the [`Motion`] and the residue as
-/// [`Link`]s.
+/// [`Link`]s. Since track 26 S6 the claim states the [`Perspective`] the
+/// pair was perceived under; the default is [`Perspective::of_sample`].
 pub use mycelium::anastome::dialogue::{decode_factor_verdict, decode_factorisation, encode_factorisation, FactorVerdict, FactorisationAct};
+pub use mycelium::transducer::perspective::{Perspective, Role, SensorMotion};
 pub use mycelium::transducer::family::transduce::{factorisations, Enclosure, Factored, Factorisation, Motion, Sense, SignedPermutation};
 pub use mycelium::transducer::sentence::Link;
 
