@@ -123,8 +123,7 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
         panic!("admitted")
     };
     assert!(!k.fold_bonded(&FoldAt::sealed(bare)), "an unbacked fold reads unbonded");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.bond_of(&verifying(&tier())), [7, 0, 0, 0], "the bond held across a restart");
 }
 
