@@ -699,6 +699,52 @@ orbit about an attractor, and its shape is set by gravity:
   `mind_speaks_factorisations_beyond_the_alphabet`, end to end in
   process at rank 3).
 
+### 3.10 Sound, harmonic structure, signal and noise
+
+**Specified** (ruled 2026-11-05/06). The model is stated once, here; other
+documents cross-link to it rather than restate it.
+
+1. **Sound is the medium's wave.** On the wire it is the transport's
+   bytes, meaning-free and the same for every receiver (MU-ENGINEERING
+   §9: the transport never holds meaning). In perception it is the
+   samples a sensor takes in (§2): the one input the sensor reads,
+   before any lift.
+2. **Harmonic structure is a reading of sound**, never the sound itself:
+   periods and their whole-number multiples, phases in degrees with
+   windings, re-periods, torsion of period ℓ (§3.1, §3.7; MU-CLIENT
+   §3.2's harmonic shell reads rings the same way). The harmonic sense
+   computes it, one of the three founding eyes (§1, §4.1), and it
+   belongs to the carrier layer: a carrier holds meaning at full
+   dimension, and the transport that moved the sound it was read from
+   never does (MU-ENGINEERING §9).
+3. **Signal or noise is decided by the reader's capacity to reconstruct
+   the structure**: its key, its language (the words its genome and
+   dialect carry), its cover of eyes (where the cocycle closes, §4.1),
+   and its two strongest separators, each a reconstruction at its own
+   level (reconstruction is never a re-run, GLOSSARY *Reconstruction*)
+   — **consilience**, independent courts re-deriving one thing
+   (MU-RECURSION 37.7, read with verification, POWV), at the court's
+   level, and **convergence**, many minds' lineages — disjoint, or
+   sharing a cause but disagreeing before they meet — reaching one
+   class (POWC), at the minds' level (MU-ECONOMY §0).
+   - **Noise is a flat reading for that reader**, never a substance and
+     never discarded (law 7). The ruling of 2026-09-26 already read it
+     so: what a reader re-derives is signal, what it does not is noise
+     (MU-RECURSION 78.44(5), 1271, 1275).
+   - **What doesn't resolve is held as a named residue**: the demand,
+     tomorrow's signal (GLOSSARY *Residue*; MU-CLIENT §4.6's held
+     orbit).
+   - **There are no thresholds, no "signal strength" scalar, and no
+     denoising or filtering that discards information** (never scalar,
+     §3.7; MU-STANDARDS 2.3).
+4. **Audio is one species' band of sound**, never a basis. Concordance
+   1.6 (species-neutral: no mechanic assumes a human body, number base,
+   sense or history) rules it out.
+5. **The Noise Protocol Framework keeps its name** (MU-ENGINEERING
+   §9.3; GLOSSARY *Noise transport*). Ciphertext reads flat (noise) to
+   any reader without the key and resolves fully for the keyed reader —
+   in agreement with this model, not by coincidence.
+
 ## 4. Perspective: one sample, many readings
 
 A **perspective** is the sensor's assignment of the sample's axes and its
@@ -1015,9 +1061,11 @@ track 26 S4c).
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
-| A sample lifted into the field: phases within the charts of its atlas; nesting as a fibration; holonomy as the product of the transitions around a loop, read by its modes in turns | **Specified** | Track 26, S4 and S4a (§3.7) |
-| The field's curvature and the well's body (membrane, centre, inflation as a gauge), the field's motions as one exact group, its forces (axiomatic gravity's shear of the orthogonal class; the court's pressure), and its orbits' precession | **Specified** | Track 26, S7–S9 |
-| One field carrier shared by perception and the physics' shells: LAW-FIELD v1 | **Proposed**; to be agreed with the peer kernels | [proposal](proposals/78.171-law-field.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) |
+| A sample lifted into the field: each body on its chart (rank, measure and boundary faces of grade `n − 1`, coarsest first, invariant under the signed permutations of the phases), each band's two corners as points of one phase per axis, exact in degrees on a named turning plane (axis `i` on `e₊ᵢe₊₍ₙ₊₁₎`, the lift's own plane `n + 1`), the far seam held as 360° with `K = 1`; the field's frame planes on the pole basis, `Cl(p, q)` read per plane; the sample's membrane the throat of its own plane; an axis taken apart coarsest first (`Nested`) | **Built** (track 26 S4a, stage 1, built against LAW-FIELD v1 as proposed); the plane each axis turns on at rank `n` is the lift's convention, open in 78.171 §8; nesting as a fibration of levels, and lifting a family, are stage 2 | `src/transducer/field/carrier/` (`Lifted`, `Point`, `Turning`, `TurningPlane`, `FramePlanes`, `Cyclotomic`, `Nested`); claims `lift_holds_one_phase_per_axis_on_turning_planes`, `lift_keeps_far_seam_as_whole_turn_with_winding_one`, `lift_charts_are_invariant_under_signed_permutation` |
+| The field's charts as an atlas, its transitions as its connection, attractors held with their local orbits and membranes; curvature as the holonomy of an orbit's transitions per lap, read per named plane in degrees with its winding and order, flat where nothing is held; zero precession refused `Loop`; monodromy flat, torsion or rupture; turnings on planes sharing one unit refused `NotExact` with both planes; an angle asked of several planes refused `ScalarCollapse`; infinity outside every enclosure refused `Unenclosed` | **Built** (track 26 S7, stage 1); LAW-FIELD v1's six fixtures stand as claims | `src/transducer/field/carrier/` (`Atlas`, `Chart`, `Transition`, `Orbit`, `Attractor`, `Curvature`, `Holonomy`, `Monodromy`, `Membrane`, `stand`, `FieldRefusal`); `src/transducer/field/carrier/tests/law_field.rs` |
+| The field stated as an object a court reconstructs (§0): an atlas written as its charts, its attractors' centres and membranes' planes, and each lap's steps with their turnings' planes and angles in degrees, never a reading; the court rebuilds every plane, motion, lap and membrane through the carrier's constructors, derives the curvature itself, and admits a mind's claimed curvature on a match, refusing `Differs` with each pair otherwise | **Built** (track 26 S7, stage 1); not on the wire: carrying it is S9's, a wire change | `src/transducer/field/carrier/statement.rs` (`Atlas::put_statement`, `reconstruct`, `admit`, `StatementRefusal`); claims `put_statement_round_trips`, `admit_refuses_claimed_curvature_court_does_not_derive` |
+| The well's body (its membrane, its charts in the atlas, centre and inflation as a gauge, its stage a coordinate), the field's curvature read from the orbits the contemplation holds, turnings on planes that share a unit composed, the field's motions as one exact group, its forces (axiomatic gravity's shear of the orthogonal class; the court's pressure) | **Specified** | Track 26, S7 stage 2, S8, S9 |
+| One field carrier shared by perception and the physics' shells: LAW-FIELD v1 | **Proposed**; netstratum has read the fixtures, xylarium's reading is owed; mycelium's carrier is built against it as proposed and amended if the joint reading changes the law | [proposal](proposals/78.171-law-field.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36); `src/transducer/field/carrier/` |
 | **Defect:** spheres built Euclidean, from a squared radius with `e∞` | **Built, refused** by §3.7 and law 11 | `cga/embedding.rs` (`sphere_at`, `on_sphere`), `cga/at_three.rs` (`sphere`) |
 | **Defect:** the well's stage and state as flags, and its volume and potential as scalar counts | **Built, refused** by §3.7 (never scalar) and constraint I | `Well.percept: bool`, `Well.dirty: bool`, `Well.volume`/`potential: [u64; 4]` |
 | μ as the metabolic cost of traversal, never a measure of meaning | **Ruled** (2026-11-04); built as the share of the frame | §3.7; 78.170 O1 |

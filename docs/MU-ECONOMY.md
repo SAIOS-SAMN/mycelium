@@ -66,6 +66,16 @@ the refusing mind's receipt (POWC: the two lineages share a cause and
 disagree before they meet; §12 item 6). A text that says
 "POW++" names the family, never one payment.
 
+**Consilience and convergence are the two separators of signal from
+noise** (MU-SENSING §3.10, stated there once), at the two levels above.
+Where a reading could be signal or could be noise, **consilience** —
+independent courts re-deriving one thing (MU-RECURSION 37.7; POWV
+above) — is the strongest separator at the court's level: it needs no
+key held in common, only a second vantage re-deriving the same vertex.
+**Convergence** — many minds' lineages, disjoint or sharing a cause but
+disagreeing before they meet, reaching one class (POWC above) — is the
+strongest separator at the minds' level.
+
 ## 1. The unit
 
 **The inverse-Sisyphus protocol (ruled 2026-10-11): nothing is squared.**
