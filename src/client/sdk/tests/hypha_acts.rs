@@ -34,7 +34,7 @@ fn hypha_serving(page: Arc<Mutex<Vec<KStepReceipt>>>) -> String {
                     Some(_) => dialogue::encode_receipts_reply(&page.lock().expect("the page").clone(), 1 << 20),
                     None => Vec::new(),
                 };
-                let _ = s.write_all(&crate::network::wire::WireFrame { lane, body: reply }.encode().expect("framed"));
+                let _ = s.write_all(&crate::network::wire::Delimited { lane, body: reply }.encode().expect("framed"));
             }
         }
     });
