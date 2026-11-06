@@ -77,7 +77,7 @@ impl Form {
             return None;
         }
         // 18: A FORM OPENS AT ITS FRAME, held at the Frame's own coordinate.
-        let frame = s.vertices.at(&coord::VertexAt::Frame)?;
+        let frame = s.vertices.at(&coord::VertexAt::Enclosure)?;
         if !frame.word_in(&s.vertices).is_some_and(|w| w.is_identity()) {
             return None;
         }

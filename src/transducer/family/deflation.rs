@@ -189,7 +189,7 @@ pub struct DeflationRead {
     pub pay: [u64; 4],
     /// O1 (ruled 2026-11-01) — THE DISCHARGE AS μ, A SHARE OF THE FRAME:
     /// per closed pair its S and G counts over the output frame's `h·w`
-    /// and its H shell count as it stands (`transduce::share_of_frame`);
+    /// and its H shell count as it stands (`transduce::share_of_enclosure`);
     /// T the flux over the carried mass, taken as a share of the frames'
     /// mass: `T = flux · (Σ mᵢ/(hᵢ·wᵢ)) / Σ mᵢ`, `mᵢ` the mass pair `i`
     /// carried. What every escrow, release and payment reads.
@@ -269,13 +269,13 @@ fn form_deflation_read_on_ground(
         }
         // The residues are read on the output's sites: their share is of
         // the output frame.
-        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, Some(y.sample())));
+        mu.step(&crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())));
         if gated {
             // The pair's own work: the links its before side demanded moved
             // (𝒮), the mass the rule's motions carried on it.
             if let Some(m) = pair_mass(x, y).ok().flatten() {
                 carried_mass = carried_mass.and_then(|c| c.checked_add(m));
-                mass_share += crate::transducer::family::transduce::share_of_frame([m, 0, 0, 0], Some(y.sample())).lane(0);
+                mass_share += crate::transducer::family::transduce::share_of_enclosure([m, 0, 0, 0], Some(y.sample())).lane(0);
                 let mass = num_rational::BigRational::from_integer(m.into());
                 for (motion, gauge) in &moved {
                     // D2.5 — the stroke is the need of the modes it reads
@@ -581,7 +581,7 @@ fn mint_or_refuse(
     crystal: &dyn Crystal,
 ) -> Result<element::Element, crate::transducer::sentence::ObstructionRefusal> {
     use crate::transducer::sentence::ObstructionRefusal;
-    // A form nothing in which acts is not uttered: the speaker's side of
+    // A form nothing in which acts is not asserted: the speaker's side of
     // `REFUSE_NOT_A_SENTENCE` (23.1 step 3, 50.6), reading the same
     // `Form::acts()` the court reads.
     if !rule.form.acts() {

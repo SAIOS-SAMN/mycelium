@@ -128,9 +128,9 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
     );
 }
 
-/// THE INTELLIGIBILITY ASSERTION (50.9). Voice A utters S; Court 1 reconstructs
+/// THE INTELLIGIBILITY ASSERTION (50.9). Voice A asserts S; Court 1 reconstructs
 /// on its copy of the family and answers a typed adjudication through the
-/// codec; Voice A receives it, contracts, and utters S' citing the
+/// codec; Voice A receives it, contracts, and asserts S' citing the
 /// receipt; the loop is well founded and closes on a standing within a few
 /// rounds. Court 2 — a second court with its own identity and no shared
 /// runtime memory — reconstructs the same serialized frame and reaches the same
@@ -145,7 +145,7 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
     let mut court1 = court(1, &task, f_1.clone());
     let mut court2 = court(2, &task, f_1);
     let s = sentence_over(&f_v);
-    let mut utter = s.clone();
+    let mut asserted = s.clone();
     let mut cited: Option<Contraction> = None;
     let mut contractions = 0usize;
     let mut standing: Option<u8> = None;
@@ -154,7 +154,7 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
             &vk,
             &task,
             0,
-            &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
+            &[Spoken { tape: asserted.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
         )
         .expect("the task frames");
         let reply = hear(&mut court1, &frame);
@@ -166,17 +166,17 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
             Adjudication::Refused { kind, at, receipt } => {
                 let mut b = voice.stroke();
                 assert_eq!(
-                    voice.receive_adjudication(&utter, *kind, at.clone(), *receipt, &f_v, task.as_bytes(), &mut b),
+                    voice.receive_adjudication(&asserted, *kind, at.clone(), *receipt, &f_v, task.as_bytes(), &mut b),
                     Contracted::Moved,
                     "the refusal contracts: {kind:?} at {}",
                     at.label()
                 );
                 let mut pending = voice.take_contracted();
                 let Some(next) = pending.pop() else {
-                    panic!("the contraction is a sentence to utter");
+                    panic!("the contraction is a sentence to assert");
                 };
                 assert!(pending.is_empty(), "one contraction, one sentence");
-                utter = next.sentence;
+                asserted = next.sentence;
                 cited = Some(next.certificate);
                 contractions += 1;
             }
@@ -186,7 +186,7 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
             }
         }
     }
-    assert!(contractions >= 1, "the first utterance was refused and contracted");
+    assert!(contractions >= 1, "the first expression was refused and contracted");
     let code = standing.expect("court 1 stood the contracted sentence within four rounds");
     assert!(voice.sealed_at(s.address().as_bytes()).is_some(), "the refused address is sealed on the voice");
     // COURT 2: the same serialized frame, its own identity, nothing shared.
@@ -194,13 +194,13 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
         &vk,
         &task,
         0,
-        &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
+        &[Spoken { tape: asserted.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
     )
     .expect("the task frames");
     let reply = hear(&mut court2, &frame);
     let adjudicated = dialogue::decode_speech_reply(&reply).expect("one adjudication per sentence");
     assert_eq!(adjudicated.iter().map(|a| a.code()).collect::<Vec<_>>(), vec![code], "the same standing on the second court");
-    let addr = utter.address();
+    let addr = asserted.address();
     assert!(court1.provisional.contains(&addr), "court 1 dockets the sentence");
     assert!(court2.provisional.contains(&addr), "court 2 dockets the same address");
     assert_ne!(court1.identity, court2.identity, "two courts, two identities");

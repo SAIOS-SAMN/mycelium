@@ -3,7 +3,7 @@
 
 use crate::context::Context;
 use crate::transport::answer;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::observe::{self, CourtReading, Memory, ObserveAct, Reading, Source};
 use mycelium::network::channel::Channel;
 
@@ -81,7 +81,7 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
     observe::replace(own, Reading::Court(Box::new(court)));
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let Some(act) = observe::decode_act(&frame.body) else { return };
     match act {
         ObserveAct::Query(prefix) => {
@@ -142,7 +142,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
                 eprintln!("  observe reply refused: more readings held than four bytes count");
                 return;
             };
-            answer(stream, WireFrame { lane: frame.lane, body });
+            answer(stream, Delimited { lane: frame.lane, body });
         }
     }
 }

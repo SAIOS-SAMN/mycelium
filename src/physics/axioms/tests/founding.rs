@@ -59,10 +59,10 @@ fn null_fluxes_keeps_generator_null_under_flow() {
     assert!(!carried.is_zero() && carried.geo(&carried).is_zero(), "carried by the flow, still null");
 }
 
-/// HOLONOMIC — A LOOP'S COMPOSITE IS ITS CONTENT. A loop composing to a turn
+/// HOLONOMIC — AN ORBIT'S COMPOSITE IS ITS CONTENT. An orbit composing to a turn
 /// about one point and a slide, read again from another base point, is the
 /// same holonomy conjugated: its modes — the modes' kinds and invariants —
-/// are the loop's, never the frame's.
+/// are the orbit's, never the frame's.
 #[test]
 fn motion_modes_ignores_base_of_holonomy() {
     let turn = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E3, q(1, 1)));
@@ -72,7 +72,7 @@ fn motion_modes_ignores_base_of_holonomy() {
     // The modes come in the modes' own canonical order (parabolic first, then by
     // `c`), so the two readings compare as read.
     let read = |m: &Mv| modes(m).into_iter().map(|x| (x.kind, x.c)).collect::<Vec<(BivectorKind, BigRational)>>();
-    assert_eq!(read(&holonomy), read(&rebased), "the class is the loop's");
+    assert_eq!(read(&holonomy), read(&rebased), "the class is the orbit's");
 }
 
 /// EVERY DIMENSION IS AN EXPONENT. The product of `k` orthogonal generators

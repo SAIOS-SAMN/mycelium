@@ -63,7 +63,7 @@ pub enum Refraction {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HeldPose {
     /// The member stands at one frame: no transition to read a pose across.
-    OneFrame,
+    OneSample,
     /// The member transited: its pose's candidates (one for a turn, the held
     /// coset's for a held stabilizer).
     Read(Vec<Versor>),

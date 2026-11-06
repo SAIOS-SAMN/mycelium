@@ -132,7 +132,7 @@ fn chain(d: &[(Vec<i64>, Vec<u8>, Vec<u8>)]) -> Vec<crate::transducer::sentence:
 /// sites changed between ground and painted over the frame's measure and G
 /// the sites changed from one painted symbol to another over it: the
 /// coboundary's spatial and gauge counts over the frame, which is the share
-/// `share_of_frame` reads off a chain, and the two sum to the share. Across
+/// `share_of_enclosure` reads off a chain, and the two sum to the share. Across
 /// `29 × 29 → 30 × 30` the one site repainted `1 → 5` is `1/900` on G.
 #[test]
 fn lane_shares_equal_chain_counts_over_frame() {
@@ -140,7 +140,7 @@ fn lane_shares_equal_chain_counts_over_frame() {
     for (x, y) in fixtures() {
         let t = record(&x, &y);
         let counts = crate::transducer::element::measure_lanes(&chain(&delta(&x, &y)));
-        let mu = share_of_frame(counts, Some(&y));
+        let mu = share_of_enclosure(counts, Some(&y));
         assert_eq!(t.lane_shares(&ground()), [mu.lane(0).clone(), mu.lane(1).clone()], "{x:?} → {y:?}");
         assert_eq!(t.lane_shares(&ground())[0].clone() + t.lane_shares(&ground())[1].clone(), t.share());
         assert_eq!(mu.lane(3), &crate::core::Q::from_integer(counts[3].into()), "H, the shell count, stands as it is");
@@ -150,7 +150,7 @@ fn lane_shares_equal_chain_counts_over_frame() {
     let zero = crate::core::Q::from_integer(0.into());
     assert_eq!(record(&x, &y).lane_shares(&ground()), [zero, crate::core::Q::new(1.into(), 900.into())]);
     // A discharge with no frame keeps its measure as n/1 (ruling 3).
-    assert_eq!(share_of_frame([3, 2, 0, 1], None), [3, 2, 0, 1]);
+    assert_eq!(share_of_enclosure([3, 2, 0, 1], None), [3, 2, 0, 1]);
 }
 
 /// THE RECORD PROJECTED IS THE IDENTITY'S SPEECH AGAINST THE OUTPUT: where

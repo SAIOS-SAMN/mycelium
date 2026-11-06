@@ -129,7 +129,7 @@ fn sentence_of_mints_no_word_for_scale_alone() {
     for (x, y) in train.iter().chain(&test) {
         let spoken = mycelium::transducer::family::statement::speak_clauses(&clauses, x, &mycelium::transducer::family::perceive(x))
             .expect("stated");
-        let mut out = mycelium::transducer::spelled::SectionSample::filled(spoken.frame, 0).expect("the spoken frame is a sample");
+        let mut out = mycelium::transducer::spelled::SectionSample::filled(spoken.extents, 0).expect("the spoken frame is a sample");
         for p in &spoken.painted {
             out.paint(p.site, p.symbol).expect("a site of the sample");
         }

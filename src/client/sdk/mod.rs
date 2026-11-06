@@ -45,7 +45,7 @@ pub use working_atlas::*;
 
 use crate::anastome::dialogue;
 use crate::transducer::family::SectionSample;
-use crate::network::wire::{Lane, WireFrame};
+use crate::network::wire::{Lane, Delimited};
 use crate::transducer::element::Element;
 use std::cell::RefCell;
 use std::io::{self, Read, Write};
