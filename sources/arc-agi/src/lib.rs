@@ -123,6 +123,25 @@ pub fn samples_of(task: &Task) -> Result<Vec<Sample>, SampleRefusal> {
     Ok(out)
 }
 
+/// A SAMPLE WRITTEN BACK INTO THE CORPUS'S ROWS (MU-SENSING §2, §7: the
+/// speech end, where a mind's outputs return to the source's form): each
+/// site's symbol read by its bytes, axis 0 the row. `None` where the sample
+/// is not of the corpus's shape (rank 2, one byte per symbol), which no
+/// grid of the corpus is.
+pub fn rows_of(sample: &Sample) -> Option<Grid> {
+    let &[rows, cols] = sample.extents() else { return None };
+    if sample.width() != 1 {
+        return None;
+    }
+    let mut out = vec![Vec::with_capacity(cols); rows];
+    for site in sample.sites() {
+        let row = usize::try_from(site.axis(0)?).ok()?;
+        let &[byte] = sample.symbol_at(&site).ok()?.bytes() else { return None };
+        out.get_mut(row)?.push(byte);
+    }
+    Some(out)
+}
+
 /// WHAT [`post`] DID: the tasks written, and each file refused with why.
 #[derive(Debug, Default)]
 pub struct Posted {

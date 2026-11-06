@@ -105,6 +105,12 @@ fn disjoint_planes_commute_and_keep_the_volume() {
     let back = generator(&one_way).expect("a generator");
     assert!(same(&back, &sum(&[word(on_first, &[P1, P2]), word(on_second, &[N1, N2])])), "B = 4/7 e₊₁e₊₂ + 3/7 e₋₁e₋₂");
     assert!(!same(&back, &b1.sum(&b2).expect("one signature")), "a per-plane reading does not give back ½ and ⅓");
+    // The per-plane readings recomposed plane by plane are another motion:
+    // `(33 + 56e₊₁e₊₂)/65 · (20 + 21e₋₁e₋₂)/29`, never `R₁R₂`.
+    let piecewise = compose(&motion(&word(q(4, 7), &[P1, P2])).expect("a motion"), &motion(&word(q(3, 7), &[N1, N2])).expect("a motion")).expect("composes");
+    let read_apart = sum(&[word(q(660, 1885), &[]), word(q(1120, 1885), &[P1, P2]), word(q(693, 1885), &[N1, N2]), word(q(1176, 1885), &[P1, P2, N1, N2])]);
+    assert!(same(&piecewise, &read_apart) && !same(&piecewise, &expect), "the plane-by-plane recomposition loses the motion");
+    assert!(same(&motion(&back).expect("a motion"), &expect), "the generator held whole keeps it, volume and all");
     [&r1, &r2, &one_way].into_iter().for_each(claim_motion);
 }
 
