@@ -1694,7 +1694,9 @@ then the backlog. Each item names its issue.
       attractor's chart, its membrane, its stage a coordinate, its
       `volume` and `potential` readings of the body (a recut);
    2. S7 stage 3, the Euclidean spheres retired, and turnings on planes
-      that share a unit composed exactly;
+      that share a unit composed exactly (in part: `carrier::Rotor`
+      composes rational motions by fixture 11b's law, any other angle
+      refused `IrrationalMotion`);
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration;
    4. S8, the field's motions as one exact group;

@@ -7,15 +7,25 @@ use super::atlas::Chart;
 use algebra::SignatureRefusal;
 use forms::coordinate::{FormRefusal, Key};
 use forms::passage::{PassageRefusal, Pole};
+use forms::turning::TurningRefusal;
 
 /// WHAT A MOTION OR AN ANGLE LEFT UNHELD: the residue `NotExact` names.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Residue {
-    /// Two turnings on planes that share one unit and are not one plane:
-    /// they do not commute, and their product turns on a third plane this
-    /// carrier holds no exact angle for. The plane held and the plane
-    /// arriving.
+    /// Two turnings on planes that share one unit and are not one plane,
+    /// whose product this carrier holds no exact composite for: asked of
+    /// `Turning::then` (they compose only as a motion), a turning arriving
+    /// on a plane that shares a unit with more than one held plane, or a
+    /// pair either of which carries a winding a composite on another plane
+    /// does not keep (78.173 §8.3: how `K` is held beside `R` is open).
+    /// The plane held and the plane arriving.
     Uncommuted { held: Key, arriving: Key },
+    /// A turning on a plane that shares a unit with another, whose motion
+    /// `cos θ + B·sin θ` is not rational (its angle no whole number of
+    /// quarter turns): the composition law holds it only as a rational
+    /// rate, which no rational number of degrees names. The plane and the
+    /// angle.
+    IrrationalMotion { plane: Key, degrees: crate::core::Q },
     /// Two turnings on disjoint planes asked to compose as one turning:
     /// they compose only as a motion of two components.
     Apart { held: Key, arriving: Key },
@@ -57,6 +67,12 @@ pub enum FieldRefusal {
     NotCharted { chart: Chart },
     /// A frame state the pole basis refuses (the passage form's refusal).
     Passage(PassageRefusal),
+    /// A rate or motion the composition of turnings refuses
+    /// (`forms::turning`'s refusal).
+    Turning(TurningRefusal),
+    /// A rotor's rate holding parts on no plane: grade 6 and above, or
+    /// units no frame plane names. Their masks.
+    NotPlanes { masks: Vec<usize> },
     /// A statement that does not decode: the byte at which it stopped.
     Malformed { at: usize },
 }

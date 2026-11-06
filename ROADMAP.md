@@ -2018,8 +2018,9 @@ Each phase is one commit:
      and the membrane on the pole basis (`Membrane`, `stand`). LAW-FIELD
      v1's six fixtures stand as claims
      (`src/transducer/field/carrier/tests/law_field.rs`). Turnings on two
-     planes that share one unit are refused `NotExact` naming both (open
-     in 78.171 §8).
+     planes that share one unit compose by fixture 11b's law
+     (`carrier::Rotor`, 78.173 §5) where both motions are rational, and
+     any other angle is refused `NotExact` with `IrrationalMotion`.
    - **Stages** (each about 1 500 changed lines or less, each leaving the
      tree green; planned 2026-11-06):
      1. Built: the lift and the field's carrier (S4a, S7), and the field
@@ -2062,9 +2063,14 @@ Each phase is one commit:
      3. The Euclidean spheres retired (S7): `sphere_at`, `on_sphere` and
         `at_three::sphere` replaced by charts and the membrane at every
         caller; and turnings on planes that share a unit composed exactly,
-        a versor over `ℚ(ζ_ℓ) ⊗ Cl(p, q)`, its angle a named residue
-        where no rational degree holds it. Claim
-        `sphere_built_without_squared_radius`.
+        its angle a named residue where no rational degree holds it.
+        Claim `sphere_built_without_squared_radius`. The composition is
+        built by the route approved 2026-11-06: `carrier::Rotor`, a motion
+        held by its rate, composed by fixture 11b's law (78.173 §5) as
+        `R₁R₂` wherever both motions are rational, any other angle refused
+        with `Residue::IrrationalMotion`; no `ℚ(ζ_ℓ)` product, and neither
+        degree convention changed (the factor of two is open in 78.173
+        §8.3). Claims in `src/transducer/field/carrier/tests/rotor.rs`.
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.
