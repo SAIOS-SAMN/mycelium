@@ -110,7 +110,7 @@ fn act_kind_carries_no_meaning_beyond_its_coordinate() {
         .into_iter()
         .map(|kind| {
             let line = line_of(vk, &[(kind, frame)]);
-            let run = chained(&line[1..], &crate::chronometry::Parent::of(&line[0]), &line[1]).expect("the page chains to the head");
+            let (run, _) = chained(&line[1..], &crate::chronometry::Parent::of(&line[0]), &line[1]).expect("the page chains to the head");
             run.iter().filter(|r| crate::client::sdk::hypha_acts::is_hypha_act(r.kind)).map(|r| r.mu).collect()
         })
         .collect();

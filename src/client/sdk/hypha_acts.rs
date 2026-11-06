@@ -55,9 +55,10 @@ pub fn is_hypha_act(kind: ActKind) -> bool {
 }
 
 /// THE PAGE READ AS A CHAIN from `from` (the last receipt read), ending on
-/// `head` where it reaches the head's place: the run and its last receipt,
-/// or `None` where it does not chain.
-pub fn chained(page: &[KStepReceipt], from: &Parent, head: &KStepReceipt) -> Option<Vec<KStepReceipt>> {
+/// `head` where it reaches the head's place: the run and the receipt the
+/// chain now stands on (`from` for an empty page), or `None` where it does
+/// not chain.
+pub fn chained(page: &[KStepReceipt], from: &Parent, head: &KStepReceipt) -> Option<(Vec<KStepReceipt>, Parent)> {
     let (run, stopped) = Reconstructed::receipts(page);
     if stopped.is_some() {
         return None;
@@ -75,7 +76,7 @@ pub fn chained(page: &[KStepReceipt], from: &Parent, head: &KStepReceipt) -> Opt
     if last.at.place() == head.stamp.place() && !Predecessor::cites(&last, &Parent::of(head)) {
         return None;
     }
-    Some(out)
+    Some((out, last))
 }
 
 /// WHERE THE READ OF ONE HYPHA'S LINE STANDS: the last receipt the signed
@@ -111,7 +112,7 @@ impl Session {
         let Some(ReceiptsAnswer::Page(page)) = self.exchange_at(&endpoint, ask).ok().and_then(|b| dialogue::decode_receipts_answer(&b)) else {
             return ActsRead::Unanswered;
         };
-        let Some(run) = chained(&page, &at.reached, &head) else {
+        let Some((run, reached)) = chained(&page, &at.reached, &head) else {
             // What the pages since the last vouched receipt chained is
             // dropped with this one: none of it reached a signed receipt.
             at.reached = at.vouched;
@@ -120,9 +121,7 @@ impl Session {
             return ActsRead::Refused;
         };
         at.pending.extend(run.iter().filter(|r| is_hypha_act(r.kind)).map(|r| HyphaAct { frame: r.mu, height: r.stamp.h }));
-        if let Some(last) = run.last() {
-            at.reached = Parent::of(last);
-        }
+        at.reached = reached;
         let read = match at.reached.at.place() == head.stamp.place() {
             true => {
                 at.vouched = at.reached;
@@ -187,7 +186,11 @@ impl Mind {
             if acts.is_empty() {
                 continue;
             }
-            let mut well = self.board.court.wells.get(signer).copied().unwrap_or_default();
+            // A hypha with no well yet opens one with nothing pressed.
+            let mut well = match self.board.court.wells.get(signer) {
+                Some(w) => *w,
+                None => Attachment::default(),
+            };
             if well.take_in(acts).is_none() {
                 eprintln!("  mind hypha acts {:02x}{:02x}…: a lane's flux passes its carrier, not taken in", signer[0], signer[1]);
                 continue;
@@ -200,7 +203,13 @@ impl Mind {
     /// attachment's flux, lane by lane.
     pub(crate) fn pressing(&self) -> [u64; 4] {
         let pace = &self.board.court;
-        pressing(&pace.deficit, &pace.wells).unwrap_or(pace.deficit)
+        match pressing(&pace.deficit, &pace.wells) {
+            Some(p) => p,
+            None => {
+                eprintln!("  mind pressing refused: a lane passes its carrier; the beat takes the deficit alone");
+                pace.deficit
+            }
+        }
     }
 
     /// THE HYPHAS' FLUX SPENT BY A BEAT: it has perturbed the field, and
