@@ -448,6 +448,46 @@ fn mint_rewrite_retires_to_one_address_on_two_courts() {
     );
 }
 
+/// MU-CLIENT §5.4 (S3) — A MIND'S PROPOSAL IS ADJUDICATED BY THE COURT'S OWN
+/// REDUCTION. A mind holding the transport `q` and the relator `q²` as
+/// ruled words proposes the retirement of `q²`. A court holding both hears
+/// it as speech, dockets it, and retires `q²` onto the cavity book because
+/// its own basis derives it without itself. A court holding `q²` alone
+/// hears the same proposal and keeps the word: the proposal is evidence,
+/// never the decision.
+#[test]
+fn court_retires_a_mind_proposal_only_where_its_basis_derives_it() {
+    let t = transport(&turn_90(1));
+    let relator = transport(&turn_90(2));
+    let mut mind = crate::client::sdk::Mind::open("127.0.0.1:1", crate::client::sdk::Voice::named("proposer"));
+    for w in [&t, &relator] {
+        assert!(mind.absorb_taught(&w.to_bytes().expect("the record writes")).is_some(), "the court's word is learned");
+    }
+    let rw = mind.retirement_of(&relator.address()).expect("the mind reads q² as q squared");
+    let addr = relator.address();
+
+    let mut k = Court::new();
+    k.set_court_voice([31; 32]);
+    install(&mut k, [41; 32], &t);
+    install(&mut k, [41; 32], &relator);
+    assert_eq!(
+        k.perceive_speech([51; 32], &[0; 32], std::slice::from_ref(&rw)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the proposal is heard"
+    );
+    let held = k.provisional.get(rw.address().as_bytes()).cloned().expect("docketed, awaiting a second organ");
+    let mut ruling = k.stroke();
+    k.retire_rewrite_inputs(&held, &mut ruling);
+    assert!(!k.basis.contains(addr.as_bytes()) && k.cavity_book.contains(addr.as_bytes()), "q² retired, its address kept");
+
+    let mut lone = Court::new();
+    lone.set_court_voice([32; 32]);
+    install(&mut lone, [42; 32], &relator);
+    let mut ruling = lone.stroke();
+    lone.retire_rewrite_inputs(&rw, &mut ruling);
+    assert!(lone.basis.contains(addr.as_bytes()), "a court whose basis does not derive q² keeps it");
+}
+
 /// A peer's line of one act and its `Ruling(Retired)` citing `cites`.
 fn retirement_line(
     key: &crate::court::identity::HyphaKey,

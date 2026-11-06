@@ -1,6 +1,14 @@
 use super::super::*;
 use std::sync::Mutex;
 
+/// A stratum root for the `n`th fixture stratum: a locator whose first
+/// eight bytes write `n`.
+fn root_of(n: u64) -> crate::court::admission::Locator {
+    let mut r = [0u8; 32];
+    r[..8].copy_from_slice(&n.to_be_bytes());
+    crate::court::admission::Locator::of_bytes(r)
+}
+
 /// A hold is taken with one stroke of the court's own metabolism; a read
 /// through `run` spends it and is counted on the holding thread; let go,
 /// the stroke goes on whole with what it still grants.
@@ -45,7 +53,7 @@ fn run_on_ends_work_unread_on_spent_stroke() {
         let (census, read) = k.nerve_census(reads);
         assert_eq!((census.len(), read), (0, 0), "no complex read on a spent stroke");
         let remote: Vec<crate::transducer::sheaf::StratumDigest> = (1..4u64)
-            .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: n.to_be_bytes().to_vec() })
+            .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: root_of(n) })
             .collect();
         k.confirm_peer_holds_on(&remote, [5; 32], reads);
         assert!(k.confirm_cursor.get(&[5u8; 32]).is_none(), "nothing reached, nothing to resume past");
@@ -60,7 +68,7 @@ fn run_on_ends_work_unread_on_spent_stroke() {
 fn confirm_peer_holds_on_resumes_past_reached_stratum() {
     let mut k = Court::new();
     let mut remote: Vec<crate::transducer::sheaf::StratumDigest> = (1..4u64)
-        .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: n.to_be_bytes().to_vec() })
+        .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: root_of(n) })
         .collect();
     #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by the canonical key, the order digests stand in")]
     remote.sort_by(|a, b| a.inv.key().as_bytes().cmp(b.inv.key().as_bytes()));

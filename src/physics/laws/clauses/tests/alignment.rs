@@ -103,6 +103,6 @@ fn alignment_mode_and_signing_citation_round_trip() {
     let mut b = Vec::new();
     cite.put_canonical(&mut b).expect("written");
     let mut p = 0;
-    assert_eq!(Cite::take_canonical(&b, &mut p), Some(cite));
+    assert!(Cite::take_canonical(&b, &mut p).is_some_and(|back| back.restates(&cite)), "the citation reads back");
     assert_eq!(p, b.len());
 }

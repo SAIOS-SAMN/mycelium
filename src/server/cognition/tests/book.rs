@@ -62,11 +62,11 @@ k.basis_insert(from_canonical(&germinate(&painted(&a), &painted(&rot)).unwrap())
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 k.basis_insert(
-    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::new(4, 4, 8, 8)),
+    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[4, 4], &[8, 8]).expect("one rank")),
     [7; 32],
 );
 k.basis_insert(
-    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::new(3, 3, 6, 6)),
+    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[3, 3], &[6, 6]).expect("one rank")),
     [8; 32],
 );
 assert!(k.basis_len() >= 2, "two distinct addresses remain");
@@ -257,7 +257,7 @@ moved[0] = 7;
 k.confirm_peer_holds(&[crate::transducer::sheaf::StratumDigest {
     inv,
     count: 0,
-    root: moved.to_vec(),
+    root: crate::court::admission::Locator::of_bytes(moved),
 }], [2; 32]);
 assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 }
