@@ -186,7 +186,10 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    the winding kept (MU-SENSING §3.7; 78.171). Each pair factors as
    motion ∘ residue, every factorisation held (MU-SENSING §3.9). Here: §3,
    §4.9 *perceive*. MU-ANASTOME §5.2 (the retina; the perception layer).
-   **Built:** `transduce::TaskPercept`, `Mind::perceive_envelope`,
+   The sample is built as a manifold, a product of circles and interval
+   charts, and the task as a family of manifolds (78.179 §1, §3).
+   **Built:** `transduce::TaskPercept`, `Mind::perceive_envelope` (to be
+   renamed `perceive_task`, #165),
    `Factorisation::of`; the carrier's lift and atlas (`Lifted::of`,
    `Atlas`; #131). **Owed:** the contemplation standing on the carrier,
    from the well's body on (track 26 S7 stage 2 to S9; #134).
@@ -425,7 +428,7 @@ perception in its own right, each moving at its own period:
 | shell | what it reads | functions |
 |---|---|---|
 | **harmonic core** — the rings | the rings of what was given, composed (`compose`, `sentences_of`), each closed or open by its modes; each ring's SIZE its return; the rings NESTED, never traversed — a ring sounds inside another where its period divides it, and its ECHO `E = Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is whole, a turn, a gain, a spiral or a delay (78.112) | `compose::{compose, sentences_of, teaches, next_rung}`, `theorem::Theorem::{of, check}`, `rung::{speak, hear}`, `hearing::{echo, nest, hear}` |
-| **luminal envelope** — the rays | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
+| **luminal rays** — on the null cone of the space the core is embedded in (MU-RECURSION 64; 78.179 §5) | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
 | **holonomic** — the circuits' algebra | each ring's curvature generates an algebra (`cech::flow_generators`), closed under the commutator with what the mind holds for that CLASS (`cech::lie_close`, `cech::quotient`); what lies outside the held span is read per axis — what the mind newly understands; a ring's winding against its period, one return one age (78.68, 78.43) | `cech::{flow_generators, lie_close, quotient, quotient::grow}`; the algebra per class in the mind's field, `cech::class_algebra` (`ClassAlgebras::hear`, `Field.classes`, grown at the mind's door `pairing::mark_flux`; #143) |
 
 PERCEPTION IS WHERE THE SHELLS ALIGN: a ring that resonates across them —

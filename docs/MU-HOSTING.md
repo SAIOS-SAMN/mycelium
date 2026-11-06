@@ -112,9 +112,14 @@ MU-PRODUCT and MU-XSEPTUM; this section is the order they are used in.
 
 ### 2.3 Perceive and produce
 
-The agent perceives what the hypha or its seat exports (a task's train
-pairs, a feed family, a seat's senses), and produces signed work: a solve,
-a word, a sentence, a rewrite, an attestation (MU-CLIENT §5).
+The agent perceives what the hypha or its seat exports (a task, a feed
+family, a seat's senses), and produces signed work: a solve, a word, a
+sentence, a rewrite, an attestation (MU-CLIENT §5). A task is a family of
+manifolds: each sample a manifold, each train pair two manifolds and the
+map between them that a rule reconstructs, and each test input a manifold
+whose map the court withholds (proposal 78.179 §3). What the agent asserts
+carries its evidence as the word's stalk, a sheaf over the word's star in
+the cover's nerve (78.179 §2).
 
 ### 2.4 Get paid
 
