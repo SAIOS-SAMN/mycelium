@@ -103,7 +103,7 @@ fn initiate_completes_handshake_and_round_trips_frames() {
     let ask = Delimited { lane: Lane::Gauge, body: vec![0x53, 1, 2, 3] };
     ia.write_delimited(&ask, Some(&point)).unwrap();
     assert_eq!(rb.read_delimited().unwrap(), (ask, Some(point)));
-    let reply = Delimited { lane: Lane::Harmonic, body: vec![9; 40] };
+    let reply = Delimited { lane: Lane::Holonomic, body: vec![9; 40] };
     rb.write_delimited(&reply, None).unwrap();
     assert_eq!(ia.read_delimited().unwrap(), (reply, None));
 }

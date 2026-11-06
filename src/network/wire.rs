@@ -52,24 +52,24 @@ pub fn frame_budget() -> usize {
 }
 
 /// The four orthogonal polytonic lanes (𝒮 spatial, 𝒢 gauge, 𝒯 temporal,
-/// 𝒽 harmonic/shell). A frame rides exactly one — never summed across lanes.
+/// 𝒽 holonomic). A frame rides exactly one — never summed across lanes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Lane {
     Spatial,
     Gauge,
     Temporal,
-    Harmonic,
+    Holonomic,
 }
 
 impl Lane {
-    pub const ALL: [Lane; 4] = [Lane::Spatial, Lane::Gauge, Lane::Temporal, Lane::Harmonic];
+    pub const ALL: [Lane; 4] = [Lane::Spatial, Lane::Gauge, Lane::Temporal, Lane::Holonomic];
 
     pub fn byte(self) -> u8 {
         match self {
             Lane::Spatial => 0,
             Lane::Gauge => 1,
             Lane::Temporal => 2,
-            Lane::Harmonic => 3,
+            Lane::Holonomic => 3,
         }
     }
 
@@ -78,7 +78,7 @@ impl Lane {
             0 => Some(Lane::Spatial),
             1 => Some(Lane::Gauge),
             2 => Some(Lane::Temporal),
-            3 => Some(Lane::Harmonic),
+            3 => Some(Lane::Holonomic),
             _ => None,
         }
     }
