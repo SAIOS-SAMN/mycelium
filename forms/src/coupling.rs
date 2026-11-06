@@ -33,7 +33,8 @@
 //! - the strength is the open share, the fluidity, `o = q/(z + q) = ν(t)`,
 //!   with `ν(t) = t/(1 + t)` ([`open_share`]); the viscosity is the
 //!   cohesion, the held share `z/(z + q) = 1 − ν(t) = ν(1/t)` (ruled
-//!   2026-11-06: viscosity resists flow), both `½` at the throat. The
+//!   2026-11-06: viscosity resists flow; [`held_share`], and per plane
+//!   [`Parcels::cohesion`], a keyed vector never summed), both `½` at the throat. The
 //!   inversion reverts it: `ν(1/t) = 1 − ν(t)`, the frames exchanged
 //!   ([`Parcel::inverted`]), exchanging the fluidity and the viscosity.
 //!
@@ -130,6 +131,9 @@ pub enum CouplingRefusal {
     PlanesDiffer { field: Key, neighbour: Key },
     /// The face's own refusal, by the passage's name.
     Passage(Box<PassageRefusal>),
+    /// A per-plane reading's keyed vector refused by the coordinate form
+    /// (other than a plane named twice, which is `PlaneRepeated`).
+    Form(Box<crate::coordinate::FormRefusal>),
 }
 
 impl From<PassageRefusal> for CouplingRefusal {
@@ -162,6 +166,21 @@ pub fn open_share(t: &Q) -> Result<Q, CouplingRefusal> {
     match t.is_negative() {
         true => Err(CouplingRefusal::NotRatio(Box::new(t.clone()))),
         false => Ok(t / (Q::one() + t)),
+    }
+}
+
+/// THE HELD SHARE OF A RATIO, the cohesion (the viscosity; ruled
+/// 2026-11-06): `c(t) = 1/(1 + t) = A/(A + Q)` for `t = Q/A ≥ 0`, the
+/// complement of the fluidity, `c(t) = 1 − ν(t)`, and for `t > 0` the
+/// fluidity of the inverted ratio, `c(t) = ν(1/t)`: the passage's
+/// `t ↦ 1/t` (78.172) exchanges the two. Both are `½` at the throat
+/// (`t = 1`); `c(0) = 1` at the closed pole. A reading of LAW-COUPLING v1's
+/// own inversion, read per plane and never summed across planes. Refused
+/// `NotRatio` with `t < 0`.
+pub fn held_share(t: &Q) -> Result<Q, CouplingRefusal> {
+    match t.is_negative() {
+        true => Err(CouplingRefusal::NotRatio(Box::new(t.clone()))),
+        false => Ok(Q::one() / (Q::one() + t)),
     }
 }
 
