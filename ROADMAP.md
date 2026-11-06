@@ -93,7 +93,8 @@ adopted by a recut (track 6). Items:
 - **The Note** between courts (track 1; MU-XSEPTUM), carrying modes.
 - **The economic law form with the peer kernels:** μ's modes, the
   reserve and conversion at the universal core tube, with joint-read
-  fixtures, through MU-RELEASE §3a (proposal 78.174, to come; §10.4).
+  fixtures, through MU-RELEASE §3a (an amendment of proposal 78.174,
+  which records the operator's rulings of 2026-11-05; §10.4).
 
 The rulings the model still needs are listed in MU-ECONOMY §12.
 
