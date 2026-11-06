@@ -17,13 +17,13 @@ use crate::context::Context;
 use mycelium::anastome::dialogue::seat::{decode_seat_request, SeatRequest};
 use mycelium::network::nerve::Keyed;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 use std::sync::{Condvar, LazyLock, Mutex};
 
 /// THE HELD READS AND THE COURT'S EVENTS: the reads waiting, by reader, and
 /// how many events the court has had.
 struct DeferredReads {
-    reads: Keyed<(TcpStream, WireFrame)>,
+    reads: Keyed<(Channel, WireFrame)>,
     events: u64,
 }
 
@@ -43,7 +43,7 @@ pub(crate) fn stir() {
 /// a read of the same reader already held — answered the earlier one in its
 /// place); the stream and frame back where it is no mail read, or something
 /// was filed past its cursor, to be answered now as before.
-pub(crate) fn offer(stream: TcpStream, frame: WireFrame, context: &Context) -> Option<(TcpStream, WireFrame)> {
+pub(crate) fn offer(stream: Channel, frame: WireFrame, context: &Context) -> Option<(Channel, WireFrame)> {
     let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return Some((stream, frame)) };
     if !r.verified() || context.seat_relay.filed_past(&r) {
         return Some((stream, frame));

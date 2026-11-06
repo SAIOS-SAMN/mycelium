@@ -38,7 +38,8 @@ fn door_answering(sk: SigningKey) -> (String, std::thread::JoinHandle<()>) {
     let addr = listener.local_addr().expect("addr").to_string();
     let bind = addr.clone();
     let served = std::thread::spawn(move || {
-        let (mut s, _) = listener.accept().expect("accept");
+        let (s, _) = listener.accept().expect("accept");
+        let mut s = mycelium::network::channel::Channel::plain(s);
         let mut ask = [0u8; 4096];
         let _ = std::io::Read::read(&mut s, &mut ask);
         let (room, roots, ruled) = ([1u64, 0, 0, 0], [[0u8; 32]; 4], [0u8; 32]);

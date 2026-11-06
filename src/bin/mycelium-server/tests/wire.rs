@@ -5,6 +5,7 @@ use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::answer;
 use mycelium::network::nerve::Keyed;
 use mycelium::network::wire::WireFrame;
+use mycelium::network::channel::Channel;
 use std::net::TcpStream;
 
 /// AN ENCODE FAILURE REFUSES THE FRAME. Twenty-one sites wrote
@@ -24,7 +25,7 @@ fn answer_refuses_frame_over_budget_writing_nothing() {
         buf
     });
 
-    let mut s = TcpStream::connect(&addr).expect("connect");
+    let mut s = Channel::plain(TcpStream::connect(&addr).expect("connect"));
     let over = mycelium::network::wire::BODY_BUDGET + 1;
     answer(
         &mut s,
@@ -47,7 +48,7 @@ fn answer_writes_frame_within_budget() {
         buf
     });
 
-    let mut s = TcpStream::connect(&addr).expect("connect");
+    let mut s = Channel::plain(TcpStream::connect(&addr).expect("connect"));
     let body = vec![7u8, 8, 9];
     answer(
         &mut s,

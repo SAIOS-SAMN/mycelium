@@ -922,7 +922,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
 | Task dispatch, solve adjudication by reconstruction, payment | end to end, with the SDK client |
 | `--check` preflight and typed console readings | in use |
 | Hyphae connecting after genesis: digest exchange and receipt admission | in code; post-genesis bonding is an active design area |
-| Transport: Ed25519-signed acts over TCP | on one host; multi-host deployment is an active area |
+| Transport: Ed25519-signed acts over TCP, inside `Noise_XX_25519_ChaChaPoly_BLAKE2s` where both ends speak it (each host's static key in its home's `noise.key`, peers pinned on first use in `noise.pins`, a changed key refused by name); a peer that does not speak Noise stays plaintext and is named in the log and the `channels` reading; an SDK session opts in with `Session::with_noise` | Noise between hyphae and the SDK client on one host (the quickstart); opt-in per peer until a later release makes it required; multi-host deployment is an active area |
 
 ---
 

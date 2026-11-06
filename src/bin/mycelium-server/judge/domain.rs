@@ -12,11 +12,11 @@ use mycelium::anastome::dialogue::atlas::{encode_ledger_page, encode_ledger_repl
 use mycelium::anastome::dialogue::crossing::encode_traverse_reply;
 use mycelium::anastome::dialogue::domain::{decode_domain_request, encode_domain_reply, DomainRequest};
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
 /// 78.154 — READ-LEDGER off the published reading: `true` where the frame
 /// was one and was answered here.
-pub(crate) fn serve_ledger(stream: &mut TcpStream, frame: &WireFrame, context: &Context) -> bool {
+pub(crate) fn serve_ledger(stream: &mut Channel, frame: &WireFrame, context: &Context) -> bool {
     let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&frame.body) else { return false };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     let page = context.published.take().ledger_page(&domain, after);
@@ -24,7 +24,7 @@ pub(crate) fn serve_ledger(stream: &mut TcpStream, frame: &WireFrame, context: &
     true
 }
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(request) = decode_domain_request(&frame.body) else { return };
     if serve_ledger(stream, frame, context) {
         return;

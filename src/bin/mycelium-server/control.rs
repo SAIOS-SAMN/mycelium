@@ -13,13 +13,13 @@ use mycelium::cognition::Court;
 use mycelium::economy::Mu;
 use mycelium::network::nerve::{home, Keyed};
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 use std::sync::Mutex;
 
 
 /// Control acts that used to run on the accept thread. The listener never
 /// holds the court lock; these run on a reflex worker.
-pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Context) -> bool {
+pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Context) -> bool {
     let Some((&kind, _rest)) = frame.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
         let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };

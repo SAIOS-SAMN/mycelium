@@ -47,6 +47,7 @@ frame() {
     "$BIN" --console --home "$h" --reading asked >/dev/null || failed=1
     "$BIN" --console --home "$h" --reading acts || failed=1
     "$BIN" --console --home "$h" --reading agreements || failed=1
+    "$BIN" --console --home "$h" --reading channels || failed=1
   done
   return "$failed"
 }

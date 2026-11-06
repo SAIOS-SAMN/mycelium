@@ -103,11 +103,7 @@ fn page_loop_asks_at_measured_floor() {
 /// begins no read; an ask resolves it to one aperture (a first ask).
 #[test]
 fn read_budgeted_refuses_unmeasured_stall() {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
-    let addr = listener.local_addr().expect("addr");
-    let mut s = std::net::TcpStream::connect(addr).expect("connect");
-    let mut buf = [0u8; 1];
-    assert_eq!(crate::transport::read_budgeted(&mut s, &mut buf, Stall::Unmeasured), None);
+    assert_eq!(crate::transport::pace_of(Stall::Unmeasured), None);
     assert_eq!(Stall::Unmeasured.resolved(), Stall::of(transport_deadline(1)), "a first ask waits one aperture");
 }
 

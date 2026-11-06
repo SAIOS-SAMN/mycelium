@@ -8,11 +8,11 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
 
 /// One probe against one open listing (23.8, 26).
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let court = &context.court;
 
     let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
