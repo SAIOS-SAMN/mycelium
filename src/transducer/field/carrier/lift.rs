@@ -46,6 +46,14 @@ pub struct LiftedBody {
 /// alike (FORMS-COORDINATE v4). At rank 1 that plane is `e₊₁e₊₂`. The
 /// sample's membrane is the throat of the lift's plane: the sample encloses
 /// what it holds.
+///
+/// THE PHASE ORIGIN (78.171 §8, the convention agreed 2026-11-06 with
+/// netstratum docs/117 §11.6). Every axis keeps the one shared lift unit
+/// `e₊₍ₙ₊₁₎`, and its phase is measured from it: phase 0 lies on
+/// `e₊₍ₙ₊₁₎`, never on `e₊ᵢ`, and a phase `θ` is `cos θ·e₊₍ₙ₊₁₎ − sin θ·e₊ᵢ`.
+/// A reversal of axis `i` is then the reflection in `e₊ᵢ` alone, and a
+/// transposition `(i j)` the quarter turning on `e₊ᵢe₊ⱼ` then the flip of
+/// `e₊ᵢ` (`carrier::motion_of`). No degree written by the lift moves.
 #[derive(Clone, Debug)]
 pub struct Lifted {
     pub frame: FramePlanes,

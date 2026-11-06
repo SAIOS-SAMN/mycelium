@@ -2091,6 +2091,23 @@ Each phase is one commit:
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.
+        **Built in part** (branch `field-s4-transitions`, stacked on
+        `field-s8-motions`): on the lift's convention agreed 2026-11-06
+        (78.171 §8; netstratum docs/117 §11.6), the phase measured from
+        the shared lift unit `e₊₍ₙ₊₁₎`, every signed permutation and its
+        re-period lifts whole as a motion of the field
+        (`carrier::motion_of`: a reversal the flip of `e₊ᵢ` and one whole
+        turning on its plane, the winding the transduction's `p − s`
+        writes; a transposition `(i j)` the 90° turning on `e₊ᵢe₊ⱼ` then
+        the flip of `e₊ᵢ`), and a pair is lifted as transitions between
+        its bodies' charts (`carrier::transitions_of`, `PairTransition`; a
+        body carried split or merged keeps its refusal). `carry_point`
+        reads the phase origin so. No degree, chart or address moves, so
+        no recut. Claims
+        `every_signed_permutation_lifts_whole_as_a_motion_of_the_field`,
+        `reversal_is_the_reflection_in_its_own_unit_alone`,
+        `pair_lifted_as_transitions_between_its_bodies_charts`.
+        **Owed:** the nesting as a fibration of levels.
      5. S8, the field's motions as one group: the turning, the reflection
         and the pole swap (`forms::passage::Poles::swap`) and the
         inversion in the membrane, the boost on a frame plane, the

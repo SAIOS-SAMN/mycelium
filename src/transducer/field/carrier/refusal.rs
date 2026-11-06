@@ -64,4 +64,7 @@ pub enum FieldRefusal {
     Passage(PassageRefusal),
     /// A statement that does not decode: the byte at which it stopped.
     Malformed { at: usize },
+    /// A pair's motion the transduction refuses to speak, as it refused it
+    /// (ROADMAP track 26 S7 stage 4).
+    Transduction(crate::transducer::family::transduce::TransductionRefusal),
 }
