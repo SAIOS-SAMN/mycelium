@@ -12,7 +12,8 @@
 //!   and the motion from one state to the other, a `Cl(n+1,1)`(ℚ) versor or,
 //!   where no exact versor exists (Niven), turns per phase with the winding
 //!   kept.
-//! - **Holonomy**: each ring the crossing closes, its holonomy a versor,
+//! - **Holonomy**: each ring the crossing closes ([`Ring`]), named by its
+//!   vertices' coordinates in order from the least, its holonomy a versor,
 //!   always. A turn is a reading of it on a named plane, never its writing.
 //! - **Clauses**: the clauses the act is read under, the final points it
 //!   cites, and the signing events it stands on (by stamp, §5a.4).
@@ -73,12 +74,86 @@ pub struct Clauses {
     pub signings: Vec<Stamp>,
 }
 
+/// A RING THE CROSSING CLOSES, named by its vertices' coordinates written
+/// out in order around it (A21: content, never a digest or an index), with
+/// its holonomy. The writing starts at the least vertex in the coordinates'
+/// canonical order (`TPoint`'s own), so two writings that are rotations of
+/// one cycle are one ring; the orientation is kept as stated, so a ring and
+/// its reverse are two names, whose holonomies are inverse (ruled
+/// 2026-11-06, #160).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Ring {
+    vertices: Vec<TPoint>,
+    pub holonomy: Mv,
+}
+
+impl Ring {
+    /// THE RING THROUGH `vertices` in the order stated, its writing rotated
+    /// to start at the least vertex, the orientation kept. `None` where it
+    /// has no vertex or a vertex twice (no least start is one).
+    pub fn new(mut vertices: Vec<TPoint>, holonomy: Mv) -> Option<Ring> {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: a ring's writing starts at its least vertex in TPoint's canonical coordinate order, as ruled (#160); a coordinate order, never a choice by a measure"
+        )]
+        let least = vertices.iter().enumerate().min_by(|a, b| a.1.cmp(b.1)).map(|(i, _)| i)?;
+        vertices.rotate_left(least);
+        Ring::canonical(vertices, holonomy).ok()
+    }
+
+    /// A writing taken as it stands: refused `RingStart` where it does not
+    /// start at its least vertex, `Malformed` where it is empty or holds a
+    /// vertex twice.
+    fn canonical(vertices: Vec<TPoint>, holonomy: Mv) -> Result<Ring, CrossingRefusal> {
+        let (first, rest) = vertices.split_first().ok_or(CrossingRefusal::Malformed)?;
+        if rest.iter().any(|v| v == first) {
+            return Err(CrossingRefusal::Malformed);
+        }
+        if rest.iter().any(|v| v < first) {
+            return Err(CrossingRefusal::RingStart);
+        }
+        let mut seen: Vec<&TPoint> = vertices.iter().collect();
+        seen.sort();
+        if seen.windows(2).any(|w| w[0] == w[1]) {
+            return Err(CrossingRefusal::Malformed);
+        }
+        Ok(Ring { vertices, holonomy })
+    }
+
+    /// The vertices in order around the ring, from the least.
+    pub fn vertices(&self) -> &[TPoint] {
+        &self.vertices
+    }
+
+    /// THE RING REVERSED: the same vertices the other way round, from the
+    /// least, its holonomy the inverse. `None` where the holonomy has no
+    /// exact inverse.
+    pub fn reversed(&self) -> Option<Ring> {
+        let mut back = self.vertices.clone();
+        back.reverse();
+        Ring::new(back, crate::transducer::cga::inverse_even(&self.holonomy)?)
+    }
+
+    fn put(&self, out: &mut Vec<u8>) {
+        put_key_count(out, self.vertices.len());
+        self.vertices.iter().for_each(|v| v.put(out));
+        self.holonomy.to_bytes(out);
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Result<Ring, CrossingRefusal> {
+        let m = CrossingRefusal::Malformed;
+        let vertices = (0..take_key_count(b, p).ok_or(m)?).map(|_| TPoint::take(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
+        let holonomy = Mv::from_bytes(b, p).ok_or(m)?;
+        Ring::canonical(vertices, holonomy)
+    }
+}
+
 /// THE CROSSING RECORD.
 #[derive(Clone, Debug)]
 pub struct Crossing {
     pub place: Place,
     pub content: Content,
-    pub holonomy: Vec<Mv>,
+    pub holonomy: Vec<Ring>,
     pub clauses: Clauses,
 }
 
@@ -88,6 +163,9 @@ pub enum CrossingRefusal {
     /// The record carries no content where the object belongs: an address
     /// only (MU-HOSTING §5a.10, ruled #160).
     AddressOnly,
+    /// A ring's writing does not start at its least vertex: a rotation of
+    /// the one writing, refused rather than read as another ring.
+    RingStart,
     /// The bytes do not read whole as a record: a part cut short, a byte
     /// left over, a turn whose winding is not its own, an extent outside
     /// `[0, 1]`.
@@ -103,13 +181,13 @@ fn take_turns(b: &[u8], p: &mut usize) -> Option<Vec<Turn>> {
     (0..take_key_count(b, p)?).map(|_| Turn::take(b, p)).collect()
 }
 
-fn put_mvs(out: &mut Vec<u8>, ms: &[Mv]) {
-    put_key_count(out, ms.len());
-    ms.iter().for_each(|m| m.to_bytes(out));
+fn put_rings(out: &mut Vec<u8>, rings: &[Ring]) {
+    put_key_count(out, rings.len());
+    rings.iter().for_each(|r| r.put(out));
 }
 
-fn take_mvs(b: &[u8], p: &mut usize) -> Option<Vec<Mv>> {
-    (0..take_key_count(b, p)?).map(|_| Mv::from_bytes(b, p)).collect()
+fn take_rings(b: &[u8], p: &mut usize) -> Result<Vec<Ring>, CrossingRefusal> {
+    (0..take_key_count(b, p).ok_or(CrossingRefusal::Malformed)?).map(|_| Ring::take(b, p)).collect()
 }
 
 impl TurnBody {
@@ -169,15 +247,16 @@ impl Content {
 
 impl Crossing {
     /// THE RECORD WRITTEN: `[place: point, parents][content tag 1][content]
-    /// [holonomy: count, versor …][clauses: ids, cited points, signing
-    /// stamps]`. `None` where a turn cannot be written.
+    /// [holonomy: count, (vertex count, vertex …, versor) …][clauses: ids,
+    /// cited points, signing stamps]`. `None` where a turn cannot be
+    /// written.
     pub fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         self.place.at.put(out);
         put_key_count(out, self.place.parents.len());
         self.place.parents.iter().for_each(|x| x.put(out));
         out.push(1);
         self.content.put(out)?;
-        put_mvs(out, &self.holonomy);
+        put_rings(out, &self.holonomy);
         put_key_count(out, self.clauses.read.len());
         self.clauses.read.iter().for_each(|id| put_clause_id(out, id));
         put_key_count(out, self.clauses.cited.len());
@@ -201,7 +280,7 @@ impl Crossing {
             1 => Content::take(b, p).ok_or(m)?,
             _ => return Err(m),
         };
-        let holonomy = take_mvs(b, p).ok_or(m)?;
+        let holonomy = take_rings(b, p)?;
         let read = (0..take_key_count(b, p).ok_or(m)?).map(|_| take_clause_id(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
         let cited = (0..take_key_count(b, p).ok_or(m)?).map(|_| TPoint::take(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
         let signings = (0..take_key_count(b, p).ok_or(m)?).map(|_| Stamp::take_canonical(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;

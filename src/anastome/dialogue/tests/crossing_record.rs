@@ -2,7 +2,8 @@
 // a crossing written out and read back to exact values, and a record that
 // carries only an address refused `AddressOnly`.
 
-use crate::anastome::dialogue::crossing_record::{put_address_only, Clauses, Content, Crossing, CrossingRefusal, Motion, Place, TurnBody};
+use crate::anastome::dialogue::crossing_record::{put_address_only, Clauses, Content, Crossing, CrossingRefusal, Motion, Place, Ring, TurnBody};
+use crate::transducer::cga::Mv;
 use crate::chronometry::tuniversal::{Origin, TPoint};
 use crate::chronometry::{Parent, Place as LinePlace, Stamp};
 use crate::court::admission::Predecessor;
@@ -29,11 +30,17 @@ fn body() -> TurnBody {
     TurnBody { breakpoints: vec![vec![Turn::of(1, 4), Turn::of(3, 4)], vec![Turn::of(1, 2)]], extent: q(3, 8) }
 }
 
+/// The ring through ticks 7 → 3 → 9, stated from 7: written from 3, the
+/// least, the orientation kept (3 → 9 → 7). Its holonomy the (3,4,5) turn.
+fn ring() -> Ring {
+    Ring::new(vec![fp(7), fp(3), fp(9)], rotator(&q(2, 1), &q(1, 1))).expect("a ring")
+}
+
 fn crossing(motion: Motion) -> Crossing {
     Crossing {
         place: Place { at: fp(12), parents: vec![parent(10), parent(11)] },
         content: Content { before: vec![body()], after: vec![body(), body()], motion },
-        holonomy: vec![rotator(&q(2, 1), &q(1, 1))],
+        holonomy: vec![ring()],
         clauses: Clauses {
             read: vec![ConcordanceClauseId { law: "FORMS-PASSAGE".into(), version: 4 }],
             cited: vec![fp(11)],
@@ -80,4 +87,52 @@ fn crossing_without_content_is_refused_address_only() {
     Turn::of(5, 4).put(&mut t).expect("written");
     t[16] = 0;
     assert!(Turn::take(&t, &mut 0).is_none(), "the winding written beside the turn must be its own");
+}
+
+/// A RING IS NAMED BY ITS VERTICES FROM THE LEAST: two statements that are
+/// rotations of one cycle are one ring, and its writing reads back to it.
+#[test]
+fn ring_named_from_least_vertex_round_trips() {
+    let r = ring();
+    assert_eq!(r.vertices(), &[fp(3), fp(9), fp(7)], "from the least, the orientation kept");
+    let rotated = Ring::new(vec![fp(9), fp(7), fp(3)], rotator(&q(2, 1), &q(1, 1))).expect("a ring");
+    assert_eq!(rotated, r, "a rotation of the cycle is the one ring");
+    let mut out = Vec::new();
+    crossing(Motion::Turns(vec![Turn::of(1, 2)])).put(&mut out).expect("written");
+    let back = Crossing::from_bytes(&out).expect("read whole");
+    assert_eq!(back.holonomy, vec![r]);
+    assert!(Ring::new(vec![fp(3), fp(9), fp(3)], rotator(&q(2, 1), &q(1, 1))).is_none(), "a vertex twice names no ring");
+}
+
+/// THE REVERSED RING IS ANOTHER NAME WITH THE INVERSE HOLONOMY: the same
+/// vertices the other way round, from the least, and its holonomy composed
+/// with the ring's is the identity.
+#[test]
+fn reversed_ring_has_inverse_holonomy() {
+    let r = ring();
+    let back = r.reversed().expect("an invertible holonomy");
+    assert_eq!(back.vertices(), &[fp(3), fp(7), fp(9)]);
+    assert_ne!(back, r, "a ring and its reverse are two names");
+    assert!(back.holonomy.geo(&r.holonomy).sub(&Mv::scalar(q(1, 1))).is_zero(), "inverse holonomies");
+    assert_eq!(back.reversed().expect("invertible"), r, "reversed twice, the ring again");
+}
+
+/// A WRITING THAT DOES NOT START AT ITS LEAST VERTEX IS REFUSED `RingStart`,
+/// never read as another ring.
+#[test]
+fn ring_writing_off_least_start_is_refused() {
+    let mut out = Vec::new();
+    crossing(Motion::Turns(vec![Turn::of(1, 2)])).put(&mut out).expect("written");
+    // The ring's first vertex is the point at tick 3; its writing stands
+    // after the place, the content and the ring count. Swap it with the
+    // second (tick 9) by rewriting the ring from 9.
+    let mut ring_bytes = Vec::new();
+    fp(3).put(&mut ring_bytes);
+    let at = out.windows(ring_bytes.len()).position(|w| w == ring_bytes.as_slice()).expect("the least vertex written");
+    let mut nine = Vec::new();
+    fp(9).put(&mut nine);
+    let mut forged = out.clone();
+    forged[at..at + nine.len()].copy_from_slice(&nine);
+    forged[at + nine.len()..at + 2 * nine.len()].copy_from_slice(&ring_bytes);
+    assert_eq!(Crossing::from_bytes(&forged).err(), Some(CrossingRefusal::RingStart));
 }
