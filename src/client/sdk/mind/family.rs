@@ -11,34 +11,21 @@ use crate::client::sdk::*;
 use crate::transducer::family::{Family, Frames};
 use crate::transducer::sentence::SentenceRule;
 
-/// The magnitude of a family, per lane: the sum over its pairs of one
-/// enclosure of the planar coboundary's lane magnitudes — what thinking it
-/// through draws on the mind's own metabolism (`Physics::bump`, the
-/// reserve's shortfall), which is counted in the mind's own units. It is
-/// NOT μ, so it stays a count (ruled 2026-11-01): μ is a share of the frame
-/// (MU-RECURSION 78.170 O1), read where μ is paid (`DeflationRead::mu`,
-/// `Court::discharge_on`). A pair with no enclosure (empty or ragged) draws
-/// nothing, and so does a pair of unequal enclosures: its coboundary is its
-/// transduction, not a chain of cells, and its count is not rebuilt as one
-/// (MU-DERIVATIONS D3.2); the share of the frame it changes is
-/// `transduce::family_share`.
-pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
-    use crate::transducer::family::transduce::Enclosure;
-    let mut mag = [0u64; 4];
-    for (x, y) in train {
-        if !Enclosure::of(x.sample()).is_same_periods(&Enclosure::of(y.sample())) {
-            continue;
-        }
-        // One enclosure: the speech reaches every site and needs no ground.
-        let Ok(residue) = crate::transducer::family::speak::residue_of(Some(x), y) else { continue };
-        let m = crate::transducer::element::measure_lanes(&residue);
-        for l in 0..4 {
-            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
-            let next = mag[l].saturating_add(m[l]);
-            mag[l] = next;
-        }
-    }
-    mag
+/// The magnitude of a family, per lane: the sum over its pairs of the lane
+/// counts of each pair's projected record, at the samples' own rank, by the
+/// one reading the genesis bond takes (`magnitude::section_cover`; ruled
+/// 2026-11-06 on #32) — what thinking it through draws on the mind's own
+/// metabolism (`Physics::bump`, the reserve's shortfall), which is counted
+/// in the mind's own units. It is NOT μ, so it stays a count (ruled
+/// 2026-11-01): μ is a share of the frame (MU-RECURSION 78.170 O1), read
+/// where μ is paid (`DeflationRead::mu`, `Court::discharge_on`); the share
+/// of the frame a pair changes is `transduce::family_share`. A pair whose
+/// record does not read (a re-period that does not land, `OffSite`) draws
+/// nothing and is held in the cover's residue, never aligned at a corner.
+pub(crate) fn family_magnitude(train: &Family) -> crate::transducer::family::magnitude::FamilyCover {
+    #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of record counts over resident pairs cannot pass u64")]
+    let cover = crate::transducer::family::magnitude::section_cover(train).unwrap_or_default();
+    cover
 }
 
 /// MU-DERIVATIONS (the readers), 78.170 O1 — A FAMILY TAKEN IN, READ TWICE

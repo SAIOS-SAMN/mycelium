@@ -1883,8 +1883,16 @@ Each phase is one commit:
      site and the frame's momentum read the re-period of each phase
      (`element::Reperiod`, `p′ᵢ/pᵢ` axis by axis). Claims
      `reperiod_carries_sites_between_extents_phase_by_phase`,
-     `momentum_read_per_phase_across_anisotropic_reperiod`. Open: the
-     magnitude's planar chains (`family::magnitude`, MU-SENSING §8).
+     `momentum_read_per_phase_across_anisotropic_reperiod`.
+   - **Built** (branch `sensing-magnitude`; ruled 2026-11-06 on #32): a
+     family's magnitude is read at the samples' own rank, S and G from
+     each pair's projected record and H from the boundary by grade
+     `n − 1` (the chain-length term retired); a pair whose record does not
+     read is held as residue citing its refusal (`OffSite`), contributing
+     nothing. The genesis bond and the mind's `family_magnitude` read
+     alike; the bond's value changes, a recut. Claims
+     `magnitude_reads_counts_at_rank_n_and_h_by_grade_n_minus_one`,
+     `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`.
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
