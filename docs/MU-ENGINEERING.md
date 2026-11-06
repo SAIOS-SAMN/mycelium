@@ -259,6 +259,13 @@ read. An utterance's identity is its content written out
 at coordinates. An admitted utterance is an event of the
 multi-dimensional ledger (lane × layer × grade).
 
+**Sound is a case of the model** (MU-SENSING §3.10, stated there once).
+The transport carries sound's bytes meaning-free, the same for every
+receiver, as it carries any other bytes; a carrier (the harmonic sense's
+reading) holds the sound's harmonic structure; and whether a reading is
+signal or noise is never a transport or carrier property, but is decided
+by the reader that holds the structure.
+
 ### 9.2 Known violations
 
 Each is a place where a layer holds what belongs to another. The gate
