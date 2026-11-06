@@ -914,7 +914,7 @@ The mind lifts these into its field (MU-SENSING §3.7–§3.9):
 Code: `src/transducer/field/` (`well.rs`, `carrier/`) and
 `src/transducer/cech/orbit.rs` (`Field`). **Owed:** seat percepts lifted
 into the field, with the seat's functions as thoughts whose orbits escape
-(MU-CLIENT §6, *Specified*; issue #133).
+(MU-CLIENT §6, *Specified*; issue #147).
 
 ### 9.3 The mind thinks in orbital masses that collide and converge
 
@@ -1062,7 +1062,7 @@ the clauses that govern what crosses (MU-HOSTING §5a.4).
 
 | Owed | Where it is specified | Issue |
 |---|---|---|
-| Seat percepts lifted into the field | MU-CLIENT §6; §9.2 | #133 |
+| Seat percepts lifted into the field | MU-CLIENT §6; §9.2 | #147 |
 | The hypha's acts (`Return`, `RankStep`, `Reconnect`) reaching a mind as perception | MU-CLIENT §3.1, §7.1; §9.1 | #136 |
 | The seated-mind harness: `mycelium-client --seat` end to end against a live house | MU-HOSTING §2.1; §9.1 | #133 |
 | A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |

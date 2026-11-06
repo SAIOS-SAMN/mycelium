@@ -783,6 +783,14 @@ impl Mind {
     /// (`Mind::submit_solve_signed`). The court pays the key that signs, so
     /// the mind is paid itself; the house may still relay the in-game call
     /// (FN_SOLVE), and a solve it files under its own key is paid to it.
+    ///
+    /// A SEAT'S ACT LEAVES AT THE MIND'S NEXT RETURN, as a seat's call does
+    /// (the empty scene, `hold_for_return`), never at the return of a thought
+    /// of the task's scene: a task the house sets is taken up where the mail
+    /// lands (ruled 2026-10-22, option (a)), and no thought of its scene need
+    /// ever return (2026-11-06, the seated harness: the solve of task
+    /// 1bcfb847 stood held for its scene at K 19 while the house was told
+    /// FN_SOLVE, and no court judged it).
     pub(crate) fn file_seat_solve(
         &mut self,
         key: &ed25519_dalek::SigningKey,
@@ -791,6 +799,6 @@ impl Mind {
         rule: &crate::transducer::element::Element,
         ground: &crate::transducer::family::transduce::Ground<u8>,
     ) -> io::Result<()> {
-        self.submit_solve_signed(key, id, outputs, rule, ground)
+        self.submit_solve_signed(key, id, &[], outputs, rule, ground)
     }
 }
