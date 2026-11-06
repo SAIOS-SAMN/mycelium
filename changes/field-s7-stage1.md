@@ -31,6 +31,12 @@
   72° × 5 is 360° with `K = 1` and the identity motion; period 9 taken
   apart as `3 · 3` reads 240° and 120°, recomposed 280°; monodromy orders 1
   and 3; `Unenclosed` outside a membrane, `4/5·n_∞` lawful inside.
+- **The field stated as an object a court reconstructs**
+  (`Atlas::put_statement`, `reconstruct`, `admit`): the statement writes
+  the atlas and each lap's turnings by plane and angle, never a reading;
+  the court rebuilds every motion from its stated angle, derives the
+  curvature itself and admits a mind's claimed curvature on a match,
+  refusing `Differs` with each pair otherwise. Not on the wire (S9).
 - **Open, for the joint reading** (78.171 §8): the plane a sample's axis
   turns on at rank `n` (the lift's convention), and the product of
   turnings on planes that share a unit (S7 stage 3).

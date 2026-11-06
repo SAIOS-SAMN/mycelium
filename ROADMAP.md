@@ -357,6 +357,12 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
   - `mind_revises_a_perception_on_a_court_ruling_by_amendment`
 - A live run of `mycelium-client` on a local network shows these. Solve
   counts are observations only.
+- **Built toward it** (track 26 S7, stage 1): a field can be stated as an
+  object, its atlas and laps written without a reading, and a court
+  reconstructs it and derives its curvature itself
+  (`transducer::field::carrier::admit`). The mind does not yet state its
+  contemplation's field: that waits on the well's body (S7 stage 2) and
+  the wire (S9).
 
 ## 11. Specification reconciliation
 
@@ -1943,7 +1949,12 @@ Each phase is one commit:
      in 78.171 §8).
    - **Stages** (each about 1 500 changed lines or less, each leaving the
      tree green; planned 2026-11-06):
-     1. Built: the lift and the field's carrier (S4a, S7).
+     1. Built: the lift and the field's carrier (S4a, S7), and the field
+        stated as an object a court reconstructs (`Atlas::put_statement`,
+        `reconstruct`, `admit`: the statement writes the atlas and no
+        reading; the court rebuilds it through the carrier's
+        constructors, derives the curvature and admits a claimed
+        curvature on a match, refusing `Differs` with each pair).
      2. The well's body (S7): `Well` stands on the carrier, its centre an
         attractor's chart, its membrane, its inflation the gauge of its
         frame state; its stage a coordinate (`percept: bool`,
