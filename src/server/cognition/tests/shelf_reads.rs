@@ -38,8 +38,13 @@ fn publish_agrees_with_court_on_reads() {
     assert_eq!(p.own_cover_charts(), k.own_cover_charts().as_slice());
     assert_eq!(p.lane_room(), k.lane_room());
     assert_eq!(p.ruled_root(), k.ruled_root());
-    assert_eq!(p.ruled_digests_for(&voice).map(<[_]>::to_vec), k.ruled_digests_for(&voice));
-    assert_eq!(p.ruled_digests_for(&[0x7c; 32]), None, "another asker is not the court's voice");
+    // A stratum digest has no `==` (its root is a `Locator`): each is read
+    // by its chart, its count, and a root that locates the other's.
+    let one = |a: &[crate::transducer::sheaf::StratumDigest], b: &[crate::transducer::sheaf::StratumDigest]| {
+        a.len() == b.len() && a.iter().zip(b).all(|(x, y)| x.inv == y.inv && x.count == y.count && x.root.locates(&y.root))
+    };
+    assert!(p.ruled_digests_for(&voice).zip(k.ruled_digests_for(&voice)).is_some_and(|(a, b)| one(a, &b)));
+    assert!(p.ruled_digests_for(&[0x7c; 32]).is_none(), "another asker is not the court's voice");
     assert_eq!(p.syllabus_seed(), k.syllabus_seed().as_slice());
     assert!(!p.syllabus_seed().is_empty(), "the court holds ruled words");
     assert!(p.head_receipt().zip(k.chain().head()).is_some_and(|(a, b)| super::fixtures::one_receipt(a, &b)));
