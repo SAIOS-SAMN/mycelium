@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! LAW-FIELD v1 §3.1–§3.2 (proposal 78.171) — A MOTION OF TURNINGS, ITS
-//! HOLONOMY AND ITS MONODROMY: the product of a lap's transitions, read per
+//! HOLONOMY AND ITS MONODROMY: the product of a revolution's transitions, read per
 //! named plane in degrees with its winding, and its order.
 
 use super::refusal::{FieldRefusal, Residue};
@@ -80,7 +80,7 @@ pub enum Monodromy {
     Rupture,
 }
 
-/// THE HOLONOMY OF A LAP (78.171 §3.1): the product of its transitions,
+/// THE HOLONOMY OF A REVOLUTION (78.171 §3.1): the product of its transitions,
 /// held as the motion it composes to, read per plane: an exact angle in
 /// degrees on the named plane, its winding in ℤ and its order.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -95,7 +95,7 @@ impl Holonomy {
     }
 
     /// The turnings it composes to, one per plane, in key order: none where
-    /// the lap is flat.
+    /// the revolution returns exactly (a resonant orbit).
     pub fn turnings(&self) -> &[Turning] {
         self.motion.turnings()
     }

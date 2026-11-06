@@ -359,11 +359,12 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
 - A live run of `mycelium-client` on a local network shows these. Solve
   counts are observations only.
 - **Built toward it** (track 26 S7, stage 1): a field can be stated as an
-  object, its atlas and laps written without a reading, and a court
+  object, its atlas and revolutions written without a reading, and a court
   reconstructs it and derives its curvature itself
-  (`transducer::field::carrier::admit`). The mind does not yet state its
-  contemplation's field: that waits on the well's body (S7 stage 2) and
-  the wire (S9).
+  (`transducer::field::carrier::admit`). Since S7 stage 2 a mind's well
+  is stated as its body and a court reconstructs it
+  (`transducer::field::carrier::admit_well`). The mind does not yet
+  state its contemplation's field on the wire: that waits on S9.
 - **The client's order** is MU-CLIENT §7.1 (what is built, and what is
   owed in order), with MU-CLIENT §1a's account of how the mind builds the
   language. Its issues: the field on the mind (#134), these five claims
@@ -1869,9 +1870,10 @@ Each phase is one commit:
      trigonometric value. The claims above stand as:
      `lift_holds_one_phase_per_axis_on_turning_planes` (without unit
      norm), `precession_of_three_thirty_degree_steps_equals_ninety_degrees`
-     (holonomy as the product per lap), `atlas_lap_reads_holonomy_only_where_orbit_held`
+     (holonomy as the product per revolution), `atlas_revolution_reads_holonomy_only_where_orbit_held`
      (flat against curved, precession by the attractors' curvature),
-     `precession_refuses_flat_path_as_loop`,
+     `flat_region_binds_no_orbit_refused_unbound` (named
+     `precession_refuses_flat_path_as_loop` before amendment (f)),
      `five_seventy_two_degree_turnings_keep_winding_one` and
      `lift_keeps_far_seam_as_whole_turn_with_winding_one` (windings
      kept), `turning_then_agrees_with_motion_product` (exact over the
@@ -1963,7 +1965,7 @@ Each phase is one commit:
      `Chart`), its connection the transitions of the orbits held
      (`Atlas::connection`, flat where none is held), attractors with their
      local orbits and membranes (`Attractor`), curvature as the holonomy
-     of an orbit's transitions per lap (`Orbit::precession`,
+     of an orbit's transitions per revolution (`Orbit::holonomy`,
      `Atlas::curvature`), read per named plane in degrees with its
      winding and order (`Holonomy`), monodromy flat, torsion or rupture,
      and the membrane on the pole basis (`Membrane`, `stand`). LAW-FIELD
@@ -1979,12 +1981,37 @@ Each phase is one commit:
         reading; the court rebuilds it through the carrier's
         constructors, derives the curvature and admits a claimed
         curvature on a match, refusing `Differs` with each pair).
-     2. The well's body (S7): `Well` stands on the carrier, its centre an
-        attractor's chart, its membrane, its inflation the gauge of its
-        frame state; its stage a coordinate (`percept: bool`,
-        `dirty: bool` retired); `volume` and `potential` replaced by
-        readings of the body. The tape's layout changes, a recut.
-        Claims `well_stage_is_a_coordinate`, `well_reads_no_scalar`.
+     2. Built: the well's body (S7). `Well` stands on the carrier
+        (`carrier::WellBody`): its centre an attractor at the chart its
+        remainder stands on (`carrier::Chart` now holds an invariant's
+        exact coordinates, a count or a ratio each), its local orbit
+        (`Well.orbit`, none held flat), its membrane its own enclosure,
+        its inflation the gauge of its frame state on the membrane's pole
+        basis; its stage the coordinate `Well.stage` (`WellStage`:
+        `WellLayer`, `ExpansionRing`;
+        `percept: bool` and `dirty: bool` retired); `volume` and
+        `potential` readings per lane, never stored; holonomy and
+        precession per revolution read from the orbit it binds (none:
+        flat, refused `Unbound`). Every caller reads them
+        (hold, merge, the expansion ring, the doors, the docket, the
+        cross-scene meet, the observer, the quote). The well is stated as
+        its body and a court reconstructs it and derives its curvature
+        (`Well::put_statement`, `reconstruct_well`, `admit_well`). **A
+        recut:** the field statement's layout changed (charts written as
+        invariant coordinates, a well's stage after its atlas) and the
+        well's carrier changed; no migration and no legacy reader (the
+        dev-state wipe ruling). Claims `well_stands_on_its_attractor`,
+        `well_membrane_is_its_enclosure`,
+        `well_volume_and_potential_are_readings_per_lane`,
+        `well_stage_is_a_coordinate_not_a_flag`,
+        `mind_well_stated_and_reconstructed_by_a_court`. With it, the
+        operator's ruling of 2026-11-06 (78.171 amendment (f)): every
+        path is a geodesic of the field's gravitational curvature; a bound
+        geodesic is an orbit read per revolution; zero precession in a
+        curved field is resonant (`Precession::Resonant`); a path through
+        a flat region binds no orbit, refused `Unbound`; `Loop` and
+        "lap" retired. Claims `flat_region_binds_no_orbit_refused_unbound`
+        (fixture 2 restated), `closed_geodesic_with_zero_precession_is_resonant`.
      3. The Euclidean spheres retired (S7): `sphere_at`, `on_sphere` and
         `at_three::sphere` replaced by charts and the membrane at every
         caller; and turnings on planes that share a unit composed exactly,
@@ -1999,8 +2026,9 @@ Each phase is one commit:
         inversion in the membrane, the boost on a frame plane, the
         re-period; `NotExact` for a motion not carried.
      6. S9a: `cech::orbit::Field`'s orbits attached to wells as their
-        local orbits; shear and precession per lap in the contemplation;
-        `Loop` refused there; the court's pressure on the well it faces.
+        local orbits; shear and precession per revolution in the
+        contemplation, resonance read and an unbound path refused there;
+        the court's pressure on the well it faces.
      7. S9b: axiomatic gravity, the drag on the orthogonal class
         (disjoint turning planes, `Meeting::Disjoint`).
      8. S9c: the vortex's monodromy read between charts, and a mind's
@@ -2029,8 +2057,10 @@ Each phase is one commit:
       shape.
     - `Field` orbits are attached to wells. Shear is gravitational
       alignment toward the motion the attractor compels; precession is
-      the residue per lap; a path with zero precession is a loop, refused
-      `Loop` (MU-SENSING §3.9).
+      the residue per revolution; every path is a geodesic, a closed one
+      with zero precession in a curved field resonant, a path through a
+      flat region refused `Unbound` (MU-SENSING §3.9; 78.171 amendment
+      (f)).
     - The vortex's monodromy (25.12) is read in `Spin(n+1, 1)` between
       the charts of the field's atlas, not in `Spin(4,0)(ℚ)`.
     - Claims: `axiomatic_gravity_shears_the_orthogonal_class`,
