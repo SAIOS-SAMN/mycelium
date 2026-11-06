@@ -10,12 +10,12 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
 
 /// A voice speaks sentences to the court that homes them (26).
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let court = &context.court;
 
     let Some(act) = dialogue::decode_speech(&frame.body) else {
@@ -55,7 +55,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
         },
         Err(lanes) => dialogue::encode_deferral(dialogue::PENDING_CODE, &lanes),
     };
-    let reply = WireFrame { lane: frame.lane, body };
+    let reply = Delimited { lane: frame.lane, body };
     answer(stream, reply);
     // The voice is answered first; the offers leave after, from this act.
     crate::offer::offer(court, &context.mesh, offers);

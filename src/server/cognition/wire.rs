@@ -17,7 +17,7 @@ use super::*;
 pub fn frame_of(
     a: &[crate::transducer::spelled::PaintedSite],
     b: &[crate::transducer::spelled::PaintedSite],
-) -> Option<crate::transducer::element::Frame> {
+) -> Option<crate::transducer::element::Reperiod> {
     // A scene's extent is its largest occupied coordinate plus one, which
     // the painted set determines (rule 4). An empty scene occupies no sites
     // and its extent is zero by measurement, not by default. An extent no
@@ -34,7 +34,7 @@ pub fn frame_of(
     };
     let (hi, wi) = extent(a)?;
     let (ho, wo) = extent(b)?;
-    Some(crate::transducer::element::Frame::new(hi, wi, ho, wo))
+    Some(crate::transducer::element::Reperiod::new(hi, wi, ho, wo))
 }
 
 /// One byte on the wire summarising an outcome (server → client reply). A

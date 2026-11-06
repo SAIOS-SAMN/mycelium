@@ -48,6 +48,9 @@ pub struct Session {
     /// every act it speaks, raised by every door reply that carries a later
     /// one. `None` before the first.
     pub(crate) final_point: RefCell<Option<crate::chronometry::tuniversal::TPoint>>,
+    /// MU-CLIENT §7.1 (#137) — EACH HYPHA'S LAST SIGNED RECEIPT, read off
+    /// the digests it answered (47.1), for the equivocation proofs of 47.4.
+    pub(crate) signed: RefCell<super::SignedReceipts>,
 }
 
 impl Session {
@@ -75,6 +78,7 @@ impl Session {
             rtt: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt_window: RefCell::new(crate::network::nerve::Keyed::new()),
             final_point: RefCell::new(None),
+            signed: RefCell::new(super::SignedReceipts::new()),
         }
     }
 
@@ -266,6 +270,10 @@ impl Session {
         if !crate::court::identity::verify(&vk, &prefix, &sig) {
             return false;
         }
+        // #137 — the signed receipt the digest carries behind it, held for
+        // 47.4's proof; a digest with none, or one refused, changes nothing
+        // the digest itself says.
+        self.hold_signed_receipt(body, &vk);
         // A4: the digest is the ROOTS. A voice whose record of this hypha's
         // roots moved asks for its cover by page (`fetch_cover`), and
         // nothing here retracts a cover this reading cannot replace.
@@ -626,7 +634,7 @@ impl Session {
     }
 
     pub(crate) fn exchange_inner(&self, endpoint: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let frame = WireFrame { lane: Lane::Spatial, body: act_body };
+        let frame = Delimited { lane: Lane::Spatial, body: act_body };
         // A body past the wire's one budget is refused here, by name, before
         // a byte is sent (78.125): a large publication is streamed in parts.
         let len = frame.body.len();
@@ -685,10 +693,10 @@ impl Session {
     }
 
     /// One act written on the channel: inside Noise, the frame and its point
-    /// sealed (`NoiseStream::write_frame`); in plaintext, its encoded bytes.
-    fn write_act(&self, s: &mut Channel, frame: &WireFrame, carried: &crate::chronometry::tuniversal::TPoint, bytes: &[u8]) -> io::Result<()> {
+    /// sealed (`NoiseStream::write_delimited`); in plaintext, its encoded bytes.
+    fn write_act(&self, s: &mut Channel, frame: &Delimited, carried: &crate::chronometry::tuniversal::TPoint, bytes: &[u8]) -> io::Result<()> {
         match s {
-            Channel::Noise(n) => n.write_frame(frame, Some(carried)).map_err(io::Error::other),
+            Channel::Noise(n) => n.write_delimited(frame, Some(carried)).map_err(io::Error::other),
             Channel::Plain(p) => p.write_all(bytes),
         }
     }
@@ -698,7 +706,7 @@ impl Session {
     fn read_reply(&self, s: &mut Channel) -> io::Result<Vec<u8>> {
         let s = match s {
             Channel::Noise(n) => {
-                let (frame, point) = n.read_frame().map_err(|why| match why {
+                let (frame, point) = n.read_delimited().map_err(|why| match why {
                     crate::network::noise::NoiseRefusal::Io(e) => e,
                     why => io::Error::new(io::ErrorKind::InvalidData, why),
                 })?;

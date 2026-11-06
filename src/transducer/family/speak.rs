@@ -596,9 +596,9 @@ fn speak_on_scene(
     if !f.elements.is_empty() {
         let spoken = super::statement::speak_elements(&f.elements, x, bodies).ok()?;
         // The speech's frame is a planar pair read with the measured frame
-        // (`element::Frame`, a defect MU-SENSING §8 names): the clauses'
+        // (`element::Reperiod`, a defect MU-SENSING §8 names): the clauses'
         // extents along the plane are written onto it in the plane's order.
-        let [first, second] = spoken.frame;
+        let [first, second] = spoken.extents;
         fy = (first, second);
         painted = spoken.painted;
         // 78.167 C — the clauses are the whole speech: what the vertices left

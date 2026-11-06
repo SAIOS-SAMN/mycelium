@@ -7,12 +7,12 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
 
 /// One probe against one open listing (23.8, 26).
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let court = &context.court;
 
     let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
@@ -29,6 +29,6 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
             pvoice[0], target[0], target[1], reading.settled, reading.closure, reading.remaining
         );
     }
-    let reply = WireFrame { lane: frame.lane, body: dialogue::encode_probe_reply(&reading) };
+    let reply = Delimited { lane: frame.lane, body: dialogue::encode_probe_reply(&reading) };
     answer(stream, reply);
 }

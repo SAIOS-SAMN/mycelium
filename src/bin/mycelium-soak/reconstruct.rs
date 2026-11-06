@@ -2,7 +2,7 @@
 // over a corpus slice, against the one number that matters — families the
 // form speaks whole. Per task: the form's speech (spoken whole or not), the
 // reconstruction left one pair out at a time (`reconstruct::reconstruct`, the
-// voice's own reader through `interpret`), the axes whose loops close on the
+// voice's own reader through `interpret`), the axes whose relations close on the
 // whole family, and the body axis's single changes by each change's fascicle's
 // regime. Data; nothing is decided.
 
@@ -22,12 +22,12 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     let (mut pairs, mut framed, mut reproduced) = (0u64, 0u64, 0u64);
     let (mut by_axis, mut closing) = ([0u64; 9], [0u64; 9]);
     let mut regimes = [0u64; 5];
-    let (mut loops, mut closed, mut unclosed, mut unseen) = ([0u64; 9], [0u64; 9], 0u64, 0u64);
+    let (mut relations, mut closed, mut unclosed, mut unseen) = ([0u64; 9], [0u64; 9], 0u64, 0u64);
     // 78.83 — the same families in time (HR5).
     let (mut t_whole, mut t_unspoken, mut t_reproduced, mut t_unclosed, mut t_unseen, mut t_unread) = (0u64, 0u64, 0u64, 0u64, 0u64, 0u64);
     let mut t_by_axis = [0u64; 9];
     let mut t_closing = [0u64; 9];
-    let mut t_loops = [[0u64; 6]; 9];
+    let mut t_relations = [[0u64; 6]; 9];
     for name in names {
         let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
         let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
@@ -49,7 +49,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         by_axis.iter_mut().zip(rec.by_axis).for_each(|(a, b)| *a += b);
         closing.iter_mut().zip(rec.closing).for_each(|(a, b)| *a += u64::from(b));
         for (a, h) in rec.holonomy.iter().enumerate() {
-            loops[a] += h.loops;
+            relations[a] += h.relations;
             closed[a] += h.closed;
         }
         unclosed += rec.unclosed;
@@ -64,7 +64,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         t_by_axis.iter_mut().zip(it.by_axis).for_each(|(a, b)| *a += b);
         for (a, h) in it.holonomy.iter().enumerate() {
             t_closing[a] += u64::from(h.closes());
-            for (slot, v) in t_loops[a].iter_mut().zip([h.loops, h.equal, h.in_time, h.gauge, h.gauge_void, h.light]) {
+            for (slot, v) in t_relations[a].iter_mut().zip([h.relations, h.equal, h.in_time, h.gauge, h.gauge_void, h.light]) {
                 *slot += v;
             }
         }
@@ -90,7 +90,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     );
     let axes: Vec<String> = AXES.iter().zip(by_axis.iter().zip(&closing)).map(|(a, (n, c))| format!("{a} {n}/{c}")).collect();
     println!("reconstruct by axis (pairs carried / families the axis closes on): {}", axes.join(" | "));
-    let held: Vec<String> = AXES.iter().zip(closed.iter().zip(&loops)).map(|(a, (c, l))| format!("{a} {c}/{l}")).collect();
+    let held: Vec<String> = AXES.iter().zip(closed.iter().zip(&relations)).map(|(a, (c, l))| format!("{a} {c}/{l}")).collect();
     println!(
         "reconstruct loops closed / loops, over every family: {} | left-out pairs no axis closed for {unclosed}, an axis closed but a key unseen {unseen}",
         held.join(" | ")
@@ -106,7 +106,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         .iter()
         .enumerate()
         .map(|(a, name)| {
-            let [l, e, t, g, gv, li] = t_loops[a];
+            let [l, e, t, g, gv, li] = t_relations[a];
             format!("{name}: loops {l} equal {e} in time {t} lift gauge {g} (void {gv}) lift light {li} | closes {} carried {}", t_closing[a], t_by_axis[a])
         })
         .collect();

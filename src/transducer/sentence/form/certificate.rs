@@ -503,8 +503,8 @@ impl At {
 /// THE CONTRACTION CERTIFICATE (50.9): the refusal a court issued, the
 /// sentence it refused, the form the move produced, and the court's
 /// receipt. Filed on the idea beside its pivot certificates; cited on the
-/// next utterance, where the court that issued the receipt verifies that
-/// the uttered sentence is the contraction at the coordinate.
+/// next expression, where the court that issued the receipt verifies that
+/// the asserted sentence is the contraction at the coordinate.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Contraction {
     pub kind: RefusalKind,

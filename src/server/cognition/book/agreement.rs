@@ -1,5 +1,5 @@
 // MU-CLIENT §5.5, 78.161(5) — AGREED LANGUAGE ATTESTED: a voice speaks a word
-// another mind heard and holds one loop with it on every ring, carrying that
+// another mind heard and holds one relation with it on every ring, carrying that
 // mind's signed HOLD; the court verifies the signature, verifies the word ON
 // THE EVIDENCE — what it does on the court's own copy of the scene it is bound
 // to — and seals the other mind's attestation on the word. Where that mind
@@ -13,7 +13,7 @@
 //! by its own letters onto the family it is bound to (`family::local::
 //! word_local`, the reader its install is paid by), its section is not empty.
 //! A word bound to no family, or with no section there, is evidenced by
-//! nothing, and no attestation is sealed on it. The loops are the two minds'
+//! nothing, and no attestation is sealed on it. The relations are the two minds'
 //! (78.163); the court re-derives no conversation it was not in (law 8) — it
 //! reads the word on its own family, as it reads every word it pays.
 //!

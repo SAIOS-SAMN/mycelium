@@ -254,7 +254,7 @@ fn terms_of_reads_static_tether_and_refuses_held_coset() {
     let mut static_contact = crossing(true);
     static_contact.transport = None;
     static_contact.whole = true;
-    static_contact.refraction = Some(Refraction::Static { tether: tether.clone(), poses: [HeldPose::OneFrame, HeldPose::OneFrame] });
+    static_contact.refraction = Some(Refraction::Static { tether: tether.clone(), poses: [HeldPose::OneSample, HeldPose::OneSample] });
     let terms = terms_of(&path_of(vec![static_contact.clone()])).expect("a static contact is read");
     assert!(omega_of(&terms).projective_eq(&tether), "its term is its tether");
     let mut back = static_contact;
