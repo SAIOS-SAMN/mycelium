@@ -6,15 +6,39 @@
 
 use super::element::Element;
 use super::stalk::{invariant_of, Invariant, Stalks};
+use crate::court::admission::Locator;
 
 /// One stratum's section digest: the chart it sits over, how many words
 /// stand there, and the root over the words' addresses.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Its root is a [`Locator`], so the digest has no `==`
+/// (`stratum_digest_has_no_equality`); two digests are read by their
+/// charts and by a root that locates the other's:
+///
+/// ```compile_fail,E0369
+/// use mycelium::transducer::sheaf::StratumDigest;
+/// fn same(a: &StratumDigest, b: &StratumDigest) -> bool {
+///     a == b
+/// }
+/// ```
+///
+/// The named comparison, which compiles:
+///
+/// ```
+/// use mycelium::transducer::sheaf::stratum_root;
+/// let members = vec![vec![1u8, 2], vec![3u8]];
+/// assert!(stratum_root(&members).locates(&stratum_root(&members)));
+/// ```
+#[derive(Debug, Clone)]
 pub struct StratumDigest {
     pub inv: Invariant,
     /// The stratum's members: the mesh's count, `u64` (3b's rule).
     pub count: u64,
-    pub root: Vec<u8>,
+    /// The root over the members, a digest in the address sense
+    /// (MU-ANTI-FLATTENING 13, MU-HOSTING §5a.10): it locates the stratum a
+    /// holder stands on and never admits a word, so it is typed at its
+    /// source and compared only by [`Locator::locates`].
+    pub root: Locator,
 }
 
 /// THE ROOT OVER A STRATUM'S MEMBERS. Thirty-two bytes, whatever the
@@ -33,14 +57,14 @@ pub struct StratumDigest {
 /// own to be written out (law 2 is about a word's identity, and no word's
 /// identity passes through this). `payload_hash` is the same construction
 /// `measure_ruled_root` already folds these roots with.
-pub fn stratum_root(members: &[Vec<u8>]) -> Vec<u8> {
+pub fn stratum_root(members: &[Vec<u8>]) -> Locator {
     let mut rows = members.to_vec();
     rows.sort();
     let mut buf = Vec::new();
     for a in &rows {
         crate::transducer::address::put_key_bytes(&mut buf, a);
     }
-    crate::chronometry::payload_hash(&buf).to_vec()
+    Locator::of_bytes(crate::chronometry::payload_hash(&buf))
 }
 
 /// Measure the section digests of a language over its atlas. The atlas
@@ -58,18 +82,18 @@ pub fn digests(stalks: &Stalks) -> Vec<StratumDigest> {
         .collect()
 }
 
-/// The remote strata this holder disagrees with: absent here, or a
-/// different root. Everything else is glued.
+/// The remote strata this holder disagrees with: absent here, or a root
+/// that does not locate this holder's stratum. Everything else is glued.
 pub fn discordant<'a>(remote: &'a [StratumDigest], local: &[StratumDigest]) -> Vec<&'a StratumDigest> {
     use crate::network::nerve::Keyed;
-    let mut here: Keyed<(Vec<u8>, u64)> = Keyed::new();
+    let mut here: Keyed<(Locator, u64)> = Keyed::new();
     for l in local {
-        here.insert(l.inv.key(), (l.root.clone(), l.count));
+        here.insert(l.inv.key(), (l.root, l.count));
     }
     remote
         .iter()
         .filter(|r| match here.get(&r.inv.key()) {
-            Some((root, _)) => *root != r.root,
+            Some((root, _)) => !root.locates(&r.root),
             None => true,
         })
         .collect()

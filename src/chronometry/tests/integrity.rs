@@ -106,7 +106,7 @@ fn act_kind_rides_tape_and_chain_hash() {
 fn cites_rides_tape_and_chain_hash() {
     let at = Stamp { h: 4, vk: [3; 32], k: 9, i: 2 };
     let word = Cite::Word { chart: crate::transducer::stalk::Invariant::counts(&[1, 2]), class: None, at };
-    let root = Cite::Root { at, hash: [5; 32] };
+    let root = Cite::Root { at, hash: crate::court::admission::Predecessor::of_bytes([5; 32]) };
     let mut c = ReceiptChain::with_signer([1; 32]);
     let r = c
         .append(ActKind::Ruling(Ruled::Retired), [0; 4], vec![word.clone(), root.clone()], [9; 32], Vec::new())
@@ -115,7 +115,11 @@ fn cites_rides_tape_and_chain_hash() {
     let mut tape = Vec::new();
     r.write(&mut tape).expect("writes");
     let back = KStepReceipt::read(&tape, &mut 0).expect("reads");
-    assert_eq!(back.cites, vec![word, root], "the citations come back as written");
+    // A citation has no `==` (its root hash is a `Predecessor`): each is
+    // read back by what it cites (`Cite::restates`).
+    let [w, rt] = back.cites.as_slice() else { panic!("two citations: {:?}", back.cites) };
+    assert!(w.restates(&word) && rt.restates(&root), "the citations come back as written");
+    assert!(!w.restates(&root), "a word's citation does not restate a root's");
     let mut other = r.clone();
     other.cites.pop();
     assert!(!other.rederives(), "the citations are in the chain hash");

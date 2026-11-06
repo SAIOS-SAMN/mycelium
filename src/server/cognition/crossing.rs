@@ -20,6 +20,7 @@ use super::atlas::record_key;
 use super::Court;
 use crate::anastome::dialogue::atlas::MapRecord;
 use crate::anastome::dialogue::crossing::{CrossRefusal, Crossed, Edge, Gas, Side, SignedTraverse};
+use crate::anastome::dialogue::retrieve::{RetrieveRefusal, Retrieved, SignedRetrieve};
 use crate::anastome::dialogue::uplink::{Child, TaxRefusal, TierFold, CONNECTION_TAX};
 use crate::anastome::dialogue::wallet::{SignedStake, StakeRefusal};
 use crate::chronometry::tuniversal::TPoint;
@@ -279,6 +280,12 @@ impl Court {
     /// `staker`'s stake as a claim held to the window. `nonce` names the
     /// claim.
     pub fn retrieve(&mut self, staker: [u8; 32], p: &TPoint, fin: Option<TPoint>, nonce: [u8; 32]) -> Result<Vec<KStepReceipt>, Unretrieved> {
+        self.retrieve_priced(staker, p, fin, nonce).map(|(read, _)| read)
+    }
+
+    /// [`Court::retrieve`] with the fee it claimed: zero where the court
+    /// holds no head to hold a claim to the window from.
+    fn retrieve_priced(&mut self, staker: [u8; 32], p: &TPoint, fin: Option<TPoint>, nonce: [u8; 32]) -> Result<(Vec<KStepReceipt>, Mu), Unretrieved> {
         if !self.final_in_view(p, fin.as_ref()) {
             return Err(Unretrieved::NotFinal);
         }
@@ -294,13 +301,45 @@ impl Court {
         p.put(&mut id);
         id.extend_from_slice(&nonce);
         let id = crate::chronometry::payload_hash(&id);
-        let Some(head) = self.chain.head() else { return Ok(read) };
-        let head = head.clone();
-        if self.atlas.claims.contains(&[staker.as_slice(), id.as_slice()].concat()) || self.draw_claim(staker, &id, fee, &head).is_none() {
+        let Some(head) = self.chain.head() else { return Ok((read, Mu::zero())) };
+        if self.atlas.claims.contains(&[staker.as_slice(), id.as_slice()].concat()) || self.draw_claim(staker, &id, fee.clone(), &head).is_none() {
             return Err(Unretrieved::Overflow);
         }
         self.mark_persist();
-        Ok(read)
+        Ok((read, fee))
+    }
+
+    /// 78.154 (4), #159 — `ACT_DOMAIN` sub-kind 19, A SIGNED COORDINATE
+    /// RETRIEVAL: the staker's signature; the domain founded; the point and
+    /// the cited point at one origin, the point at or below the cited one,
+    /// both final in this court's view; a tick this court has not folded
+    /// (a folded tick is read through `ACT_RECEIPTS`'s replay arm); then
+    /// [`Court::retrieve`]: the receipts at the tick, their read cost
+    /// claimed on the stake. The fee answered is the one claimed.
+    pub fn retrieve_signed(&mut self, s: &SignedRetrieve, fin: Option<TPoint>) -> Retrieved {
+        let r = &s.retrieve;
+        let refuse = Retrieved::Refused;
+        if !s.verifies() {
+            return refuse(RetrieveRefusal::Unsigned);
+        }
+        if self.domains.get(&r.domain).is_none() {
+            return refuse(RetrieveRefusal::UnknownDomain);
+        }
+        if r.point.origin != r.cited.origin || r.point.h > r.cited.h {
+            return refuse(RetrieveRefusal::Origins);
+        }
+        if !self.final_in_view(&r.cited, fin.as_ref()) {
+            return refuse(RetrieveRefusal::NotFinal);
+        }
+        if self.chain.root().is_some_and(|root| r.point.h <= root.height) {
+            return refuse(RetrieveRefusal::Folded);
+        }
+        match self.retrieve_priced(r.staker, &r.point, fin, r.nonce) {
+            Ok((receipts, fee)) => Retrieved::Served { fee, receipts },
+            Err(Unretrieved::NotFinal) => refuse(RetrieveRefusal::NotFinal),
+            Err(Unretrieved::Short) => refuse(RetrieveRefusal::Short),
+            Err(Unretrieved::Overflow) => refuse(RetrieveRefusal::Overflow),
+        }
     }
 
     /// 78.154a — A FOLD'S CONNECTION TAX, read before it seals: the flow
