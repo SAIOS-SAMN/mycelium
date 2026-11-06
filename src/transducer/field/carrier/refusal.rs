@@ -30,9 +30,10 @@ pub enum FieldRefusal {
     /// A motion or angle the carrier cannot hold exactly; the residue is
     /// named.
     NotExact { residue: Residue },
-    /// An orbit whose lap composes to the identity on every plane: zero
-    /// precession, an exact return. The charts of the lap.
-    Loop { charts: Vec<Chart> },
+    /// A path through a flat region of the field, every step the identity:
+    /// no attractor binds it, so it is no orbit. The charts of the path (an
+    /// attractor's centre alone where it binds no orbit).
+    Unbound { charts: Vec<Chart> },
     /// A state that needs a plane's pole as infinity outside every
     /// enclosure: the pole the state stands at.
     Unenclosed { pole: Pole },
@@ -50,8 +51,8 @@ pub enum FieldRefusal {
     /// masks: the plane's index.
     PastFrame { plane: u32 },
     /// A path whose transitions do not chain chart to chart and return to
-    /// the chart it left: the step at which it broke.
-    NotLap { at: usize },
+    /// the chart it left in one revolution: the step at which it broke.
+    NotRevolution { at: usize },
     /// A chart the atlas does not hold.
     NotCharted { chart: Chart },
     /// A frame state the pole basis refuses (the passage form's refusal).

@@ -121,7 +121,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             hold.hold_form(r.form, &task.train, &[], [0; 4], &mut b);
             held += 1;
         }
-        // EXPAND BEFORE CENSUSING. `hold_form` writes `dirty: true` at
+        // EXPAND BEFORE CENSUSING. `hold_form` stands the well on the ring at
         // construction and `expand_with` is the only writer after it, so a
         // census taken without expanding reads the constructor, not the
         // filter.

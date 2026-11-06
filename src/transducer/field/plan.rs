@@ -249,7 +249,7 @@ impl Contemplation {
             for k in keys {
                 let Some(b) = self.wells.get_mut(&k) else { continue };
                 horizon_put(&mut b.horizon, rotor.as_ref().clone(), Standing::Held);
-                b.dirty = true;
+                b.stage = b.stage.reopened();
                 self.dirty.insert(&k, ());
                 self.docket_taken += 1;
             }
