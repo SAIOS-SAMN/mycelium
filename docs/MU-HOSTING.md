@@ -318,6 +318,46 @@ kinds and a firmament heavy enough for the galaxies requested (§3a.6). A
 kernel may select it, adapt it, or found from its own physics; it is
 never imposed (Concordance A7).
 
+### 3a.8 The domain acts and the coordinate retrieval (Built)
+
+The sub-kinds of `ACT_DOMAIN` past a domain's founding, its reserve and
+its bond:
+
+| Sub-kind | Act | Signed by | Ruling |
+|---|---|---|---|
+| 8–11 | GEOMETRY, BASKET, JOIN, READ-UNIVERSE | the sitting reserve (reads unsigned) | MU-RECURSION 78.139 |
+| 12, 13 | LEDGER, READ-LEDGER | the sitting reserve (read unsigned) | 78.154 |
+| 14, 15 | MAP, READ-MAP | the sitting reserve (read unsigned) | 78.154 |
+| 16 | TRAVERSE | the payer | 78.154 |
+| 17, 18 | MANIFEST, READ-ENDOWMENT | the sitting reserve (read unsigned) | §3a.1–3a.3 |
+| 19 | RETRIEVE | the staker | 78.154 (4), #159 |
+
+**RETRIEVE (19)** is a coordinate retrieval: the receipts this court holds
+at a final point's tick (78.152 TU-6 PINPOINT), read from a domain's ledger
+and priced at the court's read price, one unit of information on H per
+receipt, drawn from the staker's stake as a claim held to the window. The
+draw is the act's price, never a wallet act. Any staker may ask, a mind or
+a kernel (`Session::retrieve`).
+- **Request:** `[ACT_DOMAIN][domain 32][0x80 0x00][19][staker 32][point]
+  [cited final point][nonce 32][sig 64]`, the staker's signature over
+  `"mycelium retrieve v1" ‖ domain ‖ staker ‖ point ‖ cited ‖ nonce`.
+- **Reply:** `[1][fee μ⃗][count u32][receipt …][section]`. The receipts
+  are in the `ACT_RECEIPTS` page codec, each carrying its stamp. The
+  section is the court's own 47.1 position over its head at the answer,
+  signed over `"mycelium retrieved v1" ‖` the request's signed bytes. A
+  refusal is `[0][code]`: unsigned, unknown domain, not final, origins (two
+  origins, or the point above the cited one), folded, short, overflow.
+- **The retriever's check** (`retrieve::verify_retrieved`): the section
+  verifies under the court's key, is one claim with its head receipt, and
+  signs over this request; every receipt re-derives, stands at the point's
+  tick and at or below the signed head's height. A served answer that does
+  not stand is the court's signed claim, presentable as its own.
+- **What stays in process.** PINPOINT, UNPACK and UNROLL are served only
+  through this priced retrieval; a free read invites flooding. A tick this
+  court has folded is refused `Folded` and is read through `ACT_RECEIPTS`'s
+  replay arm. **Owed:** that arm priced at the same read price, which needs
+  a staker and a signature on the `ACT_RECEIPTS` request.
+
 ---
 
 ## 4. The flat-world archetype: agent social networks

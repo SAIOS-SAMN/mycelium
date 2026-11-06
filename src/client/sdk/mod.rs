@@ -11,6 +11,7 @@ pub mod comprehension;
 pub mod concluded;
 pub mod genome;
 mod house;
+mod retrieval;
 pub mod mind;
 pub mod quote;
 pub mod rule;
