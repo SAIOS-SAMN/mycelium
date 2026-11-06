@@ -1,7 +1,7 @@
 use super::super::*;
 use super::fixtures::*;
 use crate::physics::equilibrium::{metric_defect, similarity};
-use crate::transducer::cga::{point_at, sphere_at};
+use crate::transducer::cga::{membrane_at, point_at};
 
 /// The register holds every law, each at its own coordinate with a
 /// statement.
@@ -59,7 +59,7 @@ fn verify_names_every_breach_by_law() {
     // CONFORMAL: a body's nucleus is not where the motion sends it.
     let mut moved = carried(&turn());
     if let [(_, after), ..] = moved.as_mut_slice() {
-        after.nucleus = sphere_at(&[q(5), q(5), q(0)], &q(1));
+        after.nucleus = membrane_at(&[q(5), q(5), q(0)], &q(1)).expect("a positive gauge");
     }
     let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: moved, hues: Default::default(), fluxes: Vec::new() }, &mut budget());
     assert!(v.breaches.contains(&(Law::Conformal, Breach::NotCarried { body: 0 })), "{:?}", v.breaches);
@@ -117,7 +117,7 @@ fn verify_admits_dilation_momentum_up_to_one_ratio() {
     let at_origin = |mass: i64, radius: i64| {
         let mut b = body([0, 0, 0]);
         b.mass = q(mass);
-        BodyState { nucleus: sphere_at(&b.centre, &q(radius)), body: b }
+        BodyState { nucleus: membrane_at(&b.centre, &q(radius)).expect("a positive gauge"), body: b }
     };
     let dilated = |s: &BodyState, mass: i64| BodyState { nucleus: d.sandwich(&s.nucleus), body: BodyMoments { mass: q(mass), ..s.body.clone() } };
     let one = at_origin(1, 1);

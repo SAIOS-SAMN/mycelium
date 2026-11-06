@@ -2075,6 +2075,19 @@ Each phase is one commit:
         a versor over `ℚ(ζ_ℓ) ⊗ Cl(p, q)`, its angle a named residue
         where no rational degree holds it. Claim
         `sphere_built_without_squared_radius`.
+        **Built in part** (branch `field-s3-membrane`): a sphere is the
+        membrane `−e₊` or its image under the dilation by a gauge and the
+        slide to a centre (`cga::membrane`, `cga::membrane_at`), read by
+        the horizon, the chart's inversion, the house's nuclei, the
+        conformance probes and the oracle's fixtures; `on_sphere` and
+        `at_three::sphere` retired; the SDK's `house::sphere_at` is
+        `house::membrane_at`. Claim `sphere_built_without_squared_radius`.
+        **Stopped:** a body's nucleus (`blade::Blade::nucleus`), whose
+        extent is a polar second moment with no rational root in general,
+        still built from `r²` by the crate-private `cga::sphere_at`, waiting
+        on a ruling of the reading that replaces it (#134); and turnings on
+        planes that share a unit, waiting on netstratum's composition law
+        (78.173 fixture 11b; the Cayley form on generators).
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.

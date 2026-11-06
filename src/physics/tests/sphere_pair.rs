@@ -3,15 +3,16 @@
 // kissing at a finite point, which is conformal but not rigid.
 
 use crate::physics::sphere_pair::{streamline_of, Fascicle, Streamline};
-use crate::transducer::cga::{point_at, sphere_at, translator_at, Mv, PairRegime};
+use crate::transducer::cga::{membrane_at, point_at, translator_at, Mv, PairRegime};
 use num_traits::One;
 
 fn q(n: i64, d: i64) -> num_rational::BigRational {
     num_rational::BigRational::new(n.into(), d.into())
 }
 
-fn sphere(c: [i64; 3], r2: (i64, i64)) -> Mv {
-    sphere_at(&c.map(|x| q(x, 1)), &q(r2.0, r2.1))
+/// The membrane about `c` at the gauge `rho`: a body's own enclosure.
+fn sphere(c: [i64; 3], rho: (i64, i64)) -> Mv {
+    membrane_at(&c.map(|x| q(x, 1)), &q(rho.0, rho.1)).expect("a positive gauge")
 }
 
 fn point(c: [i64; 3]) -> Mv {
@@ -30,18 +31,19 @@ fn dist2(a: &Mv, b: &Mv) -> num_rational::BigRational {
     q(-2, 1) * a.geo(b).scalar_part() / (wa * wb)
 }
 
-/// THE ELLIPTIC STREAMLINE. Two spheres of `r² = 2` at `0` and `(2,0,0)` cut
-/// orthogonally (a turn of order two): the pair's fascicle turns 180° about the pair's circle —
-/// the stream closes after two — and the circle's rational points `(1,1,0)`
-/// and `(1,0,1)` stand fixed. Two unit spheres a unit apart cut at 60°
-/// (order three): the turn is 120°, closing after three.
+/// THE ELLIPTIC STREAMLINE. The membranes at the gauges 3 about `0` and 4
+/// about `(5,0,0)` cut orthogonally (a turn of order two): the pair's
+/// fascicle turns 180° about the pair's circle — the stream closes after two
+/// — and the circle's rational points `(9/5, 12/5, 0)` and `(9/5, 0, 12/5)`
+/// stand fixed. Two unit membranes a unit apart cut at 60° (order three):
+/// the turn is 120°, closing after three.
 #[test]
 fn fascicle_elliptic_turns_about_circle_closing_at_period() {
-    let f = Fascicle { first: sphere([0, 0, 0], (2, 1)), second: sphere([2, 0, 0], (2, 1)) };
+    let f = Fascicle { first: sphere([0, 0, 0], (3, 1)), second: sphere([5, 0, 0], (4, 1)) };
     assert_eq!(f.regime(), PairRegime::Finite(2), "orthogonal: a turn of order two");
     assert_eq!(f.streamline(), Some(Streamline::Elliptic));
     assert!(f.stream(2).projective_eq(&one()), "the stream closes after two");
-    for p in [point([1, 1, 0]), point([1, 0, 1])] {
+    for p in [point_at(&[q(9, 5), q(12, 5), q(0, 1)]), point_at(&[q(9, 5), q(0, 1), q(12, 5)])] {
         assert!(f.act(&p).is_some_and(|x| x.projective_eq(&p)), "the circle stands fixed");
     }
     let sixty = Fascicle { first: sphere([0, 0, 0], (1, 1)), second: sphere([1, 0, 0], (1, 1)) };
@@ -77,18 +79,18 @@ fn fascicle_parabolic_fixes_contact_and_slide_kisses_at_infinity() {
     assert_eq!(streamline_of(&translator_at(&d)), Some(Streamline::Parabolic), "the translator reads parabolic");
 }
 
-/// THE HYPERBOLIC STREAMLINE. Concentric spheres of `r² = 1` and `r² = 4`
-/// are apart (a boost): the pair's fascicle breathes — a point at `(1,0,0)` is
-/// carried to `(4,0,0)`, lengths scaled by `r₂² / r₁² = 4`, and a sphere of
-/// `r² = 1/4` about the centre to one of `r² = 4`, its extent — and so its
-/// second moments — scaled by `(r₂² / r₁²)² = 16`.
+/// THE HYPERBOLIC STREAMLINE. Concentric membranes at the gauges 1 and 2
+/// are apart (a boost): the pair's fascicle breathes — a point at `(1,0,0)`
+/// is carried to `(4,0,0)`, lengths scaled by `(ρ₂ / ρ₁)² = 4`, and the
+/// membrane at `1/2` about the centre to the one at `2`, its gauge scaled by
+/// 4 and so its second moments by 16.
 #[test]
 fn fascicle_hyperbolic_dilates_by_ratio_of_squares() {
-    let f = Fascicle { first: sphere([0, 0, 0], (1, 1)), second: sphere([0, 0, 0], (4, 1)) };
+    let f = Fascicle { first: sphere([0, 0, 0], (1, 1)), second: sphere([0, 0, 0], (2, 1)) };
     assert_eq!(f.regime(), PairRegime::Boost, "apart: a boost");
     assert_eq!(f.streamline(), Some(Streamline::Hyperbolic));
     assert!(f.act(&point([1, 0, 0])).is_some_and(|x| x.projective_eq(&point([4, 0, 0]))), "lengths × 4");
-    let small = sphere([0, 0, 0], (1, 4));
-    assert!(f.act(&small).is_some_and(|x| x.projective_eq(&sphere([0, 0, 0], (4, 1)))), "extent × 16");
+    let small = sphere([0, 0, 0], (1, 2));
+    assert!(f.act(&small).is_some_and(|x| x.projective_eq(&sphere([0, 0, 0], (2, 1)))), "gauge × 4");
     assert_eq!(streamline_of(&f.versor()), Some(Streamline::Hyperbolic));
 }
