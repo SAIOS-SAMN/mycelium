@@ -23,6 +23,7 @@ mod hypha;
 mod hypha_acts;
 mod occupancy;
 mod offer;
+mod peers;
 mod perceive;
 mod rank;
 mod remainders;
