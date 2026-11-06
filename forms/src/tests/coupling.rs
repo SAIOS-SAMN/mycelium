@@ -22,9 +22,9 @@ fn stated(pole: Q, open: Q) -> Dipole {
     Dipole::stated(pole, open).expect("a dipole")
 }
 
-/// A neighbour on τ₁₂.
-fn neighbour(w: Q, d: Dipole, n: Q, h: Q) -> Neighbour {
-    Neighbour::of(w, d, n, Alignment::on(tau(), h).expect("an alignment")).expect("a neighbour")
+/// A neighbour on τ₁₂ at the round separation `delta`, in degrees.
+fn neighbour(w: Q, d: Dipole, n: Q, delta: Q) -> Neighbour {
+    Neighbour::of(w, d, n, Alignment::on(tau(), delta).expect("an alignment")).expect("a neighbour")
 }
 
 fn field_of(range: &[Neighbour]) -> Field {
@@ -90,6 +90,52 @@ fn viscosity_inverts() {
     }
 }
 
+/// The turnings about axes 1, 2 and 3: `e₊₂e₊₃`, `e₊₃e₊₁`, `e₊₁e₊₂`.
+fn three() -> [crate::coordinate::Key; 3] {
+    [units((Square::Positive, 2), (Square::Positive, 3)), units((Square::Positive, 3), (Square::Positive, 1)), tau()]
+}
+
+/// F1 PER PLANE, THE EVEN SPLIT: hydrogen founded on three turning planes
+/// holds `(2/3, 1/3)` on each, every plane reading `σ = ⅓`, `o = ⅓`; the
+/// kind `Z = 4/3, U = 1` (frames `(3, 1)`) holds `(1, 1/3)`, each plane
+/// `σ = ½`, `o = ¼`. A BOND ON ONE PLANE: hydrogen's open third on `e₊₁e₊₂`
+/// closing gives that plane `(1, 0)`, `σ = 1`, `o = 0`, the other two
+/// unchanged; the peel of the same third returns it.
+#[test]
+fn planes_split_evenly_and_bond_one_at_a_time() {
+    let read = |b: &Parcels| -> Vec<(Q, Q)> { b.planes().iter().map(|(_, p)| p.dipole().map(|d| (d.pole, d.open)).expect("a dipole")).collect() };
+    let hydrogen = Parcels::founded(&q(1, 1), &q(1, 1), &three()).expect("founded");
+    assert!(hydrogen.planes().iter().all(|(_, p)| (p.held(), p.open()) == (&q(2, 3), &q(1, 3))));
+    assert_eq!(read(&hydrogen), vec![(q(1, 3), q(1, 3)); 3]);
+    let kind = Parcels::founded(&q(4, 3), &q(1, 1), &three()).expect("founded");
+    assert_eq!(kind.on(&tau()).map(|p| (p.held().clone(), p.open().clone())), Some((q(1, 1), q(1, 3))));
+    assert_eq!(read(&kind), vec![(q(1, 2), q(1, 4)); 3]);
+    let bonded = hydrogen.bond(&tau(), &q(1, 3)).expect("a bond");
+    assert_eq!(read(&bonded), vec![(q(1, 3), q(1, 3)), (q(1, 3), q(1, 3)), (q(1, 1), q(0, 1))]);
+    assert_eq!(bonded.bond(&tau(), &q(-1, 3)), Ok(hydrogen.clone()));
+    assert_eq!(hydrogen.bond(&tau(), &q(1, 2)), Err(CouplingRefusal::NotFrames { held: Box::new(q(7, 6)), open: Box::new(q(-1, 6)) }));
+    let off = units((Square::Positive, 1), (Square::Positive, 4));
+    assert_eq!(hydrogen.bond(&off, &q(1, 3)), Err(CouplingRefusal::NoPlane(off)));
+    assert_eq!(Parcels::founded(&q(1, 1), &q(1, 1), &[]), Err(CouplingRefusal::NoPlanes));
+    assert_eq!(Parcels::founded(&q(1, 1), &q(1, 1), &[tau(), tau()]), Err(CouplingRefusal::PlaneRepeated(tau())));
+    let frame = units((Square::Positive, 1), (Square::Negative, 1));
+    assert_eq!(Parcels::founded(&q(1, 1), &q(1, 1), std::slice::from_ref(&frame)),Err(CouplingRefusal::NotTurningPlane { key: frame, plane: Some(Plane::Frame) }));
+}
+
+/// THE NAMED L1 READINGS: the hemisphere's reading of a round separation,
+/// `hemisphere_l1(0°, 45°, 90°, 135°, 180°) = 1, ½, 0, −½, −1`, refused
+/// past `[0°, 180°]`; the pole's L1 arc `θ_L1 = 180°·q/(z + q)`, 0 at the
+/// closed pole, 60 for hydrogen, 45 for `(3, 1)`, 90 at the throat, 180 at
+/// the open pole.
+#[test]
+fn l1_readings_are_named() {
+    let read = |d: i64| hemisphere_l1(&q(d, 1));
+    assert_eq!([0, 45, 90, 135, 180].map(read), [Ok(q(1, 1)), Ok(q(1, 2)), Ok(q(0, 1)), Ok(q(-1, 2)), Ok(q(-1, 1))]);
+    assert_eq!(hemisphere_l1(&q(-1, 1)), Err(CouplingRefusal::NotSeparation(Box::new(q(-1, 1)))));
+    let arcs: Vec<Q> = [(1, 0), (2, 1), (3, 1), (1, 1), (0, 1)].iter().map(|(a, o)| parcel(*a, *o).arc_l1().expect("an arc")).collect();
+    assert_eq!(arcs, [q(0, 1), q(60, 1), q(45, 1), q(90, 1), q(180, 1)]);
+}
+
 /// F1–F2 REFUSED BY NAME: frames below zero or none, a kind past `U = 3Z`,
 /// a negative ratio, a stated dipole out of its bounds.
 #[test]
@@ -104,12 +150,12 @@ fn parcel_refusals_are_named() {
 }
 
 /// F3, OPPOSED DIPOLES LOCK: `x = ⅕`, `x̄ = ½`, the body `σ = +1, o = ½`;
-/// one neighbour `w = 1, σ = −1, o = ½, n = ⅔, h = 1`: `F = −⅓`,
+/// one neighbour `w = 1, σ = −1, o = ½, n = ⅔`, `Δ = 0°` (`h = 1`): `F = −⅓`,
 /// `x̄ ⊖ x = ⅓`, `y = 1/18`, `x′ = 23/91`, and `⅕ < 23/91 < ½`.
 #[test]
 fn opposed_dipoles_lock() {
     let body = stated(q(1, 1), q(1, 2));
-    let f = field_of(&[neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(1, 1))]);
+    let f = field_of(&[neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(0, 1))]);
     assert_eq!(f, Field::Held { holding: q(1, 1), field: q(-1, 3) });
     let p = pull(&q(1, 5), &q(1, 2), &body, &f).expect("a pull");
     assert_eq!(p, Pull { gap: q(1, 3), push: q(1, 18), rate: q(23, 91) });
@@ -121,7 +167,7 @@ fn opposed_dipoles_lock() {
 #[test]
 fn aligned_dipoles_split() {
     let body = stated(q(1, 1), q(1, 2));
-    let f = field_of(&[neighbour(q(1, 1), stated(q(1, 1), q(1, 2)), q(2, 3), q(1, 1))]);
+    let f = field_of(&[neighbour(q(1, 1), stated(q(1, 1), q(1, 2)), q(2, 3), q(0, 1))]);
     assert_eq!(f.value(), q(1, 3));
     let p = pull(&q(1, 5), &q(1, 2), &body, &f).expect("a pull");
     assert_eq!(p, Pull { gap: q(1, 3), push: q(-1, 18), rate: q(13, 89) });
@@ -137,47 +183,47 @@ fn alone_or_throat_keeps_rate() {
     assert_eq!(alone, Field::Alone);
     assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &alone).map(|p| (p.push, p.rate)), Ok((q(0, 1), q(1, 5))));
     let throat = parcel(1, 1).dipole().expect("the throat");
-    let f = field_of(&[neighbour(q(1, 1), throat, q(2, 3), q(1, 1))]);
+    let f = field_of(&[neighbour(q(1, 1), throat, q(2, 3), q(0, 1))]);
     assert_eq!(f.value(), q(0, 1));
     assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &f).map(|p| p.rate), Ok(q(1, 5)));
 }
 
-/// F3, A HALF ALIGNMENT: `h = ½` with `σ_j = −1` gives `F = −⅙`,
+/// F3, A HALF ALIGNMENT: `Δ = 45°` (`h = ½`) with `σ_j = −1` gives `F = −⅙`,
 /// `y = 1/36`, `x′ = (⅕ + 1/36)/(1 + 1/180) = 41/181`. Two neighbours of
 /// holdings 1 and 3 weigh by holding: `F = (1·(−⅓) + 3·⅓)/4 = ⅙`.
 #[test]
 fn field_weighs_alignment_and_holding() {
     let body = stated(q(1, 1), q(1, 2));
-    let half = field_of(&[neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(1, 2))]);
+    let half = field_of(&[neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(45, 1))]);
     assert_eq!(half.value(), q(-1, 6));
     assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &half), Ok(Pull { gap: q(1, 3), push: q(1, 36), rate: q(41, 181) }));
     let two = field_of(&[
-        neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(1, 1)),
-        neighbour(q(3, 1), stated(q(1, 1), q(1, 2)), q(2, 3), q(1, 1)),
+        neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(0, 1)),
+        neighbour(q(3, 1), stated(q(1, 1), q(1, 2)), q(2, 3), q(0, 1)),
     ]);
     assert_eq!(two, Field::Held { holding: q(4, 1), field: q(1, 6) });
 }
 
 /// F3 ON THE FRAMES: the body `A = 3, Q = 1` (`σ = ½`, `o = ¼`) and a
-/// hydrogen neighbour (`σ = ⅓`, `o = ⅓`, `w = 1`, `n = ⅔`, `h = 1`):
+/// hydrogen neighbour (`σ = ⅓`, `o = ⅓`, `w = 1`, `n = ⅔`, `Δ = 0°`):
 /// `F = 2/27`, `y = −1/324`, `x′ = (⅕ − 1/324)/(1 − 1/1620) = 319/1619`.
 #[test]
 fn frames_read_pull() {
     let body = parcel(3, 1).dipole().expect("a dipole");
     let hydrogen = Parcel::kind(&q(1, 1), &q(1, 1)).and_then(|p| p.dipole()).expect("hydrogen");
-    let f = field_of(&[neighbour(q(1, 1), hydrogen, q(2, 3), q(1, 1))]);
+    let f = field_of(&[neighbour(q(1, 1), hydrogen, q(2, 3), q(0, 1))]);
     assert_eq!(f.value(), q(2, 27));
     assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &f), Ok(Pull { gap: q(1, 3), push: q(-1, 324), rate: q(319, 1619) }));
 }
 
 /// F3 NEAR THE BOUND: the open pole (`σ = −1`, `o = 1`) at `x = 99/100`
-/// against `x̄ = −99/100`, one open-pole neighbour at `n = 1`, `h = 1`:
+/// against `x̄ = −99/100`, one open-pole neighbour at `n = 1`, `Δ = 0°`:
 /// `F = −1`, `x̄ ⊖ x = −19800/19801`, `y = 19800/19801`, and
 /// `x′ = 3940299/3940300`, inside the bound.
 #[test]
 fn near_bound_stays_inside() {
     let open = parcel(0, 1).dipole().expect("the open pole");
-    let f = field_of(&[neighbour(q(1, 1), open.clone(), q(1, 1), q(1, 1))]);
+    let f = field_of(&[neighbour(q(1, 1), open.clone(), q(1, 1), q(0, 1))]);
     assert_eq!(f.value(), q(-1, 1));
     let p = pull(&q(99, 100), &q(-99, 100), &open, &f).expect("a pull");
     assert_eq!(p, Pull { gap: q(-19800, 19801), push: q(19800, 19801), rate: q(3_940_299, 3_940_300) });
@@ -191,15 +237,16 @@ fn near_bound_stays_inside() {
 #[test]
 fn field_and_pull_stay_bounded() {
     let poles = [q(-1, 1), q(-1, 2), q(0, 1), q(1, 3), q(1, 1)];
+    let separations = [q(180, 1), q(135, 1), q(90, 1), q(60, 1), q(0, 1)];
     let shares = [q(0, 1), q(1, 2), q(1, 1)];
     let rates = [q(-999, 1000), q(-1, 2), q(0, 1), q(99, 100), q(999, 1000)];
     for (i, sigma) in poles.iter().enumerate() {
         for o in &shares {
             for n in &shares {
-                let range: Vec<Neighbour> = poles
+                let range: Vec<Neighbour> = separations
                     .iter()
                     .enumerate()
-                    .map(|(j, h)| neighbour(Q::from_integer((1 + j).into()),stated(poles[(i + j) % poles.len()].clone(), o.clone()), n.clone(), h.clone()))
+                    .map(|(j, d)| neighbour(Q::from_integer((1 + j).into()), stated(poles[(i + j) % poles.len()].clone(), o.clone()), n.clone(), d.clone()))
                     .collect();
                 let f = field_of(&range);
                 assert!(f.value().abs() <= Q::one());
@@ -215,7 +262,8 @@ fn field_and_pull_stay_bounded() {
 }
 
 /// F3 REFUSED BY NAME: a rate at the bound, a holding of zero or below,
-/// an alignment off a turning plane or past `[−1, 1]`, a neighbour on
+/// an alignment off a turning plane or at a separation past `[0°, 180°]`,
+/// a neighbour on
 /// another plane, a nearness past `[0, 1]`.
 #[test]
 fn coupling_refusals_are_named() {
@@ -230,7 +278,9 @@ fn coupling_refusals_are_named() {
     let frame = units((Square::Positive, 1), (Square::Negative, 1));
     assert_eq!(Alignment::on(frame.clone(), q(1, 1)), Err(CouplingRefusal::NotTurningPlane { key: frame.clone(), plane: Some(Plane::Frame) }));
     assert_eq!(field(&frame, &[]), Err(CouplingRefusal::NotTurningPlane { key: frame, plane: Some(Plane::Frame) }));
-    assert_eq!(Alignment::on(tau(), q(-3, 2)), Err(CouplingRefusal::NotAlignment(Box::new(q(-3, 2)))));
+    for delta in [q(-1, 2), q(181, 1)] {
+        assert_eq!(Alignment::on(tau(), delta.clone()), Err(CouplingRefusal::NotSeparation(Box::new(delta))));
+    }
     let other = units((Square::Positive, 2), (Square::Positive, 3));
     let off = Neighbour::of(q(1, 1), body, q(1, 2), Alignment::on(other.clone(), q(0, 1)).expect("an alignment")).expect("a neighbour");
     assert_eq!(field(&tau(), &[off]), Err(CouplingRefusal::PlanesDiffer { field: tau(), neighbour: other }));

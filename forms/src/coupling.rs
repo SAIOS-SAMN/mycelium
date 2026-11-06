@@ -10,24 +10,27 @@
 //! light ledger). The pole and the alignment are continuous readings in
 //! `[−1, 1]`, never bare signs.
 //!
-//! HELD (78.175 §8): netstratum's amendment of 2026-11-06 reads the pole
-//! and the alignment from degrees through the L1 cosine, `1 − θ/90°` on the
-//! L1 diamond. The degrees of LAW-COORDINATE, LAW-PASSAGE and LAW-FIELD are
-//! rotation angles on Clifford planes (the round circle, `ζ_ℓ`), and the two
-//! readings agree only at multiples of 45°: which circle shared degrees
-//! stand on waits on both operators' ruling. Until then this form holds no
-//! map from degrees to a pole or an alignment: the alignment `h` is an
-//! input in `[−1, 1]`, and the pole is read from the frames as a ratio,
-//! which no metric enters.
+//! SHARED DEGREES ARE ROUND (ruled 2026-11-06 by netstratum's operator,
+//! matching mycelium's recommendation; 78.175 §1). A degree shared between
+//! kernels is a rotation angle on a Clifford turning plane, the round
+//! circle of LAW-COORDINATE v4, LAW-PASSAGE v3 and LAW-FIELD. An L1
+//! projection is a NAMED READING ([`hemisphere_l1`], [`Parcel::arc_l1`]),
+//! never written as plain degrees.
 //!
 //! F1 AND F2, ONE LAW: THE DIPOLE PARCEL AND ITS VISCOSITY ([`Parcel`],
-//! [`Dipole`]). A parcel's frames are `A = W = 3Z − U` held and `Q = U`
-//! open (`Parcel::kind`), `t = Q/A`.
-//! - The pole is `σ = (A − Q)/(A + Q)`, continuous in `[−1, 1]`: `+1` at
-//!   the closed pole, 0 at the throat, `−1` at the open pole. It stands on
-//!   the frames, never on the electrons' phase `R`, which is the parcel's
-//!   phase.
-//! - The strength is the open share `o = Q/(A + Q) = ν(t)`, with
+//! [`Parcels`], [`Dipole`]), PER PLANE (netstratum 3Q). A kind's frames
+//! are `A = W = 3Z − U` held and `Q = U` open (`Parcel::kind`). A body
+//! carries `(z_k, q_k)` on each of its turning planes, founded by the even
+//! split `((3Z − U)/n, U/n)` over its `n` planes ([`Parcels::founded`]);
+//! a bond or a peel changes one plane only ([`Parcels::bond`]). On each
+//! plane, with `t = q/z`:
+//! - the pole is `σ = (z − q)/(z + q)`, continuous in `[−1, 1]`: `+1` at
+//!   the closed pole, 0 at the throat, `−1` at the open pole. It is a
+//!   ratio, which no metric enters. It stands on the frames, never on the
+//!   electrons' phase `R`, which is the parcel's phase. Where an angle is
+//!   named for it, it is the L1 arc `θ_L1 = 180°·q/(z + q)`, labelled as
+//!   an L1 arc ([`Parcel::arc_l1`]);
+//! - the strength is the open share `o = q/(z + q) = ν(t)`, with
 //!   `ν(t) = t/(1 + t)` ([`open_share`]), and the inversion reverts it:
 //!   `ν(1/t) = 1 − ν(t)`, the frames exchanged ([`Parcel::inverted`]).
 //!
@@ -35,9 +38,10 @@
 //! field of a body's range acts as one, on one named turning plane
 //! (`forms::coordinate::Plane::Turning`):
 //! `F = Σ w_j·σ_j·o_j·n_j·h_j / Σ w_j`, with `n = M/(|g| + M)` the ring
-//! law's nearness ([`nearness`]) and `h ∈ [−1, 1]` the alignment on that
-//! plane ([`Alignment`]): aligned toward `+1`, uncoupled at 0, opposed
-//! toward `−1`. Each term stands in `[−1, 1]`, so `|F| ≤ 1`. A rate is a
+//! law's nearness ([`nearness`]) and `h = hemisphere_l1(Δ) = 1 − Δ/90°`
+//! the alignment ([`Alignment`]), the named L1 reading of the round
+//! separation `Δ ∈ [0°, 180°]` on that plane: aligned toward `+1`,
+//! uncoupled at 90°, opposed toward `−1`. Each term stands in `[−1, 1]`, so `|F| ≤ 1`. A rate is a
 //! share `x ∈ (−1, 1)` of the luminal bound and moves by LAW-COORDINATE's
 //! flow law (`forms::coordinate::flow`), `x′ = x ⊕ y`, with
 //! `y = −σ·F·o·(x̄ ⊖ x)` the pull toward the range's holding-weighted rate
@@ -62,11 +66,11 @@ mod dipole;
 mod field;
 mod light;
 
-pub use dipole::{Dipole, Parcel};
+pub use dipole::{Dipole, Parcel, Parcels};
 pub use field::{field, meets, nearness, pull, Alignment, Enclosure, Field, Meeting, Meets, Neighbour, Pull};
 pub use light::{ledger, take, unlocked, Face, Ledger, Taken};
 
-use crate::coordinate::{flow, Key, Plane};
+use crate::coordinate::{flow, Key, Plane, DEGREES_PER_TURN};
 use crate::passage::PassageRefusal;
 use crate::Q;
 use num_traits::{One, Signed, Zero};
@@ -99,8 +103,15 @@ pub enum CouplingRefusal {
     /// A dipole stated with its pole outside `[−1, 1]` or its open share
     /// outside `[0, 1]`.
     NotDipole { pole: Box<Q>, open: Box<Q> },
-    /// An alignment outside `[−1, 1]`: the value as presented.
-    NotAlignment(Box<Q>),
+    /// A round separation outside `[0°, 180°]`, where the hemisphere's L1
+    /// reading is not taken: the degrees as presented.
+    NotSeparation(Box<Q>),
+    /// A body with no turning plane to hold its frames on.
+    NoPlanes,
+    /// A plane named twice in one body's planes.
+    PlaneRepeated(Key),
+    /// A bond or peel on a plane the body does not hold.
+    NoPlane(Key),
     /// A nearness outside `[0, 1]`: the value as presented.
     NotNearness(Box<Q>),
     /// A moment, hold, reach or light below zero: the value as presented.
@@ -119,6 +130,23 @@ pub enum CouplingRefusal {
 impl From<PassageRefusal> for CouplingRefusal {
     fn from(r: PassageRefusal) -> CouplingRefusal {
         CouplingRefusal::Passage(Box::new(r))
+    }
+}
+
+/// The degrees of a half turn on a round plane, 180.
+fn half_turn() -> Q {
+    Q::from_integer(DEGREES_PER_TURN.into()) / Q::from_integer(2.into())
+}
+
+/// THE HEMISPHERE'S L1 READING of a round separation `Δ ∈ [0°, 180°]` on a
+/// turning plane: `hemisphere_l1(Δ) = 1 − Δ/90°`, first degree and exact.
+/// It is a named L1 reading of a round angle, never itself a degree: aligned
+/// at 0° (`+1`), uncoupled at 90° (0), opposed at 180° (`−1`). Refused `NotSeparation` with `Δ` outside `[0°, 180°]`.
+pub fn hemisphere_l1(separation: &Q) -> Result<Q, CouplingRefusal> {
+    let half = half_turn();
+    match separation.is_negative() || separation > &half {
+        true => Err(CouplingRefusal::NotSeparation(Box::new(separation.clone()))),
+        false => Ok(Q::one() - separation * Q::from_integer(2.into()) / half),
     }
 }
 

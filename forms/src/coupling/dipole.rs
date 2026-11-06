@@ -1,10 +1,12 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 // LAW-COUPLING v1 (proposal 78.175, F1 and F2; netstratum docs/121 §9.1,
-// §10.1) — THE DIPOLE PARCEL AND ITS VISCOSITY: a parcel's frames, its pole
-// and its open share, one law, each a ratio of the frames.
+// §10.1) — THE DIPOLE PARCEL AND ITS VISCOSITY, PER PLANE: a parcel's
+// frames, its pole and its open share, one law, each a ratio of the frames;
+// a body's frames on each turning plane, founded by the even split.
 
-use super::{share_of, CouplingRefusal};
+use super::{half_turn, share_of, CouplingRefusal};
+use crate::coordinate::{Key, Plane};
 use crate::Q;
 use num_traits::{One, Signed, Zero};
 
@@ -77,6 +79,69 @@ impl Parcel {
     /// `σ ↦ −σ`.
     pub fn inverted(&self) -> Parcel {
         Parcel { held: self.open.clone(), open: self.held.clone() }
+    }
+
+    /// THE POLE'S L1 ARC, a named L1 reading and never a shared degree:
+    /// `θ_L1 = 180°·q/(z + q)`, 0 at the closed pole, 90 at the throat, 180
+    /// at the open pole, measured along the L1 diamond.
+    pub fn arc_l1(&self) -> Result<Q, CouplingRefusal> {
+        Ok(half_turn() * self.open_share()?)
+    }
+}
+
+/// A BODY'S FRAMES PER TURNING PLANE (netstratum 3Q): `(z_k, q_k)` on each
+/// plane, keyed by the plane's generator, in the order founded. A bond or a
+/// peel changes one plane only.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Parcels {
+    planes: Vec<(Key, Parcel)>,
+}
+
+impl Parcels {
+    /// THE BODY OF KIND `(Z, U)` FOUNDED on `planes` by the even split: each
+    /// plane holds `((3Z − U)/n, U/n)`, `n` the planes' count. Refused
+    /// `NoPlanes` with none, `NotTurningPlane` on a key that holds no
+    /// turning, `PlaneRepeated` on a plane named twice, and as
+    /// [`Parcel::kind`] is.
+    pub fn founded(z: &Q, u: &Q, planes: &[Key]) -> Result<Parcels, CouplingRefusal> {
+        let whole = Parcel::kind(z, u)?;
+        let n = Q::from_integer(planes.len().into());
+        if planes.is_empty() {
+            return Err(CouplingRefusal::NoPlanes);
+        }
+        let mut held: Vec<(Key, Parcel)> = Vec::with_capacity(planes.len());
+        for key in planes {
+            if !matches!(key.plane(), Some(Plane::Turning(_))) {
+                return Err(CouplingRefusal::NotTurningPlane { key: key.clone(), plane: key.plane() });
+            }
+            if held.iter().any(|(k, _)| k == key) {
+                return Err(CouplingRefusal::PlaneRepeated(key.clone()));
+            }
+            held.push((key.clone(), Parcel { held: &whole.held / &n, open: &whole.open / &n }));
+        }
+        Ok(Parcels { planes: held })
+    }
+
+    /// The planes and their frames, in the order founded.
+    pub fn planes(&self) -> &[(Key, Parcel)] {
+        &self.planes
+    }
+
+    /// The frames on `plane`, if the body holds it.
+    pub fn on(&self, plane: &Key) -> Option<&Parcel> {
+        self.planes.iter().find(|(k, _)| k == plane).map(|(_, p)| p)
+    }
+
+    /// A BOND ON ONE PLANE: `closed` open frames pair and close there,
+    /// `q ↦ q − closed`, `z ↦ z + closed`; a negative `closed` is a peel.
+    /// Every other plane is unchanged. Refused `NoPlane` on a plane the
+    /// body does not hold, and `NotFrames` where the plane's frames would
+    /// fall below zero.
+    pub fn bond(&self, plane: &Key, closed: &Q) -> Result<Parcels, CouplingRefusal> {
+        let mut planes = self.planes.clone();
+        let (_, at) = planes.iter_mut().find(|(k, _)| k == plane).ok_or_else(|| CouplingRefusal::NoPlane(plane.clone()))?;
+        *at = Parcel::of(&at.held + closed, &at.open - closed)?;
+        Ok(Parcels { planes })
     }
 }
 

@@ -5,31 +5,34 @@
 // as one, the pull it gives a body's rate by the flow law, and the
 // neighbours, the bodies whose own enclosures meet.
 
-use super::{composed, held, relative, share_of, CouplingRefusal, Dipole};
+use super::{composed, held, hemisphere_l1, relative, share_of, CouplingRefusal, Dipole};
 use crate::coordinate::{Key, Plane};
 use crate::Q;
 use num_traits::{One, Signed, Zero};
 use std::cmp::Ordering;
 
-/// HOW TWO DIPOLES STAND ON ONE NAMED TURNING PLANE: the alignment
-/// `h ∈ [−1, 1]`, aligned toward `+1`, uncoupled at 0, opposed toward `−1`.
-/// It is an input: the reading of `h` from a separation in degrees is held
-/// until both operators rule which circle shared degrees stand on (78.175
-/// §8).
+/// HOW TWO DIPOLES STAND ON ONE NAMED TURNING PLANE: their round
+/// separation `Δ ∈ [0°, 180°]` on it, a rotation angle on the plane, and
+/// the hemisphere's L1 reading of it, `h = hemisphere_l1(Δ) = 1 − Δ/90°`:
+/// aligned toward `+1`, uncoupled at 90°, opposed toward `−1`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Alignment {
     plane: Key,
+    separation: Q,
     along: Q,
 }
 
 impl Alignment {
-    /// The alignment `along` on `plane`. Refused `NotTurningPlane` where
-    /// the key holds no turning, `NotAlignment` outside `[−1, 1]`.
-    pub fn on(plane: Key, along: Q) -> Result<Alignment, CouplingRefusal> {
-        match (plane.plane(), along.abs() > Q::one()) {
-            (Some(Plane::Turning(_)), false) => Ok(Alignment { plane, along }),
-            (Some(Plane::Turning(_)), true) => Err(CouplingRefusal::NotAlignment(Box::new(along))),
-            (other, _) => Err(CouplingRefusal::NotTurningPlane { key: plane, plane: other }),
+    /// The alignment at the round separation `separation` (degrees on
+    /// `plane`). Refused `NotTurningPlane` where the key holds no turning,
+    /// `NotSeparation` outside `[0°, 180°]`.
+    pub fn on(plane: Key, separation: Q) -> Result<Alignment, CouplingRefusal> {
+        match plane.plane() {
+            Some(Plane::Turning(_)) => {
+                let along = hemisphere_l1(&separation)?;
+                Ok(Alignment { plane, separation, along })
+            }
+            other => Err(CouplingRefusal::NotTurningPlane { key: plane, plane: other }),
         }
     }
 
@@ -38,7 +41,12 @@ impl Alignment {
         &self.plane
     }
 
-    /// `h`, in `[−1, 1]`.
+    /// The round separation `Δ`, in degrees on the plane.
+    pub fn separation(&self) -> &Q {
+        &self.separation
+    }
+
+    /// `h = hemisphere_l1(Δ)`, in `[−1, 1]`.
     pub fn along(&self) -> &Q {
         &self.along
     }
