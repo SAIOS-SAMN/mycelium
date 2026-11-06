@@ -47,7 +47,9 @@
 //! `y = −σ·F·o·(x̄ ⊖ x)` the pull toward the range's holding-weighted rate
 //! `x̄` and `⊖` the flow law's inverse ([`relative`]): with `|F| ≤ 1`,
 //! `o ≤ 1` and `|x̄ ⊖ x| < 1`, `|y| < 1`, so the rate stays inside the bound
-//! by construction. A body alone in its range is untouched. Its neighbours
+//! by construction. A body alone in its range is untouched, and the pure Z
+//! pole (`σ = 1`, `o = 0`) has no moment: its term is 0 and its push is 0,
+//! so it neither couples nor is coupled. Its neighbours
 //! are the bodies whose own enclosures meet ([`meets`]):
 //! `|R_i − R_j| ≤ R_i·e_i + R_j·e_j`, `e = m/(m + H(<R))`.
 //!
