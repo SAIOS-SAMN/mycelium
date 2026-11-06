@@ -244,7 +244,7 @@ fn extract_rule_closes_single_recolour_as_one_word() {
 fn snapshot_writes_myt3_and_refuses_older_layouts() {
     let mut k = Court::new();
     // A voice's sentence for a recolour, spoken through the one door an
-    // utterance has (law 8): a listing on the book to snapshot.
+    // expression has (law 8): a listing on the book to snapshot.
     // The whole frame recoloured: read with no ground, the frame is the one
     // body (its old symbol reads as the ground by the rule, which leaves no
     // body to recolour).

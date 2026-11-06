@@ -608,9 +608,9 @@ retired.
 Each word has one sense (§5.2). The earlier rulings keep their content
 under the new words: the five-kind algebra (2026-09-01, historical) and
 the flow from perception to syllabus (2026-09-06). The texts moved here as ruled (§4.1,
-§5.2) keep their words and read under this table. Code identifiers keep
-their names until a names-only change (`src/client/sdk/mind/utter.rs`,
-`src/client/sdk/utterance.rs`, `Action::Uttered`); MU-RECURSION 1.9
+§5.2) keep their words and read under this table. Code identifiers took
+the new names in a names-only change (`src/client/sdk/mind/express.rs`,
+`src/client/sdk/expression.rs`, `Action::Asserted`); MU-RECURSION 1.9
 retired `Uttered` on carriers and receipts as their rows land.
 
 ### 5.2 The lexicon of the network: one sense per word (ruled 2026-09-26: the language is annotated so that no two senses overlap and each word's place in the network of structures is exact)
@@ -790,7 +790,7 @@ for on the wire; they are what a court seals. Of them, `Install` (`0x43`)
 and `RankStep` (`0x51`) enter the presentation (78.100 S1), `Ruling`
 (`0x44`–`0x47`) rules a word upheld, demoted, slashed or retired, and
 `Settled` (`0x4D`) seals a settlement; `Section` (`0x42`), `Stood`
-(`0x4A`), `Uttered` (`0x4B`) and `Learned` (`0x4C`) are retired.
+(`0x4A`), `Asserted` (`0x4B`) and `Learned` (`0x4C`) are retired.
 
 ## 7. The language's state as a reading
 

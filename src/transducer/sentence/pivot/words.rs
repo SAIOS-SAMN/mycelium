@@ -304,7 +304,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
 /// The generators of a presentation are the ruled words (1.8), and since
 /// L5 a ruled word is a FORM: `Element::letters` answers `None` for every
 /// sentence, so an index that reads a word off `letters` sees only the v1
-/// connection words the utterance path stopped producing. This index reads
+/// connection words the expression path stopped producing. This index reads
 /// the word vertices themselves, which is where the generators are.
 pub type GeneratorIndex = Keyed<Keyed<crate::transducer::address::Address>>;
 

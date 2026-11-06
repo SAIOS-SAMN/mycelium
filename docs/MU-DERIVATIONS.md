@@ -1429,7 +1429,7 @@ one name, one meaning):
     `second_vantage.rs:35`; `chatter.rs:259, 519, 623, 842, 962`; `contract.rs:147`;
     `court.rs:137`; `family.rs:472`; `learn.rs:289, 440, 480, 515, 527`;
     `perceive.rs:634, 663, 738, 847`; `present.rs:59`; `quote.rs:58`;
-    `think.rs:511, 782, 1004`; `utter.rs:266, 415`; `winding.rs:258, 426`;
+    `think.rs:511, 782, 1004`; `express.rs:266, 415`; `winding.rs:258, 426`;
   - `transducer/family/deflation.rs:418` (the transport order's stroke);
   - the soak's instruments, `bin/mycelium-soak/main.rs:623`,
     `regime.rs:95, 137, 147`.

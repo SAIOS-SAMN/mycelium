@@ -138,7 +138,7 @@ pub enum Action {
     // Sealed by nothing since the voices' chains retired (78.49).
     Section,
     Stood,
-    Uttered,
+    Asserted,
     Learned,
 }
 
@@ -198,7 +198,7 @@ pub const ACTIONS: [Action; 57] = [
     Action::Lapse,
     Action::Adopted,
     Action::Stood,
-    Action::Uttered,
+    Action::Asserted,
     Action::Learned,
     Action::Settled,
     Action::Refused,
@@ -265,7 +265,7 @@ impl Action {
             Action::Lapse => 0x48,
             Action::Adopted => 0x49,
             Action::Stood => 0x4A,
-            Action::Uttered => 0x4B,
+            Action::Asserted => 0x4B,
             Action::Learned => 0x4C,
             Action::Settled => 0x4D,
             Action::Refused => 0x4E,
@@ -294,7 +294,7 @@ impl Action {
             | Action::Docket
             | Action::Section
             | Action::Stood
-            | Action::Uttered
+            | Action::Asserted
             | Action::Learned
             // 2026-10-11 — a mind proposes an optimization as a Retire
             // rewrite it speaks (MU-CLIENT §5.4, S3); the two bids retire.
@@ -450,7 +450,8 @@ impl Action {
             Action::Reconnect => b"reconnect",
             Action::Section => b"section",
             Action::Stood => b"stood",
-            Action::Uttered => b"uttered",
+            // The name the operator digest was fixed under; the variant's name changed, not the bytes.
+            Action::Asserted => b"uttered",
             Action::Learned => b"learned",
             Action::Seat => b"seat",
         }

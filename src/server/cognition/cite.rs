@@ -638,7 +638,7 @@ impl Court {
                 };
                 self.physics.regenerate_within(bonds);
                 // 78.69: AND THE PRESSURE RELAXES BY THE ORDER THE ORBIT BUILT,
-                // per lane (PHY1). It relaxed only where an utterance was
+                // per lane (PHY1). It relaxed only where an expression was
                 // heard (`reflex_open`), so a court booking order without
                 // hearing one kept its pressure whole.
                 self.physics.relax();

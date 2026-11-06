@@ -581,7 +581,7 @@ fn mint_or_refuse(
     crystal: &dyn Crystal,
 ) -> Result<element::Element, crate::transducer::sentence::ObstructionRefusal> {
     use crate::transducer::sentence::ObstructionRefusal;
-    // A form nothing in which acts is not uttered: the speaker's side of
+    // A form nothing in which acts is not asserted: the speaker's side of
     // `REFUSE_NOT_A_SENTENCE` (23.1 step 3, 50.6), reading the same
     // `Form::acts()` the court reads.
     if !rule.form.acts() {

@@ -64,7 +64,7 @@ pub enum RewritePayload {
     /// alone that a retirement cites something other than itself and frees
     /// something; that the cites actually reproduce the retired substance is
     /// a re-derivation over the language, and it is the kernel's, made
-    /// before the mint (`verify_utterance` in `try_refine`).
+    /// before the mint (`verify_expression` in `try_refine`).
     Retire { cites: Vec<crate::transducer::address::Address>, freed: [u64; 4] },
 }
 

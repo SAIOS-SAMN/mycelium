@@ -48,9 +48,9 @@ pub fn probe(
     let Some(listing) = view.pending.get(&at) else {
         return ProbeReading::gone();
     };
-    // The utterance is verified as spoken — its operators against the
+    // The expression is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
-    let residue = crate::transducer::sentence::verify_utterance(cites, listing.sub());
+    let residue = crate::transducer::sentence::verify_expression(cites, listing.sub());
     let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
     g.run(|g, _| {
         // A SECTION is the hypha's reading, never the speaker's flag: a cite
@@ -68,7 +68,7 @@ pub fn probe(
         let settled = g.settle_probe(voice, target, residue, cites, section);
         if settled.moved() {
             g.puncture_from(cites); // the fibre deepens on what was verified
-            // The settlement goes to the court with the utterance that made it,
+            // The settlement goes to the court with the expression that made it,
             // for the court to reconstruct and measure itself.
             g.record_settlement(crate::transducer::address::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.remaining);
         }

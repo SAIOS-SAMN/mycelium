@@ -17,7 +17,7 @@ pub mod rule;
 pub mod seat;
 pub mod seat_mind;
 pub mod session;
-pub mod utterance;
+pub mod expression;
 pub mod voice;
 pub mod working_atlas;
 
@@ -37,7 +37,7 @@ pub use mind::{Mind, Owed, Pending};
 pub(crate) use mind::HeldSaying;
 pub use quote::*;
 pub use session::*;
-pub use utterance::*;
+pub use expression::*;
 pub use voice::*;
 pub use working_atlas::*;
 

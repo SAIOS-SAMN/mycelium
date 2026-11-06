@@ -51,7 +51,7 @@ pub const ACK: u8 = 2;
 pub const HOLD: u8 = 3;
 const SIGNED: &[u8] = b"mycelium chatter v6";
 
-/// ONE RING SAID (MU-CLIENT §4.9, 78.31): an utterance that returns — its
+/// ONE RING SAID (MU-CLIENT §4.9, 78.31): an expression that returns — its
 /// coordinate in the speaker's form, its holonomy `Ω` (the ring's whole
 /// motion, what a loop said → heard is read against), its hue map, and its
 /// TERMS, each word with the transport to the next, from which the hearer

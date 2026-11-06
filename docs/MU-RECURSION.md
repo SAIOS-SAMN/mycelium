@@ -6944,7 +6944,7 @@ a coordinate.
 
 `ActKind` (ruled 2026-09-09) names the act a receipt admits — `Attest`,
 `List`, `Section`, `Install`, `Ruling`, `Syllabus`, `Lapse`, `Fold`,
-`Adopted`, `Stood`, `Uttered`, `Learned`, and `Settled`, the settlement
+`Adopted`, `Stood`, `Asserted`, `Learned`, and `Settled`, the settlement
 the first paragraph names (a probe that closed a listing or descended
 its remainder) — written on the tape as one
 coordinate byte, in the chain hash after the parents, so a phase (45.9)
@@ -6956,7 +6956,7 @@ install on a peer's stratum are `Install`; a puncture of a held word is
 accepted are `Ruling`; a connection docketed by its ratifier is
 `Attest`; a page served is `Syllabus`; a released escrow is `Lapse`; a
 probe that closed or descended is `Settled`. The mind's: `Stood`,
-`Uttered`, `Learned`. `Fold` and `Adopted` are written by 45.8's fold and
+`Asserted`, `Learned`. `Fold` and `Adopted` are written by 45.8's fold and
 adoption.
 
 K orders events inside one kernel and nothing else. A mind's K is its own
@@ -8089,7 +8089,7 @@ followed by the same address uttered unchanged.
 **Binding.** `anastome/dialogue/speech.rs`: `Adjudication` on the speech
 reply; `server/cognition/book/speech.rs` `perceive_speech`: the court's one entry point for
 an utterance, answering an adjudication per sentence and verifying a cited
-contraction; `client/sdk/mind/utter.rs`: `receive_adjudication`, the
+contraction; `client/sdk/mind/express.rs`: `receive_adjudication`, the
 sealed set on the utterance index, the contraction certificate on the
 next utterance; `sentence/form/contract.rs`: the six moves on a held
 idea's form (`contract`) and the court's reader of each
@@ -13167,7 +13167,7 @@ re-deriving the witnessing task from its own copy of the family or by
 composing the installed words it cites; unproven, it waits as dialect.
 Code: `src/transducer/element/residue.rs` (`compose_fibre`,
 `invert_fibre`, `derived_colour_word`, `colour_citation`),
-`src/client/sdk/mind/utter.rs` (`speak_colour_theorem`),
+`src/client/sdk/mind/express.rs` (`speak_colour_theorem`),
 `src/server/cognition/book/speech.rs` (`colour_proof`).
 
 ### 78.56 Three questions the physics already answers, and four closures

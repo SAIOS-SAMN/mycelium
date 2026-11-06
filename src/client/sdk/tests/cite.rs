@@ -1,6 +1,6 @@
 // 24.1, 24.3 — THE CITE OVER THE WORKING ATLAS: what a stood word, a held
 // form's word and a served listing deflate, and what a withheld form does
-// not utter.
+// not assert.
 
 use super::fixtures::*;
 use crate::client::sdk::*;
@@ -169,12 +169,12 @@ assert!(
 );
 }
 
-/// 50.6 seam 1 — A WITHHELD FORM STANDS, IS HELD AS AN IDEA, AND UTTERS
+/// 50.6 seam 1 — A WITHHELD FORM STANDS, IS HELD AS AN IDEA, AND ASSERTS
 /// NOTHING: no remainder is expressed as a word and no chain is attested;
 /// what the form could not close is its demand vertices, spoken with the
 /// sentence (L5), or the idea's own work.
 #[test]
-fn withhold_form_holds_idea_and_utters_nothing() {
+fn withhold_form_holds_idea_and_asserts_nothing() {
 use crate::transducer::family::{extract_rule, form_deflation, NoCrystal};
 let family = crate::transducer::spelled::pairs_of(vec![
     (vec![vec![1u8]], vec![vec![2u8]]),
@@ -187,7 +187,7 @@ let mut b = entity.stroke();
 entity.withhold_form(rule.form.clone(), &family, &rems, mag, &mut b);
 assert!(entity.dialect_len() >= 1, "the withheld form stands, dialect {}", entity.dialect_len());
 assert!(entity.ideas_len() >= 1, "and is held as an idea");
-assert_eq!(entity.uttered_n(), 0, "nothing is uttered for a remainder, taught_up {}", entity.uttered_n());
+assert_eq!(entity.asserted_n(), 0, "nothing is asserted for a remainder, taught_up {}", entity.asserted_n());
 for r in rems.iter().filter(|r| !r.is_empty()) {
     let chain = chain_word(r);
     assert!(entity.language.working_word(chain.address().as_bytes()).is_none(), "a remainder never stands as a word");
