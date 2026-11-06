@@ -62,8 +62,9 @@ fn well_body_cohesion_half_at_the_throat_and_exchanged_by_the_passage() {
         let state = poles.state(&Frame { hold: h, reach: r }).expect("a state");
         let passed = poles.read(&poles.swap(&state).expect("the swap")).expect("a frame");
         let after = body.cohesion(passed.hold, passed.reach).expect("a reading");
-        assert_eq!(after.on(&plane), before.fluidity().first().map(|(_, nu)| nu), "the cohesion past is the fluidity before");
-        assert_eq!(before.on(&plane), after.fluidity().first().map(|(_, nu)| nu), "and the reverse");
+        let fluidity_on = |c: &Cohesion| c.fluidity().into_iter().find(|(k, _)| *k == plane).map(|(_, nu)| nu);
+        assert_eq!(after.on(&plane).cloned(), fluidity_on(&before), "the cohesion past is the fluidity before");
+        assert_eq!(before.on(&plane).cloned(), fluidity_on(&after), "and the reverse");
     }
 }
 
