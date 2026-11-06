@@ -62,15 +62,20 @@ fn holonomy_angle_refuses_two_planes_as_scalar_collapse() {
     assert_eq!(h.monodromy(), Monodromy::Torsion { order: 24 }, "lcm(12, 8)");
 }
 
-/// Turnings on two planes sharing one unit do not commute; the carrier
-/// refuses their product `NotExact`, naming both planes as the residue.
+/// Turnings on two planes sharing one unit whose motions are not rational
+/// (30°, no whole number of quarter turns) are refused `NotExact` with
+/// `IrrationalMotion`, the held plane and its angle.
 #[test]
-fn motion_refuses_planes_sharing_one_unit() {
+fn motion_refuses_irrational_motions_sharing_one_unit() {
     let f = frame(3);
     let (a, b) = (plane(&f, 1, 2), plane(&f, 2, 3));
     assert_eq!(
         Motion::of(vec![turning(&a, 30, 1), turning(&b, 30, 1)]),
-        Err(FieldRefusal::NotExact { residue: Residue::Uncommuted { held: a.key().clone(), arriving: b.key().clone() } })
+        Err(FieldRefusal::NotExact { residue: Residue::IrrationalMotion { plane: a.key().clone(), degrees: degrees(30, 1) } })
+    );
+    assert_eq!(
+        Motion::of(vec![turning(&a, 90, 1), turning(&b, 45, 1)]),
+        Err(FieldRefusal::NotExact { residue: Residue::IrrationalMotion { plane: b.key().clone(), degrees: degrees(45, 1) } })
     );
 }
 

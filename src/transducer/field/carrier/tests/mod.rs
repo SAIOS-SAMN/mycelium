@@ -7,4 +7,5 @@ mod composition;
 mod fixtures;
 mod law_field;
 mod lift;
+mod rotor;
 mod statement;
