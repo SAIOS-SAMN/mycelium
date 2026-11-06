@@ -7,7 +7,7 @@
 //! flattening (78.99 (4)). What stands exactly is the connecting map. Each
 //! part placed by its own gauge (12.2's tree walk, exact on that part), a
 //! section that agrees on every component of the overlap but does not extend
-//! is a loop through the overlap — out through `U` from the base component
+//! is a orbit through the overlap — out through `U` from the base component
 //! to component `i`, back through `V` — and its holonomy
 //!
 //! ```text
@@ -17,7 +17,7 @@
 //! is a class NEITHER PART HELD: classified alone and never multiplied with
 //! another (every route kept, 78.44). A connected overlap makes nothing. A
 //! part that is not exact on its own refuses by name — its own holonomy
-//! would stand under every loop through it, and the new class is not read
+//! would stand under every orbit through it, and the new class is not read
 //! beneath it (rule 11). A tether both parts hold with different transitions
 //! is the Mayer–Vietoris inexactness the court refuses (`REFUSE_MV_INEXACT`).
 //!
@@ -33,11 +33,11 @@ pub struct Glued {
     /// The overlap's components: the vertices the two parts share, joined by
     /// the tethers both hold.
     pub components: usize,
-    /// THE CLASSES THE GLUE MADE: per loop through the overlap, the base
+    /// THE CLASSES THE GLUE MADE: per orbit through the overlap, the base
     /// component's vertex, the other component's vertex, and the class of
     /// its holonomy.
     pub made: Vec<(Vec<u8>, Vec<u8>, Fill)>,
-    /// Loops through the overlap whose holonomy is the identity: flat, they
+    /// Orbits through the overlap whose holonomy is the identity: flat, they
     /// make nothing.
     pub flat: usize,
     /// THE HOLES THE GLUE CAPPED: a hole of one part sealed in the other, and
@@ -131,8 +131,8 @@ impl Complex {
     /// THE CONSTRUCTION ONE VERTEX STANDS ON: its section, its tethers, and
     /// the sections at the tethers' far ends — a star, a tree, exact by
     /// construction. Two vertices' stars glued by [`connecting`] read the
-    /// loops through what the two share: each common neighbour a component of
-    /// the overlap, each loop the holonomy round the two and that neighbour.
+    /// orbits through what the two share: each common neighbour a component of
+    /// the overlap, each orbit the holonomy round the two and that neighbour.
     pub fn star_of(&self, v: &[u8]) -> Complex {
         let mut out = Complex::new();
         let Some(at) = self.sections.get(v) else { return out };
@@ -195,14 +195,14 @@ pub fn connecting(u: &Complex, v: &Complex) -> Result<Glued, Unglued> {
     let pv = placed(v).map_err(|()| Unglued::PartNotExact(1))?;
     let mut made = Vec::new();
     let mut flat = 0usize;
-    // A LOOP through the overlap runs between two of its components lying in
+    // AN ORBIT through the overlap runs between two of its components lying in
     // one component of `U` and one of `V`; each such pair is read against
     // the first component of its class, once.
     let mut bases: Keyed<usize> = Keyed::new();
     for &i in &reps {
         let (Some(ui), Some(vi)) = (pu.get(&shared[i]), pv.get(&shared[i])) else { continue };
         // The pair of components it lies in, as its coordinate: the first
-        // overlap component there is the base, the rest loop against it.
+        // overlap component there is the base, the rest orbit against it.
         let mut class = Vec::new();
         crate::transducer::address::put_key_count(&mut class, ui.0);
         crate::transducer::address::put_key_count(&mut class, vi.0);

@@ -1,6 +1,6 @@
 // 78.83 — TIME'S OWN CONGRUENCE (HR5: time needs its own congruence for
 // hyperfluidity, because its axes act one at a time). HR3
-// froze time: two sites' transports closed a loop only where they were EQUAL,
+// froze time: two sites' transports closed a relation only where they were EQUAL,
 // so the same flow observed at two times — a ray of three and a ray of five
 // out of the same kind of source — read as two motions. A pair is a sample of
 // a flow (78.75), and time is distance along it (78.43).
@@ -16,8 +16,8 @@
 //! CONGRUENT IN TIME. Two transports are one flow at two times where the
 //! transports' gauges agree and the transports' rays pair off on the SAME PLANE (`against` reads one
 //! on the other's reference), with the same hue and the same kind of end —
-//! whatever the parameters. A loop that closes so has no lift between its
-//! axes: it is the field sliding along one orbit (hyperfluid). What a loop
+//! whatever the parameters. A relation that closes so has no lift between its
+//! axes: it is the field sliding along one orbit (hyperfluid). What a relation
 //! keeps open is read by where it lifts: the gauge (the colour differs) or
 //! the light (a generator differs).
 //!
@@ -175,11 +175,11 @@ pub fn congruence(a: &Flow, b: &Flow) -> Congruence {
     }
 }
 
-/// HR5 — ONE AXIS's LOOPS, judged in time: closed equal, closed in time
+/// HR5 — ONE AXIS's RELATIONS, judged in time: closed equal, closed in time
 /// only, open by the gauge, open by the light; and its keys.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct TimeClosure {
-    pub loops: u64,
+    pub relations: u64,
     pub equal: u64,
     pub in_time: u64,
     pub gauge: u64,
@@ -191,9 +191,9 @@ pub struct TimeClosure {
 }
 
 impl TimeClosure {
-    /// Every loop closed, equal or in time, and there was one.
+    /// Every relation closed, equal or in time, and there was one.
     pub fn closes(&self) -> bool {
-        self.loops > 0 && self.equal + self.in_time == self.loops
+        self.relations > 0 && self.equal + self.in_time == self.relations
     }
 }
 
@@ -218,7 +218,7 @@ fn table(pairs: &[(&[SiteAxes], &[Flow])], axis: usize) -> (Keyed<AxisRecord>, T
                 .collect();
             match t.get_mut(&k) {
                 Some(held) => {
-                    cl.loops += 1;
+                    cl.relations += 1;
                     match congruence(&held.flow, m) {
                         Congruence::Equal => cl.equal += 1,
                         Congruence::InTime => cl.in_time += 1,
@@ -306,7 +306,7 @@ fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: u
 }
 
 /// HR5 — RECONSTRUCT A FAMILY IN TIME, each pair left out in turn: the axes
-/// whose loops close in time on the others, the most compact carrying it.
+/// whose relations close in time on the others, the most compact carrying it.
 pub fn reconstruct_in_time(family: &[(SectionSample, SectionSample)]) -> InTime {
     let mut read = InTime { pairs: family.len() as u64, ..InTime::default() };
     let fields: Vec<Option<(Vec<SiteAxes>, Vec<Flow>)>> = family.iter().map(|(x, y)| flows(x, y).map(|f| (field(x), f))).collect();

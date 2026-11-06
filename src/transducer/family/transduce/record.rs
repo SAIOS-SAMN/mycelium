@@ -126,7 +126,7 @@ pub fn family_share<'a>(family: impl IntoIterator<Item = (&'a Sample, &'a Sample
 /// `deflation::form_deflation_read`). With no frame (`None`: a source that
 /// presents no sample) the measure stays `n/1`: a discharge with no frame
 /// keeps its own measure (ruling 3).
-pub fn share_of_frame(counts: [u64; 4], frame: Option<&Sample>) -> crate::economy::Mu {
+pub fn share_of_enclosure(counts: [u64; 4], frame: Option<&Sample>) -> crate::economy::Mu {
     let whole = crate::economy::Mu::counts(counts);
     let Some(sample) = frame else { return whole };
     match Enclosure::of(sample).measure().and_then(|a| u64::try_from(a).ok()) {

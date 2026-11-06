@@ -186,7 +186,7 @@ fn volume(vs: &[Mv], n: usize) -> Q {
 }
 
 /// `v`'s coordinates on the base axes, as a frame's images are combined.
-fn on_frame(frame: &[Mv], v: &Mv) -> Mv {
+fn on_basis(frame: &[Mv], v: &Mv) -> Mv {
     frame.iter().zip(axes(frame.len())).fold(Mv::zero(), |acc, (img, a)| acc.add(&img.scale(v.coeff(a))))
 }
 
@@ -466,7 +466,7 @@ fn even_pose(
         }
         for sign in [Q::one(), -Q::one()] {
             let r: Vec<Mv> = x.iter().map(|img| img.scale(&(&sign / &lambda))).collect();
-            if !ca.iter().zip(wb).all(|(wa, wb)| on_frame(&r, wa).sub(wb).is_zero()) {
+            if !ca.iter().zip(wb).all(|(wa, wb)| on_basis(&r, wa).sub(wb).is_zero()) {
                 continue;
             }
             let Some(v) = carried(&r, a, b, rho, n, budget)? else { continue };

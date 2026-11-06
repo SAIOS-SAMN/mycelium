@@ -118,7 +118,7 @@ frame, never a count of its sites, so it reads the same at any resolution:
 
 A discharge with no frame (a rewrite's yield, a listing bound to no
 family) keeps its own measure as `n/1`. The readers are
-`DeflationRead::mu`, `Local::mu`, `transduce::share_of_frame` and
+`DeflationRead::mu`, `Local::mu`, `transduce::share_of_enclosure` and
 `Transduction::lane_shares`. A word's magnitude, a family's metabolism, a
 demand's ask and a stroke's size stay counts and are not μ. How the share
 of the frame sets each mode's amount is §12 item 4.

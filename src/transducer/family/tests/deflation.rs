@@ -101,12 +101,12 @@ crate::transducer::raster::stand_on(0);
     );
 }
 
-/// A RULE THAT FAILS ON ITS OWN FAMILY IS NOT UTTERED. `mint_sentence`
+/// A RULE THAT FAILS ON ITS OWN FAMILY IS NOT ASSERTED. `mint_sentence`
 /// already holds the speaker's side of `REFUSE_NOT_A_SENTENCE` — a form
 /// nothing in which acts is withheld rather than spoken and refused — and
 /// this is the speaker's side of `REFUSE_VERTEX_BODY` by the same argument:
 /// the court reconstructs against the family the voice already holds, so a rule
-/// that fails there fails here, and uttering it spends a round trip to have
+/// that fails there fails here, and asserting it spends a round trip to have
 /// the refusal SEAL the address (50.9) against a rule the voice could have
 /// withheld.
 ///

@@ -1,7 +1,7 @@
 // 78.82 — RECONSTRUCTION BY HOLONOMY (HR1–HR4: the aim
 // is not exactness alone but the reconstruction recreated through
 // holonomy). The values stay exact; what must agree across a family is how
-// they MOVE. A rule is the transport whose loops close across the pairs.
+// they MOVE. A rule is the transport whose relations close across the pairs.
 //
 //! HR1 — THE FIELD. Every site of a scene by its coordinates on every axis:
 //!   its hue; the sphere `C = ΣPₛ` of its neighbourhood (itself and the
@@ -17,9 +17,9 @@
 //!   fills with one hue. The body axis's own transport, the fascicle
 //!   `C_out · C_in` of a single change, is read by its regime.
 //! HR3 — THE HOLONOMY PER AXIS. On an axis, every site is keyed by its
-//!   coordinates there; two sites under one key are a LOOP — carry one by its
-//!   transport and return by the other's — and the loop closes where the two
-//!   transports are one. An axis closes on a family where every loop does: it
+//!   coordinates there; two sites under one key are a RELATION — carry one by its
+//!   transport and return by the other's — and the relation closes where the two
+//!   transports are one. An axis closes on a family where every relation does: it
 //!   carries the rule.
 //! HR4 — RECONSTRUCTION. Each pair left out, the axes closing on the others
 //!   and covering its keys; the most compact (fewest keys) carries the
@@ -235,34 +235,34 @@ pub fn key(s: &SiteAxes, axis: usize) -> Vec<u8> {
     k
 }
 
-/// HR3 — ONE AXIS ON A SET OF PAIRS: its loops, those that closed, and its
+/// HR3 — ONE AXIS ON A SET OF PAIRS: its relations, those that closed, and its
 /// distinct keys (the compaction: fewer keys, more of the field carried by
 /// one transport).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct AxisLoops {
-    pub loops: u64,
+pub struct AxisRelations {
+    pub relations: u64,
     pub closed: u64,
     pub keys: u64,
 }
 
-impl AxisLoops {
-    /// Every loop closed, and there was at least one.
+impl AxisRelations {
+    /// Every relation closed, and there was at least one.
     pub fn closes(&self) -> bool {
-        self.loops > 0 && self.closed == self.loops
+        self.relations > 0 && self.closed == self.relations
     }
 }
 
 /// The transport each key carries on one axis over a set of pairs, and the
 /// axis's closure there.
-fn table(pairs: &[(&[SiteAxes], &[Transport])], axis: usize) -> (Keyed<Transport>, AxisLoops) {
+fn table(pairs: &[(&[SiteAxes], &[Transport])], axis: usize) -> (Keyed<Transport>, AxisRelations) {
     let mut t: Keyed<Transport> = Keyed::new();
-    let mut cl = AxisLoops::default();
+    let mut cl = AxisRelations::default();
     for (sites, moves) in pairs {
         for (s, m) in sites.iter().zip(moves.iter()) {
             let k = key(s, axis);
             match t.get(&k) {
                 Some(held) => {
-                    cl.loops += 1;
+                    cl.relations += 1;
                     cl.closed += u64::from(held == m);
                 }
                 None => {
@@ -276,7 +276,7 @@ fn table(pairs: &[(&[SiteAxes], &[Transport])], axis: usize) -> (Keyed<Transport
 }
 
 /// HR3 — THE HOLONOMY OF EVERY AXIS over a set of pairs.
-pub fn holonomy(pairs: &[(&[SiteAxes], &[Transport])]) -> [AxisLoops; 9] {
+pub fn holonomy(pairs: &[(&[SiteAxes], &[Transport])]) -> [AxisRelations; 9] {
     std::array::from_fn(|axis| table(pairs, axis).1)
 }
 
@@ -289,9 +289,9 @@ pub struct ReconstructionReport {
     pub reproduced: u64,
     /// The axis that carried each reproduced pair.
     pub by_axis: [u64; 9],
-    /// The axes that close on the whole family, and each axis's loops there.
+    /// The axes that close on the whole family, and each axis's relations there.
     pub closing: [bool; 9],
-    pub holonomy: [AxisLoops; 9],
+    pub holonomy: [AxisRelations; 9],
     /// Left-out pairs no axis closed on the others for, and pairs where an
     /// axis closed but the pair holds a key the others never showed.
     pub unclosed: u64,

@@ -108,7 +108,7 @@ fn rebase_conjugates_by_versor_never_subtracts() {
         // The star the fixture placed: the chord this rebase would close
         // on, were it a closed orbit. It is not — the Frame and the word
         // are two vertices — so nothing is filed and the vertex is rebased.
-        .rebase(&coord::VertexAt::Frame, &c.vertex(), element::carriage(&q1(), &(q0(), q1())), &star)
+        .rebase(&coord::VertexAt::Enclosure, &c.vertex(), element::carriage(&q1(), &(q0(), q1())), &star)
         .expect("rebase");
     assert!(matches!(f.vertices.at(&of), Some(Vertex::Rebased { .. })));
     // The rebased vertex's member at the fixture's frame, on the chart it

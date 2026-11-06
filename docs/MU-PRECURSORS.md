@@ -128,7 +128,7 @@ bytes in flight. Identity stays where it is: in the Ed25519 signatures on
 acts, verified on admission.
 
 **The gap** (closed by the wiring below). In release 0.2.0, acts travel over plain TCP. The server door
-(`src/bin/mycelium-server/transport.rs`, `read_frame`) and the SDK session
+(`src/bin/mycelium-server/transport.rs`, `read_delimited`) and the SDK session
 (`src/client/sdk/session.rs`, `src/anastome/dialogue/chatter.rs`) read frames
 from a `TcpStream` directly. `src/network/` holds `mesh.rs`, `nerve/` and
 `wire.rs`, and no encrypted channel. ROADMAP track 5 lists "an encrypted
@@ -192,8 +192,8 @@ constructor that refuses instead.
   across a reconnect.
 - A frame past the budget is refused by name at the reassembled length,
   before its body is held (built as
-  `write_frame_refuses_over_budget_before_sending` and
-  `read_frame_refuses_head_past_budget`).
+  `write_delimited_refuses_over_budget_before_sending` and
+  `read_delimited_refuses_head_past_budget`).
 - A signed act is admitted through the tunnel and an unsigned one is not:
   the tunnel adds nothing to identity.
 - A client and a hypha, and two hyphae, speak inside Noise, each static
@@ -529,7 +529,7 @@ and not finished).
 
 **The gap.** The act decoders in `src/anastome/dialogue/` return `Option`:
 a truncated payload and a malformed one are both `None`. At the server
-door, `read_frame` reads a five-byte header and a body of the declared
+door, `read_delimited` reads a five-byte header and a body of the declared
 length, and refuses a declared length past `BODY_BUDGET` plus the point's
 length with `REFUSE_MALFORMED` before reading the body. Codec hardening is
 specified in track 14 item 2, including corpora of malformed tapes; none

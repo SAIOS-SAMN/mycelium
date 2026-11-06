@@ -339,7 +339,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_pair() {
     assert!(
         matches!(
             f.vertices.entries().next(),
-            Some((crate::network::nerve::coord::VertexAt::Frame, Vertex::Frame))
+            Some((crate::network::nerve::coord::VertexAt::Enclosure, Vertex::Frame))
         ),
         "Frame is the least vertex coordinate of the crystallized form"
     );

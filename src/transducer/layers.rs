@@ -99,7 +99,7 @@ pub enum LayerKind {
     Tiled,
     Bordered,
     /// The sample's own extent, not a body layer.
-    Frame,
+    Enclosure,
 }
 
 /// One layer of a body: its kind and its compartments on the three coordinates
@@ -120,7 +120,7 @@ struct SectionLayer {
 }
 
 impl LayerKind {
-    pub const FRAME: LayerKind = LayerKind::Frame;
+    pub const ENCLOSURE: LayerKind = LayerKind::Enclosure;
 
     pub fn byte(self) -> u8 {
         match self {
@@ -134,7 +134,7 @@ impl LayerKind {
             LayerKind::Reduced => 7,
             LayerKind::Tiled => 8,
             LayerKind::Bordered => 9,
-            LayerKind::Frame => 10,
+            LayerKind::Enclosure => 10,
         }
     }
 
@@ -150,7 +150,7 @@ impl LayerKind {
             7 => LayerKind::Reduced,
             8 => LayerKind::Tiled,
             9 => LayerKind::Bordered,
-            10 => LayerKind::Frame,
+            10 => LayerKind::Enclosure,
             _ => return None,
         })
     }
