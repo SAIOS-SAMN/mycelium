@@ -9,11 +9,11 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
 
 /// The market view for one voice, over the charts it named (23.8).
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let court = &context.court;
 
     let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };

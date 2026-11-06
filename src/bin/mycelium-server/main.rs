@@ -48,6 +48,7 @@ use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::{answer, arm_deadline, note_rtt_ok, read_frame, rtt_floor, tell_peer_measured};
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
+use mycelium::network::channel::{Channel, Pace};
 use mycelium::network::mesh::{self};
 use mycelium::network::nerve::{HomeTrie, Keyed, Router};
 use mycelium::network::wire::WireFrame;
@@ -405,6 +406,14 @@ fn main() {
     // check does: it reads a hypha (this home's own bind, or `--at`) and
     // starts nothing here.
     if args.iter().any(|a| a == "--console") {
+        // MU-PRECURSORS §3.1 — the console asks on the home's Noise channel
+        // where the home holds a key, and mints none: an unminted home asks
+        // in plaintext, named.
+        match mycelium::network::noise::NoiseHome::existing(&home) {
+            Ok(Some(h)) => crate::transport::seal(h),
+            Ok(None) => {}
+            Err(why) => eprintln!("the home's Noise key does not read ({why}); asking in plaintext"),
+        }
         // 78.92 — why one act on the hypha's own line stands.
         if let Some(asked) = flag(&args, "--why") {
             why::run(&home, flag(&args, "--at"), asked);
@@ -442,6 +451,16 @@ fn main() {
     let vk = hypha_key.verifying_bytes();
     let id = vk;
     let tag = hypha_key.prefix();
+    // MU-PRECURSORS §3.1 — THE CHANNEL'S HOME: the host's static Noise key
+    // (minted once) and its pins, under the home. The door accepts Noise
+    // and plaintext; every ask dials Noise where the peer speaks it.
+    match mycelium::network::noise::NoiseHome::open(&home) {
+        Ok(h) => {
+            eprintln!("[{tag}] noise static key {}", mycelium::court::identity::hex32(&h.public()));
+            crate::transport::seal(h);
+        }
+        Err(why) => refuse_boot(&tag, &format!("noise home: {why}")),
+    }
     let mut mesh_rec = match mesh::load_or_migrate_hypha(&home, &hypha_key) {
         Ok(rec) => rec,
         Err(why) => refuse_boot(&tag, &why),
@@ -853,7 +872,7 @@ fn main() {
     // an observation there and handing every other act, read, to the
     // WORKERS that judge it. A worker queue that is full defers the act (the
     // honest "come back"), as a full reflex queue did.
-    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(TcpStream, WireFrame)>(cores);
+    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(Channel, WireFrame)>(cores);
     let work_rx = Arc::new(Mutex::new(work_rx));
     for _ in 0..pool {
         let rx = Arc::clone(&reflex_rx);
@@ -864,11 +883,13 @@ fn main() {
                 Ok(r) => r.recv(),
                 Err(_) => break,
             };
-            let Ok(ReflexJob { mut stream }) = job else { break };
+            let Ok(ReflexJob { stream }) = job else { break };
             // One act, then the reader returns — keep-alive must not hold a
             // slot for the client's stroke. The transport deadline bounds
-            // the wait for that one frame.
+            // the wait for that one frame. The channel the caller speaks is
+            // opened first (MU-PRECURSORS §3.1).
             arm_deadline(&stream);
+            let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
             let Some(frame) = read_frame(&mut stream) else { continue };
             if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                 judge::observe::judge(&mut stream, &frame, &context);
@@ -938,8 +959,9 @@ fn main() {
     {
         let context = context.clone();
         std::thread::spawn(move || {
-            for ReflexJob { mut stream } in overflow_rx {
+            for ReflexJob { stream } in overflow_rx {
                 arm_deadline(&stream);
+                let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
                 let Some(frame) = read_frame(&mut stream) else { continue };
                 if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                     judge::observe::judge(&mut stream, &frame, &context);
@@ -982,16 +1004,16 @@ fn main() {
                 Ok(()) => continue,
                 Err(std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j)) => j,
             };
-            let mut s = job.stream;
             // 23.8 (S13.4): the deferral carries the door's per-lane reserve
             // deficit, snapshotted on every court stroke, so the asker dwells
             // on the lanes it names; a deficit that cannot be read is
-            // silence, which the asker already counts.
+            // silence, which the asker already counts. It is written on the
+            // channel the caller speaks (`defer_unread`).
             let Ok(deficit) = mesh.deficit.lock().map(|d| *d) else {
                 continue;
             };
             let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-            answer(&mut s, WireFrame { lane: mycelium::network::wire::Lane::Spatial, body });
+            crate::transport::defer_unread(job.stream, &mesh, WireFrame { lane: mycelium::network::wire::Lane::Spatial, body });
         }
     }
 }

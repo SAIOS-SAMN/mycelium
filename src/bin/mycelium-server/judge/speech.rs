@@ -11,11 +11,11 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
 
 /// A voice speaks sentences to the court that homes them (26).
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let court = &context.court;
 
     let Some(act) = dialogue::decode_speech(&frame.body) else {

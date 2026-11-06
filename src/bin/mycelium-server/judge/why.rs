@@ -14,7 +14,7 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::why::{decode_why, encode_why_reply, Why, WhyAsk};
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 use std::sync::Mutex;
 
 /// The question the door left for the court stroke, the latest in the place
@@ -24,7 +24,7 @@ static LEFT: Mutex<Option<WhyAsk>> = Mutex::new(None);
 /// The stroke's answer to the question left, served to its next asking.
 static ANSWERED: Mutex<Option<(WhyAsk, Option<Why>)>> = Mutex::new(None);
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(ask) = decode_why(&frame.body) else { return };
     let why = match crate::court_lock::held!(context.court) {
         // Stays on the court (78.153b): stamp→word and its Reasons are not
@@ -39,7 +39,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context
 /// stroke's answer where the same question was answered, else left for the
 /// next stroke and deferred as every act a full door holds back is. Answers
 /// whether the frame was a why.
-pub(crate) fn serve_left(stream: &mut TcpStream, frame: &WireFrame, context: &Context) -> bool {
+pub(crate) fn serve_left(stream: &mut Channel, frame: &WireFrame, context: &Context) -> bool {
     let Some(ask) = decode_why(&frame.body) else { return false };
     let answered = match ANSWERED.lock() {
         Ok(a) => a.as_ref().filter(|(asked, _)| *asked == ask).map(|(_, why)| encode_why_reply(why.as_ref())),

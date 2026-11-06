@@ -7,7 +7,9 @@
 //!
 //! 1. Identity — the voice's Ed25519 key, read from `<voice home>/voice.key`
 //!    or minted there (`mycelium-client --init` writes the same file).
-//! 2. Session — `Session::open` on a hypha's address; the law register read
+//! 2. Session — `Session::open` on a hypha's address, opted into the Noise
+//!    channel with the voice home's static key (`Session::with_noise`, the
+//!    hyphae pinned in `<voice home>/noise.pins`); the law register read
 //!    (`ACT_LAWS` mode 0), which decodes only at the SDK's `LAW_VERSION`.
 //! 3. Work — `ACT_TASK` asks the court for a task; the envelope carries the
 //!    train pairs and the test inputs, never the test outputs.
@@ -196,8 +198,16 @@ fn main() -> ExitCode {
     // 1. IDENTITY: the voice's key, the same file the reference mind keeps.
     let (voice, key) = mycelium_sdk::voice::load_or_mint(&format!("{home}/voice.key"));
     println!("voice {}", hex32(&voice.id()));
-    // 2. SESSION: one hypha's address; the session learns the rest.
-    let session = Session::open(endpoint, voice);
+    // 2. SESSION: one hypha's address; the session learns the rest, every
+    // act inside Noise where the hypha speaks it (MU-PRECURSORS §3.1).
+    let noise = match mycelium_sdk::session::NoiseHome::open(std::path::Path::new(home)) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("{home}: the Noise home does not open: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let session = Session::open(endpoint, voice).with_noise(noise);
     // THE LAW VERSION: the register the court judges by, read at the
     // version this SDK pins to; another version is told apart, never read.
     match session.speak(laws::encode_register_request()) {

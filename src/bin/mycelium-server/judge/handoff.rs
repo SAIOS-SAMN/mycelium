@@ -7,9 +7,9 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff_reply, encode_read_reply, HandoffRequest};
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(request) = decode_handoff_request(&frame.body) else { return };
     let body = match crate::court_lock::held!(context.court) {
         Ok(mut held) => held.run(|k, _| match request {

@@ -18,8 +18,13 @@
 use std::path::Path;
 
 /// The transport's sources, repository-relative: the wire's delimitation,
-/// the Noise channel and the hypha's door.
-pub const TRANSPORT: &[&str] = &["src/network/wire.rs", "src/network/noise.rs", "src/bin/mycelium-server/transport.rs"];
+/// the Noise channel, the choice of channel per peer and the hypha's door.
+pub const TRANSPORT: &[&str] = &[
+    "src/network/wire.rs",
+    "src/network/noise.rs",
+    "src/network/channel.rs",
+    "src/bin/mycelium-server/transport.rs",
+];
 
 /// The carrier types the transport never names: the multivector, μ's modes
 /// and its four-lane predecessor, the body coordinate, the samples and their

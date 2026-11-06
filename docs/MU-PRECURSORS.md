@@ -100,7 +100,7 @@ Mycelium's current types, admission path and treasury.
 
 | # | Component | Track | Effort | Status |
 |---|---|---|---|---|
-| 3.1 | Noise XX encrypted transport | 5 | Medium | In progress |
+| 3.1 | Noise XX encrypted transport | 5 | Medium | Landed (opt-in per peer) |
 | 3.2 | ~~Mutation audit~~ | 14 | — | Retired |
 | 3.3 | Named refusals in `learn_form` | 7 | Small | In progress |
 | 3.4 | Integer homology and invariant factors | 18, 19, 12 | Medium | Specified |
@@ -127,7 +127,7 @@ Curve25519 key. The tunnel gives confidentiality and integrity of the
 bytes in flight. Identity stays where it is: in the Ed25519 signatures on
 acts, verified on admission.
 
-**The gap.** In release 0.2.0, acts travel over plain TCP. The server door
+**The gap** (closed by the wiring below). In release 0.2.0, acts travel over plain TCP. The server door
 (`src/bin/mycelium-server/transport.rs`, `read_frame`) and the SDK session
 (`src/client/sdk/session.rs`, `src/anastome/dialogue/chatter.rs`) read frames
 from a `TcpStream` directly. `src/network/` holds `mesh.rs`, `nerve/` and
@@ -157,8 +157,22 @@ the transport as Ed25519-signed acts over TCP.
 - **Opt-in first.** The transport is selected per peer address. Plain TCP
   remains for one-host development until multi-host deployment (track 5)
   makes the encrypted channel the default.
+- **The opening** (as built, `src/network/channel.rs`). A dialler with a
+  Noise home writes `noise::OPEN` alone, five bytes no plaintext frame
+  begins with (the first names no lane; the next four read as a length past
+  the budget), and begins the XX handshake only once the door answers
+  `OPEN`. A door with a home reads each connection's first byte: the
+  opening is answered with the handshake, a lane byte is a plaintext frame
+  read as before. A door that speaks only plaintext refuses the opening as
+  a frame over budget; the dialler reads that as `NotSpoken`, dials again
+  in plaintext and names the peer. A pinned peer is held to its seal:
+  answering in plaintext is `PinnedAnsweredPlain`, and a changed key
+  `PeerKeyChanged`, both refused with no plaintext fallback. Every peer
+  met is named, with its channel, in the log and in the observer's
+  `channels` reading.
 - **Named refusals** (`NoiseRefusal`) for a failed handshake, a peer that
-  presents no static key, a changed static key, a message past the Noise
+  presents no static key, a changed static key, a peer that does not speak
+  Noise, a pinned peer answering in plaintext, a message past the Noise
   bound, a frame past the budget, a decryption failure and a malformed key
   or pin store. None is a panic.
 
@@ -182,10 +196,29 @@ constructor that refuses instead.
   `read_frame_refuses_head_past_budget`).
 - A signed act is admitted through the tunnel and an unsigned one is not:
   the tunnel adds nothing to identity.
+- A client and a hypha, and two hyphae, speak inside Noise, each static
+  key its host's own, and the hypha's deferral reaches the caller inside
+  the channel unchanged (built as `client_and_hypha_speak_inside_noise` and
+  `hypha_peers_speak_inside_noise`, `src/bin/mycelium-server/tests/channel.rs`).
+- A pinned peer presenting another key, or answering in plaintext, is
+  refused by name and never asked in plaintext (built as
+  `pinned_key_mismatch_refused`).
+- A plaintext peer is still spoken to, never pinned, and named in the log
+  and the observer (built as `plaintext_peer_named_not_hidden`); the
+  opening reads as no plaintext frame (`opening_reads_as_no_plaintext_frame`).
 
-**Track** 5. **Effort** medium. **Status** In progress: being built as
-`src/network/noise.rs`; wiring into the server door and the SDK session,
-and the pin store in the home, may remain after the first commit.
+**Track** 5. **Effort** medium. **Status** Landed, opt-in per peer:
+`src/network/noise.rs` (the channel), `src/network/channel.rs` (the
+opening, the choice per peer and the book of peers met), the server door
+and every hypha's ask (`src/bin/mycelium-server/transport.rs`), and the SDK
+session (`Session::with_noise`). A hypha's home holds `noise.key` and
+`noise.pins`; the console asks on the home's key where one stands. The
+quickstart mesh runs Noise between its hyphae and its SDK client; the
+conformance suite and the house stay plaintext and are named. Remaining:
+the reference mind's sessions (`Mind::open`) and the chatter posts stay
+plaintext, and the switch to Noise-only (a door refusing plaintext, a
+dialler refusing `NotSpoken`) is a later release step, a network-contract
+change of its own.
 
 ### 3.2 ~~Mutation audit~~
 

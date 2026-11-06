@@ -26,7 +26,12 @@ pub struct Session {
     /// monologue.
     pub(crate) strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
-    pub(crate) streams: RefCell<crate::network::nerve::Keyed<TcpStream>>,
+    pub(crate) streams: RefCell<crate::network::nerve::Keyed<Channel>>,
+    /// MU-PRECURSORS §3.1 — THE SESSION'S NOISE HOME, where it opted in
+    /// (`with_noise`): every hypha it dials is spoken to inside Noise where
+    /// the hypha speaks it, pinned under the address dialled. Without one,
+    /// every channel is plaintext, named in the log and at the door.
+    pub(crate) noise: Option<crate::network::noise::NoiseHome>,
     /// The home trie learned by page from `ACT_COVER`. Same read as the hypha.
     pub(crate) cover: RefCell<crate::network::nerve::HomeTrie>,
     /// The four cover roots and the ruled root last read from each hypha:
@@ -62,6 +67,7 @@ impl Session {
             },
             strokes: std::cell::Cell::new(0),
             streams: RefCell::new(crate::network::nerve::Keyed::new()),
+            noise: None,
             cover: RefCell::new(crate::network::nerve::HomeTrie::new()),
             last_roots: RefCell::new(crate::network::nerve::Keyed::new()),
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
@@ -82,6 +88,24 @@ impl Session {
     /// stays its own. The point is a clone of the one held.
     pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
         self.final_point.borrow().clone()
+    }
+
+    /// THE SESSION OPTED INTO NOISE (MU-PRECURSORS §3.1): every act from here
+    /// on is dialled with `home`'s static key, inside Noise where the hypha
+    /// speaks it. A hypha that answers in plaintext is spoken to in plaintext
+    /// and named, unless it was pinned; a pinned hypha presenting another
+    /// key, or answering in plaintext, is refused by name.
+    pub fn with_noise(mut self, home: crate::network::noise::NoiseHome) -> Self {
+        self.noise = Some(home);
+        self
+    }
+
+    /// The channel this session dials `endpoint` on.
+    fn dial(&self, endpoint: &str) -> io::Result<Channel> {
+        crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Blocking).map_err(|why| match why {
+            crate::network::noise::NoiseRefusal::Io(e) => e,
+            why => io::Error::new(io::ErrorKind::ConnectionRefused, why),
+        })
     }
 
     /// A point read off a door reply: held where it advances on the one held.
@@ -624,7 +648,7 @@ impl Session {
         // the first may have sealed, and a resend would seal it again.
         let mut pool = self.streams.borrow_mut();
         if let Some(s) = pool.get_mut(endpoint.as_bytes()) {
-            match s.write_all(&bytes) {
+            match self.write_act(s, &frame, &carried, &bytes) {
                 Ok(()) => {
                     let read = self.read_reply(s);
                     if read.is_err() {
@@ -642,15 +666,14 @@ impl Session {
                 }
             }
         }
-        let mut s = match TcpStream::connect(endpoint) {
+        let mut s = match self.dial(endpoint) {
             Ok(s) => s,
             Err(e) => {
                 self.rtt_timeout(endpoint);
                 return Err(e);
             }
         };
-        let _ = s.set_nodelay(true);
-        let body = match self.roundtrip(&mut s, &bytes) {
+        let body = match self.write_act(&mut s, &frame, &carried, &bytes).and_then(|()| self.read_reply(&mut s)) {
             Ok(b) => b,
             Err(e) => {
                 self.rtt_timeout(endpoint);
@@ -661,14 +684,29 @@ impl Session {
         Ok(body)
     }
 
-    pub(crate) fn roundtrip(&self, s: &mut TcpStream, bytes: &[u8]) -> io::Result<Vec<u8>> {
-        s.write_all(bytes)?;
-        self.read_reply(s)
+    /// One act written on the channel: inside Noise, the frame and its point
+    /// sealed (`NoiseStream::write_frame`); in plaintext, its encoded bytes.
+    fn write_act(&self, s: &mut Channel, frame: &WireFrame, carried: &crate::chronometry::tuniversal::TPoint, bytes: &[u8]) -> io::Result<()> {
+        match s {
+            Channel::Noise(n) => n.write_frame(frame, Some(carried)).map_err(io::Error::other),
+            Channel::Plain(p) => p.write_all(bytes),
+        }
     }
 
     /// One reply frame's body, read whole; the door's final point it carries
     /// (78.152 TU-7) is heard and leaves the body.
-    fn read_reply(&self, s: &mut TcpStream) -> io::Result<Vec<u8>> {
+    fn read_reply(&self, s: &mut Channel) -> io::Result<Vec<u8>> {
+        let s = match s {
+            Channel::Noise(n) => {
+                let (frame, point) = n.read_frame().map_err(|why| match why {
+                    crate::network::noise::NoiseRefusal::Io(e) => e,
+                    why => io::Error::new(io::ErrorKind::InvalidData, why),
+                })?;
+                self.hear_point(point);
+                return Ok(frame.body);
+            }
+            Channel::Plain(p) => p,
+        };
         let mut head = [0u8; 5];
         s.read_exact(&mut head)?;
         let Some((_, pointed)) = crate::network::wire::read_lane(head[0]) else {

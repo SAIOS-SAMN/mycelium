@@ -643,7 +643,7 @@ The text below is the derivation as specified.
 **Site.** `src/network/wire.rs:9` —
 `pub const BODY_BUDGET: usize = 768 * 1024;`, served by `frame_budget()`
 (`wire.rs:49`). It is refused past at `Frame::encode` (`wire.rs:132`), on
-read (`wire.rs:171`, `noise.rs:399`, `transport.rs:88, 208`,
+read (`wire.rs:171`, `noise.rs:460`, `transport.rs:88, 208`,
 `session.rs:682`), and is the fill bound of every paging codec: receipts
 (`receipts.rs:272`; `Court::receipts_frame`, `era.rs:102`,
 `frame_budget() − 64`), syllabus (`judge/syllabus.rs:66, 178, 209`,
@@ -661,7 +661,7 @@ no fixed length: at least `96 + 2` bytes and at most `TPoint::TRAILER_MAX =
 u16::MAX + 2`, so the `84` below reads as the trailer a given point takes).
 Under Noise a frame rides in
 plaintext chunks of `CHUNK = MESSAGE_MAX − TAG_LEN = 65535 − 16 = 65519`
-bytes (`noise.rs:36–40`).
+bytes (`noise.rs:47–52`).
 
 **Governs.** Protocol size and liveness. An act over the budget is
 refused by name at the door. A page stops at the budget. A challenge span
@@ -1642,7 +1642,11 @@ drops its `max(1)`, and a zero handed to a deadline reads `Unmeasured`.
 The transport's round trip is `NonZeroU64` at the measurement, and
 `Stall::{Strokes(NonZeroUsize), Beyond, Unmeasured}`: `read_budgeted`
 refuses `Unmeasured`, `tell_peer_within` resolves it as a first ask (one
-aperture, D4.1). Tests: `physics::tests::calibration`
+aperture, D4.1). Since the Noise wiring (MU-PRECURSORS §3.1) the polled
+read is `channel::Paced` under `Pace::Polled` (`src/network/channel.rs`),
+the same stall bound refilled on progress and the round trip counted in
+polls from the write (`Paced::first_byte_at`); `pace_of` refuses
+`Unmeasured`, and `read_budgeted` below names that read. Tests: `physics::tests::calibration`
 (`calibration_refuses_unread_cores`, `stroke_floor_reads_slack_where_hz_unpublished`),
 `physics::tests::lambda::from_transport_counts_rtt_in_strokes` (its
 same-stroke-zero claim dropped, §2 item 13), `mycelium-server tests::patience`
@@ -3727,7 +3731,7 @@ account count.
 **Class 3, external standard.** Fixed outside the physics by a published
 standard or a governing rule, cited by clause in the `EXTERNAL:` tag.
 Examples: the Noise message bound `MESSAGE_MAX = 65535` and the
-ChaChaPoly tag `TAG_LEN = 16` (`src/network/noise.rs:36–38`; Noise
+ChaChaPoly tag `TAG_LEN = 16` (`src/network/noise.rs:47–50`; Noise
 Protocol Framework rev. 34 §7), whose difference is the `CHUNK` D1.3
 reads; the Ed25519 public key of 32 octets and signature of 64 octets
 (RFC 8032 §5.1.6), where a signature actually rides a body (D4.6);

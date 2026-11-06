@@ -5,9 +5,9 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(req) = dialogue::decode_entries_request(&frame.body) else { return };
     // The frame's whole body: `encode_entries_reply` counts its own header
     // against it, and the entries the page can hold are the body less that

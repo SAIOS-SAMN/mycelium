@@ -12,9 +12,9 @@ use crate::context::Context;
 use crate::transport::answer_written;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(req) = dialogue::decode_receipts_request(&frame.body) else { return };
     // A budget smaller than the envelopes serves nothing: the page's tapes,
     // and the reply's whole budget behind which the reading height rides.

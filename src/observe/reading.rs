@@ -53,10 +53,15 @@ pub const TAG_DISPATCHED: u8 = 24;
 /// citation and voice, its verdicts and the height of the last.
 /// FORMAT: judged reading tag byte.
 pub const TAG_JUDGED: u8 = 25;
+/// MU-PRECURSORS §3.1 — every peer a host met, by its channel (Noise or
+/// plaintext) and side.
+/// FORMAT: channels reading tag byte.
+pub const TAG_CHANNELS: u8 = 26;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 16] = [
+pub const READING_NAMES: [(&str, u8); 17] = [
+    ("channels", TAG_CHANNELS),
     ("asked", TAG_ASKED),
     ("dispatched", TAG_DISPATCHED),
     ("judged", TAG_JUDGED),
@@ -835,6 +840,8 @@ pub enum Reading {
     Dispatched(Box<super::Dispatched>),
     /// The solves a court judged, by citation and voice (`TAG_JUDGED`).
     Judged(Box<super::JudgedSolves>),
+    /// The peers a host met, by channel and side (`TAG_CHANNELS`).
+    Channels(Box<super::Channels>),
 }
 
 impl Reading {
@@ -856,6 +863,7 @@ impl Reading {
             Reading::Asked(_) => TAG_ASKED,
             Reading::Dispatched(_) => TAG_DISPATCHED,
             Reading::Judged(_) => TAG_JUDGED,
+            Reading::Channels(_) => TAG_CHANNELS,
         }
     }
 
@@ -894,6 +902,8 @@ impl Reading {
             // The dispatches are read whole at the question; the later stands.
             (Reading::Dispatched(a), Reading::Dispatched(b)) => *a = b.clone(),
             (Reading::Judged(a), Reading::Judged(b)) => *a = b.clone(),
+            // The book is read whole at the question; the later stands.
+            (Reading::Channels(a), Reading::Channels(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -935,6 +945,7 @@ impl Reading {
             }
             Reading::Dispatched(r) => r.put(out),
             Reading::Judged(r) => r.put(out),
+            Reading::Channels(r) => r.put(out),
         }
     }
 
@@ -958,6 +969,7 @@ impl Reading {
             TAG_ASKED => Some(Reading::Asked(take_u64(b, p)?)),
             TAG_DISPATCHED => Some(Reading::Dispatched(Box::new(super::Dispatched::take(b, p)?))),
             TAG_JUDGED => Some(Reading::Judged(Box::new(super::JudgedSolves::take(b, p)?))),
+            TAG_CHANNELS => Some(Reading::Channels(Box::new(super::Channels::take(b, p)?))),
             _ => None,
         }
     }

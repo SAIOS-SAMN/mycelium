@@ -18,9 +18,9 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::network::wire::WireFrame;
 use mycelium::physics::laws::codec::{decode_laws_request, encode_register_reply, LawsRequest};
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(request) = decode_laws_request(&frame.body) else { return };
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
