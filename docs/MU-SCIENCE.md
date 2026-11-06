@@ -159,7 +159,7 @@ shell.
 | **The universal law register L0** | The laws every transition touching the network satisfies (§3.1) | `src/physics/laws/mod.rs`, `ACT_LAWS` |
 | **The universal law forms** | The forms each universe composes over its own constants (Concordance 2.10) | `forms/` |
 | **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/MU-CONCORDANCE.md` |
-| **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ALPHABET §6) | `docs/MU-ALPHABET.md`, `src/transducer/alphabet/` |
+| **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ANASTOME §2.6) | `docs/MU-ANASTOME.md`, `src/transducer/alphabet/` |
 | **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
 | **Exact arithmetic** | ℚ and `Cl(p, q)`(ℚ), the signature carried as data, with perception's conformal case `Cl(n+1, 1)`(ℚ), `n` read from the data (`Cl(4,1)` at `n = 3`); no floating point in anything admitted | Throughout |
 | **The proofs of work** | POUW, POWC, POWR, the POWV share, and the settlement of each | `docs/MU-ECONOMY.md` |
@@ -357,7 +357,8 @@ The vocabulary follows the grammar of the language (MU-RECURSION 78.39,
   algebra the held generators span.
 - **Many algorithms may construct one generator.** Superposition holds the
   candidates whole at the letter, word and conjugate grades until one is
-  distinguished.
+  distinguished. The grades are the language's levels, mapped to the
+  algebra in [MU-ANASTOME](MU-ANASTOME.md) §1.
 - **The court never proposes a generator.** It reconstructs the object from
   the constructor steps a mind sends and admits it on reaching the same
   exact object, so admission is independent of the constructing algorithm

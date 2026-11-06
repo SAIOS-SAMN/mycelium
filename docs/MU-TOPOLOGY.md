@@ -78,7 +78,7 @@ versors and stabilizers (ROADMAP track 19).
 
 The alphabet of seventeen letters is a fixed set of versors of this
 algebra; a word is a product of letters, one exact versor whose meaning is the
-motion it performs (MU-EQUATIONS §3; [`MU-ALPHABET.md`](MU-ALPHABET.md)).
+motion it performs (MU-EQUATIONS §3; [`MU-ANASTOME.md`](MU-ANASTOME.md) §2).
 
 ---
 
