@@ -1053,6 +1053,21 @@ refused by the same names. The motion and the residue are read under no
 ground, so the stated ground is checked and never changes the residue
 derived. Claim `factorisation_claim_states_its_ground`.
 
+**A claim of factorisation states its perspective** (track 26 S6, stage 2).
+The act carries the perspective the pair was perceived under after its
+residue (`[rank u16][(source u16)(sense u8) · rank][role u8 · rank]`), and
+is signed as `mycelium factorisation v2`. The court reads its own copy of
+the posted pair through the stated perspective (`Perspective::read`) and
+reconstructs there; it never chooses a perspective. One of another rank
+than the pair is refused `REFUSE_FACTOR_PERSPECTIVE_RANK`, and one reading
+an axis as other than space `REFUSE_FACTOR_PERSPECTIVE_ROLE`, since the
+transduction factors every axis as a phase the bodies extend along. The
+mind perceives under a perspective (`TaskPercept::under`) and states the
+percept's own. The perspective is part of the claim, never of the task.
+Claim `claim_states_its_perspective_and_court_reconstructs_under_it`. The
+solve of outputs and speech read the alphabet's section in its default
+perspective and do not yet state one.
+
 ## 7. Who owns a source's code
 
 Source-specific code exists only as a **decoder** from the source's format
