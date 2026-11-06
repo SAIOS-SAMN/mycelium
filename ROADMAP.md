@@ -66,6 +66,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | B3, B4: a domain's crossings refused `NotSignatory` at the universal core tube until its sitting reserve's alignment converses on every network clause of the version served; the boundary reading | track 24 | Built on branch `b3-vertex` (the fold's transitions under L0, `NotThroughCore`, `NotSignatory` at the tube); the boundary reading open |
 | LAW-COORDINATE fixtures 7–10 (advance, an event's bell, merger with offsets, fission) | 78.173 | Next; exact statements agreed with netstratum |
 | LAW-FIELD v1, agreed with the peer kernels | [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) | 78.171 amended (a–e, 2026-11-05): the pole basis, the signature per plane, the winding with each phase in degrees, spheres as enclosures only, the orbit's shear per netstratum docs/121; fixtures read by netstratum; xylarium's reading owed |
+| LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
 | Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
 | The alphabet past `n = 3`; the `Frame` defect; `Act::Slide`/`Extend`'s planar ray | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
@@ -1443,6 +1444,23 @@ adjudicated reading (B2). Each phase is one commit:
      order), and the ruled act that opens a lane. Open: the
      signed-to-issuance map at the vertex, xylarium's lane renaming, and
      netstratum's composition law (fixture 11b).
+   - **A new B3 crossing kind, the traversal, is proposed:** LAW-TRAVERSAL
+     v1 ([proposal 78.176](docs/proposals/78.176-law-traversal.md),
+     **Proposed**, agreed with netstratum), the inter-kernel crossing
+     through the universal core tube, stated as two LAW-PASSAGE v3
+     passages composed at the vertex — one out through the source
+     universe's own throat, one in through the destination's — and
+     reconstructed by the court as a LAW-COORDINATE v4 re-origin, read
+     twice. Each kernel declares its polarity as data; the inter-kernel
+     map (polar or antipolar) is one case of the law, never the law
+     itself. The antipolar case exchanges a kind's frames,
+     `(z_k, q_k) ↦ (q_k, z_k)`, keeping the whole `z_k + q_k` per plane
+     (so 3Z and a nucleon mass are kept), the axis inversion `t ↦ 1/t`
+     fixing only the throat. To build after 78.176 is agreed: open, the
+     wire framing of a traversal, the kernel-pair polarity declaration's
+     form, and the reading of alignment across the tube. Which kernel's
+     universal core is the antipolar face of any tube is not confirmed;
+     xylarium's operator rules it for xylarium's own tubes.
 5. **B4, the boundary:** `NotThroughCore` and `NotSignatory` at the
    universal core tube; refusals at the tube by name and domain under
    `ACT_OBSERVE`, and the reconstruction events (Collapse, Converse,

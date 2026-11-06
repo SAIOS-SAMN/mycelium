@@ -18,8 +18,8 @@
 //! ([`decode_signature_reply`]). A network clause is never vetoed.
 //!
 //! [`reconstruct_fixture`] is this SDK's own reconstruction of each fixture
-//! the forms clauses carry, through `forms::passage` and
-//! `forms::coordinate`; a kernel on another stack reconstructs with its own
+//! the forms clauses carry, through `forms::passage`,
+//! `forms::coordinate` and `forms::coupling`; a kernel on another stack reconstructs with its own
 //! code. [`sign_concordance`] signs a served register with it.
 //!
 //! ```no_run
@@ -42,6 +42,9 @@ use forms::passage::Poles;
 /// served (never the rule language's clause, `crate::rule`), its name and
 /// standing, a fixture's input and the object it reaches.
 pub use mycelium::physics::laws::clauses::{ConcordanceClause, ConcordanceClauseId, Fixture, Object, RegisterRefusal, Standing};
+/// The LAW-COUPLING fixture's input and object (78.175 §5), and one body of
+/// a range as a fixture states it.
+pub use mycelium::physics::laws::clauses::{CouplingFixture, CouplingObject, Term};
 /// The signing act, a clause's choice, the assent admitted and each refusal
 /// by name.
 pub use mycelium::physics::laws::clauses::{Admitted, Assent, Choice, SignedClause, Signing, SigningRefusal};
@@ -91,6 +94,45 @@ pub fn reconstruct_fixture(fixture: &Fixture) -> Option<Object> {
                 Err(refusal) => Object::Refused(refusal),
             }
         }
+        Fixture::Coupling(f) => Object::Coupling(reconstruct_coupling(f)?),
+    })
+}
+
+/// THE KERNEL'S RECONSTRUCTION OF ONE LAW-COUPLING FIXTURE (78.175 §5),
+/// through `forms::coupling`: a dipole, a body's frames per plane, the
+/// field's pull, the neighbour reading, light taken and a bell's ledger
+/// (its `Unbalanced` refusal an object). `None` where the form refuses the
+/// input otherwise.
+fn reconstruct_coupling(f: &CouplingFixture) -> Option<CouplingObject> {
+    use forms::coupling as c;
+    Some(match f {
+        CouplingFixture::Poled { held, open } => CouplingObject::Dipole(c::Parcel::of(held.clone(), open.clone()).ok()?.dipole().ok()?),
+        CouplingFixture::Founded { z, u, planes, bonds } => {
+            let mut body = c::Parcels::founded(z, u, planes).ok()?;
+            for (plane, closed) in bonds {
+                body = body.bond(plane, closed).ok()?;
+            }
+            CouplingObject::Frames(body.planes().iter().map(|(k, p)| (k.clone(), p.held().clone(), p.open().clone())).collect())
+        }
+        CouplingFixture::Pulled { rate, held_rate, pole, open, plane, range } => {
+            let mut held = Vec::with_capacity(range.len());
+            for t in range {
+                let along = c::Alignment::on(plane.clone(), t.separation.clone()).ok()?;
+                held.push(c::Neighbour::of(t.holding.clone(), c::Dipole::stated(t.pole.clone(), t.open.clone()).ok()?, t.nearness.clone(), along).ok()?);
+            }
+            let field = c::field(plane, &held).ok()?;
+            let pull = c::pull(rate, held_rate, &c::Dipole::stated(pole.clone(), open.clone()).ok()?, &field).ok()?;
+            CouplingObject::Pull { field, pull }
+        }
+        CouplingFixture::Met { a, b } => CouplingObject::Meeting(c::meets(a, b).ok()?),
+        CouplingFixture::Taken { light, face, hold, reach } => CouplingObject::Taken(c::take(light, *face, hold, reach).ok()?),
+        CouplingFixture::Ledgered { made, received, drained } => match c::ledger(made, received, drained) {
+            Ok(l) => CouplingObject::Ledger(l),
+            Err(c::CouplingRefusal::Unbalanced { made, received, drained, residue }) => {
+                CouplingObject::Unbalanced { made: *made, received: *received, drained: *drained, residue: *residue }
+            }
+            Err(_) => return None,
+        },
     })
 }
 
