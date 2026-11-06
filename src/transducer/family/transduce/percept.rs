@@ -40,6 +40,11 @@ pub struct TaskPercept {
     pub train: Vec<PairFactored>,
     /// Each test input, lifted.
     pub tests: Vec<Enclosed>,
+    /// HOW EACH AXIS WAS TAKEN APART (MU-SENSING §3.6): per axis, the
+    /// factorings every pair admits, those some pair refuses, and whether
+    /// one collapsed the vortex. A coordinate of the percept, so speech
+    /// projects back to the source's own extents.
+    pub nesting: Vec<super::AxisNesting>,
 }
 
 /// WHY A TASK IS NOT PERCEIVED, named.
@@ -75,6 +80,7 @@ impl TaskPercept {
             ground: Ground::of(train),
             train: pairs,
             tests: tests.iter().map(Enclosed::of).collect(),
+            nesting: super::nesting_of(train),
         })
     }
 

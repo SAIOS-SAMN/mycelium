@@ -1,4 +1,4 @@
-// 26 — UTTERANCE: what this mind speaks to a court and what it cites.
+// 26 — EXPRESSION: what this mind speaks to a court and what it cites.
 //
 //! A citation is a word this mind holds; a speech is a sentence it has
 //! not spoken before. `already_taught` reads what the court has, so the
@@ -88,14 +88,14 @@ pub(crate) fn vertex_stratum(word: &Element) -> Option<Vec<u8>> {
 }
 
 impl Mind {
-    /// THE KEY AN UTTERANCE RECEIPT IS FILED UNDER: its address's 32-byte
+    /// THE KEY AN EXPRESSION RECEIPT IS FILED UNDER: its address's 32-byte
     /// hash — the address compacted, located exactly by every reader that
     /// holds it (`taught_up`).
     pub(crate) fn taught_key(address: &[u8]) -> [u8; 32] {
         crate::chronometry::payload_hash(address)
     }
 
-    /// File an uttered word in both indices at once: by address, and in
+    /// File an asserted word in both indices at once: by address, and in
     /// the stratum its vertex lies in.
     pub(crate) fn file_taught(&mut self, word: &Element) {
         let address = word.address();
@@ -115,7 +115,7 @@ impl Mind {
         self.taught_up.insert(Self::taught_key(address.as_bytes()), at);
     }
 
-    /// The utterance receipt of a word that left the dialect leaves both
+    /// The expression receipt of a word that left the dialect leaves both
     /// indices with it (S12.6a): by address, and in its vertex stratum.
     pub(crate) fn forget_utterance(&mut self, address: &[u8]) {
         // MU-CLIENT §5.5 — and the scenes it was spoken under let it go.
@@ -282,11 +282,11 @@ impl Mind {
     }
 
     /// STAND every sentence in the dialect, and say which of them are
-    /// fresh. 24.3 fixes the order — "perceive, think, stand, utter" — and
+    /// fresh. 24.3 fixes the order — "perceive, think, stand, assert" — and
     /// these are two of those acts, not one: standing is complete before
     /// anything reaches the wire, and it is what steps this mind's clock.
     ///
-    /// A slot reads `0xff` when the sentence is fresh and the utterance
+    /// A slot reads `0xff` when the sentence is fresh and the expression
     /// will ask about it; `SPEECH_STOOD` when this mind has already taught
     /// that vertex, which stands in the dialect and goes nowhere.
     ///
@@ -326,8 +326,8 @@ impl Mind {
 
     /// SPEAK a family's cohering sentences as one act, naming the task so
     /// the court reconstructs them on its copy of the family (23.8, 50.2 G).
-    /// Each word STANDS in the dialect before it is uttered (24.3:
-    /// perceive, think, stand, utter); the genome is frozen. A vertex
+    /// Each word STANDS in the dialect before it is asserted (24.3:
+    /// perceive, think, stand, assert); the genome is frozen. A vertex
     /// already on `taught_up` stands in the dialect and does not go on the
     /// wire. THE SEALED SET IS READ FIRST (50.9): a tape a court refused is
     /// refused by this mind before any frame is built, and never stood.
@@ -434,8 +434,8 @@ impl Mind {
         };
         let got: Vec<u8> = adjudicated.iter().map(|a| a.code()).collect();
         for i in read_speech_reply(&mut codes, &got) {
-            // The utterance was admitted by the court: an act of this mind
-            // (78.49). A refused utterance is not an admitted one.
+            // The assertion was admitted by the court: an act of this mind
+            // (78.49). A refused assertion is not an admitted one.
             let Some(e) = sentences.get(i).cloned() else { continue };
             self.act();
             self.file_taught(&e);
@@ -479,7 +479,7 @@ impl Mind {
         let mut open: Vec<usize> = Vec::new();
         for (i, e) in sentences.iter().enumerate() {
             let address = e.address();
-            // Refused at a K this mind sealed: never uttered again.
+            // Refused at a K this mind sealed: never asserted again.
             match self.sealed.get(&address) {
                 Some(_) => codes[i] = dialogue::SPEECH_REFUSED,
                 None => open.push(i),
@@ -564,14 +564,14 @@ impl Mind {
         self.taught_up.contains(&Self::taught_key(address))
     }
 
-    /// Already uttered this operator: same vertex on the working atlas
+    /// Already asserted this operator: same vertex on the working atlas
     /// or already sent up, not the same digest. A dialect hit is a use.
     pub(crate) fn already_taught(&mut self, word: &Element) -> bool {
         if self.already_taught_address(word.address().as_bytes()) {
             return true;
         }
         // THE STRATUM, THEN THE EXACT TEST, never a walk of every word this
-        // mind uttered (law 3). `taught_at` names the words that COULD be
+        // mind asserted (law 3). `taught_at` names the words that COULD be
         // one vertex with this one; the exact test decides over that fibre
         // and nothing else, on each word as the language holds it. A sentence
         // is one vertex by its address, answered above.
@@ -619,7 +619,7 @@ impl Mind {
     /// empty where no family evidences it.
     pub(crate) fn speak_word_on(&mut self, word: &Element, train: &crate::transducer::family::Family, family: &[u8]) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
-        // wire never carries ∂g. A word with a chain is held, not uttered.
+        // wire never carries ∂g. A word with a chain is held, not asserted.
         if let [_, ..] = word.sub() {
             self.hold_chain(word.sub().to_vec());
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
@@ -641,7 +641,8 @@ impl Mind {
         Ok(Utterance::Spoken)
     }
 
-    /// Addresses this mind has uttered (receipt: address at this K).
+    /// Addresses this mind has asserted (receipt: address at this K). The
+    /// receipt's name stays until it retires with row L19.
     #[cfg(test)]
     pub(crate) fn uttered_n(&self) -> usize {
         self.taught_up.len()

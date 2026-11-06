@@ -16,7 +16,7 @@ pub struct Spoken {
     pub standing: u8,
     pub contraction: Option<Contraction>,
     /// MU-CLIENT §5.5 — AGREED LANGUAGE: the signed HOLD frame of another
-    /// mind that re-derived this sentence and holds one loop with the
+    /// mind that re-derived this sentence and holds one relation with the
     /// speaker on every word (78.161, 78.163). The court verifies the
     /// signature and seals the other mind's attestation (`Attest`).
     pub agreement: Option<Vec<u8>>,
@@ -28,7 +28,7 @@ pub struct Spoken {
     // voice reached each word vertex through are ON the tape at v7, in
     // the vertex's own derivation, because they are what the vertex is.
     // The contraction certificate stays beside the tape: it is a claim
-    // about which utterance this is (50.9).
+    // about which expression this is (50.9).
 }
 
 /// `None` where the task's address cannot be framed (LD0): not spoken.

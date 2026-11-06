@@ -159,7 +159,7 @@ pub(crate) fn stand_on(g: u8) {
 /// a task's identity reads no frame fixing (MU-SENSING §3.4, scope
 /// separation).
 #[cfg(test)]
-pub fn frame_fixed_on_ground(task: Task) -> Task {
+pub fn enclosure_fixed_on_ground(task: Task) -> Task {
     // The perspective open on this thread stands, as `on_ground_of` keeps
     // it; with none open, the train family's deduced reading.
     let open = GROUND.with(|c| c.borrow().clone());

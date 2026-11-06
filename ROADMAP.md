@@ -1753,7 +1753,7 @@ Each phase is one commit:
        - A task's identity is its posted samples' content (rank, extents,
          symbols, places). Neither the ground nor frame fixing enters it.
        - The decoder posts tasks as read, and `parse_task` is removed.
-       - Frame fixing (`raster::frame_fixed_on_ground`, only under `One`)
+       - Frame fixing (`raster::enclosure_fixed_on_ground`, only under `One`)
          is a perspective no reader applies at intake. It becomes one in
          S6.
        - All 1 000 training addresses change, inside v0.3.0's one break.
@@ -1838,8 +1838,20 @@ Each phase is one commit:
      `axis_taken_apart_only_where_family_invariant`.
    - **Built** with T2 ([PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)):
      the transduction at rank `n` (`src/transducer/family/transduce/`) and
-     the nested map (`nest.rs`). Open: the reading of which factorings the
-     family is invariant under, which keeps or dissolves each candidate.
+     the nested map (`nest.rs`). The reading of which factorings the
+     family is invariant under is built (branch `sensing-nest`; ruled
+     2026-11-06 on #32): per pair, separators as the fine phase of a period
+     `b + 1`, repeating blocks as relations, motions per level, collapse by
+     a reading that holds for one candidate alone, several alike
+     superposed; the nesting a coordinate of the percept
+     (`transduce::nesting`, `TaskPercept.nesting`). Claims
+     `axis_taken_apart_only_where_family_invariant`,
+     `factoring_read_per_pair_and_kept_only_where_every_pair_admits`,
+     `separator_is_the_fine_phase_of_period_b_plus_one`,
+     `repeating_blocks_kept_as_relation_by_fine_motion`,
+     `motion_per_level_is_coarse_times_fine`,
+     `several_factorings_holding_alike_stay_superposed`. Nesting as a
+     fibration of levels in the field's lift stays with S4a stage 4.
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.

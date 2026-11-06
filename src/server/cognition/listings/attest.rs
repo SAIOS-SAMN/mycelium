@@ -44,7 +44,7 @@ impl Court {
         (surface, priced)
     }
 
-    /// The voices that uttered this object — the settle receipt's parties.
+    /// The voices that asserted this object — the settle receipt's parties.
     /// A use, credited (24.1); never a vantage.
     #[cfg(test)]
     pub fn voices_of(&self, germ: &[u8]) -> Vec<[u8; 32]> {
@@ -52,7 +52,7 @@ impl Court {
     }
 
     /// THIS COURT re-derived `object` and reached its address, and the voice
-    /// that uttered it is a party to the settlement. The second vantage is a
+    /// that asserted it is a party to the settlement. The second vantage is a
     /// witness hypha's re-derivation of the same address (47.3), recorded by
     /// `converge_witness` when an Offer is glued.
     pub(crate) fn converge_here(&mut self, object: &Element, voice: [u8; 32]) {

@@ -9,10 +9,10 @@ use mycelium::anastome::dialogue::challenge::{
     decode_challenge_request, encode_challenge_reply, encode_finality_reading, encode_line_head_reply, encode_obstructions_reply,
     ChallengeRequest, FinalityReading, LineHead,
 };
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let Some(request) = decode_challenge_request(&frame.body) else { return };
     // The reads stay on the court (78.153b): finality, obstructions, tolls
     // and line heads are not on the shelf yet, and the domain acts are 78.154's.
@@ -42,5 +42,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, WireFrame { lane: frame.lane, body });
+    answer(stream, Delimited { lane: frame.lane, body });
 }

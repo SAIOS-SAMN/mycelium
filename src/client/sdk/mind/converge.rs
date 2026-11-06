@@ -5,7 +5,7 @@
 //
 //! THE SCENES THIS MIND HAS SPOKEN WORDS ON. Every word it speaks under a
 //! scene is held by the scene's citation with the scene's family, while its
-//! utterance receipt stands (`forget_utterance` lets it go). They are what a
+//! expression receipt stands (`forget_utterance` lets it go). They are what a
 //! heard word is read against.
 //!
 //! THE EVIDENCE A HEARD WORD CARRIES (`chatter::Evidence`): the scene it was

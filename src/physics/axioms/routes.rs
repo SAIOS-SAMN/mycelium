@@ -26,7 +26,7 @@ pub const R3_LOCALITY: &str = "routes are compared inside one cell: the members 
 pub const R4_CURVATURE_IS_HOLONOMY: &str =
     "F(σ) = T(∂σ), and σ is flat iff F(σ) is the identity ray, ±1 one ray";
 
-/// R5 · BASING. Every loop is carried to the basepoint by the tree
+/// R5 · BASING. Every orbit is carried to the basepoint by the tree
 /// transport, `ρ(ℓ) = θ T(ℓ) θ⁻¹` (Axiom A, 54.7).
 pub const R5_BASING: &str = "every loop is based by the tree transport: ρ(ℓ) = θ T(ℓ) θ⁻¹";
 

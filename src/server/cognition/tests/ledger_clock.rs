@@ -271,11 +271,11 @@ assert_eq!((c.persisted, c.folded), (None, None), "never persisted, never folded
 assert_eq!(c.unstamped, [0; 5], "every word the percept held, an act admitted");
 // R1: the List act names the listing, which the listing book holds and
 // measures — its frame is read there, never counted as missing.
-assert_eq!(c.unframed, 0, "every act the percept sealed named a word a row holds");
+assert_eq!(c.unmeasured, 0, "every act the percept sealed named a word a row holds");
 
 // An act naming a word no row holds reads its frame as nothing.
 k.append_step(crate::chronometry::ActKind::Attest, [0xEE; 40], [1; 32]);
-assert_eq!(k.clock(None).unframed, 1, "sealed without a frame, counted at seal");
+assert_eq!(k.clock(None).unmeasured, 1, "sealed without a frame, counted at seal");
 
 // A word placed on the basis with no act is held without a stamp.
 k.basis_insert(from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 2)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 9)])).unwrap()), [7; 32]);

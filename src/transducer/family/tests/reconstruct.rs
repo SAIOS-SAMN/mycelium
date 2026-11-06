@@ -1,6 +1,6 @@
 // 78.82 — RECONSTRUCTION BY HOLONOMY (`family/reconstruct.rs`, HR1–HR4): a
 // site read by its coordinates on every axis, its transport in the pair's
-// output, the loops across pairs closed on the axis that carries the rule,
+// output, the relations across pairs closed on the axis that carries the rule,
 // and each pair rebuilt from the others by reconstruction.
 
 use super::fixtures::digits;
@@ -23,7 +23,7 @@ fn field_reads_centrality_against_body_sphere() {
 /// HR3, HR4 — THE AXIS THAT CARRIES THE RULE. Each pair holds a stroke
 /// leaning one way and a stroke leaning the other, both of 5; the first turns
 /// 2 and the second 8. On the hue axis one key (5) is sent two ways, so its
-/// loops do not close; by mass, density, centrality and body the two strokes
+/// relations do not close; by mass, density, centrality and body the two strokes
 /// are alike and do not close either. The local inertia form's cross term
 /// has opposite signs on the two strokes: LOCAL DIRECTION closes, and each
 /// pair left out is derived from the other two by it.
@@ -49,7 +49,7 @@ fn reconstruct_derives_each_pair_on_closing_axis() {
     let h = holonomy(&pairs);
     assert!(!h[0].closes(), "the hue axis sends 5 two ways");
     assert!(!h[1].closes() && !h[3].closes() && !h[7].closes(), "mass, density and centrality see the strokes alike");
-    assert!(h[2].closes(), "local direction closes every loop");
+    assert!(h[2].closes(), "local direction closes every relation");
     let rec = reconstruct(&family);
     assert_eq!((rec.framed, rec.reproduced), (3, 3));
     assert_eq!(rec.by_axis[2], 3, "every pair carried by local direction, the most compact axis that closes");

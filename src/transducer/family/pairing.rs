@@ -462,7 +462,7 @@ pub(crate) fn contact_edge(
     }
     let (Some((a, a_after)), Some((b, b_after))) = (a, b) else {
         let held = |m: Option<(&blade::Blade, &blade::Blade)>, budget: &mut crate::physics::Budget| match m {
-            None => HeldPose::OneFrame,
+            None => HeldPose::OneSample,
             Some((before, after)) => match blade::relative_pose(before, after, budget) {
                 Ok(blade::Pose::Turn(r)) => HeldPose::Read(vec![r]),
                 Ok(blade::Pose::Open180(candidates)) => HeldPose::Read(candidates),
