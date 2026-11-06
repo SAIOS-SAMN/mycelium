@@ -9,6 +9,7 @@ use crate::chronometry::{ActKind, Cite, KStepReceipt, ReceiptChain};
 use crate::court::admission::{Admitted, SignedPrefix};
 use crate::court::identity::HyphaKey;
 use crate::server::cognition::Court;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use ed25519_dalek::SigningKey;
 
 /// The origin every fixture frame is signed at.
@@ -144,7 +145,7 @@ fn admit_backfill_refuses_founding_not_on_signed_chain() {
     assert!(n == page.len() && missing.is_none(), "the page links and is held");
     assert_eq!(b.domains.get(&d), None, "no signature reaches it: the domain stays unfounded");
     assert_eq!(b.origin_of(&d), None, "and holds no origin");
-    assert_eq!(b.hear_uplink(&trade().sign(&tier_key())), Uplinked::Unbound, "its tier's fold is unbound");
+    assert_eq!(b.hear_uplink(&trade().signed(&tier_key())), Uplinked::Unbound, "its tier's fold is unbound");
 
     let mut forged = ReceiptChain::with_signer(key.verifying_bytes());
     let thief = vk(&SigningKey::from_bytes(&[66; 32]));
@@ -176,10 +177,10 @@ fn backfilled_domain_accepts_reserve_fold_on_second_hypha() {
     let (mut a, key) = hypha("b0-fold-a");
     found(&mut a);
     let (mut b, _) = hypha("b0-fold-b");
-    assert_eq!(b.hear_uplink(&trade().sign(&tier_key())), Uplinked::Unbound, "unknown on b before the back-fill");
+    assert_eq!(b.hear_uplink(&trade().signed(&tier_key())), Uplinked::Unbound, "unknown on b before the back-fill");
     let (mut b, _) = hear(b, &a, &key);
-    assert!(matches!(a.hear_uplink(&trade().sign(&tier_key())), Uplinked::Admitted { .. }), "admitted on a");
-    assert!(matches!(b.hear_uplink(&trade().sign(&tier_key())), Uplinked::Admitted { .. }), "and on b");
+    assert!(matches!(a.hear_uplink(&trade().signed(&tier_key())), Uplinked::Admitted { .. }), "admitted on a");
+    assert!(matches!(b.hear_uplink(&trade().signed(&tier_key())), Uplinked::Admitted { .. }), "and on b");
 }
 
 /// B0 — ONCE BY CONTENT: the founding line heard and back-filled twice

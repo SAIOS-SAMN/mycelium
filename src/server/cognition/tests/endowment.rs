@@ -45,7 +45,7 @@ fn manifest(nonce: u8) -> Manifest {
 }
 
 fn signed(m: Manifest, by: u8) -> SignedManifest {
-    m.sign(&key(by)).expect("the manifest writes")
+    m.sign(crate::anastome::dialogue::crossing_record::still(), &key(by)).expect("the manifest writes")
 }
 
 /// THE MANIFEST AND ITS READING TRAVEL WHOLE: a manifest of astronomical

@@ -11,6 +11,7 @@ use crate::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse
 use crate::anastome::dialogue::domain::{decode_domain_request, DomainRequest};
 use crate::anastome::dialogue::uplink::{decode_uplink_reply, encode_uplink_reply, TaxRefusal, Uplinked};
 use crate::anastome::dialogue::wallet::{decode_stake, decode_stake_reply, decode_wallet, encode_stake, encode_stake_reply, StakeAct, StakeRefusal};
+use crate::anastome::dialogue::crossing_record::still;
 use crate::chronometry::tuniversal::{Origin, TPoint};
 
 fn key(b: u8) -> ed25519_dalek::SigningKey {
@@ -32,21 +33,26 @@ fn verifies(signer: &ed25519_dalek::SigningKey, bytes: &[u8], sig: &[u8; 64]) ->
 fn ledger_entry_round_trips_and_verifies() {
     for applied in [Vec::new(), vec![([3; 32], 41u64), ([4; 32], 42)]] {
         let e = LedgerEntry { domain: [6; 32], u: 40, commitment: [1; 32], events: [2; 32], point: at(7), parent: [5; 32], applied, nonce: [8; 32] };
-        let signed = e.clone().sign(&key(30));
-        let mut frame = encode_ledger(&signed);
+        let signed = e.clone().sign(still(), &key(30)).expect("signs");
+        let mut frame = encode_ledger(&signed).expect("encodes");
         let Some(DomainRequest::Ledger(back)) = decode_domain_request(&frame) else { panic!("a ledger entry") };
         assert_eq!(back.entry, e);
-        assert!(verifies(&key(30), &back.entry.signed_bytes(), &back.sig));
+        assert_eq!(back.crossing, still(), "the crossing it carries");
+        assert!(verifies(&key(30), &back.signed_bytes().expect("written"), &back.sig));
+        assert!(!verifies(&key(30), &back.entry.signed_bytes(), &back.sig), "the signature holds the crossing too");
         assert_eq!(back.entry.hash(), e.hash());
         frame.push(0);
         assert_eq!(decode_domain_request(&frame), None, "a byte left over");
     }
     let bare = LedgerEntry { domain: [6; 32], u: 1, commitment: [0; 32], events: [0; 32], point: at(1), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
-    let mut frame = encode_ledger(&bare.clone().sign(&key(30)));
+    let mut frame = encode_ledger(&bare.clone().sign(still(), &key(30)).expect("signs")).expect("encodes");
     // The point: genesis, epoch, h, four whole lanes `n/1` (a sign byte, then
-    // one limb by count for each of n and 1: 19 bytes a lane), K.
+    // one limb by count for each of n and 1: 19 bytes a lane), K; then the
+    // crossing as it writes itself.
     let point = 32 + 4 + 8 + 4 * 19 + 8;
-    assert_eq!(frame.len(), 1 + 32 + 2 + 1 + 8 + 32 + 32 + point + 32 + 32 + 64, "the ruled bytes exactly");
+    let mut crossing = Vec::new();
+    still().put(&mut crossing).expect("written");
+    assert_eq!(frame.len(), 1 + 32 + 2 + 1 + 8 + 32 + 32 + point + 32 + 32 + crossing.len() + 64, "the ruled bytes exactly");
     frame.push(0);
     assert_eq!(decode_domain_request(&frame), None, "an empty applied list is never written");
     assert_eq!(decode_domain_request(&encode_ledger_read([6; 32], 9)), Some(DomainRequest::ReadLedger { domain: [6; 32], after: 9 }));
@@ -82,10 +88,10 @@ fn map_act_round_trips_with_reading() {
     ];
     for record in records.clone() {
         let act = MapAct { domain: [6; 32], point: at(4), record, nonce: [1; 32] };
-        let signed = act.clone().sign(&key(31));
-        let Some(DomainRequest::Map(back)) = decode_domain_request(&encode_map(&signed)) else { panic!("a map act") };
+        let signed = act.clone().sign(still(), &key(31)).expect("signs");
+        let Some(DomainRequest::Map(back)) = decode_domain_request(&encode_map(&signed).expect("encodes")) else { panic!("a map act") };
         assert_eq!(back.act, act);
-        assert!(verifies(&key(31), &back.act.signed_bytes(), &back.sig));
+        assert!(verifies(&key(31), &back.signed_bytes().expect("written"), &back.sig));
     }
     // The local throat's frames decode coefficient for coefficient, not
     // only projectively.

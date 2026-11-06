@@ -11,6 +11,13 @@ use mycelium::physics::actions::{Action, Kind, ACTIONS};
 use mycelium_sdk::house;
 use mycelium_sdk::ACT_TABLE;
 
+/// X1 (#160) — the crossing a universe act carries: one that moves no body,
+/// at the default point, over one phase of period 1.
+fn crossing() -> mycelium_sdk::forms::Crossing {
+    use mycelium_sdk::forms::{Crossing, Place};
+    Crossing::still(Place { at: mycelium::chronometry::tuniversal::TPoint::default(), parents: Vec::new() }, vec![1])
+}
+
 fn key(b: u8) -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::from_bytes(&[b; 32])
 }
@@ -80,7 +87,7 @@ fn sdk_speaks_every_act_the_server_judges() {
         (Action::Laws, laws::encode_register_request()),
         (Action::Why, readings::encode_why(mycelium::anastome::dialogue::why::WhyAsk::Own(upto))),
         (Action::Wallet, wallet::encode_wallet(&V)),
-        (Action::Uplink, house::encode_uplink(&fold.sign(&key(9)))),
+        (Action::Uplink, house::encode_uplink(&fold.sign_crossed(crossing(), &key(9)).expect("signs")).expect("a fold frames")),
         (Action::Domain, house::encode_map_read([1; 32])),
         (Action::Challenge, house::encode_line_head_request([1; 32])),
         (Action::Seat, house::encode_read_listing(&[1; 32], None)),
@@ -132,7 +139,7 @@ fn equivocation_proof_round_trips() {
 fn handoff_acts_round_trip() {
     use mycelium::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff_reply, encode_orbits_reply, encode_read_reply, HandoffRequest};
     let signed = house::Handoff::Accept { id: [6; 32] }.sign(&key(8));
-    assert_eq!(decode_handoff_request(&house::encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+    assert_eq!(decode_handoff_request(&house::encode_handoff(&signed).expect("encodes")), Some(HandoffRequest::Signed(signed)));
     assert_eq!(decode_handoff_request(&house::encode_handoff_read([6; 32])), Some(HandoffRequest::Read([6; 32])));
     assert_eq!(decode_handoff_request(&house::encode_orbits_read()), Some(HandoffRequest::Orbits));
     assert_eq!(decode_handoff_request(&house::encode_tube_read([7; 32])), Some(HandoffRequest::TubeRead([7; 32])));
@@ -182,8 +189,8 @@ fn traverse_ledger_and_map_round_trip() {
     let refused = house::Crossed::Refused(house::CrossRefusal::UnknownDomain);
     assert_eq!(house::decode_traverse_reply(&encode_traverse_reply(&refused)), Some(refused));
     let entry = house::LedgerEntry { domain: [6; 32], u: 1, commitment: [1; 32], events: [2; 32], point: TPoint::default(), parent: [0; 32], applied: Vec::new(), nonce: [8; 32] };
-    let signed = entry.sign(&key(30));
-    assert_eq!(decode_domain_request(&house::encode_ledger(&signed)), Some(DomainRequest::Ledger(Box::new(signed))));
+    let signed = entry.sign(crossing(), &key(30)).expect("signs");
+    assert_eq!(decode_domain_request(&house::encode_ledger(&signed).expect("encodes")), Some(DomainRequest::Ledger(Box::new(signed))));
     assert_eq!(decode_domain_request(&house::encode_ledger_read([6; 32], 9)), Some(DomainRequest::ReadLedger { domain: [6; 32], after: 9 }));
     assert_eq!(decode_domain_request(&house::encode_map_read([6; 32])), Some(DomainRequest::ReadMap([6; 32])));
     for r in [house::Ledgered::Sealed { entry: [7; 32], h: 12, point: TPoint::default() }, house::Ledgered::Refused(house::LedgerRefusal::Parent)] {

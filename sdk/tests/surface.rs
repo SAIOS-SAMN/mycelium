@@ -536,6 +536,18 @@ use mycelium_sdk::house::BODY_BUDGET as _;
 use mycelium_sdk::house::POINTED as _;
 
 // forms
+use mycelium_sdk::forms::crossed as _;
+use mycelium_sdk::forms::put_address_only as _;
+use mycelium_sdk::forms::verify_carried as _;
+use mycelium_sdk::forms::Body as _;
+use mycelium_sdk::forms::Clauses as _;
+use mycelium_sdk::forms::Content as _;
+use mycelium_sdk::forms::Crossing as _;
+use mycelium_sdk::forms::CrossingRefusal as _;
+use mycelium_sdk::forms::Motion as _;
+use mycelium_sdk::forms::Place as _;
+use mycelium_sdk::forms::Ring as _;
+use mycelium_sdk::forms::TurnBody as _;
 use mycelium_sdk::forms::shares::share_compounds as _;
 use mycelium_sdk::forms::shares::share_compounds::Remaining as _;
 use mycelium_sdk::forms::reference as _;

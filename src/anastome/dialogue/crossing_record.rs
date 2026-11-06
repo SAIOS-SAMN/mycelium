@@ -30,7 +30,21 @@ use crate::physics::laws::clauses::ConcordanceClauseId;
 use crate::transducer::address::{put_key_count, take_key_count};
 use crate::transducer::alphabet::rotor::{put_q, take_q};
 use crate::transducer::cga::Mv;
-use crate::transducer::family::transduce::Turn;
+use crate::physics::laws::{verify_turns, TurnBreach, TurnMotion, TurnTransition};
+use crate::transducer::family::transduce::{Enclosure, Turn};
+
+/// The domain of the bytes a universe act is signed over with its crossing,
+/// so the record is never read as a part of the act before it.
+const CROSSED: &[u8] = b"mycelium crossing x1";
+
+/// X1 (#160) — THE BYTES A UNIVERSE ACT IS SIGNED OVER: the act's own
+/// signed bytes, then its crossing record under its own domain, written out
+/// whole, never a digest of it. `None` where a turn cannot be written.
+pub fn crossed(mut act: Vec<u8>, c: &Crossing) -> Option<Vec<u8>> {
+    act.extend_from_slice(CROSSED);
+    c.put(&mut act)?;
+    Some(act)
+}
 
 /// A BODY HELD BY ITS BOUNDARY: per phase of the frame the turns at which
 /// the body's boundary breaks, in order, and the share of the frame the body
@@ -42,7 +56,7 @@ pub struct TurnBody {
 }
 
 /// THE MOTION from the state before to the state after.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Motion {
     /// A versor of `Cl(n+1, 1)`(ℚ).
     Versor(Mv),
@@ -50,11 +64,22 @@ pub enum Motion {
     Turns(Vec<Turn>),
 }
 
-/// THE CONTENT: the bodies before and after and the motion between them.
-#[derive(Clone, Debug, PartialEq)]
+/// A BODY AS THE RECORD CARRIES IT: its place, the origin it stands at on
+/// each phase of the frame (one turn per phase), beside its boundary
+/// (ruled 2026-11-06, #160: the record is verifiable from itself alone).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Body {
+    pub origin: Vec<Turn>,
+    pub boundary: TurnBody,
+}
+
+/// THE CONTENT: the frame's periods per phase, stated once for the record,
+/// the bodies before and after, and the motion between them.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Content {
-    pub before: Vec<TurnBody>,
-    pub after: Vec<TurnBody>,
+    pub frame: Vec<usize>,
+    pub before: Vec<Body>,
+    pub after: Vec<Body>,
     pub motion: Motion,
 }
 
@@ -64,6 +89,19 @@ pub struct Place {
     pub at: TPoint,
     pub parents: Vec<Parent>,
 }
+
+/// Two places are one where they stand at one point and cite one past cone
+/// in one order, each citation compared in its link sense
+/// (`Predecessor::cites`, MU-HOSTING §5a.10), never by bytes.
+impl PartialEq for Place {
+    fn eq(&self, other: &Place) -> bool {
+        self.at == other.at
+            && self.parents.len() == other.parents.len()
+            && self.parents.iter().zip(&other.parents).all(|(a, b)| crate::court::admission::Predecessor::cites(a, b))
+    }
+}
+
+impl Eq for Place {}
 
 /// THE CLAUSES the act is read under, the final points it cites, and the
 /// signing events it stands on, by their stamps.
@@ -81,7 +119,7 @@ pub struct Clauses {
 /// one cycle are one ring; the orientation is kept as stated, so a ring and
 /// its reverse are two names, whose holonomies are inverse (ruled
 /// 2026-11-06, #160).
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ring {
     vertices: Vec<TPoint>,
     pub holonomy: Mv,
@@ -141,15 +179,15 @@ impl Ring {
     }
 
     fn take(b: &[u8], p: &mut usize) -> Result<Ring, CrossingRefusal> {
-        let m = CrossingRefusal::Malformed;
-        let vertices = (0..take_key_count(b, p).ok_or(m)?).map(|_| TPoint::take(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
-        let holonomy = Mv::from_bytes(b, p).ok_or(m)?;
+        const M: CrossingRefusal = CrossingRefusal::Malformed;
+        let vertices = (0..take_key_count(b, p).ok_or(M)?).map(|_| TPoint::take(b, p)).collect::<Option<Vec<_>>>().ok_or(M)?;
+        let holonomy = Mv::from_bytes(b, p).ok_or(M)?;
         Ring::canonical(vertices, holonomy)
     }
 }
 
 /// THE CROSSING RECORD.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Crossing {
     pub place: Place,
     pub content: Content,
@@ -157,9 +195,25 @@ pub struct Crossing {
     pub clauses: Clauses,
 }
 
-/// WHY A CROSSING RECORD DOES NOT READ.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// WHY A CROSSING RECORD DOES NOT READ, or does not verify from itself.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CrossingRefusal {
+    /// A universe act that carries no crossing record at all (X1: every
+    /// universe act carries one).
+    Absent,
+    /// The content states no frame: no phase, or a phase of period 0
+    /// (ruled 2026-11-06, #160).
+    NoFrame,
+    /// Body `body` (counted through the bodies before, then after) states
+    /// no origin (ruled 2026-11-06, #160).
+    NoPlace { body: usize },
+    /// A motion stated as turns over `before` bodies before and `after`
+    /// after: the turns carry each body before onto the one after it, and
+    /// two counts pair no bodies.
+    Unpaired { before: usize, after: usize },
+    /// The motion stated as turns breaks the conformal law
+    /// (`verify_turns`), each breach named with what it breaks it by.
+    Turns(Vec<TurnBreach>),
     /// The record carries no content where the object belongs: an address
     /// only (MU-HOSTING §5a.10, ruled #160).
     AddressOnly,
@@ -206,17 +260,47 @@ impl TurnBody {
     }
 }
 
-fn put_bodies(out: &mut Vec<u8>, bodies: &[TurnBody]) -> Option<()> {
+impl Body {
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        put_turns(out, &self.origin)?;
+        self.boundary.put(out)
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<Body> {
+        Some(Body { origin: take_turns(b, p)?, boundary: TurnBody::take(b, p)? })
+    }
+}
+
+fn put_bodies(out: &mut Vec<u8>, bodies: &[Body]) -> Option<()> {
     put_key_count(out, bodies.len());
     bodies.iter().try_for_each(|x| x.put(out))
 }
 
-fn take_bodies(b: &[u8], p: &mut usize) -> Option<Vec<TurnBody>> {
-    (0..take_key_count(b, p)?).map(|_| TurnBody::take(b, p)).collect()
+fn take_bodies(b: &[u8], p: &mut usize) -> Option<Vec<Body>> {
+    (0..take_key_count(b, p)?).map(|_| Body::take(b, p)).collect()
+}
+
+fn put_frame(out: &mut Vec<u8>, frame: &[usize]) -> Option<()> {
+    put_key_count(out, frame.len());
+    frame.iter().try_for_each(|h| {
+        out.extend_from_slice(&u64::try_from(*h).ok()?.to_le_bytes());
+        Some(())
+    })
+}
+
+fn take_frame(b: &[u8], p: &mut usize) -> Option<Vec<usize>> {
+    (0..take_key_count(b, p)?)
+        .map(|_| {
+            let h = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+            usize::try_from(h).ok()
+        })
+        .collect()
 }
 
 impl Content {
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        put_frame(out, &self.frame)?;
         put_bodies(out, &self.before)?;
         put_bodies(out, &self.after)?;
         match &self.motion {
@@ -233,6 +317,7 @@ impl Content {
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Content> {
+        let frame = take_frame(b, p)?;
         let (before, after) = (take_bodies(b, p)?, take_bodies(b, p)?);
         let tag = *b.get(*p)?;
         *p += 1;
@@ -241,7 +326,7 @@ impl Content {
             2 => Motion::Turns(take_turns(b, p)?),
             _ => return None,
         };
-        Some(Content { before, after, motion })
+        Some(Content { frame, before, after, motion })
     }
 }
 
@@ -270,21 +355,59 @@ impl Crossing {
     /// A record whose content tag is 0 carries no content and is refused
     /// `AddressOnly`; anything that does not read is `Malformed`.
     pub fn take(b: &[u8], p: &mut usize) -> Result<Crossing, CrossingRefusal> {
-        let m = CrossingRefusal::Malformed;
-        let at = TPoint::take(b, p).ok_or(m)?;
-        let parents = (0..take_key_count(b, p).ok_or(m)?).map(|_| Parent::take(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
-        let tag = *b.get(*p).ok_or(m)?;
+        const M: CrossingRefusal = CrossingRefusal::Malformed;
+        let at = TPoint::take(b, p).ok_or(M)?;
+        let parents = (0..take_key_count(b, p).ok_or(M)?).map(|_| Parent::take(b, p)).collect::<Option<Vec<_>>>().ok_or(M)?;
+        let tag = *b.get(*p).ok_or(M)?;
         *p += 1;
         let content = match tag {
             0 => return Err(CrossingRefusal::AddressOnly),
-            1 => Content::take(b, p).ok_or(m)?,
-            _ => return Err(m),
+            1 => Content::take(b, p).ok_or(M)?,
+            _ => return Err(M),
         };
         let holonomy = take_rings(b, p)?;
-        let read = (0..take_key_count(b, p).ok_or(m)?).map(|_| take_clause_id(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
-        let cited = (0..take_key_count(b, p).ok_or(m)?).map(|_| TPoint::take(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
-        let signings = (0..take_key_count(b, p).ok_or(m)?).map(|_| Stamp::take_canonical(b, p)).collect::<Option<Vec<_>>>().ok_or(m)?;
+        let read = (0..take_key_count(b, p).ok_or(M)?).map(|_| take_clause_id(b, p)).collect::<Option<Vec<_>>>().ok_or(M)?;
+        let cited = (0..take_key_count(b, p).ok_or(M)?).map(|_| TPoint::take(b, p)).collect::<Option<Vec<_>>>().ok_or(M)?;
+        let signings = (0..take_key_count(b, p).ok_or(M)?).map(|_| Stamp::take_canonical(b, p)).collect::<Option<Vec<_>>>().ok_or(M)?;
         Ok(Crossing { place: Place { at, parents }, content, holonomy, clauses: Clauses { read, cited, signings } })
+    }
+
+    /// A CROSSING THAT MOVES NO BODY: at `place`, over a frame of the
+    /// periods `frame`, no body before or after, the motion the identity
+    /// versor, no ring closed and no clause read. What an act that carries
+    /// no body across states.
+    pub fn still(place: Place, frame: Vec<usize>) -> Crossing {
+        let one = Mv::scalar(Q::from_integer(1.into()));
+        Crossing {
+            place,
+            content: Content { frame, before: Vec::new(), after: Vec::new(), motion: Motion::Versor(one) },
+            holonomy: Vec::new(),
+            clauses: Clauses { read: Vec::new(), cited: Vec::new(), signings: Vec::new() },
+        }
+    }
+
+    /// THE RECORD VERIFIED FROM ITSELF ALONE, as admission reads it (ruled
+    /// 2026-11-06, #160): the content states its frame (`NoFrame`) and every
+    /// body its origin (`NoPlace`); and a motion stated as turns is read by
+    /// the conformal law ([`verify_turns`]) over the frame, each body's
+    /// origin before carried onto its origin after, every breach named
+    /// (`Turns`). A motion that is a versor is reconstructed with X2.
+    pub fn verify(&self) -> Result<(), CrossingRefusal> {
+        let c = &self.content;
+        let frame = Enclosure::new(c.frame.clone()).map_err(|_| CrossingRefusal::NoFrame)?;
+        if let Some(body) = c.before.iter().chain(&c.after).position(|x| x.origin.is_empty()) {
+            return Err(CrossingRefusal::NoPlace { body });
+        }
+        let Motion::Turns(turns) = &c.motion else { return Ok(()) };
+        if c.before.len() != c.after.len() {
+            return Err(CrossingRefusal::Unpaired { before: c.before.len(), after: c.after.len() });
+        }
+        let bodies = c.before.iter().zip(&c.after).map(|(x, y)| (x.origin.clone(), y.origin.clone())).collect();
+        let verdict = verify_turns(&TurnTransition { frame, motion: TurnMotion { turns: turns.clone() }, bodies });
+        match verdict.breaches.is_empty() {
+            true => Ok(()),
+            false => Err(CrossingRefusal::Turns(verdict.breaches.into_iter().map(|(_, b)| b).collect())),
+        }
     }
 
     /// The record read whole from `b`: a byte left over is `Malformed`.
@@ -296,6 +419,80 @@ impl Crossing {
             false => Err(CrossingRefusal::Malformed),
         }
     }
+}
+
+/// The tests' crossing: [`Crossing::still`] at the zero point of a zero
+/// origin, over a frame of one phase of period 1, citing nothing.
+#[cfg(test)]
+pub(crate) fn still() -> Crossing {
+    use crate::chronometry::tuniversal::Origin;
+    let at = TPoint { origin: Origin { genesis: [0; 32], epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    Crossing::still(Place { at, parents: Vec::new() }, vec![1])
+}
+
+/// The tests' universe acts signed with [`still`] (X1): each act's own
+/// `sign` with the crossing it carries.
+#[cfg(test)]
+pub(crate) trait SignedStill {
+    type Signed;
+    fn signed(self, key: &ed25519_dalek::SigningKey) -> Self::Signed;
+}
+
+#[cfg(test)]
+impl SignedStill for super::atlas::LedgerEntry {
+    type Signed = super::atlas::SignedLedger;
+    fn signed(self, key: &ed25519_dalek::SigningKey) -> Self::Signed {
+        self.sign(still(), key).expect("the tests' crossing writes")
+    }
+}
+
+#[cfg(test)]
+impl SignedStill for super::atlas::MapAct {
+    type Signed = super::atlas::SignedMap;
+    fn signed(self, key: &ed25519_dalek::SigningKey) -> Self::Signed {
+        self.sign(still(), key).expect("the tests' crossing writes")
+    }
+}
+
+#[cfg(test)]
+impl SignedStill for super::universe::Statement {
+    type Signed = super::universe::SignedStatement;
+    fn signed(self, key: &ed25519_dalek::SigningKey) -> Self::Signed {
+        self.sign(still(), key).expect("the tests' crossing writes")
+    }
+}
+
+#[cfg(test)]
+impl SignedStill for super::endowment::Manifest {
+    type Signed = Option<super::endowment::SignedManifest>;
+    fn signed(self, key: &ed25519_dalek::SigningKey) -> Self::Signed {
+        self.sign(still(), key)
+    }
+}
+
+#[cfg(test)]
+impl SignedStill for super::uplink::TierFold {
+    type Signed = super::uplink::SignedFold;
+    fn signed(self, key: &ed25519_dalek::SigningKey) -> Self::Signed {
+        self.sign_crossed(still(), key).expect("the tests' crossing writes")
+    }
+}
+
+#[cfg(test)]
+impl SignedStill for super::handoff::Handoff {
+    type Signed = super::handoff::SignedHandoff;
+    fn signed(self, key: &ed25519_dalek::SigningKey) -> Self::Signed {
+        match self.crosses() {
+            true => self.sign_crossed(still(), key).expect("the tests' crossing writes"),
+            false => self.sign(key),
+        }
+    }
+}
+
+/// A UNIVERSE ACT'S CROSSING AT ADMISSION: refused `Absent` where the act
+/// carries none, else verified from itself ([`Crossing::verify`]).
+pub fn verify_carried(c: Option<&Crossing>) -> Result<(), CrossingRefusal> {
+    c.ok_or(CrossingRefusal::Absent)?.verify()
 }
 
 /// A RECORD WITH NO CONTENT, as a crossing that carries only an address
