@@ -1945,6 +1945,19 @@ Each phase is one commit:
      §6.2).
    - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
      `two_perspectives_of_one_sample_compared_as_a_cover`.
+   - **Built, stage 1** (branch `s6-perspective-motion`): a perspective
+     holds its pose, the signed permutation the sensor reads through,
+     beside its roles; a shift (`SensorMotion::Pose`, `Recast`) moves the
+     sensor, and a sample is read through it, never rewritten
+     (`Perspective::read`, `turn_to`). The perspectives of one sample are a
+     cover (`perspective::cover`): contacts as 0-cochains, the turn on each
+     overlap, the cocycle on triples, the residue of contacts held. The
+     frame fixing is a perspective (`raster::frame_fixing`). Claims
+     `perspective_shift_is_a_sensor_motion`,
+     `two_perspectives_of_one_sample_compared_as_a_cover`,
+     `frame_fixing_is_a_perspective_reading`. No wire or address change.
+     Open: a claim stating its perspective (stage 2); a mind asking for a
+     perspective as a demand; collapsing a ground's vortex by a relation.
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
