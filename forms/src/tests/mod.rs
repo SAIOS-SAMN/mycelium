@@ -1,5 +1,6 @@
 mod bodies;
 mod coordinate;
+mod coupling;
 mod crossing;
 mod frame;
 mod law_ids;
