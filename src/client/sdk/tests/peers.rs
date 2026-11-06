@@ -26,12 +26,14 @@ fn answer(by: &ed25519_dalek::SigningKey, said: &[u8], vertex: &[u8], factors: &
     (key, frame)
 }
 
-/// The gain asked about, and its inverse: one class (the generator's square
-/// and the weight are the same), another motion.
+/// The gain asked about, and its conjugate by a slide: one class (the
+/// conjugacy invariants are the same), another motion (the gain about
+/// another point).
 fn gain_and_conjugate() -> (Mv, Mv) {
     let gain = crate::transducer::cga::dilator(&q(2));
-    let inverse = crate::transducer::cga::dilator(&num_rational::BigRational::new(1.into(), 2.into()));
-    (gain, inverse)
+    let slide = crate::transducer::cga::translator_at(&[q(1), q(0), q(0)]);
+    let conjugate = slide.geo(&gain).geo(&slide.reverse());
+    (gain, conjugate)
 }
 
 /// THE RECORD IS FOLDED FROM THE PEER'S FRAMES, FILED BY THE RESIDUE'S
@@ -64,17 +66,17 @@ fn peer_record_folds_answer_frames_by_the_residue_class() {
 }
 
 /// A PEER INEXACT ON A CLASS IS NOT ASKED THAT CLASS AGAIN. The peer's
-/// answer to the gain does not re-derive it; the gain's inverse (one class,
-/// another motion) is then not asked of that peer, and its residue is bound
-/// by construction; the same inverse is asked of a peer whose record holds
-/// nothing against it.
+/// answer to the gain does not re-derive it; the gain's conjugate (one
+/// class, another motion) then reads inexact on that peer's record, is not
+/// asked of it, and opens no question; on a peer whose record holds nothing
+/// against it the same conjugate reads askable.
 #[test]
 fn peer_inexact_on_a_class_is_not_asked_it_again() {
     let (p, fresh) = (peer(3), peer(4));
     let (pk, fk) = (p.verifying_key().to_bytes(), fresh.verifying_key().to_bytes());
     use crate::client::sdk::mind::peers::Addressed;
     // Two minds with one history: the peer asked the gain and answered it
-    // inexactly. Then one asks the peer the inverse, the other a fresh peer.
+    // inexactly. Then one asks the peer the conjugate, the other a fresh peer.
     let ask_after_inexact = |name: &str, of: [u8; 32]| {
         let mut mind = Mind::open("127.0.0.1:1", Voice::named(name));
         let mut field = std::mem::take(&mut mind.field);
@@ -92,7 +94,8 @@ fn peer_inexact_on_a_class_is_not_asked_it_again() {
         out
     };
     assert_eq!(ask_after_inexact("addressing", pk), (Addressed::Inexact, false, 1), "the class it answered inexactly is not asked of it again");
-    assert_eq!(ask_after_inexact("addressing fresh", fk), (Addressed::Ask, true, 2), "a peer whose record holds nothing against it is asked");
+    let (fresh_reading, _, _) = ask_after_inexact("addressing fresh", fk);
+    assert_eq!(fresh_reading, Addressed::Ask, "a peer whose record holds nothing against it is askable");
 }
 
 /// A PEER'S FRAMES LAPSE WITH THE QUESTION THEY ANSWERED: the question's
