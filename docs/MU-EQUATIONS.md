@@ -253,10 +253,13 @@ The one producer of a sphere (78.171 amendment (d), track 26 S7 stage 3).
 A sphere is a holding's own enclosure: the membrane, or its image under
 the dilation by the gauge `ρ` and the slide to `c`. No squared radius is
 written; a point `p` stands on it where `⟨X(p) S⟩₀ = 0`. A gauge `ρ ≤ 0`
-names no enclosure. A body's nucleus, whose extent is a polar second
-moment with no rational root in general, is still built from `r²` by a
-crate-private producer; that defect waits on a ruling (#134; MU-SENSING
-§8).
+names no enclosure.
+
+A body's nucleus is no sphere (ruled on #134, 2026-11-06): it is the
+body's exact second moment `r²`, a reading of its mass held beside the
+membrane. Where the algebra needs it as a vector, it is the dual-sphere
+form `s = c + ½(c² − r²) e_∞ + e_o`, `s² = r²`, written from `r²` alone,
+no root taken (`src/transducer/blade/body.rs::nucleus_form`).
 
 Sources: MU-RECURSION A4, 51.2; 78.171 §1a. Code:
 `src/transducer/cga/embedding.rs::membrane`, `::membrane_at`.

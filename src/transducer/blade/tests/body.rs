@@ -26,6 +26,27 @@ fn topology_counts_components_and_holes() {
     assert_ne!(moduli(&shape_of(&l4).blade), moduli(&shape_of(&s4).blade));
 }
 
+/// THE NUCLEUS IS THE SECOND MOMENT READ, NEVER A SPHERE (ruled on #134,
+/// 2026-11-06): an L-tromino's second moment `r²` has no rational root, so
+/// no gauge holds it, yet its nucleus stands exactly as the dual-sphere form
+/// `c + ½(c² − r²)e_∞ + e_o`: spacelike with `s² = r²`, its centre read
+/// back, and `⟨s·e_∞⟩₀ = −1`, the form at unit weight. No root is taken.
+#[test]
+fn nucleus_is_the_second_moment_read_never_a_sphere() {
+    let b = lift(&compartments(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)]));
+    let r2 = b.radius2();
+    let root = |x: &num_rational::BigRational| {
+        let (n, d) = (x.numer().sqrt(), x.denom().sqrt());
+        &n * &n == *x.numer() && &d * &d == *x.denom()
+    };
+    assert!(!root(&r2), "the second moment {r2} is no rational square");
+    let s = b.nucleus().expect("a centroid");
+    assert_eq!(s.norm2(), r2, "s² = r²: spacelike, the reading kept whole");
+    assert_eq!(crate::transducer::cga::base_at(&s, 3), b.centroid(), "its centre reads back");
+    assert_eq!(s.geo(&crate::transducer::cga::e_inf()).scalar_part(), qn(-1, 1), "at unit weight");
+    assert_eq!(s, b.spatial, "the lift's own nucleus is the same form");
+}
+
 /// A 2×2 square lifts to a blade with the exact centroid (½,½,0), positive
 /// extent, and an invertible spatial sphere — the body HAS volume.
 #[test]
