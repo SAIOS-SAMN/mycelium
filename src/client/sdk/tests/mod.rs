@@ -22,6 +22,7 @@ mod height;
 mod hypha;
 mod occupancy;
 mod offer;
+mod peers;
 mod perceive;
 mod rank;
 mod remainders;
