@@ -1601,13 +1601,23 @@ Each phase lands on its own branch, one item per commit:
      and no claim in the tree. `Court::restore` returns `bool`, not a
      `Reconstructed<State>`, and
      `restore_reconstructs_and_checks_receipts` is not written.
-   - Open (the next stage): `Cite::Root`'s hash, still bare, which would
-     drop `PartialEq` from `Cite`; the stratum root itself
-     (`transducer::sheaf::StratumDigest::root`, a `Vec<u8>`) typed at its
-     source; the clause 14 guard type and claim; the report of
-     changed document sentences. The report of changed document sentences that put a typed
-     term beside an admission verb is not built: it needs a base commit
-     the gate does not hold.
+   - **Built**, third stage ([#28](https://github.com/SAIOS-SAMN/mycelium/issues/28)):
+     `Cite::Root`'s hash is a `Predecessor`, so `Cite` has no
+     `PartialEq`; two citations are compared by `Cite::restates` (two
+     roots in the link sense, any other pair by its canonical writing).
+     The stratum root is typed at its source: `StratumDigest::root` is a
+     `Locator` (`sheaf::stratum_root`), compared by `Locator::locates`,
+     and a digests reply naming a root that is not 32 bytes is refused
+     whole. Claims `cite_has_no_equality`,
+     `stratum_digest_has_no_equality` (`compile_fail`, in the drift
+     register), `digests_reply_refuses_root_of_another_width`.
+   - Open, each asked on [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28):
+     the clause 14 guard type and claim (which object a restore's
+     `Reconstructed<State>` carries); the report of changed document
+     sentences that put a typed term beside an admission verb, which
+     needs a base commit the gate does not hold. The issue's
+     mutation-audit entry is not built: the mutation audit is retired
+     (*Test assurance* item 9, ruled 2026-11-04).
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,
    clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
    values (Concordance 1.4). It rides B3's change to the fold, which
