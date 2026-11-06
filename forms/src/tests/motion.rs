@@ -11,7 +11,7 @@ fn at_root(h: u64, lanes: Lanes, k: Vec<u64>) -> Coordinate {
     body(&root(), h, lanes, k)
 }
 
-/// Fixture 7's body: bell 10, `S = 1/3`, `H = 90°` on `e_Z1Q1`, `K = 0`.
+/// Fixture 7's body: bell 10, `S = 1/3`, `H = 90°` on `e₊₂e₊₃`, `K = 0`.
 fn moving() -> Coordinate {
     at_root(10, lanes(q(1, 3), q(0, 1), q(0, 1), q(90, 1)), vec![0])
 }
@@ -47,12 +47,12 @@ fn advance_refuses_backward_bell() {
 }
 
 /// FIXTURE 7, RATES OF ANOTHER SHAPE ARE REFUSED: rates keyed on H's
-/// `e_Z2Q2` against a body on `e_Z1Q1` are refused `ShapesDiffer`, naming
+/// `e₊₃e₊₁` against a body on `e₊₂e₊₃` are refused `ShapesDiffer`, naming
 /// both shapes.
 #[test]
 fn advance_refuses_other_shape() {
     let [ks, kg, kt, kh] = keys();
-    let other = plane(('Z', 2), ('Q', 2));
+    let (_, other) = about();
     let zero = || q(0, 1);
     let rates = Rates { lanes: Lanes::base(Vector::one(ks, zero()), Vector::one(kg, zero()), Vector::one(kt, zero()), Vector::one(other.clone(), zero())).expect("the base lanes") };
     assert_eq!(moving().advance(&rates, 11), Err(MotionRefusal::ShapesDiffer(Box::new(Shapes { lane: Lane::H, held: vec![kh], asked: vec![other] }))));

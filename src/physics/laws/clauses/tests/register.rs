@@ -157,6 +157,6 @@ fn register_reaches_stated_coordinate_objects() {
     assert_eq!(
         ranges,
         [vec![q(1, 2), q(1, 2), q(1, 2), q(1, 2), q(3, 5), q(7, 10), q(4, 5)], vec![q(0, 1), q(1, 4)], vec![q(-1, 2), q(7, 4), q(7, 4)]],
-        "S over [1/2, 9/10), G over [0, 1), and H's e_Z1Q1 over [1/3, 1/2) by e_Z2Q2: b, a, d"
+        "S over [1/2, 9/10), G over [0, 1), and H's e₊₂e₊₃ over [1/3, 1/2) by e₊₃e₊₁: b, a, d"
     );
 }

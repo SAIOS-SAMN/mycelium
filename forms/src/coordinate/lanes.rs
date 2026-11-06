@@ -1,9 +1,10 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-// LAW-COORDINATE v3 (proposal 78.173 §1) — THE LANES: a lane is a vector of
-// exact signed components, each keyed by its axis (H's by its generator, the
-// plane its two axes name), and a lane set is a list of named lanes, the
-// base S, G, T and H and any lane a ruled opening admits.
+// LAW-COORDINATE v4 (proposal 78.173 §1) — THE LANES: a lane is a vector of
+// exact signed components, each keyed by its axis (H's by its generator, a
+// turning plane of two frame units that square alike), and a lane set is a
+// list of named lanes, the base S, G, T and H and any lane a ruled opening
+// admits.
 
 use crate::Q;
 use std::cmp::Ordering;
@@ -23,6 +24,11 @@ pub enum FormRefusal {
     /// An H component keyed by one axis: H's components are keyed by
     /// generators. The key read.
     NotGenerator { key: Key },
+    /// An H component keyed by a generator that holds no turning: a frame
+    /// plane's own two units, a mixed pair of opposite squares (each a
+    /// boost, which stands on S), or axes whose squares are not named
+    /// (netstratum docs/117 §10.3). The key read and the plane it names.
+    NotTurningPlane { key: Key, plane: Plane },
     /// A lane held twice in one set: the lane.
     LaneRepeated { lane: Lane },
     /// A base lane absent from a set: the lane.
@@ -32,9 +38,46 @@ pub enum FormRefusal {
     LaneNotOpened { lane: Lane },
 }
 
-/// AN AXIS, named by one ASCII capital and a positive index, written out
-/// (`Z1`, `Q1`, `Z2`, `S1`). The name is the caller's; the form reads
-/// nothing into the letter.
+/// THE SIGN OF A FRAME UNIT'S SQUARE: plane `k`'s positive unit `e₊ₖ`
+/// squares to +1 and its negative unit `e₋ₖ` to −1 (78.172 §1).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Square {
+    Positive,
+    Negative,
+}
+
+impl Square {
+    /// The sign's one writing in a key: `+` or `-`.
+    fn sign(self) -> char {
+        match self {
+            Square::Positive => '+',
+            Square::Negative => '-',
+        }
+    }
+}
+
+/// WHAT A GENERATOR'S PLANE HOLDS (netstratum docs/117 §10.3, agreed
+/// 2026-11-05): a turning stands only on two units that square alike; a
+/// plane of opposite squares holds a boost, which stands on S.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Plane {
+    /// Two frame units of one square, on two planes: a turning. Positive
+    /// is the continuum's `e₊ₖe₊ₗ`, negative the vacuum's `e₋ₖe₋ₗ`, the
+    /// inverted face.
+    Turning(Square),
+    /// One frame plane's own two units, `e₊ₖe₋ₖ`: its boost.
+    Frame,
+    /// Units of opposite squares on two planes, `e₊ₖe₋ₗ`: a boost.
+    Mixed,
+    /// An axis named by a letter: no square is named, so no turning is
+    /// read.
+    Unsigned,
+}
+
+/// AN AXIS, written out: named by one ASCII capital and a positive index
+/// (`S1`, `G1`), the name the caller's and nothing read into the letter; or
+/// a FRAME UNIT, plane `k`'s `e₊ₖ` or `e₋ₖ`, written `+k` or `-k`, whose
+/// sign names its square.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Axis {
     letter: char,
@@ -52,7 +95,25 @@ impl Axis {
         }
     }
 
-    /// The axis's letter.
+    /// PLANE `k`'S UNIT OF SQUARE `square`: `e₊ₖ` (`+k`) or `e₋ₖ` (`-k`).
+    /// Refused `AxisUnwritable`, the sign and the index, where `k` is 0.
+    pub fn unit(square: Square, k: u32) -> Result<Axis, FormRefusal> {
+        match k {
+            0 => Err(FormRefusal::AxisUnwritable { letter: square.sign(), index: k }),
+            _ => Ok(Axis { letter: square.sign(), index: k }),
+        }
+    }
+
+    /// The square a frame unit names; `None` for an axis named by a letter.
+    pub fn square(&self) -> Option<Square> {
+        match self.letter {
+            '+' => Some(Square::Positive),
+            '-' => Some(Square::Negative),
+            _ => None,
+        }
+    }
+
+    /// The axis's letter: an ASCII capital, or a frame unit's sign.
     pub fn letter(&self) -> char {
         self.letter
     }
@@ -62,7 +123,8 @@ impl Axis {
         self.index
     }
 
-    /// The writing: the letter, then the index in decimal (`Z1`).
+    /// The writing: the letter or sign, then the index in decimal (`S1`,
+    /// `+2`).
     pub fn written(&self) -> String {
         format!("{}{}", self.letter, self.index)
     }
@@ -70,9 +132,9 @@ impl Axis {
 
 /// A COMPONENT'S KEY: one axis (a component of S, G or T, or of an opened
 /// lane) or a GENERATOR, the plane named by its two axes in the orientation
-/// written (`e_Z1Q1` a frame plane, `e_Z1Z2` the turning between two
-/// planes). Written `e_` and the axes; keys order by that writing, so the
-/// key's order routes and never measures.
+/// written (`e_+2+3` the continuum's turning about axis 1, `e_+1-1` frame
+/// plane 1's boost). Written `e_` and the axes; keys order by that writing,
+/// so the key's order routes and never measures.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Key {
     axes: Vec<Axis>,
@@ -98,9 +160,23 @@ impl Key {
         &self.axes
     }
 
+    /// WHAT THE GENERATOR'S PLANE HOLDS, read from its two units' squares:
+    /// a turning where they square alike, the frame plane's boost or a
+    /// mixed boost where they do not, unsigned where an axis is named by a
+    /// letter. `None` for a key of one axis.
+    pub fn plane(&self) -> Option<Plane> {
+        let [a, b] = self.axes.as_slice() else { return None };
+        Some(match (a.square(), b.square()) {
+            (Some(x), Some(y)) if x == y => Plane::Turning(x),
+            (Some(_), Some(_)) if a.index == b.index => Plane::Frame,
+            (Some(_), Some(_)) => Plane::Mixed,
+            _ => Plane::Unsigned,
+        })
+    }
+
     /// The writing: `e_` and each axis's writing in turn (`e_S1`,
-    /// `e_Z1Q1`). Each axis opens with its letter, so the writing reads
-    /// back as one key.
+    /// `e_+2+3`). Each axis opens with its letter or sign, so the writing
+    /// reads back as one key.
     pub fn written(&self) -> String {
         let axes: String = self.axes.iter().map(Axis::written).collect();
         format!("e_{axes}")
@@ -221,14 +297,15 @@ fn component_text(q: &Q) -> String {
 /// then the opened lanes by name and version.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Lane {
-    /// Spatial: boost and dilation, the reach.
+    /// Spatial: boost and dilation, the reach; its keys may name boost
+    /// planes (a frame plane's `e₊ₖe₋ₖ`, a mixed pair `e₊ₖe₋ₗ`).
     S,
     /// Gauge: change of kind.
     G,
     /// Temporal: null flux, the beat and the passages.
     T,
     /// Holonomic: the turnings between planes, in degrees, each component
-    /// keyed by its generator.
+    /// keyed by its generator, a turning plane (`e₊ₖe₊ₗ` or `e₋ₖe₋ₗ`).
     H,
     /// A lane beyond the base, admitted only by a ruled opening
     /// ([`Openings`]): its name and the law version that opened it.
@@ -293,8 +370,9 @@ pub struct Lanes {
 impl Lanes {
     /// THE SET OF `lanes`, put in canonical order. Refused, naming what was
     /// read: `LaneRepeated`, `LaneMissing` for an absent base lane,
-    /// `LaneNotOpened` for a lane `openings` does not admit, and
-    /// `NotGenerator` for an H component keyed by one axis.
+    /// `LaneNotOpened` for a lane `openings` does not admit, `NotGenerator`
+    /// for an H component keyed by one axis, and `NotTurningPlane` for an H
+    /// component keyed by a plane that holds no turning, naming the plane.
     pub fn of(mut lanes: Vec<(Lane, Vector)>, openings: &Openings) -> Result<Lanes, FormRefusal> {
         lanes.sort();
         let repeated = lanes.windows(2).find_map(|w| match w {
@@ -309,8 +387,8 @@ impl Lanes {
         }
         for (lane, vector) in &lanes {
             openings.admit(lane)?;
-            if let (Lane::H, Some((key, _))) = (lane, vector.components().iter().find(|(k, _)| k.axes().len() != 2)) {
-                return Err(FormRefusal::NotGenerator { key: key.clone() });
+            if let Lane::H = lane {
+                vector.components().iter().try_for_each(|(key, _)| turning(key))?;
             }
         }
         Ok(Lanes { held: lanes })
@@ -366,6 +444,17 @@ impl Lanes {
         let slot = held.get_mut(at)?;
         slot.1 = slot.1.with(key, value)?;
         Some(Lanes { held })
+    }
+}
+
+/// AN H KEY READ AS A TURNING PLANE: admitted where its two units square
+/// alike; refused `NotGenerator` for one axis and `NotTurningPlane`, naming
+/// the plane, for a frame plane, a mixed pair or unsigned axes.
+fn turning(key: &Key) -> Result<(), FormRefusal> {
+    match key.plane() {
+        None => Err(FormRefusal::NotGenerator { key: key.clone() }),
+        Some(Plane::Turning(_)) => Ok(()),
+        Some(plane) => Err(FormRefusal::NotTurningPlane { key: key.clone(), plane }),
     }
 }
 

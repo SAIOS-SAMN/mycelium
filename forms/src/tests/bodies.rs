@@ -28,10 +28,27 @@ pub fn plane(a: (char, u32), b: (char, u32)) -> Key {
     Key::generator(axis(a.0, a.1), axis(b.0, b.1)).expect("two axes")
 }
 
+/// Plane `k`'s frame unit of square `square`: `e₊ₖ` or `e₋ₖ`.
+pub fn unit(square: Square, k: u32) -> Axis {
+    Axis::unit(square, k).expect("a plane's unit")
+}
+
+/// The generator of the units `a` and `b`, each `(square, plane)`, in that
+/// order.
+pub fn units(a: (Square, u32), b: (Square, u32)) -> Key {
+    Key::generator(unit(a.0, a.1), unit(b.0, b.1)).expect("two units")
+}
+
+/// The continuum's turning `e₊ₖe₊ₗ`, in that orientation.
+pub fn turning(k: u32, l: u32) -> Key {
+    units((Square::Positive, k), (Square::Positive, l))
+}
+
 /// The one-component lanes' keys: S, G and T each on its own first axis
-/// (`e_S1`, `e_G1`, `e_T1`), H on the frame plane `e_Z1Q1`.
+/// (`e_S1`, `e_G1`, `e_T1`), H on the turning about axis 1, `e₊₂e₊₃`
+/// (`e_+2+3`).
 pub fn keys() -> [Key; 4] {
-    [on('S', 1), on('G', 1), on('T', 1), plane(('Z', 1), ('Q', 1))]
+    [on('S', 1), on('G', 1), on('T', 1), turning(2, 3)]
 }
 
 /// One-component lanes `S:G:T:H`, H in degrees.
@@ -59,11 +76,18 @@ pub fn value<'a>(c: &'a Coordinate, lane: &Lane) -> &'a Q {
     }
 }
 
-/// Bodies at `R`, bell 5, S = G = T = 0, and H on the two frame planes
-/// `e_Z1Q1` and `e_Z2Q2`, in degrees, `K` read per component.
+/// The turnings about axes 1 and 2, `e₊₂e₊₃` (`e_+2+3`) and `e₊₃e₊₁`
+/// (`e_+3+1`), in their key order.
+pub fn about() -> (Key, Key) {
+    (turning(2, 3), turning(3, 1))
+}
+
+/// Bodies at `R`, bell 5, S = G = T = 0, and H on the turnings about axes
+/// 1 and 2, `e₊₂e₊₃` and `e₊₃e₊₁`, in degrees, `K` read per component.
 pub fn planar(h1: Q, h2: Q) -> Coordinate {
     let [ks, kg, kt, _] = keys();
-    let h = Vector::of(vec![(plane(('Z', 1), ('Q', 1)), h1), (plane(('Z', 2), ('Q', 2)), h2)]).expect("two planes");
+    let (z1, z2) = about();
+    let h = Vector::of(vec![(z1, h1), (z2, h2)]).expect("two planes");
     let lanes = Lanes::base(Vector::one(ks, q(0, 1)), Vector::one(kg, q(0, 1)), Vector::one(kt, q(0, 1)), h).expect("the base lanes");
     body(&root(), 5, lanes, vec![0, 0])
 }

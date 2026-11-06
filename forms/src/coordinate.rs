@@ -1,8 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE COORDINATE (LAW-COORDINATE v3, proposal 78.173; ruled by both
+//! THE COORDINATE (LAW-COORDINATE v4, proposal 78.173; ruled by both
 //! operators 2026-11-05 through MU-RELEASE §3a, v3's points agreed with
-//! netstratum and xylarium the same day), the standard every kernel
+//! netstratum and xylarium the same day, v4's H keys agreed with netstratum
+//! the same day, docs/117 §10.3), the standard every kernel
 //! addresses its bodies by. Netstratum's statement is docs/120, "The
 //! coordinate: TUniversal inside the universe" (§8b: a lane is a vector).
 //!
@@ -25,9 +26,14 @@
 //!
 //! A LANE IS A VECTOR ([`Vector`]): exact signed components, each keyed by
 //! its axis ([`Key`]), never summed into one number. H's components are
-//! keyed by their GENERATORS, the plane each turns in named by its two axes
-//! (`e_Z1Q1` a frame plane, `e_Z1Z2` the turning τ₁₂ between two planes,
-//! a component of its own), and stored in DEGREES, exact: a component is a
+//! keyed by their GENERATORS, and H STANDS ONLY ON TURNING PLANES
+//! ([`Plane::Turning`]): two frame units that square alike, on two planes —
+//! the continuum's `e₊ₖe₊ₗ` (written `e_+k+l`) or the vacuum's `e₋ₖe₋ₗ`
+//! (`e_-k-l`), the inverted face. A hyperbolic frame plane holds no turning:
+//! its own motion `e₊ₖe₋ₖ` and each mixed pair `e₊ₖe₋ₗ` are boosts, keys S
+//! may hold, and on H they are refused `NotTurningPlane` by name. The phase
+//! turned "in plane k" is the turning about axis k (3-space duality):
+//! `e₊₂e₊₃`, `e₊₃e₊₁`, `e₊₁e₊₂`. H is stored in DEGREES, exact: a component is a
 //! motion, its state at a bell and a rate in degrees per bell, advanced in
 //! closed form, `θ(t) = θ(h) + ω·(t − h)`, on the universe's own bell
 //! (TUniversal stamps an act and never drives it). `K_c = ⌊|θ_c| / 360⌋`
@@ -88,7 +94,7 @@ mod lanes;
 mod motion;
 mod reading;
 
-pub use lanes::{Axis, FormRefusal, Key, Lane, Lanes, Openings, Shapes, Vector};
+pub use lanes::{Axis, FormRefusal, Key, Lane, Lanes, Openings, Plane, Shapes, Square, Vector};
 pub use motion::{fission, flow, merge, EventBell, Merger, MotionRefusal, Passed, Rates, Through};
 pub use reading::{Bodies, Bounds, Interval, Neighbours, Places, Reading, Sector, Sides, Whole};
 
@@ -98,10 +104,11 @@ pub const LAW_ID: &str = "FORMS-COORDINATE";
 
 /// The form's version: an amendment, or an operation added to the form,
 /// raises it.
-/// FORMAT: the shell's version, the form of LAW-COORDINATE v3 (proposal
+/// FORMAT: the shell's version, the form of LAW-COORDINATE v4 (proposal
 /// 78.173): lanes as keyed vectors, H in degrees with `K` per component,
-/// open lanes, decisions on the caller's intervals, the re-origin.
-pub const LAW_VERSION: u16 = 3;
+/// open lanes, decisions on the caller's intervals, the re-origin; v4
+/// keys H on turning planes alone (same-sign generator pairs).
+pub const LAW_VERSION: u16 = 4;
 
 /// THE DISPLAY'S BASE: the places of the sexagesimal reading.
 /// FORMAT: display only (LAW-COORDINATE v3 §1, ruled 2026-11-05): the
