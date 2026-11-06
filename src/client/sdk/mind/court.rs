@@ -204,7 +204,7 @@ impl Mind {
         if !self.couples(&envelope.id, &offer.charts) {
             return;
         }
-        let mag = super::family::family_magnitude(&envelope.train);
+        let mag = super::family::family_magnitude(&envelope.train).lanes();
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             return;
         }
