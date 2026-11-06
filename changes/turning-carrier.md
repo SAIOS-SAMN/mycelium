@@ -41,5 +41,6 @@
 - **Docs:** 78.173 §5 records the clause `FORMS-TURNING` v1 as
   reproduced by netstratum 2026-11-06 (its own exact `Cl(3, 3)` over ℚ;
   degree sectors read in floating point only; no veto), signature pending
-  its operator, xylarium owed; 78.171's open point, ROADMAP track 26 and
-  MU-CLIENT §7.1 item 1.2 restated.
+  its operator, xylarium owed; 78.171's open point and ROADMAP track 26's
+  carrier row restated. ROADMAP's stage 3 row and MU-CLIENT §7.1 item 1.2
+  are left to #175, which restates the same lines.
