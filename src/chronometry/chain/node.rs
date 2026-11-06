@@ -141,6 +141,7 @@ impl ReceiptChain {
             }
         }
         self.tally(&at.vk, false, left);
+        self.unfile_signings(&r);
         self.placed.remove(&key);
         self.nodes.remove(&key);
         Some(r)
