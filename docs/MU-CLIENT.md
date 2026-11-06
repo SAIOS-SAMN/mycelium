@@ -350,7 +350,8 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
 
 - **The algorithms of language the masters produce** — the master equation
   applied at each grade (78.68, 78.69, 78.95); nothing in the language is
-  stored that the mathematics does not derive (law 12):
+  stored that the mathematics does not derive (law 12). The levels are
+  stated once, mapped to the algebra, in [MU-ANASTOME](MU-ANASTOME.md) §1:
   - **letters** — two reflections compose into a rotor (U14): where its
     generators open axes the mind's algebra did not hold, it is a letter of
     the mind's dialect, or U15's triad `λ = (g_core, ∇B, ΔB)` where

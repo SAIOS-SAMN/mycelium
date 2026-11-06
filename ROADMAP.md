@@ -1438,6 +1438,23 @@ adjudicated reading (B2). Each phase is one commit:
      order), and the ruled act that opens a lane. Open: the
      signed-to-issuance map at the vertex, xylarium's lane renaming, and
      netstratum's composition law (fixture 11b).
+   - **A new B3 crossing kind, the traversal, is proposed:** LAW-TRAVERSAL
+     v1 ([proposal 78.176](docs/proposals/78.176-law-traversal.md),
+     **Proposed**, agreed with netstratum), the inter-kernel crossing
+     through the universal core tube, stated as two LAW-PASSAGE v3
+     passages composed at the vertex — one out through the source
+     universe's own throat, one in through the destination's — and
+     reconstructed by the court as a LAW-COORDINATE v4 re-origin, read
+     twice. Each kernel declares its polarity as data; the inter-kernel
+     map (polar or antipolar) is one case of the law, never the law
+     itself. The antipolar case exchanges a kind's frames,
+     `(z_k, q_k) ↦ (q_k, z_k)`, keeping the whole `z_k + q_k` per plane
+     (so 3Z and a nucleon mass are kept), the axis inversion `t ↦ 1/t`
+     fixing only the throat. To build after 78.176 is agreed: open, the
+     wire framing of a traversal, the kernel-pair polarity declaration's
+     form, and the reading of alignment across the tube. Which kernel's
+     universal core is the antipolar face of any tube is not confirmed;
+     xylarium's operator rules it for xylarium's own tubes.
 5. **B4, the boundary:** `NotThroughCore` and `NotSignatory` at the
    universal core tube; refusals at the tube by name and domain under
    `ACT_OBSERVE`, and the reconstruction events (Collapse, Converse,
