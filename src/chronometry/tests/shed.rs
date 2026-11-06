@@ -21,7 +21,7 @@ fn close(c: &mut ReceiptChain) -> KStepReceipt {
 /// Fold `c` at its last close and seal the `Fold` node citing the root.
 fn fold(c: &mut ReceiptChain, at: Place) -> KStepReceipt {
     let (_, root) = c.fold_before(at).expect("the orbit folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.signer(), root.at), hash: root.hash.bytes() }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.signer(), root.at), hash: root.hash }];
     c.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone()
 }
 

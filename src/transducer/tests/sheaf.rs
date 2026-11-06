@@ -19,25 +19,23 @@ fn word(painted_a: &[(i64, i64, u8)], painted_b: &[(i64, i64, u8)]) -> Element {
 fn stratum_root_is_fixed_width_over_set() {
     let small: Vec<Vec<u8>> = (0..2u16).map(|i| i.to_le_bytes().to_vec()).collect();
     let large: Vec<Vec<u8>> = (0..2000u16).map(|i| i.to_le_bytes().to_vec()).collect();
-    assert_eq!(stratum_root(&small).len(), 32, "a root is thirty-two bytes");
+    assert_eq!(stratum_root(&small).bytes().len(), 32, "a root is thirty-two bytes");
     assert_eq!(
-        stratum_root(&large).len(),
+        stratum_root(&large).bytes().len(),
         32,
         "and a stratum a thousand times wider is the same thirty-two"
     );
     let mut reversed = large.clone();
     reversed.reverse();
-    assert_eq!(
-        stratum_root(&large),
-        stratum_root(&reversed),
+    assert!(
+        stratum_root(&large).locates(&stratum_root(&reversed)),
         "the root is over the set; arrival order is not part of it"
     );
-    assert_ne!(stratum_root(&small), stratum_root(&large), "and it separates strata");
+    assert!(!stratum_root(&small).locates(&stratum_root(&large)), "and it separates strata");
     let mut plus = small.clone();
     plus.push(vec![9u8; 4]);
-    assert_ne!(
-        stratum_root(&small),
-        stratum_root(&plus),
+    assert!(
+        !stratum_root(&small).locates(&stratum_root(&plus)),
         "one member added moves the root — this is what discordance reads"
     );
 }
