@@ -56,8 +56,27 @@ fn closed_geodesic_with_zero_precession_is_resonant() {
         motion: Motion::of(vec![turning(&p, n, 1)]).expect("a motion"),
     };
     let orbit = Orbit::of(vec![step(0, 30), step(1, 30), step(2, -60)]).expect("curved, so bound");
-    assert_eq!(orbit.precession(), Ok(Precession::Resonant));
-    assert!(orbit.holonomy().expect("composes").turnings().is_empty(), "0° on every plane, K = 0");
+    let Ok(Precession::Resonant(h)) = orbit.precession() else { panic!("resonant") };
+    assert!(h.turnings().is_empty(), "0° on every plane, K = 0");
+}
+
+/// FIXTURE 2b (78.171 §6, asked by netstratum on reading amendment (f)).
+/// FLAT AND RESONANT ARE SEPARATED BY THE KEPT WINDING: a resonant
+/// revolution of three 120° steps on `e₊₁e₊₂` is no identity at any step
+/// and composes to 360° with `K = 1`, its motion the identity, read
+/// `Resonant` with that holonomy; a flat path's steps are each the
+/// identity, compose to 0° with `K = 0`, and it is refused `Unbound`.
+#[test]
+fn flat_and_resonant_separated_by_kept_winding() {
+    let (lifted, charts) = three_charts();
+    let p = plane(&lifted.frame, 1, 2);
+    let orbit = revolution_turning(&charts, &p, 120, 1);
+    assert!(orbit.revolution().iter().all(|t| !t.motion.turnings().is_empty()), "no step is the identity");
+    let Ok(Precession::Resonant(h)) = orbit.precession() else { panic!("a resonant orbit") };
+    let whole = h.angle().expect("one plane");
+    assert_eq!((whole.degrees(), whole.winding()), (&degrees(360, 1), BigInt::from(1)), "360°, K = 1, kept");
+    assert_eq!(whole.motion(), &Cyclotomic::one(), "its motion the identity");
+    assert_eq!(lifted.atlas().revolution(&charts), Err(FieldRefusal::Unbound { charts }), "flat: 0°, K = 0, refused");
 }
 
 /// FIXTURE 3. A turning by 72° on `e₊₁e₊₂` composed five times: the motion

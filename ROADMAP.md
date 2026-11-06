@@ -2125,6 +2125,21 @@ Each phase is one commit:
    - Claims: `field_stays_smooth_under_every_isometry`,
      `stretch_is_a_re_period_not_a_versor`,
      `inversion_in_the_membrane_needs_no_infinity`.
+   - **Built** (branch `field-s8-motions`, track 26 S7 stage 5;
+     `src/transducer/field/carrier/motions.rs`): the generators
+     `Generator::{Turn, Flip, Boost, RePeriod}` (the pole swap, the
+     inversion in the membrane, is the flip of `e₋ₖ`, `Generator::swap`,
+     `Membrane::invert`); a motion the reduced word of its generators
+     (`FieldMotion`, with `then` and `inverse`); acting exactly on
+     turnings, motions and orbits by conjugation, on frame states and on
+     points, and refused `NotExact` with `Residue::Unnamed` where a plane
+     is carried onto no named plane. The three claims above and
+     `field_motion_and_its_inverse_compose_to_the_identity`. With it,
+     LAW-FIELD fixture 2b (netstratum's request): flat and resonant
+     separated by the kept winding (`Precession::Resonant` keeps its
+     holonomy; claim `flat_and_resonant_separated_by_kept_winding`).
+     Open: turnings sharing a unit at other than a quarter turn (78.173
+     fixture 11b, netstratum's composition law).
 10. **S9, forces, orbits and the vortex in the field's atlas:**
     - Axiomatic gravity is read as the local orbit's shear on the
       orthogonal orbit class. Two classes are orthogonal when the two
