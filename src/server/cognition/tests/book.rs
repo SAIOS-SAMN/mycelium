@@ -257,7 +257,7 @@ moved[0] = 7;
 k.confirm_peer_holds(&[crate::transducer::sheaf::StratumDigest {
     inv,
     count: 0,
-    root: moved.to_vec(),
+    root: crate::court::admission::Locator::of_bytes(moved),
 }], [2; 32]);
 assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 }

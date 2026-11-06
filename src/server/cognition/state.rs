@@ -262,8 +262,9 @@ pub struct Court {
         usize,
     )>,
     /// Addresses fetched as Dialect or Slashed — (chart key, stratum root at
-    /// fetch). Dropped when confirm_peer_holds sees that root move.
-    pub(crate) heard: crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>,
+    /// fetch, in the address sense). Dropped when confirm_peer_holds sees
+    /// that root no longer locate the peer's stratum.
+    pub(crate) heard: crate::network::nerve::Keyed<(Vec<u8>, crate::court::admission::Locator)>,
     /// Heard addresses keyed by the chart they were heard under, so the
     /// two readers that want one chart's heard addresses read a fibre
     /// instead of the whole set — as `chart_listings` is to listings.
