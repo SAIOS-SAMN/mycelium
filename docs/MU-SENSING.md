@@ -829,6 +829,17 @@ runs.
   `Residue` of contacts each alone reads). The cocycle closes where the
   turns compose around a triple, and otherwise names the turn around it.
   Claim `two_perspectives_of_one_sample_compared_as_a_cover`.
+- **A missing perspective is a demand** (ruled 2026-11-06 on #32 (2);
+  track 26 S6, stage 4). Where an overlap's agreement is a residue, the
+  cocycle does not close on the sample's 0-cochains: a chart one
+  perspective reads is missing from the other. The cover lists a typed
+  vertex (`cover::PerspectiveDemand`, `Cover::demand`, `Cover::demands`):
+  the sample's place, the overlap's two perspectives, and the residue,
+  which is the demand (the contacts each alone reads). Its key is its
+  coordinates written out (`PerspectiveDemand::key`), and a family's
+  samples list each vertex once (`cover::listed`). A congruent overlap
+  lists none, and nothing in the cover chooses the perspective that would
+  answer the demand. Claim `missing_perspective_is_listed_as_a_typed_demand`.
 - **Frame fixing is a perspective** (`raster::frame_fixing`): the moments
   of 78.54 name a pose, and `frame_fixed` reads the task through it. Claim
   `frame_fixing_is_a_perspective_reading`.
