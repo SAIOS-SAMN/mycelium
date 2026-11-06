@@ -38,6 +38,57 @@ fn admit_refuses_claimed_curvature_court_does_not_derive() {
     assert_eq!(admit(&stated, &other), Err(StatementRefusal::Differs { pairs: expected }));
 }
 
+/// A well's body is stated as its own atlas and its stage, and a court
+/// reconstructs it and derives its precession itself: the 90° of three 30°
+/// steps admitted, a claim of 135° refused `Differs` with the pair, and a
+/// flat well's `Loop` derived on both sides.
+#[test]
+fn well_body_stated_and_admitted_by_its_precession() {
+    let (lifted, charts) = three_charts();
+    let p = plane(&lifted.frame, 1, 2);
+    let body = WellBody::of(lifted.frame, charts[0].clone(), Some(lap_turning(&charts, &p, 30, 1)), WellStage::perceived()).expect("the well stands");
+    let mut stated = Vec::new();
+    body.put_statement(&mut stated).expect("stated");
+    let claimed = Curvature { centre: charts[0].clone(), holonomy: body.precession() };
+    let admitted = admit_well(&stated, &claimed).expect("admitted");
+    assert_eq!(admitted.stage(), WellStage::perceived(), "the stage is stated and read back");
+    let other = WellBody::of(lifted.frame, charts[0].clone(), Some(lap_turning(&charts, &p, 45, 1)), WellStage::perceived()).expect("stands");
+    let wrong = Curvature { centre: charts[0].clone(), holonomy: other.precession() };
+    assert_eq!(admit_well(&stated, &wrong).map(|_| ()), Err(StatementRefusal::Differs { pairs: vec![(Some(wrong.clone()), Some(claimed))] }));
+    let flat = WellBody::of(lifted.frame, charts[1].clone(), None, WellStage::default()).expect("stands");
+    let mut stated = Vec::new();
+    flat.put_statement(&mut stated).expect("stated");
+    let loop_ = Curvature { centre: charts[1].clone(), holonomy: Err(FieldRefusal::Loop { charts: vec![charts[1].clone()] }) };
+    assert!(admit_well(&stated, &loop_).is_ok(), "a flat well's Loop is derived, never a stored reading");
+}
+
+/// A stated atlas holding two attractors is no well: refused `Malformed`.
+#[test]
+fn reconstruct_well_refuses_an_atlas_of_two_attractors() {
+    let (lifted, charts) = three_charts();
+    let p = plane(&lifted.frame, 1, 2);
+    let mut atlas = atlas_holding(&lifted, lap_turning(&charts, &p, 30, 1));
+    atlas.hold(Attractor { centre: charts[1].clone(), orbit: lap_turning(&charts, &p, 30, 1), membrane: lifted.membrane.clone() }).expect("held");
+    let mut stated = Vec::new();
+    atlas.put_statement(&mut stated);
+    stated.extend([0, 0]);
+    assert!(matches!(reconstruct_well(&stated), Err(FieldRefusal::Malformed { .. })));
+}
+
+/// A chart is an invariant's exact coordinates, a ratio among them: an
+/// atlas on the chart of `(1, 3/7)` is stated and reconstructed to that
+/// chart, the ratio read back whole.
+#[test]
+fn chart_of_ratio_invariant_round_trips() {
+    use crate::transducer::stalk::{ChartAxis, Invariant};
+    let ratio = num_rational::BigRational::new(3.into(), 7.into());
+    let chart = Chart::of_invariant(&Invariant(vec![ChartAxis::Count(1), ChartAxis::Ratio(ratio)]));
+    let atlas = Atlas::of(super::fixtures::frame(2), vec![chart.clone()]);
+    let mut stated = Vec::new();
+    atlas.put_statement(&mut stated);
+    assert_eq!(reconstruct(&stated).expect("reconstructs").charts(), &[chart]);
+}
+
 /// A statement with bytes past its writing is refused `Malformed` at the
 /// first byte past it, never read as a field.
 #[test]

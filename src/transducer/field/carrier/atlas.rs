@@ -8,25 +8,34 @@ use super::enclosing::Membrane;
 use super::holonomy::{Holonomy, Motion};
 use super::refusal::FieldRefusal;
 use super::turning::FramePlanes;
+use crate::transducer::stalk::{ChartAxis, Invariant};
 
 /// A CHART (78.171 §2; MU-RECURSION 78.41), its one meaning: a body's exact
-/// invariant coordinates, its shape class, coarsest first, written out. It
-/// is never a surface the body is measured against. Ordered by its
-/// coordinates as written: the order routes and never measures.
+/// invariant coordinates, its shape class, coarsest first, written out:
+/// the same coordinates a `stalk::Invariant` holds (a count or an exact
+/// ratio each), so a well's chart and a lifted body's chart are one kind
+/// of object. It is never a surface the body is measured against. Ordered
+/// by its coordinates as written: the order routes and never measures.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Chart {
-    coordinates: Vec<usize>,
+    coordinates: Vec<ChartAxis>,
 }
 
 impl Chart {
     /// The chart of these invariant coordinates, coarsest first. Built by
     /// the lift from a body and by a statement's reconstruction.
-    pub(super) fn of(coordinates: Vec<usize>) -> Chart {
+    pub(super) fn of(coordinates: Vec<ChartAxis>) -> Chart {
         Chart { coordinates }
     }
 
+    /// THE CHART AN INVARIANT NAMES: its coordinates, coarsest first, taken
+    /// whole. Total: every invariant is a chart.
+    pub fn of_invariant(invariant: &Invariant) -> Chart {
+        Chart { coordinates: invariant.0.clone() }
+    }
+
     /// The invariant coordinates, coarsest first.
-    pub fn coordinates(&self) -> &[usize] {
+    pub fn coordinates(&self) -> &[ChartAxis] {
         &self.coordinates
     }
 }

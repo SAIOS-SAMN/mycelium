@@ -11,6 +11,7 @@ use super::turning::{FramePlanes, Turning, TurningPlane};
 use crate::core::Q;
 use crate::transducer::family::transduce::{Enclosed, Factoring, Turn};
 use crate::transducer::sample::Sample;
+use crate::transducer::stalk::ChartAxis;
 use forms::coordinate::{Square, DEGREES_PER_TURN};
 use num_bigint::BigInt;
 
@@ -77,8 +78,9 @@ fn strides_of(periods: &[usize]) -> Vec<usize> {
 /// sites it holds), and its boundary's faces of grade `n − 1` (a site's
 /// side whose neighbour across it is off the sample or another body's).
 /// Each is invariant under the field's signed permutations of the phases
-/// and its translations; the class is coarsest first.
-fn charts_of(e: &Enclosed) -> Vec<Chart> {
+/// and its translations; the class is coarsest first, each a count.
+/// Refused `Malformed` with a count no `u64` coordinate holds.
+fn charts_of(e: &Enclosed) -> Result<Vec<Chart>, FieldRefusal> {
     let periods = e.enclosure.periods();
     let strides = strides_of(periods);
     let sites: usize = periods.iter().product();
@@ -111,7 +113,8 @@ fn charts_of(e: &Enclosed) -> Vec<Chart> {
         }
     }
     let rank = periods.len();
-    measure.into_iter().zip(faces).map(|(m, f)| Chart::of(vec![rank, m, f])).collect()
+    let count = |x: usize| u64::try_from(x).map(ChartAxis::Count).map_err(|_| FieldRefusal::Malformed { at: x });
+    measure.into_iter().zip(faces).map(|(m, f)| Ok(Chart::of(vec![count(rank)?, count(m)?, count(f)?]))).collect()
 }
 
 impl Lifted {
@@ -125,7 +128,7 @@ impl Lifted {
         let frame = FramePlanes::of(own)?;
         let planes = (1..=rank).map(|i| TurningPlane::of(&frame, Square::Positive, i, own)).collect::<Result<Vec<_>, _>>()?;
         let membrane = Membrane::of(&frame, own)?;
-        let charts = charts_of(&e);
+        let charts = charts_of(&e)?;
         let corner = |pick: fn((usize, usize)) -> usize, spans: &[(usize, usize)]| -> Result<Point, FieldRefusal> {
             let phases = spans
                 .iter()
