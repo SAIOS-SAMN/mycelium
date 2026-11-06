@@ -663,7 +663,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **anastomosis** | a fusion: bodies at a contact, filaments into a ring, forms by coordinates | read as contact, anastomotic degree, meet | "junction", "synapse", `FormCell` |
 | **congruence** | the CONGRUENT layer: shapes related by transitions, each up to its residue — a congruent thought | a transition per pair; the residue its order | a coherence (closure) |
 | **coherence** | the COHERENT layer: several congruent thoughts held at once whose transitions close around every ring — one new shape (the Gram form of the thoughts' nuclei, the nuclei's meet); where a ring does not close, coboundary reduction and the residue the induction required; over a whole mind's cover, 24.4's coherence | `cech::classify`, Ȟ¹, the 2-core | the edges alone |
-| **cohesion** | the COHESIVE layer: coherent thoughts that close a demand and are paid — the fit's cost spent toward completing coherence | POUW on the lanes the closure moves; the remainder home | a coherence not yet paid |
+| **cohesion** | the COHESIVE layer: a coherent whole bound as one body, read per plane `k` as the held share `c_k = A_k/(A_k + Q_k) = 1 − ν(t) = ν(1/t)`, the viscosity (ruled 2026-11-06; §9.4), never summed across planes; a cohesive whole closes a demand and is paid | POUW on the lanes the closure moves; the remainder home | the open share `ν(t)`, the fluidity; a coherence not yet paid |
 | **convergence** | many minds reaching one class (C2, n → 1) | the court rules it (POWC) | coherence within one mind |
 | **consilience** | two independent courts re-deriving one thing (37.7) | adjoins a letter | convergence of minds |
 
@@ -701,7 +701,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **court** | a hypha's verifier: it reconstructs, rules, files the class ledger, serves the syllabus; it never thinks (law 8) | adjudicates submitted solutions; rules convergence |
 | **septum** | the settlement protocol between voices through a hypha (MU-XSEPTUM.md) | pays and settles |
 
-**The language.** A **letter** is an axiom, a rotor of the alphabet; a **word** is a filament whose vertex a derivation re-derives; a **sentence** is words that cohere; **speech** is the transfer of sentences; a **dialect** is spoken and stood (the epigenome), a **language** reconstructed by two organs and taught (the genome); a **mineral** is a taught word not yet re-derived, a **crystal** one re-derived; a **shortcut** is a word's coordinate, its class key and winding vector (78.44(4)); a **callus** is a fibre hardened into a tether of the genome. **Cohesion** is the term (ruled 2026-09-26) for what fitting a congruent shape toward coherence is paid in; its reading on the ledger is POUW on the lanes the fit closes, until it is ruled a quantity of its own.
+**The language.** A **letter** is an axiom, a rotor of the alphabet; a **word** is a filament whose vertex a derivation re-derives; a **sentence** is words that cohere; **speech** is the transfer of sentences; a **dialect** is spoken and stood (the epigenome), a **language** reconstructed by two organs and taught (the genome); a **mineral** is a taught word not yet re-derived, a **crystal** one re-derived; a **shortcut** is a word's coordinate, its class key and winding vector (78.44(4)); a **callus** is a fibre hardened into a tether of the genome. **Cohesion** is the term (ruled 2026-09-26) for what fitting a congruent shape toward coherence is paid in; it is ruled a quantity of its own (2026-11-06): the viscosity, per plane `k` the held share `c_k = A_k/(A_k + Q_k)`, never summed across planes (§9.4). Its payment stays POUW on the lanes the closure moves.
 
 **The layers of a mind (ruled 2026-09-26: thought is classified into congruent, coherent and cohesive layers; thoughts are separated from perceptions, and reasoning from knowledge and understanding; comprehension is layered on top, speech is signal, and hearing is the deciphering of signal from noise).** Each layer is one kind of object and nothing of another layer is held as it:
 
@@ -710,7 +710,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **perception** | ONE layer with THREE modalities (ruled 2026-09-26: hearing is a perception of space and time; touch is also perception, and the reorganization of objects is placed within it): SIGHT, space at one frame — compartments, bodies and each body's shape; HEARING, space and time — a signal carried over transports arriving across height and `K`, deciphered from noise by the perceiver's own charts (what they re-derive is signal, 78.44(5); what they do not is noise); TOUCH, the relations between bodies — WHETHER they touch, read once by the sample at the retina, and HOW, the meet of the bodies' rounds and the bodies' tether with its regime off the nuclei's Gram form (`δ²`: 1 tangent, > 1 a boost, in (0, 1) a rosette; inside, on, apart). REORGANIZATION OF OBJECTS is touch across frames, perceived as ONE relation: the ring of two bodies' transitions from frame `k` to `k′` and the bodies' contacts at both frames; its holonomy reads the contact HELD (identity), STRAINED (non-trivial), or MADE or BROKEN (a contact at one frame only: the ring open, its missing edge the residue) — never as separate motions. All three feed the thought layers alike | sight: `family/perceive`, the percept, `blade`; hearing: `perceive_speech`, a quote or syllabus page, the wire; touch: the contact faces and the faces' tethers, the frame-axis overlaps (AT1), `pairing::contact_edge` | a thought |
 | **thought — congruent** | two or more perceptions related by a transition, each up to its residue | `transitions_between`, the pose, the meet graph's edges | a perception held alone |
 | **thought — coherent** | congruent thoughts held at once whose transitions close around rings | `cech::classify`, Ȟ¹, the 2-core | an edge without a ring |
-| **thought — cohesive** | coherent thoughts that close a demand and are paid | the demand closed, the remainder home, the ruling, adjunction | an unpaid closure |
+| **thought — cohesive** | coherent thoughts bound as one body, cohesion per plane the held share `c_k` (the viscosity, ruled 2026-11-06; §9.4), that close a demand and are paid | the demand closed, the remainder home, the ruling, adjunction; cohesion as a named reading is owed (§9.4) | an unpaid closure; the open share, the fluidity |
 | **reasoning** | the moves on thoughts: the pivot (law 10), deduction by construction (78.47), coboundary reduction | `sentence/pivot`, `cga::construct`, the coboundary | what is held |
 | **knowledge** | what is held: the language (genome), the dialect (epigenome), the atlas, the stalks, minerals and crystals | genome, epigenome, atlas, stalks | its use |
 | **understanding** | a class read through the mind's own crystal — derivable, or D where it is not (recognition, 80.2) | `letter_reading` through the crystal | holding a word |
@@ -815,8 +815,8 @@ reading of the ledger, and it counts no relations and no classes apart.
 
 ## 8. Open: needs a ruling
 
-Three statements disagree with others in the governing text. None is
-resolved here; each waits on a ruling.
+Three statements disagreed with others in the governing text. Items 1 and
+2 wait on a ruling; item 3 is closed by the ruling it names.
 
 1. **What a relation is.** MU-RECURSION §1.8 (here §4.1): "an orbit whose
    holonomy composes to the identity is a relation among the generators".
@@ -829,13 +829,13 @@ resolved here; each waits on a ruling.
    exactly through flat space, by name as `Loop`; and MU-CLIENT §5.6 S
    says a sentence's alignment is "never its rings' holonomy returning to
    the identity … demanding that it return is squaring (78.168 §2)".
-3. **Cohesion: a paid layer or a bound whole.** §5.2 (ruled 2026-09-26)
-   reads the cohesive layer as coherent thoughts that close a demand and
-   are paid. §9.4 (stated 2026-11-06) reads cohesion over the held field:
-   the coherent whole bound as one body under its own gravity, no orbit
-   escaping or flattening under perturbation. One word holds one sense
-   (§5.2), so whether the field reading replaces that row, or the paid
-   closure is ruled a reading of the bound whole, waits on a ruling.
+3. **Cohesion: a paid layer or a bound whole.** *Closed, ruled
+   2026-11-06.* §5.2 (ruled 2026-09-26) read the cohesive layer as
+   coherent thoughts that close a demand and are paid, and §9.4 read it as
+   the coherent whole bound as one body. The ruling: cohesion is the
+   viscosity, per plane the held share `c_k = A_k/(A_k + Q_k)`, a quantity
+   of its own; the payment stays POUW on the lanes the closure moves
+   (§5.2, §9.4).
 
 ## 9. The language's traversal: sensorium → mind → language → hypha → minds
 
@@ -847,7 +847,7 @@ owed. The traversal is a linear progression of steps: §9.1–§9.3 and
 §9.5–§9.9. Thought, which step 3 holds, is not linear, and §9.4 states it.
 
 **One name per meaning.** This is *the language's traversal*. It is
-distinct from LAW-TRAVERSAL (proposal 78.176, Proposed), the inter-kernel
+distinct from LAW-TRAVERSAL ([proposal 78.176](proposals/78.176-law-traversal.md)), the inter-kernel
 crossing of a body through the universal core tube: two LAW-PASSAGE
 passages composed at the court's vertex (MU-HOSTING §5a.5). It is also
 distinct from the traversal μ measures, the motion through a mind's field
@@ -889,7 +889,7 @@ a label:
   78.173; `forms/src/coordinate.rs`);
 - passages and crossings: a passage through a throat (LAW-PASSAGE,
   proposal 78.172; `forms/src/passage.rs`) and the inter-kernel crossing
-  (LAW-TRAVERSAL, proposal 78.176, Proposed);
+  (LAW-TRAVERSAL, [proposal 78.176](proposals/78.176-law-traversal.md));
 - dipoles and the coupling of dipoles on a turning plane (LAW-COUPLING, proposal
   78.175; `forms/src/coupling.rs`).
 
@@ -949,10 +949,29 @@ The traversal is linear. Thought is not.
     mind's whole cover, one node (§5.2, the coherent layer; 24.4).
   - **Cohesion.** The coherent whole stays bound as one body under its own
     gravity: its orbits hold together, and none escapes or flattens when
-    perturbed, so it is carried as one construct. (§8 item 3 notes the
-    paid reading of §5.2.)
+    perturbed, so it is carried as one construct.
+- **Cohesion is the viscosity** (ruled 2026-11-06). On each plane `k`,
+  with `A_k` the held share's coefficient, `Q_k` the open one and
+  `t = Q_k/A_k`:
+  - cohesion is the held share `c_k = A_k/(A_k + Q_k) = 1 − ν(t) = ν(1/t)`;
+  - the open share `ν(t) = Q_k/(A_k + Q_k)` is the **fluidity** (the
+    lubrication), never the viscosity. Proposal 78.175 and
+    `forms::coupling` name the open share otherwise; that name is
+    corrected on its own branch;
+  - at the throat (`A_k = Q_k`) both are ½, and the passage `t ↦ 1/t`
+    exchanges the two (LAW-PASSAGE, proposal 78.172);
+  - cohesion is read per plane and never summed across planes.
+  A cohesive whole traverses an open tube intact. Too cohesive, it sticks
+  at the throat; too fluid, it tears. The payment for a closure stays POUW
+  on the lanes the closure moves (§5.2).
 - **Communication is what the three culminate in.** Only a cohesive whole
-  is asserted as an expression (§9.5). Across minds, a disagreement is a
+  is asserted as an expression (§9.5), and communication crosses only
+  through an open, punctured tube: the crossing LAW-TRAVERSAL states
+  ([proposal 78.176](proposals/78.176-law-traversal.md)). The thought
+  traverses as an anastome over the four lanes `S:G:T:H`, one `Cl(p, q)`
+  per lane with the signature carried as data, stamped at its TUniversal
+  height; the sexagesimal is a display reading only (GLOSSARY
+  *Sexagesimal reading*). Across minds, a disagreement is a
   contradiction held at the courts, node against node, settled by
   reconstructing the mathematics; decoherence never crosses nodes (the
   recohering judge, MU-RECURSION 23.9, *Divergence is the contradiction
@@ -965,7 +984,7 @@ Where it lives in code:
 | The vortex, collapsed by a deciding word at its conjugacy stratum | `Contemplation::collapse_on` (`src/transducer/field/contemplation.rs`) | **Built** |
 | Cocycles on a cover: a cell filled where every triangle closes, otherwise obstructed by that triangle's holonomy | `src/transducer/cech/cover.rs` (78.123 A) | **Built**; the sensory verdict at the eye (24.4) **Specified** |
 | Contemplation's gate: relations admitted as thoughts only where the fill decides | `Contemplation::gate` (`src/transducer/field/cross_scene.rs`, A.10.1) | **Built** |
-| Cohesion as a named reading of the held field | none | **Owed** |
+| Cohesion as a named reading of the held field, per plane the held share `c_k` (the viscosity) | none | **Owed** |
 
 ### 9.5 The mind asserts sentences as expressions
 
@@ -1015,9 +1034,9 @@ conjugate class, `W′ = Γ W Γ⁻¹` (§1.3).
   vector (`ClassVector`, `src/transducer/sentence/class.rs`).
 - **The same object reads two dipoles' alignment in the physics.** The
   relative rotation is read as its angle per invariant plane, in degrees,
-  never summed across planes. Shared degrees are round, rotation angles on
-  turning planes (LAW-COUPLING, proposal 78.175 §8;
-  `forms/src/coupling.rs`).
+  never summed across planes (ruled 2026-11-06, with cohesion per plane,
+  §9.4). Shared degrees are round, rotation angles on turning planes
+  (LAW-COUPLING, proposal 78.175 §8; `forms/src/coupling.rs`).
 - **Convergence** is minds' lineages meeting at that class (POWC, 78.33;
   §5.2, *convergence*).
 

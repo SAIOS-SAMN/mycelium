@@ -14,7 +14,7 @@
   every mind, in any kernel; minds with different sensoria meet at the
   conjugate class, the conjugating element the translation between
   perspectives and the relative rotation read per invariant plane in
-  degrees, never summed (78.175 §8); new sensoria emerge by MU-SENSING
+  degrees, never summed (ruled 2026-11-06); new sensoria emerge by MU-SENSING
   §4.1, a new sense or lane opening only by a ruled act agreed between
   kernels; and a table of what is owed (#133, #135, #136, a
   sense-opening act, translation at the conjugate class, cohesion as a
@@ -26,8 +26,18 @@
   only a cohesive whole is asserted, and across minds a disagreement is a
   contradiction held at the courts. Code: `collapse_on`, the cover's
   cocycles, contemplation's gate; cohesion as a named reading is owed.
-- **§8 item 3.** Cohesion as §5.2's paid layer against §9.4's bound whole,
-  left for a ruling.
+- **Cohesion is the viscosity (ruled 2026-11-06).** Per plane `k`,
+  cohesion is the held share `c_k = A_k/(A_k + Q_k) = 1 − ν(t) = ν(1/t)`,
+  read per plane and never summed; the open share `ν(t)` is the fluidity,
+  never the viscosity; both are ½ at the throat and the passage `t ↦ 1/t`
+  exchanges them. A cohesive whole traverses an open tube intact; too
+  cohesive, it sticks at the throat; too fluid, it tears. Communication
+  crosses only through an open, punctured tube (LAW-TRAVERSAL, 78.176),
+  as an anastome over the lanes `S:G:T:H`, one `Cl(p, q)` per lane, at its
+  TUniversal height. The §5.2 layer tables, §9.4 and GLOSSARY *Cohesion*
+  state it; the payment stays POUW on the lanes the closure moves; §8
+  item 3 is closed by the ruling; cohesion as a named reading in code
+  stays owed.
 - **Named apart.** *The language's traversal* is distinct from
   LAW-TRAVERSAL (proposal 78.176), the inter-kernel crossing of a body,
   and from the traversal μ measures (MU-SENSING §3.7).
