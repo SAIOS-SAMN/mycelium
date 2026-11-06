@@ -268,8 +268,9 @@ fn fits_both(t: &crate::anastome::dialogue::handoff::Tube, mass: &num_rational::
 /// and never on a grid (MU-DERIVATIONS D1.2 Phase A): a curved face always
 /// holds it; a sphere face holds the cap of angular radius `r = 2m/R` short of
 /// the antipode, `r < π`, decided by refining `π` until its enclosure leaves
-/// `r` (`certified::separates`); a torus face holds the horizon sphere of
-/// radius `2m` APART from its image under every period (`enclosure::
+/// `r` (`certified::separates`); a torus face holds the horizon, the
+/// membrane at the gauge `2m` (`cga::membrane_at`, no squared radius),
+/// APART from its image under every period (`enclosure::
 /// containment`), the meet 78.162 (5) names, no ratio formed. `None` for a
 /// non-positive mass or radius, or a period that does not read.
 pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Option<bool> {
@@ -291,7 +292,7 @@ pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Opt
         Geometry::Torus { periods, .. } => {
             let rho = &two * mass;
             let origin = vec![Q::zero(); periods.len()];
-            let horizon = crate::transducer::cga::sphere_at(&origin, &(&rho * &rho));
+            let horizon = crate::transducer::cga::membrane_at(&origin, &rho)?;
             for (axis, (n, d)) in periods.iter().enumerate() {
                 if *d == 0 || *n == 0 {
                     return None;

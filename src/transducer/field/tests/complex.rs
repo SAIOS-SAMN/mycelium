@@ -211,7 +211,7 @@ fn docket_order_takes_outermost_entry_first() {
     next.docket_sealed();
     let order = next.docket_order();
     assert_eq!(order.len(), 3);
-    let at = |x: &Cite| order.iter().position(|o| o == x).expect("taken");
+    let at = |x: &Cite| order.iter().position(|o| o.restates(x)).expect("taken");
     assert!(at(&outer) < at(&inner), "the wrapping entry before the one it wraps: {order:?}");
     assert!(at(&owed) < at(&inner), "an owed enclosure is outermost, never wrapped");
 }
