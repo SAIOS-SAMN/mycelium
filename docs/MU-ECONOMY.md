@@ -245,6 +245,25 @@ Only an event moves a holding, and the event cites its causes:
 
 No event carries a clock reading (MU-RECURSION chapter 45).
 
+### 2.5 Holdings no motion made
+
+A holding's modes are the motions verified work moved (§1). Some value is
+held although no motion of the network's lanes made it. Ruled by the
+coordinator on 2026-11-06, under the operator's delegation (#169;
+[78.180](proposals/78.180-delegated-rulings-2026-11-06.md) ruling 3):
+- **Reserves, deficits, rooms and prices are readings**, never holdings.
+  Each is read off holdings and motions when it is needed, carries no
+  modes of its own, and is never stored.
+- **A bond holds the modes it was staked from.** Staking carries the
+  balance's modes unchanged into the bond (§2.3, §4).
+- **A genesis allocation is held at the founding mode.** The founding
+  mode is the identity motion of its lane. It is stated explicitly as the
+  mode, never left empty, and its amount is its share of the frame (§1).
+  Its issuance cites the founding receipt (§2.4).
+- **A Note's mode-0 receipt is a founding-mode receipt** (#168). It is
+  admitted under the rule that admits a genesis allocation and is not held
+  for review (MU-XSEPTUM §5.3).
+
 ## 3. Issuance
 
 New μ enters only when a closure is verified. The closing orbit advanced
@@ -857,9 +876,12 @@ for its lessee for one window.
    the frame, never S mass; a recolour pays G by its share).* Today each
    mode is read at its closed pair's carried mass (`DeflationRead::modes`);
    v0.5.0 reads it as the share of the frame (§1).
-5. **Room over modes.** *Open (78.174 §2).* Room reads a bond's whole part
-   on each lane; read over modes, that is a projection to one count per
-   lane.
+5. **Room over modes.** *Closed (coordinator, 2026-11-06, under the
+   operator's delegation; #169; 78.180 ruling 3).* Room is a reading, never
+   a holding: it is read per lane and per mode over the bond's modes it
+   draws on (§2.5), never as one count per lane and never as a scalar.
+   Today room reads a bond's whole part on each lane (`REFUSE_ROOM`), the
+   projection v0.5.0 retires.
 6. **POWC's earlier instance.** *Closed (ruled 2026-11-05: POWC is
    widened).* In 74 (CV4) the closer cites the refusing mind's receipt, so
    the two orbits' cones are not disjoint at the well. Lineages that share
@@ -870,13 +892,17 @@ for its lessee for one window.
    equivocation, as F2b and MU-RECURSION 47.4 burn a second mint; claims
    the cones leave unordered are held as a residue; F2a's equal shares are
    retired (§3.4).
-8. **The ask under modes.** *Open (78.174 §2).* A demand is a residue,
-   which has no motion yet, so its ask has no modes; 78.149 (b)'s lane-wise
-   cap of a payment by the ask needs a stated form.
+8. **The ask under modes.** *Closed (coordinator, 2026-11-06, under the
+   operator's delegation; #169; 78.180 ruling 3).* A demand is a residue,
+   which has no motion yet, so its ask holds no modes of its own. The ask
+   is a reading per lane and per mode over the holdings it draws on, never
+   a scalar, and 78.149 (b)'s cap of a payment by the ask reads it so.
 9. **The Note's amounts.** MU-XSEPTUM §5 writes μ as `4×u64`, which
    predates both `Mu` and `Modes`. Under 78.174 §1 item 2 its amounts are
-   `Modes`; the restatement is built with v0.5.0. Its mode-0 receipt stays
-   held for review (MU-XSEPTUM §5.3).
+   `Modes`; the restatement is built with v0.5.0. Its mode-0 receipt is a
+   founding-mode receipt, admitted under the rule that admits a genesis
+   allocation and not held for review (§2.5; #168, closed by 78.180
+   ruling 3).
 
 Also ruled by the operator on 2026-11-05 and recorded in proposal 78.174
 §1: pay by level (letters never paid; words POWR plus citation shares;
