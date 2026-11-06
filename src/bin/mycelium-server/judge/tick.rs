@@ -19,5 +19,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
         Ok(_) => TICK_HEARD,
         Err(_) => TICK_REFUSED,
     };
-    answer(stream, WireFrame { lane: frame.lane, body: vec![ack] });
+    answer(stream, WireFrame { body: vec![ack] });
 }

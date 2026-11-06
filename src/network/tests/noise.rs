@@ -1,7 +1,6 @@
 use crate::chronometry::tuniversal::TPoint;
 use crate::network::noise::*;
-use crate::network::wire::{WireFrame, BODY_BUDGET};
-use crate::network::wire::Lane;
+use crate::network::wire::{WireFrame, DELIMITED_MAX, HEAD};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
@@ -87,8 +86,8 @@ fn message_lengths(mut seen: &[u8]) -> Vec<usize> {
 }
 
 /// XX completes between two homes over loopback TCP: each side holds the
-/// other's public key, and a pointed frame and its reply read back
-/// exactly, lane, body and point.
+/// other's public key, and a frame carrying an expression with its point,
+/// and its reply, read back exactly.
 #[test]
 fn initiate_completes_handshake_and_round_trips_frames() {
     let ((_da, a), (_db, b)) = (home(), home());
@@ -100,12 +99,15 @@ fn initiate_completes_handshake_and_round_trips_frames() {
 
     use crate::chronometry::tuniversal::Origin;
     let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1].into(), k: 812 };
-    let ask = WireFrame { lane: Lane::Gauge, body: vec![0x53, 1, 2, 3] };
-    ia.write_frame(&ask, Some(&point)).unwrap();
-    assert_eq!(rb.read_frame().unwrap(), (ask, Some(point)));
-    let reply = WireFrame { lane: Lane::Harmonic, body: vec![9; 40] };
-    rb.write_frame(&reply, None).unwrap();
-    assert_eq!(ia.read_frame().unwrap(), (reply, None));
+    let said = crate::anastome::dialogue::Expression::of(vec![0x53, 1, 2, 3], Some(point));
+    let ask = WireFrame { body: said.write().unwrap() };
+    ia.write_frame(&ask).unwrap();
+    let heard = rb.read_frame().unwrap();
+    assert_eq!(heard, ask);
+    assert_eq!(crate::anastome::dialogue::Expression::read(heard.body), Some(said), "the point rides inside the expression");
+    let reply = WireFrame { body: vec![9; 40] };
+    rb.write_frame(&reply).unwrap();
+    assert_eq!(ia.read_frame().unwrap(), reply);
 }
 
 /// A frame past one Noise message rides as ⌈bytes / CHUNK⌉ messages,
@@ -117,16 +119,16 @@ fn write_frame_chunks_past_one_message_and_rejoins() {
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     rb.get_mut().seen.clear();
     let body: Vec<u8> = (0..3 * CHUNK + 7).map(|i| u8::try_from(i % 251).unwrap()).collect();
-    let frame = WireFrame { lane: Lane::Temporal, body };
+    let frame = WireFrame { body };
     let sender = std::thread::spawn(move || {
-        ia.write_frame(&frame, None).unwrap();
+        ia.write_frame(&frame).unwrap();
         frame
     });
-    let (got, point) = rb.read_frame().unwrap();
+    let got = rb.read_frame().unwrap();
     let frame = sender.join().unwrap();
-    assert_eq!((got, point), (frame.clone(), None));
+    assert_eq!(got, frame.clone());
     let lens = message_lengths(&rb.get_ref().seen);
-    let plain = 5 + frame.body.len();
+    let plain = HEAD + frame.body.len();
     assert_eq!(lens.len(), plain.div_ceil(CHUNK));
     assert!(lens.iter().all(|&l| l <= MESSAGE_MAX));
     assert_eq!(lens.iter().map(|l| l - TAG_LEN).sum::<usize>(), plain);
@@ -139,11 +141,11 @@ fn write_frame_refuses_over_budget_before_sending() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
-    let over = WireFrame { lane: Lane::Spatial, body: vec![0; BODY_BUDGET + 1] };
-    assert!(matches!(ia.write_frame(&over, None), Err(NoiseRefusal::FrameOverBudget { len }) if len == BODY_BUDGET + 1));
-    let next = WireFrame { lane: Lane::Spatial, body: vec![4, 2] };
-    ia.write_frame(&next, None).unwrap();
-    assert_eq!(rb.read_frame().unwrap(), (next, None));
+    let over = WireFrame { body: vec![0; DELIMITED_MAX + 1] };
+    assert!(matches!(ia.write_frame(&over), Err(NoiseRefusal::FrameOverBudget { len }) if len == DELIMITED_MAX + 1));
+    let next = WireFrame { body: vec![4, 2] };
+    ia.write_frame(&next).unwrap();
+    assert_eq!(rb.read_frame().unwrap(), next);
 }
 
 /// A head that names a body past the budget is refused by its length,
@@ -153,10 +155,8 @@ fn read_frame_refuses_head_past_budget() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
-    let len = BODY_BUDGET + TPoint::TRAILER_MAX + 1;
-    let mut head = vec![Lane::Spatial.byte()];
-    head.extend_from_slice(&u32::try_from(len).unwrap().to_le_bytes());
-    ia.write_all(&head).unwrap();
+    let len = DELIMITED_MAX + 1;
+    ia.write_all(&u32::try_from(len).unwrap().to_le_bytes()).unwrap();
     assert!(matches!(rb.read_frame(), Err(NoiseRefusal::FrameOverBudget { len: l }) if l == len));
 }
 
@@ -168,7 +168,7 @@ fn read_frame_refuses_tampered_ciphertext() {
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     // Past the two-byte length, the first ciphertext byte.
     rb.get_mut().flip_in = Some(2);
-    ia.write_frame(&WireFrame { lane: Lane::Gauge, body: vec![1, 2, 3] }, None).unwrap();
+    ia.write_frame(&WireFrame { body: vec![1, 2, 3] }).unwrap();
     assert!(matches!(rb.read_frame(), Err(NoiseRefusal::Decrypt)));
 }
 
@@ -198,23 +198,23 @@ fn pin_refuses_changed_peer_key() {
     assert!(matches!(a.pin("a\tb", &c.public()), Err(NoiseRefusal::PeerLabel(_))));
 }
 
-/// THE OPENING READS AS NO PLAINTEXT FRAME: its first byte names no lane,
-/// and its head, read as a plaintext length, passes the wire's budget, so a
-/// door that speaks only plaintext refuses it by length and reads no body;
-/// a responder opened with anything else answers `NotSpoken`.
+/// THE OPENING READS AS NO PLAINTEXT FRAME: its head, read as a plaintext
+/// length, passes the wire's `DELIMITED_MAX`, so a door that speaks only
+/// plaintext refuses it by length and reads no body; a responder opened
+/// with anything else answers `NotSpoken`.
 #[test]
 fn opening_reads_as_no_plaintext_frame() {
-    assert_eq!(crate::network::wire::read_lane(OPEN[0]), None);
-    let len = usize::try_from(u32::from_le_bytes([OPEN[1], OPEN[2], OPEN[3], OPEN[4]])).unwrap();
-    assert!(len > BODY_BUDGET + TPoint::TRAILER_MAX);
+    let len = usize::try_from(u32::from_le_bytes([OPEN[0], OPEN[1], OPEN[2], OPEN[3]])).unwrap();
+    assert!(len > DELIMITED_MAX);
+    assert!(len > crate::network::wire::BODY_BUDGET + TPoint::TRAILER_MAX);
     assert!(WireFrame::decode(&OPEN).is_none());
 
     let (_db, b) = home();
     let (mut sa, sb) = loopback();
     let responder = std::thread::spawn(move || respond(sb, &b, None).map(|s| s.remote_static()));
-    let frame = WireFrame { lane: Lane::Spatial, body: vec![1, 2, 3] };
+    let frame = WireFrame { body: vec![1, 2, 3, 4, 5] };
     sa.write_all(&frame.encode().unwrap()).unwrap();
-    assert!(matches!(responder.join().unwrap(), Err(NoiseRefusal::NotSpoken { answered }) if answered[0] == Lane::Spatial.byte()));
+    assert!(matches!(responder.join().unwrap(), Err(NoiseRefusal::NotSpoken { answered }) if answered[..HEAD] == 5u32.to_le_bytes()));
 }
 
 /// The static key is minted once, `0600`, and reloads to the same key; a

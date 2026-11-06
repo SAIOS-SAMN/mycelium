@@ -20,7 +20,7 @@ pub(crate) fn serve_ledger(stream: &mut Channel, frame: &WireFrame, context: &Co
     let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&frame.body) else { return false };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     let page = context.published.take().ledger_page(&domain, after);
-    answer(stream, WireFrame { lane: frame.lane, body: encode_ledger_page(&page) });
+    answer(stream, WireFrame { body: encode_ledger_page(&page) });
     true
 }
 
@@ -64,5 +64,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, WireFrame { lane: frame.lane, body });
+    answer(stream, WireFrame { body });
 }

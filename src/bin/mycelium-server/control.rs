@@ -27,12 +27,12 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
         // names it by): a task's content address is never framed, routed or
         // indexed here. A root naming it any other way is not heard.
         let Ok(task) = <[u8; 32]>::try_from(task.as_bytes()) else {
-            answer(s, WireFrame { lane: frame.lane, body: Vec::new() });
+            answer(s, WireFrame { body: Vec::new() });
             return true;
         };
         // A poisoned router lock knows no peer; the root is not heard.
         if !context.router.lock().is_ok_and(|r| r.knows(&from)) {
-            answer(s, WireFrame { lane: frame.lane, body: Vec::new() });
+            answer(s, WireFrame { body: Vec::new() });
             return true;
         }
         let hear = {
@@ -80,7 +80,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
                 spoken_at,
             )
         };
-        answer(s, WireFrame { lane: frame.lane, body: reply });
+        answer(s, WireFrame { body: reply });
         return true;
     }
     if kind == dialogue::ACT_EVIDENCE {
@@ -102,7 +102,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
                 eprintln!("  evidence refused: {accepted} accepted does not fit the reply");
                 return true;
             };
-            let reply = WireFrame { lane: frame.lane, body: vec![accepted] };
+            let reply = WireFrame { body: vec![accepted] };
             answer(s, reply);
             return true;
         }
@@ -127,7 +127,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
             eprintln!("  evidence reply refused: an address cannot be framed");
             return true;
         };
-        answer(s, WireFrame { lane: frame.lane, body });
+        answer(s, WireFrame { body });
         return true;
     }
     if kind == dialogue::ACT_TASK {
@@ -190,7 +190,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
             }
             (None, None) => return true,
         };
-        let reply = WireFrame { lane: frame.lane, body };
+        let reply = WireFrame { body };
         answer(s, reply);
         return true;
     }
@@ -212,7 +212,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
                 reg.record_factorisation(&act);
             }
         }
-        answer(s, WireFrame { lane: frame.lane, body: dialogue::encode_factor_verdict(&verdict) });
+        answer(s, WireFrame { body: dialogue::encode_factor_verdict(&verdict) });
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
@@ -435,7 +435,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
             Some(b) => b,
             None => dialogue::encode_solve_receipt(code, &mu),
         };
-        let reply = WireFrame { lane: frame.lane, body };
+        let reply = WireFrame { body };
         answer(s, reply);
         return true;
     }
@@ -455,7 +455,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
                 }
             }
             match dialogue::encode_peers_reply(&nerve_addrs) {
-                Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
+                Some(body) => answer(s, WireFrame { body }),
                 None => eprintln!("  peers reply refused: an address or the count passes its u16"),
             }
         }
@@ -491,7 +491,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
                 eprintln!("  cover page refused: the bind does not fit its length");
                 return true;
             };
-            answer(s, WireFrame { lane: frame.lane, body });
+            answer(s, WireFrame { body });
         }
         return true;
     }
@@ -512,7 +512,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
             })
             // A word whose tape does not parse queues nothing.
             .is_some_and(|q| q);
-        answer(s, WireFrame { lane: frame.lane, body: vec![queued as u8] });
+        answer(s, WireFrame { body: vec![queued as u8] });
         return true;
     }
     if kind == dialogue::ACT_SYLLABUS {
@@ -586,7 +586,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &WireFrame, context: &Contex
             eprintln!("  syllabus refused: the class records cannot be framed");
             return true;
         }
-        let reply = WireFrame { lane: frame.lane, body };
+        let reply = WireFrame { body };
         answer(s, reply);
         return true;
     }

@@ -18,7 +18,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &WireFrame, context: &Context) {
     };
     let say = |s: &mut Channel, r: dialogue::Ruled| {
         match dialogue::encode_ruled(&r) {
-            Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
+            Some(body) => answer(s, WireFrame { body }),
             None => eprintln!("  court equivocation answer refused: the reason passes its u16"),
         }
     };

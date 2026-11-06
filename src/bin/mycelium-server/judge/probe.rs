@@ -29,6 +29,6 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
             pvoice[0], target[0], target[1], reading.settled, reading.closure, reading.remaining
         );
     }
-    let reply = WireFrame { lane: frame.lane, body: dialogue::encode_probe_reply(&reading) };
+    let reply = WireFrame { body: dialogue::encode_probe_reply(&reading) };
     answer(stream, reply);
 }

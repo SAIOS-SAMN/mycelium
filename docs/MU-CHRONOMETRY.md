@@ -83,12 +83,16 @@ its book.
   `K`. `TPoint` is no longer `Copy`.
 - **Every act carries it** (TU-7). A client reads the latest final point
   with `Session::tuniversal`, or asks a court for it
-  (`encode_clock_request`); chatter frames carry it. A pointed frame is
-  `[lane | 0x80][len u32 LE][body][point][point len u16 LE]`: the point's
-  wire bytes (genesis 32, epoch u32 LE, `h` u64 LE, the four lanes in the
-  rational lane codec, `K` u64 LE), then the point's byte count, so a reader finds the
-  point from the frame's end. A point is at least 96 bytes (four lanes at
-  `0/1`) and at most `u16::MAX`.
+  (`encode_clock_request`); chatter frames carry it. The point stands in
+  the expression, never on the envelope (v0.5.0 recut; MU-ENGINEERING
+  §9.1): a frame is `[len u32 LE][expression]`, and an expression is
+  `[act][point][point len u16 LE]` (`anastome::dialogue::expression`): the
+  act's bytes, the point's wire bytes (genesis 32, epoch u32 LE, `h` u64 LE,
+  the four lanes in the rational lane codec, `K` u64 LE), then the point's
+  byte count, so a reader finds the point from the expression's end. A
+  speaker that has read no point writes the count `0` and no point bytes.
+  A point is at least 96 bytes (four lanes at `0/1`) and at most
+  `u16::MAX`.
 - **The core stamp.** A court serves its head's stamp
   `h:S:G:T:H:K.i` (`CoreStamp`, `ACT_LAWS` mode 4), so a kernel can read
   the court's own state at its latest act (78.124).

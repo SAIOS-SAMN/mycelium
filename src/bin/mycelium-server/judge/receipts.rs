@@ -44,7 +44,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
     };
     dialogue::put_reading_height(&mut body, reading.height());
     // A page the asker no longer waits for is counted, never dropped silent.
-    if !answer_written(stream, WireFrame { lane: frame.lane, body }) {
+    if !answer_written(stream, WireFrame { body }) {
         mycelium::observe::note_serve(mycelium::observe::ServeAxis::Unwritten, 1);
     }
 }

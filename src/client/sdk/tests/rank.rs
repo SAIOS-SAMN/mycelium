@@ -83,25 +83,14 @@ type Heard = (crate::anastome::dialogue::FactorisationAct, crate::anastome::dial
 /// admitted, answered with its verdict, and handed to the test with it.
 fn factoring_court(book: std::sync::Arc<std::sync::Mutex<crate::server::registry::TaskRegistry>>) -> (String, std::sync::mpsc::Receiver<Heard>) {
     use crate::anastome::dialogue;
-    use std::io::{Read, Write};
+    use std::io::Write;
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the court listens");
     let addr = listener.local_addr().expect("an address").to_string();
     let (heard, claims) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         for conn in listener.incoming() {
             let Ok(mut s) = conn else { continue };
-            loop {
-                let mut head = [0u8; 5];
-                if s.read_exact(&mut head).is_err() {
-                    break;
-                }
-                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
-                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-                let mut body = vec![0u8; len];
-                if s.read_exact(&mut body).is_err() {
-                    break;
-                }
-                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
+            while let Some(body) = super::fixtures::read_act(&mut s) {
                 let reply = match dialogue::decode_factorisation(&body) {
                     Some(act) => {
                         let task = book.lock().expect("the book").task(&act.task).cloned();
@@ -115,8 +104,7 @@ fn factoring_court(book: std::sync::Arc<std::sync::Mutex<crate::server::registry
                     }
                     None => Vec::new(),
                 };
-                let frame = crate::network::wire::WireFrame { lane, body: reply };
-                let _ = s.write_all(&frame.encode().expect("framed"));
+                let _ = s.write_all(&super::fixtures::reply_bytes(&reply));
             }
         }
     });

@@ -27,10 +27,7 @@ fn answer_refuses_frame_over_budget_writing_nothing() {
 
     let mut s = Channel::plain(TcpStream::connect(&addr).expect("connect"));
     let over = mycelium::network::wire::BODY_BUDGET + 1;
-    answer(
-        &mut s,
-        WireFrame { lane: mycelium::network::wire::Lane::Spatial, body: vec![0u8; over] },
-    );
+    answer(&mut s, WireFrame { body: vec![0u8; over] });
     drop(s);
     assert!(reader.join().expect("join").is_empty(), "an unframeable act writes nothing");
 }
@@ -50,18 +47,13 @@ fn answer_writes_frame_within_budget() {
 
     let mut s = Channel::plain(TcpStream::connect(&addr).expect("connect"));
     let body = vec![7u8, 8, 9];
-    answer(
-        &mut s,
-        WireFrame { lane: mycelium::network::wire::Lane::Spatial, body: body.clone() },
-    );
+    answer(&mut s, WireFrame { body: body.clone() });
     drop(s);
     let got = reader.join().expect("join");
-    assert_eq!(&got[5..], &body[..], "the body arrives");
-    assert_eq!(
-        u32::from_le_bytes([got[1], got[2], got[3], got[4]]) as usize,
-        body.len(),
-        "with its length"
-    );
+    let head = mycelium::network::wire::HEAD;
+    let len = u32::from_le_bytes(got[..head].try_into().expect("a head")) as usize;
+    assert_eq!(len, got.len() - head, "the envelope is its length and its body");
+    assert_eq!(super::act_of(got[head..].to_vec()), body, "the act arrives inside the door's expression");
 }
 
 

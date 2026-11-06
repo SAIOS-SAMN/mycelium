@@ -69,6 +69,6 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
         items.len(),
         body.len()
     );
-    let reply = WireFrame { lane: frame.lane, body };
+    let reply = WireFrame { body };
     answer(stream, reply);
 }

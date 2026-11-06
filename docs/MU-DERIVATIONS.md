@@ -129,13 +129,13 @@ MU-STANDARDS 2.12 binds it on every line written:
 |---|---|---|---|---|---|---|---|---|
 | D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations (**Built** 2026-10-31, law version 5; O1 ruled every keeper) | yes | L | 22, 20 |
 | D1.2 | `THROAT_LEVEL_BITS = 64` | `server/cognition/domain_passage.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
-| D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page (**Built** 2026-10-31: the defect fixed, every envelope its codec's header; O1 read (b): REGISTERED, served on `ACT_LAWS` mode 5) | yes | S/M | 5, 14 |
+| D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 88` (the lane byte retired, v0.5.0), `k` from the largest unit that cannot page (**Built** 2026-10-31: the defect fixed, every envelope its codec's header; O1 read (b): REGISTERED, served on `ACT_LAWS` mode 5) | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = B·X/(B + X)`, exposure against bond (**Built**, ruled 2026-10-31) | no | M | 3, 14 |
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = cut·D/(D + X)` (**Built**, ruled 2026-10-31) | no | S | 3, 14 |
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = 1 + y/R`, scale-free (**Built**, κ = 1 ruled 2026-10-31) | O2 | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived (**Built**, 2026-10-31) | no | S | 3 |
-| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` (**Built** 2026-11-04: one boot calibration stroke seals the capacity `C = ⌊M_proc/b⌋`; O1 ruled into four readings: metabolism on `C`, strokes on the work's need (owed sites listed), a quiet peer asked again once the final point advances, cooling on the challenge window, the pointed book on `M_proc`; O3, the ratio's `8`, derived in track 26 S4b as `2ⁿ` at the alphabet's base `n = LETTER_RANK − 1`) | yes | M | 14 |
+| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` (**Built** 2026-11-04: one boot calibration stroke seals the capacity `C = ⌊M_proc/b⌋`; O1 ruled into four readings: metabolism on `C`, strokes on the work's need (owed sites listed), a quiet peer asked again once the final point advances, cooling on the challenge window, the pointed book on `M_proc` (the book retired by the v0.5.0 recut); O3, the ratio's `8`, derived in track 26 S4b as `2ⁿ` at the alphabet's base `n = LETTER_RANK − 1`) | yes | M | 14 |
 | D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31; the reserve's memory term with D2.5, 2026-11-04) | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state (**Built** 2026-10-31: a CLI's first ask to the stream's end, a court's the mesh floor) | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
@@ -654,11 +654,14 @@ read (`wire.rs:171`, `noise.rs:460`, `transport.rs:88, 208`,
 (`client/sdk/mind/chatter.rs:309, 319`), learn (`learn.rs:249, 372`),
 the awaited-citations ask (`exchange.rs:881`), and the seat mind's series
 bound (`seat_mind/mind.rs:170`). A frame is
-`[lane 1][len u32 LE 4][body][TPoint 84]?`
+`[len u32 LE 4][expression]`, and the expression `[act][TPoint 84][count u16]`
 (`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`; ruled 2026-11-01, the point's
-lanes are exact rationals and the trailer is `[point][point len u16]`, of
+lanes are exact rationals and the point is `[point][point len u16]`, of
 no fixed length: at least `96 + 2` bytes and at most `TPoint::TRAILER_MAX =
-u16::MAX + 2`, so the `84` below reads as the trailer a given point takes).
+u16::MAX + 2`, so the `84` below reads as the trailer a given point takes;
+the v0.5.0 recut retired the lane byte and moved the point from the
+frame into the expression, the frame's bound `wire::DELIMITED_MAX =
+BODY_BUDGET + u16::MAX + 2`).
 Under Noise a frame rides in
 plaintext chunks of `CHUNK = MESSAGE_MAX − TAG_LEN = 65535 − 16 = 65519`
 bytes (`noise.rs:47–52`).
@@ -673,8 +676,8 @@ comment).
 protocol number the mesh agrees on, not a host reading (the earlier
 `spend_unit() · 1024` read host memory and split the mesh). The value
 768 KiB is a choice: it is not a multiple of `CHUNK`.
-`(786432 + 5 + 84) / 65519` gives 13 Noise messages, the thirteenth
-carrying 293 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
+`(786432 + 4 + 84) / 65519` gives 13 Noise messages, the thirteenth
+carrying 292 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
 `BODY_BUDGET`", which states its role and not its value.
 
 **Severity.** Medium (protocol size, reading bounds).
@@ -684,12 +687,12 @@ carrying 293 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
 - *A format identity (exact).* Over the Noise channel, the largest body
   that rides in exactly `k ∈ ℤ≥1` transport messages, point included, is
   ```text
-  B(k) = k · CHUNK − HEAD − TPoint::LEN = 65519·k − 5 − 84 = 65519·k − 89        (bytes, ∈ ℤ)
-  HEAD = 1 (lane byte) + 4 (u32 LE length)   — FORMAT
+  B(k) = k · CHUNK − HEAD − TPoint::LEN = 65519·k − 4 − 84 = 65519·k − 88        (bytes, ∈ ℤ)
+  HEAD = 4 (u32 LE length)                    — FORMAT (the lane byte retired by the v0.5.0 recut)
   CHUNK = 65535 − 16                          — EXTERNAL (Noise rev. 34 §7: message ≤ 65535 bytes; ChaChaPoly tag 16)
   ```
   This reduces the free choice from a byte count to a message count `k`.
-  The present value lies between `B(12) = 786139` and `B(13) = 851658`.
+  The present value lies between `B(12) = 786140` and `B(13) = 851659`.
 - *The count `k`, from the largest unit that must ride whole.* Let `𝒜` be
   the set of wire units that cannot page: a single signed act of each kind
   admitted at the door, a single receipt (`KStepReceipt`), a fold-root
@@ -1448,12 +1451,11 @@ one name, one meaning):
   sealed reach and return of every other keeper (D1.1, law version 5).
   Settlements on the docket are held windows (`held_windows`), so the court
   seals the close they wait on; a lone court closes none.
-- **The pointed-connection book and the nerve's queue are bounded by
-  `M_proc`**: an unanswered pointed connection is kept while the book's
-  held bytes fit it, and a new one past it is refused by name
-  (`PointedRefusal::{Unsealed, PastMemory}`), never an entry let go; the
-  nerve holds spoken acts while the acts' bytes fit it, an act past it
-  dropped.
+- **The nerve's queue is bounded by `M_proc`**: the nerve holds spoken
+  acts while the acts' bytes fit it, an act past it dropped. (The
+  pointed-connection book, bounded the same way, was retired by the v0.5.0
+  recut: every expression carries its point slot, so the door no longer
+  remembers which speakers read points.)
 
 Choices the entry left open, as built:
 
@@ -1510,8 +1512,7 @@ Tests: `physics::tests::calibration` (`capacity_equals_memory_over_footprint`,
 (`quiet_peer_not_asked_again_while_final_point_still`,
 `quiet_peer_asked_once_after_final_point_advances`);
 `server::cognition::tests::market::record_settlement_cools_after_window_closes`;
-`mycelium-server tests::pointed` (`admit_pointed_refuses_past_memory`,
-`admit_pointed_refuses_unsealed`); `tests/calibration.rs`
+`tests/calibration.rs`
 (`reserve_sealed_from_measured_bytes_per_read_before_serving`, a process
 allocating through jemalloc as the binaries do). The open-physics register reads
 the capacity MEASURED: no entry stands at a calibration or memory site or
@@ -1538,7 +1539,7 @@ MU-EQUATIONS §7.1: `reserve_max = ⌊ max(cores · (1 + GiB available), 16) / 8
 - the reserve per lane;
 - `digest_ceiling`;
 - the POWV share and the read price (D2.3);
-- the bound of `note_pointed` and the nerve channel bound (`main.rs:671`);
+- the nerve channel bound (`main.rs:671`);
 - the rtt stand-ins (D2.7).
 
 **Why it is underived.** `2³⁰` bytes is a unit picked because it is a
@@ -3183,7 +3184,9 @@ header 1), `encode_cited_request`
 (`[act][voice 32][CITED u?][count u16]…`). The `TPoint` a pointed frame
 carries is outside `B` (the frame admits `B + TPoint::LEN`,
 `wire.rs:171`; from 2026-11-01 the point's lanes are exact rationals and
-the frame admits `B + TPoint::TRAILER_MAX`, the point and its u16 count). So `64` is not a signature here, and naming it
+the frame admits `B + TPoint::TRAILER_MAX`, the point and its u16 count;
+from the v0.5.0 recut the point stands in the expression and the frame
+admits `wire::DELIMITED_MAX`, the same bound). So `64` is not a signature here, and naming it
 `ED25519_SIGNATURE_LEN` citing RFC 8032 would put a false citation on the
 wire's size (§2 item 10).
 

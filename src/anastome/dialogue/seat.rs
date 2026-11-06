@@ -31,8 +31,9 @@
 //!
 //! v1.3 (78.152 TU-7, WIRE-CHANGE): a PERCEPT's fields end in the house's
 //! last final TUniversal point, `[0]` or `[1][TPoint 84]`, signed with them;
-//! every frame on the seat surface carries its speaker's last final point
-//! behind its body (`network::wire::POINTED`).
+//! every expression on the seat surface carries its speaker's last final
+//! point behind its act (`anastome::dialogue::expression`, the v0.5.0
+//! recut; it rode the frame's envelope before).
 //!
 //! v1.4 (lexicon 5, WIRE-CHANGE; 78.155 §5c, 78.156):
 //! - SEATS SCOPED TO A SUB-ORIGIN. A seat is named by (domain, sub-origin,

@@ -71,5 +71,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
             mycelium::physics::laws::codec::encode_batch_reply(&verdicts)
         }
     };
-    answer(stream, WireFrame { lane: frame.lane, body });
+    answer(stream, WireFrame { body });
 }

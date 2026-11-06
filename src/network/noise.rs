@@ -28,17 +28,16 @@
 //!
 //! THE OPENING. The initiator writes [`OPEN`] alone and begins the handshake
 //! only once the responder has answered [`OPEN`]. No plaintext
-//! frame begins with `OPEN`: its first byte names no lane, and its next four,
-//! read as a plaintext length, pass the wire's budget. A door that speaks
-//! only plaintext reads it as a frame over budget and answers a plaintext
+//! frame begins with `OPEN`: its first four bytes, read as a plaintext
+//! length, pass the wire's `DELIMITED_MAX`. A door that speaks only
+//! plaintext reads it as a frame over budget and answers a plaintext
 //! refusal, which the initiator reads as `NotSpoken`; a door that speaks
-//! Noise tells the two apart by the first byte (`channel::accept`).
+//! Noise tells the two apart by those four bytes (`channel::accept`).
 
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use super::wire::{read_lane, split_point, WireFrame, BODY_BUDGET};
-use crate::chronometry::tuniversal::TPoint;
+use super::wire::{delimited_len, WireFrame, HEAD};
 
 /// The one handshake pattern and cipher suite of the channel.
 pub const PATTERN: &str = "Noise_XX_25519_ChaChaPoly_BLAKE2s";
@@ -58,8 +57,8 @@ pub const PIN_FILE: &str = "noise.pins";
 /// EXTERNAL: Curve25519/X25519 key, 32 bytes (RFC 7748).
 pub const KEY_LEN: usize = 32;
 /// THE CHANNEL'S OPENING, written by each side before its first handshake
-/// message: a first byte that is no lane byte, then four bytes that read as
-/// a plaintext length past the wire's budget (`0x0158584e`).
+/// message: four bytes that read as a plaintext length past the wire's
+/// `DELIMITED_MAX` (`0x58584eff`), then a fifth.
 /// FORMAT: Noise channel opening bytes.
 pub const OPEN: [u8; 5] = [0xff, b'N', b'X', b'X', 0x01];
 
@@ -99,8 +98,7 @@ pub enum NoiseRefusal {
     /// A frame whose body is past the wire's budget.
     #[error("frame of {len} bytes over the wire budget")]
     FrameOverBudget { len: usize },
-    /// A decrypted frame whose head names no lane, or a pointed body shorter
-    /// than its point.
+    /// A decrypted frame whose head does not read as a length.
     #[error("noise channel carried a malformed frame")]
     FrameMalformed,
     /// A transport message that failed to authenticate: tampered, replayed,
@@ -440,30 +438,25 @@ impl<S: Read + Write> NoiseStream<S> {
         Ok(())
     }
 
-    /// One wire frame, with the point it carries where one is given, sealed
-    /// onto the channel. A body over the wire's budget is refused before a
-    /// byte is sent.
-    pub fn write_frame(&mut self, frame: &WireFrame, point: Option<&TPoint>) -> Result<(), NoiseRefusal> {
-        let bytes = frame.encode_at(point).ok_or(NoiseRefusal::FrameOverBudget { len: frame.body.len() })?;
+    /// One wire frame sealed onto the channel. A body over the wire's
+    /// budget is refused before a byte is sent.
+    pub fn write_frame(&mut self, frame: &WireFrame) -> Result<(), NoiseRefusal> {
+        let bytes = frame.encode().ok_or(NoiseRefusal::FrameOverBudget { len: frame.body.len() })?;
         self.send(&bytes)
     }
 
-    /// One wire frame off the channel, with the point it carries. A head
-    /// naming a body past the wire's budget is refused before the body is
-    /// allocated.
-    pub fn read_frame(&mut self) -> Result<(WireFrame, Option<TPoint>), NoiseRefusal> {
-        let mut head = [0u8; 5];
+    /// One wire frame off the channel. A head naming a body past the wire's
+    /// budget is refused before the body is allocated.
+    pub fn read_frame(&mut self) -> Result<WireFrame, NoiseRefusal> {
+        let mut head = [0u8; HEAD];
         self.take_plain(&mut head)?;
-        let (lane, pointed) = read_lane(head[0]).ok_or(NoiseRefusal::FrameMalformed)?;
-        let len = usize::try_from(u32::from_le_bytes([head[1], head[2], head[3], head[4]]))
-            .map_err(|_| NoiseRefusal::FrameMalformed)?;
-        if len > BODY_BUDGET + TPoint::TRAILER_MAX {
+        let Some(len) = delimited_len(head) else {
+            let len = usize::try_from(u32::from_le_bytes(head)).map_err(|_| NoiseRefusal::FrameMalformed)?;
             return Err(NoiseRefusal::FrameOverBudget { len });
-        }
+        };
         let mut body = vec![0u8; len];
         self.take_plain(&mut body)?;
-        let (body, point) = split_point(body, pointed).ok_or(NoiseRefusal::FrameMalformed)?;
-        Ok((WireFrame { lane, body }, point))
+        Ok(WireFrame { body })
     }
 }
 
