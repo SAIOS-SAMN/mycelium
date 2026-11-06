@@ -1969,6 +1969,28 @@ Each phase is one commit:
      §6.2).
    - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
      `two_perspectives_of_one_sample_compared_as_a_cover`.
+   - **Built, stage 1** (branch `sensing-s6`, PR #167): a perspective
+     holds its pose, the signed permutation the sensor reads through,
+     beside its roles; a shift (`SensorMotion::Pose`, `Recast`) moves the
+     sensor, and a sample is read through it, never rewritten
+     (`Perspective::read`, `turn_to`). The perspectives of one sample are a
+     cover (`perspective::cover`): contacts as 0-cochains, the turn on each
+     overlap, the cocycle on triples, the residue of contacts held. The
+     frame fixing is a perspective (`raster::frame_fixing`). Claims
+     `perspective_shift_is_a_sensor_motion`,
+     `two_perspectives_of_one_sample_compared_as_a_cover`,
+     `frame_fixing_is_a_perspective_reading`. No wire or address change.
+     Open: a mind asking for a perspective as a demand; collapsing a
+     ground's vortex by a relation.
+   - **Built, stage 2** (branch `sensing-s6-claim`, a wire change inside
+     v0.4.0's break): a claim of factorisation states the perspective it
+     was perceived under (signed `mycelium factorisation v2`); the court
+     reads its copy of the pair through it and reconstructs there, refusing
+     another rank or a non-space role by name; the mind perceives under a
+     perspective (`TaskPercept::under`). Claim
+     `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
+     the solve of outputs and speech stating a perspective (they read the
+     section in its default).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where

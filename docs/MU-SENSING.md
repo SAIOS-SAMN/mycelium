@@ -366,8 +366,9 @@ no pair of axes is *the* plane.
     the percept is permuted exactly (claim
     `no_axis_is_privileged_in_perception`).
 
-  S6 makes perspectives general. Which factorings a family is invariant
-  under (the nesting's reading) stays open.
+  S6 makes perspectives general (§4: a pose beside the roles, shifted by
+  a sensor motion, several perspectives a cover). Which factorings a
+  family is invariant under (the nesting's reading) stays open.
 
 ### 3.7 The field: non-Euclidean, never scalar
 
@@ -810,6 +811,28 @@ runs.
   Frame fixing, the canonical turn or mirror of a sample, is a
   perspective and belongs to the sensor's scope (§6.1).
 
+**Built (track 26 S6).**
+- **The pose.** A perspective (`transducer::perspective::Perspective`)
+  holds, beside its roles, the signed permutation of the sample's phases
+  the sensor reads through; the roles are those of the axes as read. The
+  default is the identity pose with every axis space.
+- **A shift is a sensor motion** (`SensorMotion`): `Pose(σ)` moves the
+  pose to `pose ∘ σ` and each role with its axis, and `Recast` reads one
+  axis in another role. A sample is read through a perspective
+  (`Perspective::read`, `frame`) with its place kept and its content, and
+  so its address, unchanged. The turn between two perspectives is
+  `turn_to`. Claim `perspective_shift_is_a_sensor_motion`.
+- **The cover** (`perspective::cover::Cover`). A perspective's 0-cochain
+  is the contacts it reads: two neighbouring sites of one symbol along a
+  sample axis it reads as space (§3.2). An overlap holds the turn between
+  two perspectives and their agreement (`Agreement::Congruent`, or the
+  `Residue` of contacts each alone reads). The cocycle closes where the
+  turns compose around a triple, and otherwise names the turn around it.
+  Claim `two_perspectives_of_one_sample_compared_as_a_cover`.
+- **Frame fixing is a perspective** (`raster::frame_fixing`): the moments
+  of 78.54 name a pose, and `frame_fixed` reads the task through it. Claim
+  `frame_fixing_is_a_perspective_reading`.
+
 ### 4.1 Emergent senses: variation, selection by admission, inheritance
 
 **Specified** (ruled 2026-11-04; ROADMAP track 26 S10). Senses and
@@ -1054,6 +1077,21 @@ refused by the same names. The motion and the residue are read under no
 ground, so the stated ground is checked and never changes the residue
 derived. Claim `factorisation_claim_states_its_ground`.
 
+**A claim of factorisation states its perspective** (track 26 S6, stage 2).
+The act carries the perspective the pair was perceived under after its
+residue (`[rank u16][(source u16)(sense u8) · rank][role u8 · rank]`), and
+is signed as `mycelium factorisation v2`. The court reads its own copy of
+the posted pair through the stated perspective (`Perspective::read`) and
+reconstructs there; it never chooses a perspective. One of another rank
+than the pair is refused `REFUSE_FACTOR_PERSPECTIVE_RANK`, and one reading
+an axis as other than space `REFUSE_FACTOR_PERSPECTIVE_ROLE`, since the
+transduction factors every axis as a phase the bodies extend along. The
+mind perceives under a perspective (`TaskPercept::under`) and states the
+percept's own. The perspective is part of the claim, never of the task.
+Claim `claim_states_its_perspective_and_court_reconstructs_under_it`. The
+solve of outputs and speech read the alphabet's section in its default
+perspective and do not yet state one.
+
 ## 7. Who owns a source's code
 
 Source-specific code exists only as a **decoder** from the source's format
@@ -1143,7 +1181,7 @@ track 26 S4c).
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
-| **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
+| **Closed (S6):** the frame fixing ordered and reversed two fixed axes by moments over the painted sites and rewrote the samples (`frame_fixed`) where §4 makes the frame a perspective | **Built** (track 26 S6): the moments name a pose (`raster::frame_fixing`, a `Perspective`), and `frame_fixed` reads the task through it; the samples are never rewritten. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One`. The moments stay on the section's plane, of the rank the letters spell | `src/transducer/raster.rs` |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residue.rs`; track 26, S4 |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_sites`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
 | An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse; a separated factoring `a·(b + 1) − 1` on the same carrier | **Built** | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`, `Joint`) |
@@ -1153,7 +1191,7 @@ track 26 S4c).
 | Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b), and the nesting's family-invariance reading (S4) | `transducer::perspective`; `transduce::Enclosure` |
 | A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind perceives every rank since S4b and the hypha serves every rank since S4c; a solve's rule is reconstructed on the alphabet's section | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
 | **Closed (S4b):** a link was `(i64, i64, u8, u8)`, two axes and one-byte symbols. `sentence::Link` now carries a site of rank `n` and the symbols at the source's width; the alphabet's section reads `SectionLink`, a section site and two symbols (a named type since S4d, stage 2b) | **Built** (track 26 S4b) | `transducer::sentence::link` |
-| Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
+| Perspective as a sensor motion (a pose beside the roles, shifted by a signed permutation or a recast; a sample read through it, never rewritten); the perspectives of one sample as a cover (contacts as 0-cochains, the turn on each overlap, the cocycle on triples, the residue held) | **Built** (track 26, S6) | `src/transducer/perspective.rs` (`Perspective::shifted`, `turn_to`, `read`, `SensorMotion`); `src/transducer/perspective/cover.rs` (`Cover`, `Agreement`, `Cocycle`) |
 
 **The defect** ([ROADMAP track 26](../ROADMAP.md#26-sensing-any-source-at-any-rank);
 the issue linked there). The sensor and everything downstream are written
