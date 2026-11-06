@@ -33,6 +33,12 @@ pub(crate) struct CourtPace {
     /// answers a quote; the mind's beat drags on these lanes
     /// (`Field::beat_under`).
     pub(crate) deficit: [u64; 4],
+    /// MU-CLIENT §3.1 (#136) — THE MIND'S WELL FOR EACH HYPHA, its
+    /// attachment, by the hypha's key: the flux its acts pressed on each
+    /// lane, standing as the deficit does until the field's next beat.
+    pub(crate) wells: crate::network::nerve::Keyed<crate::client::sdk::hypha_acts::Attachment>,
+    /// One read of the hyphas' lines in flight at a time.
+    pub(crate) reading_acts: bool,
     last_synced_height: u64,
     pub(crate) quoting: bool,
     pub(crate) quoted: Option<YieldQuote>,
@@ -272,6 +278,7 @@ impl Mind {
         self.discover();
         self.pull_syllabus();
         self.sync_genome();
+        self.read_hypha_acts();
         let pace = &mut self.board.court;
         pace.last_synced_height = pace.last_height;
     }

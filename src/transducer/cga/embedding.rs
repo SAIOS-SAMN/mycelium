@@ -1,5 +1,6 @@
-//! A4, 51.2 — the conformal null basis, the embeddings of a base point and
-//! a sphere, and the translation and rotation versors that carry them.
+//! A4, 51.2 — the conformal null basis, the embedding of a base point, the
+//! membrane and its images (a holding's own enclosure, 78.171 amendment
+//! (d)), and the translation and rotation versors that carry them.
 
 use super::multivector::{half, one, pseudo, zero, Mv, E1, E2, EM, EP};
 use num_rational::BigRational;
@@ -89,11 +90,45 @@ pub fn hyperbolic_point(x: &[BigRational], x0: &BigRational, r: &BigRational) ->
     }
 }
 
-/// The dual sphere of ℚⁿ, `S = X(c) − ½ r² e_∞`, about a centre of the
-/// base's own `n` coordinates: the ONE producer of a sphere. A point at
-/// squared distance `r2` from `c`; `r2 = 0` recovers the point (a
-/// volumeless sphere). Off-cone iff r² ≠ 0.
-pub fn sphere_at(c: &[BigRational], r2: &BigRational) -> Mv {
+/// THE MEMBRANE AT THE ORIGIN (78.171 §1a, amendments (a), (d)): the
+/// throat's fixed sphere, the frame state on `e₊` alone, here `−e₊` at unit
+/// weight (`e_o − ½e_∞` read on the pole basis, no radius written). It is
+/// the one sphere the field holds; every other enclosure is its image under
+/// a motion ([`membrane_at`]).
+pub fn membrane() -> Mv {
+    Mv::blade(EP, -one())
+}
+
+/// A HOLDING'S OWN ENCLOSURE ABOUT `c` AT THE GAUGE `rho` (78.171
+/// amendment (d); MU-SENSING §3.7, law 11): the membrane dilated by `rho`
+/// and slid to `c`, `T(c)·D(ρ)·M·D̃(ρ)·T̃(c)`, read at unit weight
+/// (`−⟨S e_∞⟩₀ = 1`). The ONE producer of a sphere: it is built by the
+/// field's motions acting on the throat, never from a squared radius with
+/// `e∞`, and it is never a reference surface anything is measured against.
+/// `None` where `rho ≤ 0`, an enclosure with no extent, or where the image
+/// carries no weight. The Euclidean producer is no surface of the crate:
+///
+/// ```compile_fail,E0603
+/// let _ = mycelium::transducer::cga::sphere_at(&[], &num_rational::BigRational::from_integer(1.into()));
+/// ```
+pub fn membrane_at(c: &[BigRational], rho: &BigRational) -> Option<Mv> {
+    if *rho <= zero() {
+        return None;
+    }
+    let dilated = super::group::dilator(rho).sandwich(&membrane());
+    let image = translator_at(c).sandwich(&dilated);
+    let weight = -image.geo(&e_inf()).scalar_part();
+    (!weight.is_zero()).then(|| image.scale(&(one() / weight)))
+}
+
+/// THE DEFECT LEFT OPEN (MU-SENSING §8; ROADMAP track 26 S7 stage 3): the
+/// dual sphere `X(c) − ½ r² e_∞` built from a squared extent. Its one
+/// caller is a body's nucleus (`blade::Blade`), whose extent is its polar
+/// second moment, an exact `r²` whose root is in general no rational gauge,
+/// so [`membrane_at`] cannot carry it. What reading replaces the nucleus is
+/// a ruling owed on #134; until then it is crate-private and nothing else
+/// builds a sphere from a squared radius.
+pub(crate) fn sphere_at(c: &[BigRational], r2: &BigRational) -> Mv {
     point_at(c).sub(&e_inf().scale(&(half() * r2)))
 }
 
@@ -143,11 +178,6 @@ pub fn rotator(s: &BigRational, b: &BigRational) -> Mv {
 /// `(1,3)` (51.2).
 pub fn rotator_on_blade(s: &BigRational, b: &BigRational, blade: usize) -> Mv {
     Mv::scalar(s.clone()).add(&Mv::blade(blade, b.clone()))
-}
-
-/// Does base point `p` lie on dual sphere `S`? `X(p)·S = 0`, exact.
-pub fn on_sphere(p: &Mv, s: &Mv) -> bool {
-    p.geo(s).scalar_part().is_zero()
 }
 
 /// THE BOUNDARY PROJECTION `∂σ = σ ⌟ I⁻¹` — the dual contraction against the
