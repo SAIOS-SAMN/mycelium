@@ -5,6 +5,7 @@
 mod enclosed;
 mod factor;
 mod ground;
+mod manifold;
 mod motion;
 mod nest;
 mod nesting;
