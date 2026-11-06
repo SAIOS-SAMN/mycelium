@@ -45,18 +45,18 @@ fn shed_keeps_taught_word_until_ratified() {
 /// shed's arithmetic and says nothing about where K comes from.
 ///
 /// This one calls `stand` alone, which is 24.3's own act -- "perceive,
-/// think, stand, utter" -- and reaches no wire at all. It spoke through
+/// think, stand, assert" -- and reaches no wire at all. It spoke through
 /// `speak` to a hypha that was not there, so it depended on a TCP connect
 /// to a port nothing listened on failing, which §3.7 does not let a test
 /// do ("what a test never does ... read the network"). Nothing about the
-/// claim needed the wire: standing is complete before anything is uttered.
+/// claim needed the wire: standing is complete before anything is asserted.
 #[test]
 fn stand_acts_at_mind_k_and_moves_no_clock() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("clock"));
 assert_eq!(entity.own_k(), 0, "a mind none of whose orbits returned seats at zero");
 
-// Standing is the act, and it is complete before anything is uttered. It
+// Standing is the act, and it is complete before anything is asserted. It
 // stands at the mind's K; only a return moves K (MU-CLIENT §4.4(4)).
 let codes = entity.stand(std::slice::from_ref(&e1), 0, &[]);
 assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
@@ -64,7 +64,7 @@ assert!(!entity.close_cycle(0), "standing is no return: the stroke closes nothin
 assert_eq!(entity.own_k(), 0, "K stands");
 assert!(entity.close_cycle(1), "an orbit returned: the stroke closes");
 assert_eq!(entity.own_k(), 1, "the return stepped the clock once");
-assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
+assert_eq!(codes, vec![0xff], "and it is fresh, so an expression would ask about it");
 
 // Standing the same form again is a USE of it (ruled 2026-10-14: a
 // mind repeating itself is mumbling, not acting): it is already taught, so

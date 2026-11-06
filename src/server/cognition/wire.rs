@@ -17,24 +17,23 @@ use super::*;
 pub fn frame_of(
     a: &[crate::transducer::spelled::PaintedSite],
     b: &[crate::transducer::spelled::PaintedSite],
-) -> Option<crate::transducer::element::Frame> {
+) -> Option<crate::transducer::element::Reperiod> {
     // A scene's extent is its largest occupied coordinate plus one, which
     // the painted set determines (rule 4). An empty scene occupies no sites
     // and its extent is zero by measurement, not by default. An extent no
     // `usize` holds is refused, never truncated (STD1 3c-5).
-    let extent = |s: &[crate::transducer::spelled::PaintedSite]| -> Option<(usize, usize)> {
+    // A painted site stands on the section's plane, so a scene's extents are
+    // one per axis of the plane, in the plane's order (track 26 S4: the
+    // re-period per phase, `Reperiod`).
+    let extent = |s: &[crate::transducer::spelled::PaintedSite]| -> Option<Vec<usize>> {
         let axis = |m: Option<i64>| match m {
             Some(x) if x > 0 => usize::try_from(x).ok(),
             _ => Some(0),
         };
-        // The frame's two counts are the plane's two axes in the plane's
-        // order (`Frame`, a defect named in MU-SENSING §8).
         let reach = |on: usize| s.iter().filter_map(|p| p.site.coordinates().get(on).map(|x| x + 1)).max();
-        Some((axis(reach(0))?, axis(reach(1))?))
+        (0..crate::transducer::alphabet::ALPHABET_SAMPLE_RANK).map(|on| axis(reach(on))).collect()
     };
-    let (hi, wi) = extent(a)?;
-    let (ho, wo) = extent(b)?;
-    Some(crate::transducer::element::Frame::new(hi, wi, ho, wo))
+    crate::transducer::element::Reperiod::of_extents(&extent(a)?, &extent(b)?)
 }
 
 /// One byte on the wire summarising an outcome (server → client reply). A

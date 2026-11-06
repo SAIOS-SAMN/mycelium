@@ -34,7 +34,7 @@ pub struct Harmonics {
     pub isoperimetric: BigRational,
     /// h₅ — the sides open along `e₃` over the compartments: two for one
     /// section, less for a stack.
-    pub frame_boundary: BigRational,
+    pub enclosure_boundary: BigRational,
     /// h₆ — det(I)/tr(I)² on the plane (anisotropy of the inertia).
     pub anisotropy: BigRational,
     /// h₇ — the trace on every axis over the compartments² (spread per area).
@@ -60,7 +60,7 @@ impl Harmonics {
         let n = b.shell.clone();
         let count = |v: usize| BigRational::from_integer(num_bigint::BigInt::from(v as i64));
         let edges = count(blade::boundary_length(&b.support));
-        let open = count(blade::frame_faces(&b.support));
+        let open = count(blade::enclosure_faces(&b.support));
         // The anisotropy is read on the plane, named (BQ4); the spread is
         // the trace on every axis the body has.
         let (gi, gj) = crate::transducer::perspective::family_plane(b.n())?;
@@ -75,7 +75,7 @@ impl Harmonics {
             betti,
             turns: blade::turns(&b.support) as u64,
             isoperimetric: &edges * &edges / &n,
-            frame_boundary: &open / &n,
+            enclosure_boundary: &open / &n,
             anisotropy: match tr.is_zero() {
                 true => BigRational::zero(),
                 false => &det / (&tr * &tr),
@@ -103,7 +103,7 @@ impl Harmonics {
             .collect();
         for r in [
             &self.isoperimetric,
-            &self.frame_boundary,
+            &self.enclosure_boundary,
             &self.anisotropy,
             &self.spread,
         ] {

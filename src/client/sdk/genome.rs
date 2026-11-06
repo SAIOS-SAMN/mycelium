@@ -177,7 +177,7 @@ pub struct MindLanguage {
     /// address). A ruled word is a form since L5, so the generators of the
     /// presentation are its WORD VERTICES; read off `Element::letters`,
     /// which answers `None` for every sentence, a factorisation saw only
-    /// the v1 connection words the utterance path stopped producing.
+    /// the v1 connection words the expression path stopped producing.
     pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
     /// 42.6 AS AMENDED, L12 — THE SAME GENERATORS, ONE COVER PER LANE.
     /// The cover of the language is the product of four, and a reduction

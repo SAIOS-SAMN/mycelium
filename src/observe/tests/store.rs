@@ -63,7 +63,7 @@ fn encode_reply_round_trips_every_reading() {
         peers: vec![(party(1), 37, 3), (party(2), 44, -4)],
         persisted: Some((38, 11)),
         folded: None,
-        unframed: 5,
+        unmeasured: 5,
         unstamped: [1, 0, 2, 0, 3],
         rulings: [[3, 1, 1, 1], [0; 4], [2, 2, 0, 0], [1, 0, 1, 0]],
         // F5 — each reason in its own slot travels.

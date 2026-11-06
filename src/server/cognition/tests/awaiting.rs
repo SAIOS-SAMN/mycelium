@@ -76,7 +76,7 @@ fn perceive_speech_defers_unruled_citation_until_ruled() {
     );
 
     // The generator is ruled. The waiting sentence is heard again, with
-    // no second utterance from the voice.
+    // no second expression from the voice.
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&generator)),
         vec![crate::anastome::dialogue::SPEECH_STOOD],
@@ -95,7 +95,7 @@ fn perceive_speech_defers_unruled_citation_until_ruled() {
 /// and names the form it waits on. Nothing is sealed for the second — a
 /// wait carries no receipt, because no act was admitted — and the voice
 /// reads the cited address off the reply, which is what tells it which
-/// form to utter first (chapter 6's depth order).
+/// form to assert first (chapter 6's depth order).
 #[test]
 fn hear_speech_adjudicates_stood_and_awaiting_apart() {
     use crate::anastome::dialogue::{self, Adjudication};

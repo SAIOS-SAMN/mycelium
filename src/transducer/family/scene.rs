@@ -66,7 +66,7 @@ pub type Regions = Keyed<Region>;
 ///
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
 ///
-/// `LayerKind::Frame` is the kind because a region is a part of the
+/// `LayerKind::Enclosure` is the kind because a region is a part of the
 /// SAMPLE'S OWN EXTENT and not a body layer — which is what that member of
 /// the enum says. A reading that cut by something beyond the region would
 /// write it after its own tag, which leads the key, so its regions key apart
@@ -74,7 +74,7 @@ pub type Regions = Keyed<Region>;
 pub fn region_key(reading: PlaneCut, support: &[Site]) -> Vec<u8> {
     let mut k = vec![reading.byte()];
     use crate::network::nerve::Coordinate;
-    k.extend_from_slice(super::pieces::piece_at(LayerKind::Frame, support).encode().as_bytes());
+    k.extend_from_slice(super::pieces::piece_at(LayerKind::Enclosure, support).encode().as_bytes());
     k
 }
 

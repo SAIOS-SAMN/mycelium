@@ -560,7 +560,7 @@ universe does inside is constrained only where it reaches the core.
 
 | Part | Status | Where |
 |---|---|---|
-| The universal law forms as a crate a kernel links; the core shell and an outer shell | **Built** | `forms/` (`forms::frame` at the core; `forms::shares` an outer shell) |
+| The universal law forms as a crate a kernel links; the core shell and an outer shell | **Built** | `forms/` (`forms::reference` at the core; `forms::shares` an outer shell) |
 | The court holds no in-universe state: anchors carry a commitment, chained and never judged | **Built** | `LedgerEntry`, `Court::ledger_on` (MU-CHRONOMETRY §3) |
 | A universe's tiers relaying inside (offices, lines, houses) | The kernel's own | Concordance 6.2a |
 

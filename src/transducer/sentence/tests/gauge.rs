@@ -138,7 +138,7 @@ fn coboundary_gauge_agrees_with_address() {
     let q_class = word_vertex(1, q.clone()).class().expect("a 90° turn has a class");
     let rebased = || {
         Vertex::rebased_on(
-            coord::VertexAt::Frame,
+            coord::VertexAt::Enclosure,
             q_class.clone(),
             stalk::Invariant::default(),
             Box::new(element::carriage(&q1(), &(q0(), q1()))),

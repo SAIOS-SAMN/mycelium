@@ -91,7 +91,7 @@ let family = vec![(
     digits(&["0011", "0000"]),
 )];
 let chain = crate::transducer::family::speak::residue_of(Some(&family[0].0), &family[0].1).expect("one enclosure needs no ground");
-let frame = crate::transducer::element::Frame::new(2, 4, 2, 4);
+let frame = crate::transducer::element::Reperiod::of_extents(&[2, 4], &[2, 4]).expect("one rank");
 assert!(k.intake(&chain, &frame), "the listing stands");
 let listing = k.pending.scoped().next().expect("listed").1.address();
 let task = [7u8; 32];

@@ -28,7 +28,7 @@ impl Court {
     /// minted sentence leaves empty. So every sentence in the basis contributed
     /// 0 to the volume however many orbits its form had filed — the ruling at
     /// `court_torsion_files_form_by_orbit_class` ("the court
-    /// reads Form.torsion by the filed loop's class key, never the element's
+    /// reads Form.torsion by the filed orbit's class key, never the element's
     /// empty section") held at one site of its shape and not at its neighbour
     /// three lines down.
     ///

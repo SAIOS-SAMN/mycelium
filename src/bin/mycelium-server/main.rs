@@ -45,13 +45,13 @@ use crate::exchange::{note_root, speak_root_locked, Exchange, Mesh, RootHear};
 use crate::genesis::Genesis;
 use crate::persist::{persist, persist_if_due};
 use crate::syllabus::{syllabus_admit, Syllabus};
-use crate::transport::{answer, arm_deadline, note_rtt_ok, read_frame, rtt_floor, tell_peer_measured};
+use crate::transport::{answer, arm_deadline, note_rtt_ok, read_delimited, rtt_floor, tell_peer_measured};
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::channel::{Channel, Pace};
 use mycelium::network::mesh::{self};
 use mycelium::network::nerve::{HomeTrie, Keyed, Router};
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -872,7 +872,7 @@ fn main() {
     // an observation there and handing every other act, read, to the
     // WORKERS that judge it. A worker queue that is full defers the act (the
     // honest "come back"), as a full reflex queue did.
-    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(Channel, WireFrame)>(cores);
+    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(Channel, Delimited)>(cores);
     let work_rx = Arc::new(Mutex::new(work_rx));
     for _ in 0..pool {
         let rx = Arc::clone(&reflex_rx);
@@ -890,7 +890,7 @@ fn main() {
             // opened first (MU-PRECURSORS §3.1).
             arm_deadline(&stream);
             let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
-            let Some(frame) = read_frame(&mut stream) else { continue };
+            let Some(frame) = read_delimited(&mut stream) else { continue };
             if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                 judge::observe::judge(&mut stream, &frame, &context);
                 mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
@@ -915,7 +915,7 @@ fn main() {
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, WireFrame { lane: frame.lane, body });
+                answer(&mut stream, Delimited { lane: frame.lane, body });
             }
         });
     }
@@ -962,7 +962,7 @@ fn main() {
             for ReflexJob { stream } in overflow_rx {
                 arm_deadline(&stream);
                 let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
-                let Some(frame) = read_frame(&mut stream) else { continue };
+                let Some(frame) = read_delimited(&mut stream) else { continue };
                 if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                     judge::observe::judge(&mut stream, &frame, &context);
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
@@ -985,7 +985,7 @@ fn main() {
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, WireFrame { lane: frame.lane, body });
+                answer(&mut stream, Delimited { lane: frame.lane, body });
             }
         });
     }
@@ -1013,7 +1013,7 @@ fn main() {
                 continue;
             };
             let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-            crate::transport::defer_unread(job.stream, &mesh, WireFrame { lane: mycelium::network::wire::Lane::Spatial, body });
+            crate::transport::defer_unread(job.stream, &mesh, Delimited { lane: mycelium::network::wire::Lane::Spatial, body });
         }
     }
 }
