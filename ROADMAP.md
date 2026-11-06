@@ -1518,8 +1518,8 @@ with its section *Drift guards*.
 A connection between a universe and the hypha is transduced. It carries
 the exact object and the motion, never a digest in place of them. Each
 crossing carries its place (TUniversal coordinates and past cone), its
-content (each body by its boundary, the motion as a versor or as turns in
-ℚ/ℤ), its holonomy and its clauses. The hypha reconstructs the object
+content (each body by its boundary, the motion as a versor or as turns,
+each phase with its winding kept), its holonomy and its clauses. The hypha reconstructs the object
 and admits it only on reaching the same exact object. A disagreement is
 held as a residue (the composed motion, the differing boundary, the
 differing holonomy), never as unequal bytes. A digest keeps exactly
@@ -1606,10 +1606,18 @@ Each phase lands on its own branch, one item per commit:
      clause 12. `Turn` has private fields and one constructor,
      `Turn::of(r, h)`, proved by the `compile_fail` claim
      `turn_has_one_constructor`.
-   - Not registered: the guard of clause 14, which has no guarding type
-     and no claim in the tree. `Court::restore` returns `bool`, not a
-     `Reconstructed<State>`, and
-     `restore_reconstructs_and_checks_receipts` is not written.
+   - **Built**, fourth stage (ruled on [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28),
+     2026-11-06, option (a)): the guard of clause 14. A restore is
+     `Court::reconstruct(self, &[u8]) -> Result<Reconstructed<Court>,
+     RestoreRefusal>`, a constructor in place of the in-place
+     `restore -> bool`, which is removed. `Reconstructed::court` reads
+     the snapshot under its laws: each receipt re-derives, the line
+     verifies on its root, a held line holds the stamp the snapshot
+     names, each row continues its receipt, each word re-derives its
+     citation. `self` is the court holding its line and eras from disk,
+     the evidence the snapshot is read against. Every call site and the
+     server boot are migrated, with no legacy path. Claim
+     `restore_reconstructs_and_checks_receipts`, in the drift register.
    - **Built**, third stage ([#28](https://github.com/SAIOS-SAMN/mycelium/issues/28)):
      `Cite::Root`'s hash is a `Predecessor`, so `Cite` has no
      `PartialEq`; two citations are compared by `Cite::restates` (two
@@ -1620,13 +1628,15 @@ Each phase lands on its own branch, one item per commit:
      whole. Claims `cite_has_no_equality`,
      `stratum_digest_has_no_equality` (`compile_fail`, in the drift
      register), `digests_reply_refuses_root_of_another_width`.
-   - Open, each asked on [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28):
-     the clause 14 guard type and claim (which object a restore's
-     `Reconstructed<State>` carries); the report of changed document
-     sentences that put a typed term beside an admission verb, which
-     needs a base commit the gate does not hold. The issue's
-     mutation-audit entry is not built: the mutation audit is retired
-     (*Test assurance* item 9, ruled 2026-11-04).
+   - **Retired** (ruled on #28, 2026-11-06): the report of changed
+     document sentences that put a typed term beside an admission verb.
+     A report that never refuses and that no reader acts on is theatre,
+     the reason the mutation audit was retired (*Test assurance* item 9);
+     the gate's heading and link checks guard document sentences.
+   - The issue's mutation-audit entry is covered by the `compile_fail`
+     claims `reconstructed_is_built_only_by_the_laws` and
+     `vertex_admits_only_a_reconstructed_fold` (ruled on #28), as the
+     drift register notes.
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,
    clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
    values (Concordance 1.4). It rides B3's change to the fold, which
@@ -1674,7 +1684,9 @@ Each phase lands on its own branch, one item per commit:
 6. **X5, the transduction in place of the common grid.** Two frames
    relate by the motion between them; each keeps its own resolution;
    each body is held by its boundary; incidences are read between boundary arcs; a site
-   lifts as turns in ℚ/ℤ. The transduction is **Built** (the v0.3.0
+   lifts as turns of its frame's own periods, the angle `360°·s/e` on a
+   named plane, and a composed motion keeps its winding beside its phase
+   (LAW-FIELD amendment (c)). The transduction is **Built** (the v0.3.0
    transduction work, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25),
    closed): `src/transducer/family/refine.rs` was removed with
    `CommonRefinement`. X5's guard remains to land, so that no common refinement
@@ -2118,6 +2130,21 @@ Each phase is one commit:
    - Claims: `field_stays_smooth_under_every_isometry`,
      `stretch_is_a_re_period_not_a_versor`,
      `inversion_in_the_membrane_needs_no_infinity`.
+   - **Built** (branch `field-s8-motions`, track 26 S7 stage 5;
+     `src/transducer/field/carrier/motions.rs`): the generators
+     `Generator::{Turn, Flip, Boost, RePeriod}` (the pole swap, the
+     inversion in the membrane, is the flip of `e₋ₖ`, `Generator::swap`,
+     `Membrane::invert`); a motion the reduced word of its generators
+     (`FieldMotion`, with `then` and `inverse`); acting exactly on
+     turnings, motions and orbits by conjugation, on frame states and on
+     points, and refused `NotExact` with `Residue::Unnamed` where a plane
+     is carried onto no named plane. The three claims above and
+     `field_motion_and_its_inverse_compose_to_the_identity`. With it,
+     LAW-FIELD fixture 2b (netstratum's request): flat and resonant
+     separated by the kept winding (`Precession::Resonant` keeps its
+     holonomy; claim `flat_and_resonant_separated_by_kept_winding`).
+     Open: turnings sharing a unit at other than a quarter turn (78.173
+     fixture 11b, netstratum's composition law).
 10. **S9, forces, orbits and the vortex in the field's atlas:**
     - Axiomatic gravity is read as the local orbit's shear on the
       orthogonal orbit class. Two classes are orthogonal when the two
