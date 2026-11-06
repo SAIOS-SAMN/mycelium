@@ -6,7 +6,7 @@ use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::WireFrame;
 use std::io::Write;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
 /// THE SECOND ORGAN ARRIVES HERE. A home Offers a first-vantage germ; the
 /// peer reconstructs it and glues it into its own cover, and its ruled root
@@ -16,7 +16,7 @@ use std::net::TcpStream;
 /// saw a provisional, no root ever moved, and every percept sat at `germ
 /// pending (one voice)` forever with basis 0. The gate was never the germ
 /// quorum; it was that the offer never left the process.
-pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(s: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(dialogue::Offer { addr, home, elem: elem_bytes, section, .. }) =
         dialogue::decode_offer(&frame.body)
     else {
@@ -34,7 +34,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     // I9b made it worse by making `home` load-bearing: before it, the
     // forged key was ignored; after it, the forged key is where the
     // section goes.
-    let refuse_offer = |s: &mut TcpStream, why: &str| {
+    let refuse_offer = |s: &mut Channel, why: &str| {
         eprintln!(
             "  court offer refused {:02x}{:02x}… from {:02x}{:02x}…: {why}",
             addr.as_bytes()[0],

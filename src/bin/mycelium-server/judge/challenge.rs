@@ -10,9 +10,9 @@ use mycelium::anastome::dialogue::challenge::{
     ChallengeRequest, FinalityReading, LineHead,
 };
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(request) = decode_challenge_request(&frame.body) else { return };
     // The reads stay on the court (78.153b): finality, obstructions, tolls
     // and line heads are not on the shelf yet, and the domain acts are 78.154's.

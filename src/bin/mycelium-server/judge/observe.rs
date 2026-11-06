@@ -5,7 +5,7 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::network::wire::WireFrame;
 use mycelium::observe::{self, CourtReading, Memory, ObserveAct, Reading, Source};
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
 /// A question the observer left for the court: the court stroke takes it
 /// (`answer_standing`) and publishes the standing the next question reads.
@@ -81,7 +81,7 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
     observe::replace(own, Reading::Court(Box::new(court)));
 }
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(act) = observe::decode_act(&frame.body) else { return };
     match act {
         ObserveAct::Query(prefix) => {
@@ -132,6 +132,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context
             // The judged-solve observation (2026-10-24): every solve this
             // court judged, by citation and voice, its verdicts and height.
             observe::replace(own, Reading::Judged(Box::new(observe::judged_solves())));
+            // MU-PRECURSORS §3.1 — every peer this hypha met, by its channel:
+            // a plaintext peer is named here, never hidden.
+            observe::replace(own, Reading::Channels(Box::new(observe::Channels::now())));
             // The frame's whole body: `encode_reply` counts its own header
             // against it (D4.6).
             let budget = mycelium::network::wire::frame_budget();

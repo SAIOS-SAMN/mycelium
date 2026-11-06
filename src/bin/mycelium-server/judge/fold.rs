@@ -13,18 +13,18 @@ use crate::transport::{answer, tell_peer_measured};
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::Place;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(s: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(p) = dialogue::decode_fold(&frame.body) else { return };
     let witness = context.mesh.vk;
     let home = p.section.receipt.stamp.vk;
-    let say = |s: &mut TcpStream, w: dialogue::FoldWitness| {
+    let say = |s: &mut Channel, w: dialogue::FoldWitness| {
         if let Some(body) = dialogue::encode_fold_reply(&w) {
             answer(s, WireFrame { lane: frame.lane, body });
         }
     };
-    let refuse = |s: &mut TcpStream, why: &str| {
+    let refuse = |s: &mut Channel, why: &str| {
         eprintln!("  court fold refused {:02x}{:02x}…: {why}", home[0], home[1]);
         say(s, dialogue::FoldWitness::Refused { vk: witness, why: why.as_bytes().to_vec() });
     };

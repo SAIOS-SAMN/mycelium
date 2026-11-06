@@ -1,11 +1,20 @@
 // law 9 — THE COURT'S TRANSPORT APERTURE: how a hypha reaches a peer, and
 // what bounds the reach.
 //
-//! Every wait here is denominated in STROKES and never in seconds:
-//! `read_budgeted` spends a stroke budget while a peer is silent, and the
-//! rtt an aperture holds is a stroke count.
+//! Every wait here is denominated in STROKES and never in seconds: a polled
+//! read (`channel::Pace::Polled`) spends a stroke budget while a peer is
+//! silent, and the rtt an aperture holds is a stroke count.
+//!
+//! THE CHANNEL (MU-PRECURSORS §3.1). The door accepts each connection on the
+//! channel its caller speaks (`accept`), and every ask to a peer is dialled
+//! on Noise where the peer speaks it (`tell_peer_over`); the host's static
+//! key and its pins are its Noise home (`seal`). Frames inside a Noise
+//! channel ride `NoiseStream::{write_frame, read_frame}`; a plaintext peer's
+//! ride the stream as they always did.
 
 use crate::Mesh;
+use mycelium::network::channel::{self, Channel, Pace};
+use mycelium::network::noise::NoiseHome;
 use mycelium::network::wire::WireFrame;
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -13,6 +22,66 @@ use std::net::TcpStream;
 pub(crate) fn arm_deadline(s: &TcpStream) {
     let _ = s.set_read_timeout(None);
     let _ = s.set_write_timeout(None);
+}
+
+/// THIS HOST'S NOISE HOME, opened once at boot: its static key and its pins.
+static HOME: std::sync::OnceLock<NoiseHome> = std::sync::OnceLock::new();
+
+/// The door and every ask from here on speak Noise with `home`. A second
+/// home is not taken: the first stands for the process.
+pub(crate) fn seal(home: NoiseHome) {
+    let _ = HOME.set(home);
+}
+
+/// The process's Noise home, where one was sealed.
+pub(crate) fn home() -> Option<&'static NoiseHome> {
+    HOME.get()
+}
+
+/// A CONNECTION AT THE DOOR, on the channel its caller speaks: the opening
+/// answered with the handshake, a plaintext frame left to be read. A
+/// handshake that fails is refused by name and the connection let go.
+pub(crate) fn accept(tcp: TcpStream, pace: Pace) -> Option<Channel> {
+    accept_with(tcp, home(), pace)
+}
+
+pub(crate) fn accept_with(tcp: TcpStream, home: Option<&NoiseHome>, pace: Pace) -> Option<Channel> {
+    let at = tcp.peer_addr().ok();
+    match channel::accept(tcp, home, pace) {
+        Ok(c) => Some(c),
+        Err(why) => {
+            match at {
+                Some(at) => eprintln!("  channel from {at} refused: {why}"),
+                None => eprintln!("  channel refused: {why}"),
+            }
+            None
+        }
+    }
+}
+
+/// THE LISTENER'S OWN ANSWER, where every reader is busy (23.8): the
+/// caller's channel opened at the mesh's measured prior, so a caller that
+/// stalls its opening holds the listener no longer than a silent peer holds
+/// an ask, and `frame` (the deferral) written on it unread — inside Noise
+/// for a Noise caller, as before for a plaintext one.
+pub(crate) fn defer_unread(tcp: TcpStream, mesh: &Mesh, frame: WireFrame) {
+    defer_unread_with(tcp, mesh, frame, home());
+}
+
+pub(crate) fn defer_unread_with(tcp: TcpStream, mesh: &Mesh, frame: WireFrame, home: Option<&NoiseHome>) {
+    let Some(pace) = pace_of(Stall::of(prior(mesh)).resolved()) else { return };
+    let Some(mut s) = accept_with(tcp, home, pace) else { return };
+    answer(&mut s, frame);
+}
+
+/// The pace a stall reads at; none for `Unmeasured`, on which no read is
+/// begun (D2.6; `tell_peer_within` resolves it as a first ask).
+pub(crate) fn pace_of(stall: Stall) -> Option<Pace> {
+    match stall {
+        Stall::Strokes(n) => Some(Pace::Polled(Some(n))),
+        Stall::Beyond => Some(Pace::Polled(None)),
+        Stall::Unmeasured => None,
+    }
 }
 
 /// Write one frame back, or REFUSE the act. `encode` answers `None` when a
@@ -28,7 +97,7 @@ pub(crate) fn arm_deadline(s: &TcpStream) {
 /// read (the reflex pool hands the stream on).
 static POINTED: std::sync::Mutex<Vec<std::net::SocketAddr>> = std::sync::Mutex::new(Vec::new());
 
-fn note_pointed(s: &TcpStream, pointed: bool) {
+fn note_pointed(s: &Channel, pointed: bool) {
     let (Ok(at), Ok(mut held)) = (s.peer_addr(), POINTED.lock()) else { return };
     held.retain(|a| *a != at);
     if pointed {
@@ -68,14 +137,14 @@ pub(crate) fn admit_pointed(
 
 /// Whether this connection's speaker carried a point, its entry let go: one
 /// answer per frame read.
-fn spoke_pointed(s: &TcpStream) -> bool {
+fn spoke_pointed(s: &Channel) -> bool {
     let (Ok(at), Ok(mut held)) = (s.peer_addr(), POINTED.lock()) else { return false };
     let was = held.contains(&at);
     held.retain(|a| *a != at);
     was
 }
 
-pub(crate) fn answer(s: &mut TcpStream, frame: WireFrame) {
+pub(crate) fn answer(s: &mut Channel, frame: WireFrame) {
     let _ = answer_written(s, frame);
 }
 
@@ -85,26 +154,61 @@ pub(crate) fn answer(s: &mut TcpStream, frame: WireFrame) {
 /// is never silent there (2026-10-08). A LOWER BOUND: a reply written just
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
-pub(crate) fn answer_written(s: &mut TcpStream, frame: WireFrame) -> bool {
+pub(crate) fn answer_written(s: &mut Channel, frame: WireFrame) -> bool {
     // 78.152 TU-7: a reply carries this door's final point where the speaker
     // carried one (`note_pointed`); otherwise it is the frame it always was.
     let point = match spoke_pointed(s) {
         true => crate::tuniversal::final_point(),
         false => None,
     };
-    match frame.encode_at(point.as_ref()) {
-        Some(bytes) => s.write_all(&bytes).is_ok(),
-        None => {
-            eprintln!(
-                "  court reply refused: body {} over the wire budget",
-                frame.body.len()
-            );
-            false
-        }
+    let refused = || eprintln!("  court reply refused: body {} over the wire budget", frame.body.len());
+    match s {
+        Channel::Noise(n) => match n.write_frame(&frame, point.as_ref()) {
+            Ok(()) => true,
+            Err(mycelium::network::noise::NoiseRefusal::FrameOverBudget { .. }) => {
+                refused();
+                false
+            }
+            Err(_) => false,
+        },
+        Channel::Plain(p) => match frame.encode_at(point.as_ref()) {
+            Some(bytes) => p.write_all(&bytes).is_ok(),
+            None => {
+                refused();
+                false
+            }
+        },
     }
 }
 
-pub(crate) fn read_frame(s: &mut TcpStream) -> Option<WireFrame> {
+pub(crate) fn read_frame(s: &mut Channel) -> Option<WireFrame> {
+    let Channel::Noise(n) = s else { return read_plain_frame(s) };
+    let read = n.read_frame();
+    match read {
+        Ok((frame, point)) => {
+            note_pointed(s, point.is_some());
+            crate::tuniversal::heard_at_door(point);
+            Some(frame)
+        }
+        // Refused by name inside the channel, as on plain TCP below; the lane
+        // byte stood inside the refused head and is not read.
+        Err(mycelium::network::noise::NoiseRefusal::FrameOverBudget { .. }) => {
+            refuse_over_budget(s, mycelium::network::wire::Lane::Spatial);
+            None
+        }
+        Err(_) => None,
+    }
+}
+
+/// THE ACT WHOSE HEAD NAMES A BODY PAST THE WIRE'S BUDGET, answered refused
+/// before the connection closes (78.125).
+fn refuse_over_budget(s: &mut Channel, lane: mycelium::network::wire::Lane) {
+    let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
+    let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
+    answer(s, WireFrame { lane, body });
+}
+
+fn read_plain_frame(s: &mut Channel) -> Option<WireFrame> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
@@ -118,9 +222,7 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<WireFrame> {
             Some((l, _)) => l,
             None => mycelium::network::wire::Lane::Spatial,
         };
-        let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
-        let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
-        answer(s, WireFrame { lane, body });
+        refuse_over_budget(s, lane);
         return None;
     }
     let mut buf = vec![0u8; 5 + len];
@@ -297,9 +399,23 @@ pub(crate) fn tell_peer_measured(mesh: &Mesh, endpoint: &str, body: Vec<u8>) -> 
 /// round trip in strokes — never zero: the poll that read the first byte is
 /// counted (D2.6) — or `None`: the peer is silent.
 pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> Option<(Vec<u8>, std::num::NonZeroU64)> {
-    let stall = stall.resolved();
-    let mut s = std::net::TcpStream::connect(endpoint).ok()?;
-    let _ = s.set_nodelay(true);
+    tell_peer_over(endpoint, body, stall, home())
+}
+
+/// `tell_peer_within` on the channel `home` opens: Noise where the peer
+/// speaks it, plaintext where it does not (named), and a pinned peer that
+/// presents another key, or answers in plaintext, refused by name and never
+/// asked in plaintext. The handshake waits at the same stall as the reply.
+pub(crate) fn tell_peer_over(endpoint: &str, body: Vec<u8>, stall: Stall, home: Option<&NoiseHome>) -> Option<(Vec<u8>, std::num::NonZeroU64)> {
+    let pace = pace_of(stall.resolved())?;
+    let mut s = match channel::dial(endpoint, home, pace) {
+        Ok(s) => s,
+        Err(why @ (mycelium::network::noise::NoiseRefusal::PeerKeyChanged { .. } | mycelium::network::noise::NoiseRefusal::PinnedAnsweredPlain { .. })) => {
+            eprintln!("  channel to {endpoint} refused: {why}");
+            return None;
+        }
+        Err(_) => return None,
+    };
     // A PEER THAT SAYS NOTHING IS SILENT, NOT AUTHORITATIVE. `read_exact`
     // with no bound makes a peer that writes nothing an unbounded wait, and
     // one such peer stops this thread and every act it was going to perform
@@ -310,99 +426,50 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     // The bound is STROKES, not seconds. The first cut set two 20-second
     // socket timeouts, which is a wall clock in a binary (law 9) and the
     // very sites B6 exists to remove. A socket cannot be handed a stroke,
-    // so the READ is budgeted instead: non-blocking, one spend per attempt,
-    // refused when the transport's own deadline is spent.
+    // so the READ is polled instead (`Pace::Polled`): non-blocking, one
+    // spend per poll that moves no byte, refused when the transport's own
+    // deadline is spent. PROGRESS REFILLS THE BUDGET: what it bounds is a
+    // STALL, so a peer trickling a large frame is never refused for being
+    // slow, and one that has said nothing at all still is. A poll costs the
+    // processor its scheduler floor (the stroke-duration ruling), so a peer
+    // whose listener has merely not been scheduled is not counted silent.
     let frame = WireFrame { lane: mycelium::network::wire::Lane::Spatial, body };
     // 78.152 TU-7: a court's act to a peer carries its door's final point.
-    s.write_all(&frame.encode_at(crate::tuniversal::final_point().as_ref())?).ok()?;
-    s.set_nonblocking(true).ok()?;
-    let mut head = [0u8; 5];
+    let carried = crate::tuniversal::final_point();
     // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this court
     // spent between the write and the first byte back, one stroke per poll
     // of the socket, the poll that found the byte included. It returned a
     // literal 1, so every rtt window held ones, `rtt_floor` was 1 on every
     // wire and `transport_deadline(1)` was eight yields -- microseconds,
-    // refusing a peer that had merely not been scheduled. The body's read
-    // is the frame's length, not the transport, and is not in the measure.
-    let rtt = std::num::NonZeroU64::new(read_budgeted(&mut s, &mut head, stall)?)?;
-    let (_, pointed) = mycelium::network::wire::read_lane(head[0])?;
-    let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::TRAILER_MAX {
-        return None;
-    }
-    let mut reply = vec![0u8; len];
-    read_budgeted(&mut s, &mut reply, stall)?;
+    // refusing a peer that had merely not been scheduled. The handshake
+    // before the write is not in the measure.
+    s.paced_mut().measure();
+    let (reply, point) = match &mut s {
+        Channel::Noise(n) => {
+            n.write_frame(&frame, carried.as_ref()).ok()?;
+            let (reply, point) = n.read_frame().ok()?;
+            (reply.body, point)
+        }
+        Channel::Plain(p) => {
+            p.write_all(&frame.encode_at(carried.as_ref())?).ok()?;
+            let mut head = [0u8; 5];
+            p.read_exact(&mut head).ok()?;
+            let (_, pointed) = mycelium::network::wire::read_lane(head[0])?;
+            let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
+            if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::TRAILER_MAX {
+                return None;
+            }
+            let mut reply = vec![0u8; len];
+            p.read_exact(&mut reply).ok()?;
+            mycelium::network::wire::split_point(reply, pointed)?
+        }
+    };
+    // Never zero: the poll that read the first byte is counted (D2.6).
+    let rtt = std::num::NonZeroU64::new(s.paced().first_byte_at()?)?;
     // The peer door's final point leaves the body: a claim of that door, read
     // as heard here — this court's final point is its own keepers' quorum.
-    let (reply, point) = mycelium::network::wire::split_point(reply, pointed)?;
     crate::tuniversal::shelf().heard_at_door(point);
     Some((reply, rtt))
-}
-
-/// Fill `buf` from a non-blocking stream, paying one stroke per attempt
-/// that finds nothing, and answer with the strokes it took for the first
-/// byte to arrive: the polls made up to and including the one that read
-/// it, so a reply present on the first poll took one stroke, the
-/// instrument's own resolution, never a floor. `None` when the peer
-/// closed, when the read errors, or when the budget is spent -- all three
-/// are the same answer to the caller: this peer is SILENT, which the
-/// exchange already counts as a refusal. It is never a partial buffer read
-/// as a short frame (rule 11). An empty buffer is filled by no poll and
-/// measures nothing, which reads as zero strokes. Under `Stall::Beyond` no
-/// poll is counted: the read ends at the stream's own end (the boundary it
-/// walks), or filled.
-/// An `Unmeasured` stall is refused: a read is never begun on no bound and
-/// no measurement (D2.6; `tell_peer_within` resolves it as a first ask).
-pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: Stall) -> Option<u64> {
-    let fresh = || match stall {
-        Stall::Strokes(n) => Some(mycelium::physics::Physics::default().stroke_n(n.get())),
-        Stall::Beyond | Stall::Unmeasured => None,
-    };
-    if stall == Stall::Unmeasured {
-        return None;
-    }
-    let mut budget = fresh();
-    let mut got = 0usize;
-    let mut polls = 0u64;
-    let mut first_byte_at = 0u64;
-    while got < buf.len() {
-        polls += 1;
-        match std::io::Read::read(s, &mut buf[got..]) {
-            Ok(0) => return None,
-            Ok(n) => {
-                if got == 0 {
-                    first_byte_at = polls;
-                }
-                got += n;
-                // PROGRESS REFILLS THE BUDGET. Spent per poll it counted
-                // scheduler passes, not transport: `transport_deadline(8)`
-                // is 64, and 64 yields pass in microseconds, so a peer that
-                // was merely slow to be scheduled was refused as silent.
-                // Measured on the transport's own test, which passed alone and failed
-                // beside its neighbours. What the budget bounds is a STALL
-                // -- consecutive polls that move no bytes -- so a peer
-                // trickling a large frame is never refused for being slow,
-                // and one that has said nothing at all still is.
-                budget = fresh();
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                if budget.as_mut().is_some_and(|b| !b.spend()) {
-                    return None;
-                }
-                // A POLL COSTS THE PROCESSOR (the stroke-duration ruling).
-                // `yield_now` returns at once when no other thread on this
-                // core is ready, so the whole poll budget passed in
-                // microseconds and a peer whose listener had merely not
-                // been scheduled was counted SILENT — which is what every
-                // court read of every peer on the epoch-10 deployment, while
-                // each of them pinned a core in its own idle loop.
-                std::thread::sleep(mycelium::physics::stroke_floor());
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
-            Err(_) => return None,
-        }
-    }
-    Some(first_byte_at)
 }
 
 /// WHETHER A PEER IS ASKED AGAIN (45.7, S13.1), a predicate at the wire

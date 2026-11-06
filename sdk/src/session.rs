@@ -45,6 +45,12 @@
 /// `reserve_reading`; the seat acts (see [`crate::seat`]).
 pub use mycelium::sdk::Session;
 
+/// MU-PRECURSORS §3.1 — a host's Noise home: its static channel key
+/// (`noise.key`, minted once) and the hyphae's keys pinned on first use
+/// (`noise.pins`). [`Session::with_noise`] opts a session into the encrypted
+/// channel; a session without one speaks plaintext, which every hypha names.
+pub use mycelium::network::noise::{NoiseHome, NoiseRefusal};
+
 /// How far one exchange may run, in the mind's own strokes.
 pub use mycelium::sdk::TransportAperture;
 

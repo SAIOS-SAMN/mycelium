@@ -6,7 +6,7 @@ use mycelium::anastome::dialogue;
 use mycelium::cognition::{outcome_code, Outcome};
 use mycelium::network::wire::WireFrame;
 use mycelium::physics::actions::{Action, Kind};
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
@@ -18,7 +18,7 @@ static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
 /// (78.152b) a peer keeper's pushed ring (`ACT_TICK`), off the keepers' own
 /// lock. None waits behind a worker the court holds. `false` where the
 /// frame is none of them: the caller judges it as before.
-pub(crate) fn serve_published(stream: &mut TcpStream, frame: &WireFrame, context: &Context) -> bool {
+pub(crate) fn serve_published(stream: &mut Channel, frame: &WireFrame, context: &Context) -> bool {
     let tag = dialogue::act_tag(&frame.body);
     let served = match tag.and_then(Action::of_wire) {
         Some(Action::Receipts) => {
@@ -57,7 +57,7 @@ pub(crate) fn serve_published(stream: &mut TcpStream, frame: &WireFrame, context
     served
 }
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: WireFrame, context: &Context) {
     if serve_control(stream, &frame, context) {
         return;
     }

@@ -11,9 +11,9 @@ use crate::transport::answer;
 use mycelium::anastome::dialogue::lease::{decode_close, decode_lease, encode_lease_reply};
 use mycelium::anastome::dialogue::wallet::{decode_stake, decode_wallet, encode_stake_reply, encode_wallet_reply};
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     // MU-ECONOMY §5.2 — a compute lease opened or closed: a write, taken
     // under the court and acknowledged only once durable, as a stake is.
     let lease = match (decode_lease(&frame.body), decode_close(&frame.body)) {
