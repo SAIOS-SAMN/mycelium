@@ -329,7 +329,7 @@ impl Mind {
         // MU-CLIENT §4.13 — the hearings left unread across a return lapse,
         // and §7.1 the offers left uncoupled across one.
         if returns > 0 {
-            // Both buffers: the hearings whose loops were read and left
+            // Both buffers: the hearings whose relations were read and left
             // unread on, and the ones the conversation handed over and no
             // stroke read (ruled 2026-10-26).
             let lapsed = self.lapse_hearings().checked_add(self.lapse_field_waiting()).and_then(|n| u64::try_from(n).ok());

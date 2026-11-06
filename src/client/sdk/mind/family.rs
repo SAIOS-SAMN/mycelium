@@ -5,7 +5,7 @@
 //
 //! 21, 26 — a family the form engine does not close is a WITHHELD form, held
 //! in the contemplation rather than dropped; no residue reaches the
-//! wire. A sentence with demand vertices is uttered whole (50.5).
+//! wire. A sentence with demand vertices is asserted whole (50.5).
 
 use crate::client::sdk::*;
 use crate::transducer::family::{Family, Frames};
@@ -429,9 +429,9 @@ impl Mind {
     /// SPEAK A RULE AS ITS CRYSTALLIZED FORM (chapter 30 step 4). The
     /// remainder is interpreted in the act that speaks it (78.81): an
     /// inversion the speech accepted IS the form spoken. A form carrying
-    /// demands is uttered whole with them (50.5); a form with a remainder, an
+    /// demands is asserted whole with them (50.5); a form with a remainder, an
     /// unmeasurable span, or no mint is held as thought; the wire never sees
-    /// a nerve. Answers the magnitude uttered.
+    /// a nerve. Answers the magnitude asserted.
     pub(crate) fn speak_form(&mut self, rule: &SentenceRule, train: &Family, frames: &Frames, family: &[u8], budget: &mut crate::physics::Budget) -> Option<[u64; 4]> {
         let prepared = speech_of(&self.language, rule, train, budget);
         self.speak_prepared(prepared, train, frames, family, budget)
@@ -439,9 +439,9 @@ impl Mind {
 
     /// THE PREPARED SPEECH SPOKEN (`speech_of` read it, here or on the
     /// perception carrier): an unmeasurable span withholds; a form carrying
-    /// demands is uttered whole with them (50.5); a form with a remainder, or
+    /// demands is asserted whole with them (50.5); a form with a remainder, or
     /// no mint, is held as thought; otherwise its word is spoken under its
-    /// scene. Answers the magnitude uttered.
+    /// scene. Answers the magnitude asserted.
     pub(crate) fn speak_prepared(
         &mut self,
         (rule, mag, remainders): (SentenceRule, [u64; 4], Vec<Chain>),
@@ -481,7 +481,7 @@ impl Mind {
         Some(word.magnitude())
     }
 
-    /// 50.5 — THE SENTENCE WITH ITS DEMANDS, uttered whole: minted at its
+    /// 50.5 — THE SENTENCE WITH ITS DEMANDS, asserted whole: minted at its
     /// span, spoken, and — refused by the mint, by the court or by the wire —
     /// held as the open work it is, never let go. A sentence the court took
     /// is order built, recorded at its own magnitude (78.69 fix 3).

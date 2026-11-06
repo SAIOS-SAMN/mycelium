@@ -51,7 +51,7 @@ fn tell_peer_within_reads_reply_and_counts_strokes() {
         // sibling test may have advanced; the act is the body either way.
         let (_, pointed) = mycelium::network::wire::read_lane(head[0]).expect("a lane");
         let (body, _point) = mycelium::network::wire::split_point(body, pointed).expect("a frame's body and its point");
-        let frame = mycelium::network::wire::WireFrame {
+        let frame = mycelium::network::wire::Delimited {
             lane: mycelium::network::wire::Lane::Spatial,
             body: reply_body,
         };

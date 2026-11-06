@@ -479,7 +479,7 @@ impl Mind {
     /// against what it holds and credits each cited word's discoverer with
     /// the use (26). It mints no dimension, so it waits on no union. Said
     /// once: a composition a court already taught is a use, not a second
-    /// utterance. Answers whether the ruled words compose it.
+    /// expression. Answers whether the ruled words compose it.
     pub(crate) fn speak_composition(
         &mut self,
         residue: &crate::transducer::cga::Mv,
@@ -706,7 +706,7 @@ impl Mind {
 
     /// Stand a withheld form and hold it as an idea (24.3 as amended,
     /// 50.6 seam 1). Nothing is expressed as a residue word and no chain
-    /// is uttered: what the form could not close is its demand vertices,
+    /// is asserted: what the form could not close is its demand vertices,
     /// spoken with the sentence by `speak_form`, and a remainder no demand
     /// names is the idea's own work.
     #[cfg(test)]
@@ -775,7 +775,7 @@ impl Mind {
     /// orbit with the mind's language as its crystal (the closed forms it holds,
     /// ruled or stood; an idea is glued only once it has closed and stood,
     /// 13.6). An idea that closes crystallizes (25.2), stands in the
-    /// dialect and is uttered once (24.3). Returns the lane measure of the
+    /// dialect and is asserted once (24.3). Returns the lane measure of the
     /// A16 snaps (Discharged, Vortex, TorsionFiled) and the dirty ring's
     /// circuit reading — circuits and period in strokes — when this stroke
     /// completed a circuit (45.7, S13.3).
@@ -887,7 +887,7 @@ impl Mind {
             };
             // Standing in this mind's own dialect is not being heard: only a
             // court's standing or ratifying (`already_taught`) ends the
-            // utterance; a deferred letter is said again.
+            // expression; a deferred letter is said again.
             if self.already_taught(&e) {
                 continue;
             }
@@ -895,9 +895,9 @@ impl Mind {
         }
     }
 
-    /// A crystallized idea stands in the dialect and is uttered once
+    /// A crystallized idea stands in the dialect and is asserted once
     /// (25.2, 24.3): the same vertex already stood or taught is a use, not
-    /// a second utterance.
+    /// a second expression.
     ///
     /// MU-CLIENT §5.4 (E1) — UNDER THE SCENE ITS EVIDENCE NAMES: `family` is
     /// the citation of the family it closed (`Contemplation::crystallize`),
@@ -923,7 +923,7 @@ impl Mind {
         }
         // Spoken, refused on the wire, or withheld on a transport error: the
         // court's reply is the record (its refusal code, its docket). 37.7 —
-        // where it lands, what no court taught on this utterance (deferred,
+        // where it lands, what no court taught on this expression (deferred,
         // unread, unreachable) is said again on a later stroke; a refusal
         // seals it and it leaves.
         let word = e.clone();
@@ -1064,8 +1064,8 @@ impl Mind {
                 || unratified(a)
         };
         let dropped = self.language.shed_unreferenced(&referenced);
-        // 7.3, S12.6a: the utterance receipt of a word that shed leaves
-        // with it: 24.3's "nothing is uttered twice" needs the receipt only
+        // 7.3, S12.6a: the expression receipt of a word that shed leaves
+        // with it: 24.3's "nothing is asserted twice" needs the receipt only
         // while the word stands.
         for a in &dropped {
             self.forget_utterance(a);

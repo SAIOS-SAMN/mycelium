@@ -2,7 +2,7 @@
 //
 // 24 — the mind: a voice with its genome, and what it owes its courts.
 //
-//! 24.3 — THE MIND: perceive, think, stand, utter, contract — the stroke,
+//! 24.3 — THE MIND: perceive, think, stand, assert, contract — the stroke,
 //! the quote, the speech, the adjudication, and what each writes.
 
 pub(super) mod seating;
@@ -28,7 +28,7 @@ pub(super) mod second_vantage;
 pub(super) mod think;
 pub(super) mod winding;
 pub(super) mod transport;
-pub(super) mod utter;
+pub(super) mod express;
 
 use super::*;
 
@@ -73,10 +73,10 @@ pub struct Mind {
     pub(crate) taught_up: crate::network::nerve::Keyed<Option<Vec<u8>>>,
     /// `taught_up` INDEXED BY VERTEX STRATUM: the M1 key of a word's rotor
     /// (or its canonical chain, where it has no letters) to the addresses
-    /// uttered at it.
+    /// asserted at it.
     ///
     /// `already_taught` read the whole of `taught_up` doing an exact
-    /// `same_vertex` against every word this mind had ever uttered, on
+    /// `same_vertex` against every word this mind had ever asserted, on
     /// every sentence of every speak — law 3's "no loop over pairs the
     /// carrier does not already name", and its answer: "the carrier is
     /// missing a key and that key is the first thing to write". On a mesh
@@ -151,15 +151,15 @@ pub struct Mind {
     /// built; a sealed tape is refused by the mind itself.
     pub(crate) sealed: crate::network::nerve::Keyed<u64>,
     /// Contraction certificates by the contracted form's vertex key, cited
-    /// on the next utterance of that form (50.9).
+    /// on the next expression of that form (50.9).
     pub(crate) contractions: crate::network::nerve::Keyed<crate::transducer::sentence::Contraction>,
-    /// The contracted sentences waiting to be uttered, each with the family
+    /// The contracted sentences waiting to be asserted, each with the family
     /// and the task it was minted for.
     pub(crate) contracted: Vec<Pending>,
     /// 21 step 3, chapter 6's depth order — WHAT THIS MIND OWES A COURT
     /// BEFORE IT SPEAKS AGAIN. A court that answered `Awaiting` has not
     /// ruled a form this mind cited; the mind HOLDS that form, so it
-    /// utters the cited form first and the citer after it. Nothing was
+    /// asserts the cited form first and the citer after it. Nothing was
     /// sealed and nothing was refused: this is the mind teaching the
     /// court what it was speaking from, in the order a cited form must
     /// precede its citer.
@@ -238,7 +238,7 @@ pub struct Owed {
     pub task: Vec<u8>,
 }
 
-/// A CONTRACTED SENTENCE WAITING TO BE UTTERED (50.9): the sentence the
+/// A CONTRACTED SENTENCE WAITING TO BE ASSERTED (50.9): the sentence the
 /// move produced, the family it was minted over, the task it answers, and
 /// the certificate it cites.
 #[derive(Clone, Debug)]

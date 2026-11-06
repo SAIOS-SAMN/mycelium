@@ -154,7 +154,7 @@ impl Court {
     ///
     /// μ IS A SHARE OF THE FRAME (MU-RECURSION 78.170 O1, ruled 2026-11-01):
     /// a discharge read on a family is each pair's share of its own frame
-    /// (`transduce::share_of_frame`); a discharge with no frame — a
+    /// (`transduce::share_of_enclosure`); a discharge with no frame — a
     /// rewrite's magnitude, a listing bound to no family — keeps its own
     /// measure as `n/1`.
     pub(crate) fn discharge_on(

@@ -585,7 +585,7 @@ fn speak_clauses_settles_stack_and_stops_at_border() {
     let say = |clause: &Clause, x: &[&str]| -> Result<SectionSample, Unstated> {
         let x = digits(x);
         let spoken = speak_clauses(std::slice::from_ref(clause), &x, &crate::transducer::family::perceive(&x))?;
-        let mut g = SectionSample::filled(spoken.frame, 0).expect("a frame");
+        let mut g = SectionSample::filled(spoken.extents, 0).expect("a frame");
         for p in spoken.painted {
             g.paint(p.site, p.symbol).expect("on the sample");
         }

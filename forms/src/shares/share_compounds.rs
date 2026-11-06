@@ -103,7 +103,7 @@ impl Remaining {
 /// forms read in frames that bend, twist, stretch, expand and contract —
 /// never on a grid): its reading is the one-axis point it is, carried
 /// exactly by the frame form.
-impl crate::frame::ReadIn for Remaining {
+impl crate::reference::ReadIn for Remaining {
     fn reading_point(&self) -> Vec<Q> {
         vec![self.reading()]
     }

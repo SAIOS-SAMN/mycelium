@@ -64,7 +64,7 @@ fn receipts_survives_element_record() {
 ///
 /// Evidence is not identity. Two words whose geometry is one and whose
 /// attestations differ are ONE word at ONE address — otherwise a mind that
-/// pivots would rename its own utterance and orphan every citation of it,
+/// pivots would rename its own expression and orphan every citation of it,
 /// which is the argument that moved the filing at `df1eeaa`.
 #[test]
 fn set_receipts_keeps_address() {

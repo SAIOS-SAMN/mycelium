@@ -52,7 +52,7 @@ fn words_of(e: &Element) -> Vec<(crate::network::nerve::coord::VertexAt, crate::
 }
 
 /// A `VertexBody` refusal at one word: the mind seals the refused address
-/// on its own chain and in the utterance index, contracts the form (the
+/// on its own chain and in the expression index, contracts the form (the
 /// word is now a demand on its chart, the closed sub-complex one word
 /// smaller), holds it with its certificate, and queues the contracted
 /// sentence citing the receipt.
@@ -79,10 +79,10 @@ fn receive_adjudication_contracts_form_and_seals_address() {
     assert!(entity.ideas_len() >= 1, "the contracted form is held as an idea");
     let pending = entity.take_contracted();
     match words.len() {
-        1 => assert!(pending.is_empty(), "a sentence whose only word was refused has nothing to utter"),
+        1 => assert!(pending.is_empty(), "a sentence whose only word was refused has nothing to assert"),
         _ => {
             let [p] = pending.as_slice() else {
-                panic!("one contracted sentence waits to be uttered, got {}", pending.len());
+                panic!("one contracted sentence waits to be asserted, got {}", pending.len());
             };
             let f = crate::transducer::sentence::from_element_form(&p.sentence)
                 .expect("the contracted tape reads back");
@@ -108,7 +108,7 @@ fn receive_adjudication_contracts_form_and_seals_address() {
 /// A sealed tape never reaches the wire: the mind refuses it itself, with
 /// no frame built (a session bound to nothing answers nothing, and the
 /// speak returns without asking it), and the sentence is neither stood
-/// nor filed as uttered.
+/// nor filed as asserted.
 #[test]
 fn speak_refuses_sealed_tape_before_wire() {
     use crate::anastome::dialogue::SPEECH_REFUSED;
@@ -131,19 +131,19 @@ fn speak_refuses_sealed_tape_before_wire() {
     entity.speak(std::slice::from_ref(&e), move |_, codes| *into.borrow_mut() = Some(codes));
     let codes = heard.borrow_mut().take().expect("heard at once: no frame went on the wire").expect("no frame is built for a sealed tape");
     assert_eq!(codes, vec![SPEECH_REFUSED], "refused by the mind itself");
-    assert!(!entity.uttered(e.address().as_bytes()), "never filed as uttered");
+    assert!(!entity.uttered(e.address().as_bytes()), "never filed as asserted");
     assert_eq!(entity.dialect_len(), 0, "a sealed sentence does not stand");
 }
 
 /// 24.2, 50.9 — A REFUSED SENTENCE LEAVES THE DIALECT with its refusal: it
-/// stood there before it was uttered and did not stand at the court, so
+/// stood there before it was asserted and did not stand at the court, so
 /// nothing glues it and nothing cites it again.
 #[test]
 fn receive_adjudication_drops_refused_sentence_from_dialect() {
     let (family, e) = two_bars();
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("refused-leaves"));
     entity.language.stand_dialect_at(e.clone(), 1, 1);
-    assert_eq!(entity.dialect_len(), 1, "the sentence stood in the dialect before the utterance");
+    assert_eq!(entity.dialect_len(), 1, "the sentence stood in the dialect before the expression");
     let mut b = entity.stroke();
     let _ = entity.receive_adjudication(
         &e,
@@ -212,7 +212,7 @@ fn owe_citation_owes_once_per_court_never_sealed() {
 
 /// The contraction certificate is indexed by the minted sentence's address,
 /// so `certificate_for` reads it directly when the contracted sentence is
-/// uttered.
+/// asserted.
 #[test]
 fn certificate_for_reads_contraction_by_minted_address() {
     let (family, e) = two_bars();

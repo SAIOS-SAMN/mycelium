@@ -196,9 +196,9 @@ impl Write for Opened {
 /// ONE FRAME at the post on an open channel: a question `answer` takes is
 /// answered on it, anything else delivered.
 fn converse<S: Read + Write>(s: &mut S, deliver: &impl Fn(Vec<u8>), answer: &impl Fn(&[u8]) -> Option<Vec<u8>>) -> io::Result<()> {
-    let frame = read_frame(s)?;
+    let frame = read_delimited(s)?;
     match answer(&frame) {
-        Some(reply) => write_frame(s, &reply),
+        Some(reply) => write_delimited(s, &reply),
         None => {
             deliver(frame);
             Ok(())
@@ -255,15 +255,15 @@ fn dial_mind(endpoint: &str, peer: &str, home: Option<&NoiseHome>) -> io::Result
 /// speaks it, pinned under `peer`.
 pub fn send_over(endpoint: &str, peer: &str, frame: &[u8], home: Option<&NoiseHome>) -> io::Result<()> {
     let mut ch = dial_mind(endpoint, peer, home)?;
-    write_frame(&mut ch, frame)
+    write_delimited(&mut ch, frame)
 }
 
 /// ASK the mind at `endpoint`, named `peer`, one question and read its
 /// answer, on one connection: inside Noise as `send_over` is.
 pub fn ask_over(endpoint: &str, peer: &str, question: &[u8], home: Option<&NoiseHome>) -> io::Result<Vec<u8>> {
     let mut ch = dial_mind(endpoint, peer, home)?;
-    write_frame(&mut ch, question)?;
-    read_frame(&mut ch)
+    write_delimited(&mut ch, question)?;
+    read_delimited(&mut ch)
 }
 
 /// THE NAME A MIND'S POST IS PINNED UNDER: the voice the rendezvous files

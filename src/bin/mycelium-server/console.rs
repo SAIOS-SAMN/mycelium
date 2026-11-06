@@ -481,7 +481,7 @@ fn clock(c: &observe::Clock) -> Vec<String> {
                 }),
                 format!("  {BOLD}persisted{RESET}   {}", since(c.persisted, h, c.k)),
                 format!("  {BOLD}folded{RESET}      {}", since(c.folded, h, c.k)),
-                format!("  {BOLD}unframed{RESET}    {}", flag(c.unframed > 0, format!("{} acts sealed on a word nothing measured", c.unframed))),
+                format!("  {BOLD}unframed{RESET}    {}", flag(c.unmeasured > 0, format!("{} acts sealed on a word nothing measured", c.unmeasured))),
                 format!("  {BOLD}unstamped{RESET}   {}", flag(ub + up + ul + uc + uf > 0, unstamped)),
                 format!("  {BOLD}economy{RESET}     {rulings}"),
             ]

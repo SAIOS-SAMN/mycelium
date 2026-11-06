@@ -645,7 +645,7 @@ pub(super) fn family_percept(
     // are filed by member and by class (21 step 1) once every vertex
     // stands.
     let mut scenery = Scenery::new();
-    let frame_at = coord::VertexAt::Frame;
+    let frame_at = coord::VertexAt::Enclosure;
     let _ = scenery.place(frame_vertex(), Vec::new());
     // THE BODIES EACH MEMBER STANDS ON AT EACH FRAME, keyed member ‖ frame:
     // the member by its vertex's coordinate and its chart, the frame by its
@@ -1203,13 +1203,13 @@ pub(super) fn family_percept(
         // the Frame — whose chart is its tag alone and stands first — and,
         // where the edge re-derived on some of them only, those (52.5: the
         // face's section along `e₃`).
-        let star_i = matches!(i, coord::VertexAt::Frame);
-        let star_j = matches!(j, coord::VertexAt::Frame);
+        let star_i = matches!(i, coord::VertexAt::Enclosure);
+        let star_j = matches!(j, coord::VertexAt::Enclosure);
         let frames: Vec<u64> = match (star_i, star_j) {
             (true, _) => form.member_frames(&j, &cj),
             (_, true) => form.member_frames(&i, &ci),
             _ => {
-                let there = crate::transducer::sentence::section_of_frames(form.member_frames(&j, &cj));
+                let there = crate::transducer::sentence::samples_of_section(form.member_frames(&j, &cj));
                 form.member_frames(&i, &ci).into_iter().filter(|k| there.contains(&frame_key(*k))).collect()
             }
         };
@@ -1219,7 +1219,7 @@ pub(super) fn family_percept(
         };
         for k in frames {
             let chart = |v: &coord::VertexAt, c: &Invariant| match v {
-                coord::VertexAt::Frame => ChartAt::Frame,
+                coord::VertexAt::Enclosure => ChartAt::Frame,
                 _ => ChartAt::at(v.clone(), c.clone(), k),
             };
             let o = match star_j {

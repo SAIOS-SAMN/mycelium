@@ -471,7 +471,7 @@ pub struct ChamberAlgebra {
     pub coxeter: Option<super::CoxeterReading>,
     pub polars: Option<super::CoxeterReading>,
     /// DF1 — the dual frame, `descend`'s reader, or why there is none.
-    pub dual: Option<cga::DualFrame>,
+    pub dual: Option<cga::ReciprocalBasis>,
     /// OR3 — each crossing circuit whose holonomy did not read, by its reason.
     pub circuits_unread: Vec<CircuitUnread>,
     /// MR1 — each read circuit whose modes did not read, by why.
@@ -933,7 +933,7 @@ pub fn read_chamber_after(
     });
     let dual = nuclei.map(cga::dual_frame);
     let polars = match &dual {
-        Some(cga::DualFrame::Frame(ps)) => Some(super::read_coxeter(ps, &[], budget)),
+        Some(cga::ReciprocalBasis::Frame(ps)) => Some(super::read_coxeter(ps, &[], budget)),
         _ => None,
     };
     ChamberAlgebra {

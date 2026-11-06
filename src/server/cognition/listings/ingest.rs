@@ -2,7 +2,7 @@
 // admits a voice's act, and the redundancy probe the syntropic stroke runs.
 //
 //! Nothing here composes a sentence (law 8, ruled 2026-09-10): a voice's
-//! utterance enters by `perceive_speech` and is listed by `list_sentence`.
+//! expression enters by `perceive_speech` and is listed by `list_sentence`.
 //! What stood here — a percept reduced against the language and the commit
 //! of a germ — was the court running F on a voice's painted sites, and it is
 //! deleted, not refused (50.6, seam 3).
@@ -37,7 +37,7 @@ impl Court {
         self.room_shortfall(voice, draw)
     }
 
-    /// THE REFLEX OPENING — under the lock, before an utterance is heard:
+    /// THE REFLEX OPENING — under the lock, before an expression is heard:
     /// the metabolism dissipates its backlog (no voice enrols here, §3.1 as
     /// ruled), the cheap syntropic moves fire in both resting states of the
     /// two-stroke (depleted or idle; the redundancy probe stays with the
