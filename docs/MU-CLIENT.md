@@ -387,18 +387,15 @@ export reaches it at the carrier facing that hypha (§5.1):
 | its pressure: the deficit per lane, the surface | every deferral, every quote reply | flux on the mind's lanes, which its metabolism carries; the mind's intake is paced by that internal metabolism — a scene admitted when the reserve has regenerated on the lanes it costs — never by a schedule and never by the pressure alone |
 | its listings: open forms with the demands each carries | quote replies | rings heard in the mind's three shells (§3.2) against its own of the same class: echo, nesting, a discharge where a held word answers |
 | its verdicts and rulings | the replies to the mind's acts (each reply's kind only, MU-RECURSION 0.1) | a ruling of a class the mind asks seals the hole that keeps it (§4.5); a refusal is a reading of its kind, held |
-| its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS`, `ACT_TEACH` | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
+| its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS` (teaching rides the syllabus; `ACT_TEACH` was retired, 78.94) | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
 | its published reading: cover, room, ruled cover, head | the shelf (78.151), read without the kernel | the language's charts the mind's rings stand against |
-| a registry task | `ACT_TASK` | an OFFER (§4.13) and, where it couples, a family given to the mind's perception, its solve the mind's act (§5.4): its pairs are SCENES taken into the shells as any family is, perturbing the orbits they land on; a solve is emitted by comprehension where a rule its perspectives know binds the thought (§4.9) — never a pipeline from the task's arrival to the court (§2.4(8)). Every scene keeps the coordinates of the family it came from, so whatever the mind speaks of it names its evidence (§5.4) |
-| its acts — Return, RankStep, Reconnect | its ledger | SPECIFIED: no act reaches a mind as a perception yet; until one does, the mind reads the hypha's motion only through the rows above |
+| a registry task | `ACT_TASK` | an OFFER, never a command (§4.13): where it couples, its pairs are SCENES perceived as any family is, perturbing the orbits they land on, and a solve is emitted by comprehension where a rule its perspectives know binds the thought (§4.9). Every scene keeps its family's coordinates, so what the mind asserts of it names its evidence (§5.4) |
+| its acts — Return, RankStep, Reconnect | its ledger | owed (#136): until one reaches the mind, it reads the hypha's motion only through the rows above |
 
-Beside the hypha, the mind takes in:
-- **other minds' speech** — what a peer says it newly understands, and its
-  answers to what this mind said (§5.3), at the carrier facing that peer;
-- **the corpus's families**, met where the mind's orbits stand (§4.13);
-- **a seat's sensorium** where the mind is seated: the game builds the
-  sensorium, and the sensorium speaks the given language to the mind
-  (§6). The mind never perceives a game's universe itself.
+Beside the hypha, the mind takes in other minds' assertions and answers
+(§5.3), the corpus's families met where its orbits stand (§4.13), and,
+where it is seated, a seat's sensorium as mathematics (§6). It never
+perceives a game's universe itself.
 
 Nothing heard enters the mind's genome or dialect as given (law 8): it is
 perceived, and the mind holds only what it re-derives.
@@ -814,20 +811,15 @@ period, one return one age, perturbed by its neighbours' lift and drag
 (78.46(4′)).
 
 **Generators open by commutator or puncture, and grow only on refusal.** A
-generator IS a constructor (78.32(3)(a)): a held element keyed by its
-canonical ray. A palindrome — a sandwich `V x Ṽ`, a conjugate — carries a
-thing to another vantage inside its class and OPENS NOTHING; a dimension is
-opened by the group commutator of two held versors, `[A, B] = A B Ã B̃`, new
-exactly where it leaves the span the held generators close (78.39(1)), and
-by a PUNCTURE, a new independent ring whose two orientations are a new
-inside and outside (78.40(1)). The store grows by ONE trigger — a refusal: a
-pivot that reaches its mode grows nothing; a mode no held word spells
-refuses as the typed demand carrying it (78.32(3)(b)). It grows by
-independence, shrinks by derivability — a constructor derivable from the
-others retires (78.32(3)(f)) — and is AMENDED BY EXPERIENCE (§4.10). Its
-capacity is the algebra's, derived: at most `n + 2` reflections to a versor,
-the closure bounded by `dim so(n+1,1)`; what a chamber cannot hold is held by
-the ENCLOSURE that wraps it, a sporophore of higher grade (78.32(3)(e), 78.31),
+generator IS a constructor (78.32(3)(a)), keyed by its canonical ray. A
+palindrome `V x Ṽ`, a conjugate, carries a thing to another vantage inside
+its class and OPENS NOTHING; a dimension is opened by the group commutator
+of two held versors, `[A, B] = A B Ã B̃`, where it leaves the held span
+(78.39(1)), or by a PUNCTURE (78.40(1)). The store grows by ONE trigger, a
+refusal (78.32(3)(b)); it shrinks by derivability (78.32(3)(f)) and is
+AMENDED BY EXPERIENCE (§4.10). Its capacity is the algebra's: at most
+`n + 2` reflections to a versor, the closure bounded by `dim so(n+1,1)`;
+what a chamber cannot hold is held by the ENCLOSURE that wraps it (78.31),
 never a stretched chamber and never a cap.
 
 ### 4.8 Waves, resonance, superposition
@@ -856,29 +848,22 @@ never a stretched chamber and never a cap.
 | word — the IDEA | candidate forms for one idea, each with its pivots — the vortex | the circuits' actions, the orbit algebra | a fill by a perception, or a court reconstruction making one a ruled citation |
 | conjugate — the THOUGHT across vantages | several twists under one class | the rays of one class against each other | a ruling that makes one twist the citation and the rest dialect |
 
-  At each grade the candidates are what the algebra has not yet
-  distinguished, held whole; a palindrome moves within the set, a
-  commutator on that grade's base separates it. Two remainders of one class
-  with different twists are a superposition HELD — the pair's commutator
-  `g₁ g₂ g̃₁ g̃₂` read into the class's modes: trivial, one vantage seen
-  twice; non-trivial, the dimension that separates the two vantages. Where
-  half-open signs superpose over a cycle, the collapse is a KERNEL over
-  `F₂`, every consistent assignment at once, never a pruning (59.5; T5).
+  At each grade a palindrome moves within the set and a commutator on that
+  grade's base separates it: two remainders of one class with different
+  twists have commutator `g₁ g₂ g̃₁ g̃₂`, trivial for one vantage seen twice,
+  non-trivial for the dimension that separates them. Half-open signs
+  superposed over a cycle collapse as a KERNEL over `F₂`, every consistent
+  assignment at once, never a pruning (59.5; T5).
 - **The vortex is the superposition of ideation, and the predictive
   self-model at the idea's grade** (78.168). Each candidate of an escaping
-  thought's vortex — a held form, a composition of ruled words, a clause set
-  read off an effect (§4.9), a conjugate — is held whole, writing nothing
-  (no hold, no mint, no send). No amplitude, weight or payoff ranks
-  candidates; the superposition is carried with its thought across returns,
-  and collapses only as this section says — a fill by a perception, a court
-  reconstruction, a ruling. A candidate lost without a binding or a named refusal is
-  a collapse, and a defect.
+  thought's vortex (a held form, a composition of ruled words, a clause set
+  read off an effect, a conjugate) is held whole, writing nothing. No
+  amplitude, weight or payoff ranks candidates; a candidate lost without a
+  binding or a named refusal is a defect.
 
   **What tells candidates apart.** Speaking the candidates on the thought's
-  OWN scenes decides nothing: they are certified discharges of the same
-  orbit on those scenes, and a candidate's move rewrites the form's FACES,
-  which a form's speech does not read — every candidate speaks the scenes
-  alike. What tells them apart is each candidate's orbit holonomy on a scene the
+  OWN scenes decides nothing: every candidate speaks them alike. What tells
+  them apart is each candidate's orbit holonomy on a scene the
   vortex has NOT yet seen: each new perception joining a thought is read
   against every vortex at its rotor's class
   (`Contemplation::carry_vortices_round` in `transducer/field/cross_scene.rs`
@@ -1257,17 +1242,14 @@ takes what is addressed to it.
 
 ### 5.2 Dialect
 
-A mind's dialect is its language as it composes it: the letters it coined,
-its words and the words' derivations, its shortcuts, the transports its
-conversations built — in its epigenome, volatile (78.49), amended by
-experience until each thought is discarded (§4.10), lapsing by its flux. It
-is the mind's history, the history that changes; the court's ledger and the
-genome of court-admitted words are the history that does not. Two minds
-holding different presentations reach one vertex by two derivations — one
-meaning, two proofs (13.10, 50.2). The dialect IS that difference: different
-letter structures on spinors reaching the same mathematical answer by
-different functions. Nothing compares them by bytes; both are the meaning,
-projectively.
+A mind's dialect is its language as it composes it (the letters it coined,
+its words and their derivations, its shortcuts, the transports its
+conversations built), held in its epigenome, volatile (78.49), amended by
+experience (§4.10): the history that changes, beside the court's ledger and
+genome, which do not. Two minds holding different presentations reach one
+vertex by two derivations, one meaning and two proofs (13.10, 50.2): the
+dialect IS that difference, and where the two derivations meet at one
+object they are a relation (§0). Nothing compares them by bytes.
 
 ### 5.3 Conversation between minds
 
@@ -1447,22 +1429,15 @@ rewrite moved (78.162). The mind proposing Rewrites is owed (§7.1).
 
 ### 5.5 Hardening: dialect into language
 
-The one motion of the objective (§1, item 6):
-1. **dialect** — each mind's own, amended by experience (§5.2);
-2. **agreement between minds** — a reconstructed discharge, one meaning by two
-   derivations (§5.3);
-3. **adjudication** — the coiner speaks it to a court, which re-derives it
-   on a second organ and rules it (§5.4);
-4. **hardening** — what is ruled returns through the syllabus as a MINERAL
-   in each mind's genome (`absorb_taught_at`, `MindLanguage::file_admitted`)
-   and hardens into a CRYSTAL where the mind re-derives it by its own
-   circuits (80.2).
-
-A dialect word is never copied into a genome (78.49, GEN7): the anastome —
-the network of minds and courts — fuses dialects into one language by
-conversation and adjudication, and each mind holds it by re-derivation,
-never by transmission (78.31, 78.95). Each step is a winding: the mind's,
-the conversation's, the court's, and the mind's again.
+The one motion of the objective (§1, item 6; §1a steps 5–7): the
+**dialect**, each mind's own (§5.2); **agreement** between minds, a
+reconstructed discharge (§5.3); **adjudication**, the coiner asserting it
+to a court that re-derives it on a second organ (§5.4); and **hardening**,
+what is ruled returning through the syllabus as a MINERAL in each genome
+(`absorb_taught_at`, `MindLanguage::file_admitted`) and hardening into a
+CRYSTAL where the mind re-derives it by its own circuits (80.2). A dialect
+word is never copied into a genome (78.49, GEN7): each mind holds the
+language by re-derivation, never by transmission (78.31, 78.95).
 
 **Real convergence: separate algorithmic constructions, or different
 orbits, reaching the same conclusion.** Agreement on one word read twice is
@@ -1667,65 +1642,78 @@ these seven); the rest are SICE's suite (test_sovereign_mind.py).
 
 ### 7.1 Implementation status
 
-The field (§4) exists in the tree: `Contemplation` with its complex, the
-transport fronts, the docket, the held orbits and the orbits' discharge, the
-questions as holes (`field/question.rs`) and the constructors
-(`construct_and_adjoin`). Paths below are under `src/`; `client/sdk/mind/`
+This section is the build's status and its order; the arc of §1a cites it.
+Progress is tracked on the issues and in ROADMAP track 10 (the mind) and
+track 26 (the field); this section names what exists and what is owed,
+never how far along a piece is. Paths are under `src/`; `client/sdk/mind/`
 is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 
-**Built**
+**Built.** What exists now, on the new substrate:
 
 | construct | § | where |
 |---|---|---|
-| carriers per counterparty: hypha, perception, conversation, seat | §5.1, §4.2 | `mind/hypha.rs` (`hypha::Carrier`, `Mind::ask_seat`); `mind/perceive.rs` (`take_perceived`); `mind/chatter.rs`; `mind/seating.rs` |
-| the field the mind's own; long laws off the field | §4.2 | `t/mind.rs` (`MindField`, `MindField::think`, `scratch_here`, `admit`) |
-| the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`) |
-| a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/field/merge.rs` (`Contemplation::closing_ground`); `t/field/line.rs` |
-| the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/field/cross_scene.rs` (`twisted_return`, `work_slips`); `t/field/returned.rs` (`work_returned`) |
-| the drive: the docket's one taker; deliberation | §4.12 | `t/field/cross_scene.rs` (`note_ground`); `t/field/plan.rs` (`docket_demand`, `drain_demands`); `mind/think.rs` (`compose_or_construct`) |
-| the vortex collapsed by a new perception | §4.8 | `t/field/cross_scene.rs` (`carry_vortices_round`); `t/field/contemplation.rs` (`collapse_on`) |
-| the pivot cross and the throat's two faces | §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs` |
-| the breath, every plane | §4.3 | `t/cga/commutator.rs` (`breath`, `breathe`) |
-| containment: release typed by why, sealing at the period, reservoirs condensing and locked, court gravity as drag | §4.13 | `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `mind/think.rs` (`lock_reservoirs`); `t/field/line.rs` (`return_escrow`) |
-| memory by coordinates; each question on its own line; the dialect shed by reference | §4.13 | `mind/chatter.rs` (`QUESTION_LINE`, `lapse_question`, `release_unmet`, `lapse_unpriced`); `mind/perceive.rs` (`lapse_hearings`); `mind/think.rs` (`Mind::shed`) |
-| a task as an offer and as perception; tension | §3.1, §4.13 | `mind/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `mind/court.rs` (`task_inflow`, `comprehend_waiting`); `mind/learn.rs` (`pull_task`) |
-| the corpus met at the focus; the ground state | §4.13 | `mind/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`, `Field::lands`); `mind/feed.rs` (`inotify`) |
-| an act read off its effect | §4.9 | `t/family/acts.rs` (`read_acts`) |
-| a rule known by its perspectives; undetermined rules sent for judgement | §5.4 | `mind/family.rs` (`ascertain_on`, `Unexempt`); `mind/perceive.rs` (`TaskSeen`) |
-| hearing as sound and word; questions one order down; vantage; given meanings | §5.3 | `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `distinct_vantage`, `learn_by`, `learn_given`, `re_reduce_given`); `mind/chatter.rs` (`price_hearings`, `sound_of`) |
-| deferral by an owed citation | §5.3(4) | `mind/contract.rs` (`owe_citation`) |
-| evidence: every scene under its family's citation | §5.4 | `server/registry.rs` (`citation`); `mind/court.rs` |
-| words installed beside the sentence that taught them | §5.4 | `server/cognition/court/vantage_install.rs` (`install_taught_words`) |
-| convergence V1–V4, K1–K2 | §5.5 | `anastome/dialogue/chatter.rs` (`Evidence`, `mycelium chatter v6`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
-| the measures W, C, S; D2′ shares read locally; E2–E4 | §5.6 | `t/family/local.rs` (`word_local`, `spoken_section`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/court/vantage_install.rs` (`cited_deflation`); `server/cognition/book/demand.rs` (`pay_convergence`); `server/cognition/court/task.rs` (`grow_grants_by_paid`) |
-| the Rewrite (court side) | §5.4 | `server/cognition/book/rewrite.rs` (`offer_rewrite`) |
-| the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_discharge_read`) |
-| the seat's call chosen from what calls did; no enumeration | §6 | `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat_mind/repertoire.rs` (`SeatMind::reach`); `client/sdk/seat.rs` (`SeatHold`) |
-| the observer: where the winding carrier stands, and calls answered at its next law boundary | §7.2 | `mind/observer.rs` (`Mind::at_law`; calls `now`, `thoughts`, `thought`, `field`, `held`, `scenes`, `questions`, `perception`, `convergence`, `calls`); `observe/live.rs`; `mycelium-client --call "<call>" [--mind HEX]` |
+| **the winding drive**: the winding carrier, outflow at returns, K counting returns; a ground's winding; the twist by the pull and slips worked at the return; the docket's one taker; the vortex collapsed by a new perception; containment and memory by coordinates | §4.4, §4.8, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`); `t/field/merge.rs` (`closing_ground`); `t/field/cross_scene.rs` (`twisted_return`, `work_slips`, `carry_vortices_round`); `t/cga/twist.rs` (`twist_about`); `t/field/plan.rs` (`docket_demand`, `drain_demands`); `t/field/contemplation.rs` (`collapse_on`); `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `t/field/line.rs` (`return_escrow`); `mind/think.rs` (`Mind::shed`, `lock_reservoirs`) |
+| **the task as an offer**: read to its charts, extracted only where it couples, lapsing otherwise; a task asked only under tension; the corpus met at the field's focus | §3.1, §4.13 | `mind/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `mind/learn.rs` (`pull_task`); `mind/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`) |
+| **the pivot cross**: ascend, descend, condense, drain, puncture, seal; the throat's two faces; the board; the breath on every plane | §4.3, §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs`; `t/field/question.rs`; `t/cga/commutator.rs` (`breath`, `breathe`) |
+| **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_envelope`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
+| **seated solves signed by the mind**: filed under its own key, then the house's call (#124); the seat's call chosen from what calls did | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`) |
+| **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
+| conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
+| the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
+| the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
-The observer is an instrument permitted against §2.4(1): every call reads,
-none moves the mind, and nothing in cognition reads it back.
+**Specified, in order.** First the field, then track 10's claims on it,
+then the backlog. An item marked *issue to file* has none yet.
 
-**Specified, in order**
+1. **The field stages** (track 26; #134), the mind's contemplation moved
+   onto the carrier, each stage leaving the tree green:
+   1. S7 stage 2, the well's body: `Well` on the carrier, its centre an
+      attractor's chart, its membrane, its stage a coordinate, its
+      `volume` and `potential` readings of the body (a recut);
+   2. S7 stage 3, the Euclidean spheres retired, and turnings on planes
+      that share a unit composed exactly;
+   3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
+      nesting as a fibration;
+   4. S8, the field's motions as one exact group;
+   5. S9a, the orbits attached to wells, shear and precession per lap in
+      the contemplation, and the carrier's `Loop` refusal restated under
+      the geodesic ruling (§0): a flat region refused `Unbound`, a
+      zero-precession closed geodesic read as a resonant orbit (*issue to
+      file* for the rename);
+   6. S9b, axiomatic gravity, the drag on the orthogonal class;
+   7. S9c, the vortex's monodromy between charts, and a mind's stated
+      holonomy, precession and monodromy reconstructed by a court (a wire
+      change).
+2. **Track 10's five claims** (#135), after S9, shown on a live run:
+   `mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`,
+   `mind_declines_a_scene_its_field_does_not_bind`,
+   `mind_acts_at_its_returns`,
+   `mind_revises_a_perception_on_a_court_ruling_by_amendment`; with the
+   defect #135 names, a task pulled because the corpus is empty (§4.13).
+3. **The backlog:**
+   1. the hypha's acts (Return, RankStep, Reconnect) reaching the mind as
+      perception (§3.1, §1a(7); #136);
+   2. the algebra held per class in the mind's field (§3.2, §4.2,
+      §1a(4); *issue to file*);
+   3. amendment held beside, the amended constructor separated by
+      commutator (§4.10, §1a(9); within #135);
+   4. POWC on a held question closed by another mind: an evidence path
+      for the conversation's questions, E2's guard, and convergence K3 on
+      its ruling (§5.5, §5.6; *issue to file*);
+   5. peer records from receipts (§5.3(5); *issue to file*);
+   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); *issue to file*);
+   7. seat play from the mind's own orbits, the seat's percepts lifted into
+      the field, and its act as a physics `Action` (§6; *issue to file*);
+   8. the cross-chamber bracket (CB1; §4.9; *issue to file*).
+4. **Also owed on the client:** cohesion as a named reading over the held
+   field (§1, §4.9; *issue to file*); the sessions and chatter inside Noise
+   (#132); the seated harness end to end against a live house (#133);
+   signed receipts reaching the mind, so it can send equivocation proofs
+   (#137).
 
-1. **The algebra held per class** in the mind's field (§4.2, §3.2).
-2. **The hypha's acts as perception** — Return, RankStep and Reconnect
-   reaching a mind (§3.1).
-3. **Modes as the unit of pay** (§5.6 M; 78.162): the ledger paying the
-   `Modes` its closures moved in place of a count per lane.
-4. **POWC on a held question closed by another mind** (§5.6): the
-   conversation's questions reach no court, and an evidence path is a
-   design; E2's guard (a fixture whose listing's demand another mind's
-   cited form closes); the closed thought's twist spoken under its family;
-   convergence K3 (§5.5) on its ruling.
-5. **Peer records** (§5.3(5)).
-6. **Amendment held beside** (§4.10) — the amended constructor entering
-   beside the one it amends, separated by commutator.
-7. **The mind proposing a Rewrite** (S3, §5.4).
-8. **Seat play from the mind's own orbits**, and the seat's act as a
-   physics `Action` (§6).
-9. **The cross-chamber bracket** (CB1, §4.9).
-10. **Curiosity** (§8); the mirror and the curvature (78.167 D3/D4).
+Moved out of this list: paying the ledger in `Modes` is v0.5.0's
+(MU-ECONOMY §9; ROADMAP 1b); curiosity, the mirror and the curvature
+(78.167 D3/D4) wait on the ruling posed in §8.
 
 ### 7.2 Verification
 
@@ -1743,25 +1731,17 @@ A construct is verified by three things and nothing else:
    witness.
 
 **What is never done (78.168; §2.4(8)).** None of these is a witness, a
-completion or a reason to build:
-- a test passing, or a suite green — a guard proves its section's identity
-  and nothing else;
-- a test written to show the mind closes tasks, solves more, or earns more —
-  a test built for appearance, refused; a guard states an identity of the
-  algebra (a reconstruction, MU-SCIENCE §5.0; a fixed locus; a refusal by name), never a network
-  outcome;
-- a counter rising — solves sent, rules known, closures, μ earned, forecast
-  hits — read beside the witness as the observer's diagnosis, never as the
-  build's measure, and never chosen as the mind's motive;
-- code reached only by a test — dead, refused under item 2.
+completion or a reason to build: a test passing or a suite green; a test
+written to show the mind closes tasks, solves more or earns more (a guard
+states an identity of the algebra, a reconstruction, a fixed locus or a
+refusal by name, never a network outcome; MU-SCIENCE §5.0); a counter
+rising (solves, rules known, closures, μ earned), which is the observer's
+diagnosis and never the mind's motive; code reached only by a test.
 
 On a running network the witness is the counterparties' acts: the courts'
 POUW and POWC mints and the union's pay for words and sentences no task
-named, a peer's reconstruction of what a mind said, a question sealed by another
-mind's answer. The minds' readings — orbits closing, held and escaping
-across K, returns acted on, slips — are the diagnosis beside it. The tree is
-built under MU-STANDARDS, MU-RECURSION's laws, rules 1–17 and checklist
-(a)–(t), and the Anti-Flattening Law.
+named, a peer's reconstruction of what a mind said, a question sealed by
+another mind's answer. The minds' own readings are the diagnosis beside it.
 
 ---
 
@@ -1807,9 +1787,15 @@ Posed under 78.168:
 - **the containment vector** — its physics stated exactly, beyond the
   bounds §4.13 lists as built.
 
-And what the hypha has not built, which the mind's side waits on: μ as
-modes on the ledger (78.162; §7.1 Specified item 3); the hypha's acts reaching a
-mind as perception (§3.1).
+*Settled, 2026-11-06* (the geodesic ruling, §0): what a relation is (two
+derivations meeting at one object), and whether a closing sentence is a
+refused path (a zero-precession closed geodesic is a resonant orbit; only
+a flat region is refused, `Unbound`). These are the two items MU-ANASTOME
+§8 holds open.
+
+What the hypha has not built, which the mind's side waits on: μ as modes on
+the ledger (78.162; MU-ECONOMY §9); the hypha's acts reaching a mind as
+perception (§3.1; #136).
 
 ---
 

@@ -363,6 +363,12 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
   (`transducer::field::carrier::admit`). The mind does not yet state its
   contemplation's field: that waits on the well's body (S7 stage 2) and
   the wire (S9).
+- **The client's order** is MU-CLIENT §7.1 (what is built, and what is
+  owed in order), with MU-CLIENT §1a's account of how the mind builds the
+  language. Its issues: the field on the mind (#134), these five claims
+  (#135), the hypha's acts as perception (#136), Noise on the mind's
+  sessions (#132), the seated harness (#133), signed receipts to the mind
+  (#137). Items there marked *issue to file* have none yet.
 
 ## 11. Specification reconciliation
 
