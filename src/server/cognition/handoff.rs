@@ -339,7 +339,8 @@ impl Court {
     pub fn handoff(&mut self, h: &SignedHandoff) -> Handed {
         use HandoffRefusal as R;
         let refuse = Handed::Refused;
-        if !crate::court::identity::verify(&h.who, &h.handoff.signed_bytes(&h.who), &h.sig) {
+        let Some(bytes) = h.signed_bytes() else { return refuse(R::Unsigned) };
+        if !crate::court::identity::verify(&h.who, &bytes, &h.sig) {
             return refuse(R::Unsigned);
         }
         let id = h.handoff.citation();

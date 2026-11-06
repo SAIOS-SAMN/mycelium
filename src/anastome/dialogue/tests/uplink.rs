@@ -6,7 +6,25 @@ use crate::anastome::dialogue::uplink::{
     decode_uplink, decode_uplink_reply, encode_uplink, encode_uplink_reply, Child, ChildNet, ChildRefusal, Discontinuous, FoldAt, TierFold,
     Uplinked,
 };
+use crate::anastome::dialogue::crossing_record::still;
+use crate::anastome::dialogue::uplink::SignedFold;
 use crate::chronometry::Stamp;
+
+/// The reserve's fold, the act that crosses, signed with its crossing (X1).
+fn crossed(f: TierFold, key: &ed25519_dalek::SigningKey) -> SignedFold {
+    f.sign_crossed(still(), key).expect("signs")
+}
+
+fn wire(f: &SignedFold) -> Vec<u8> {
+    encode_uplink(f).expect("encodes")
+}
+
+/// The crossing's writing, as it stands beside the rows.
+fn crossing_len() -> usize {
+    let mut c = Vec::new();
+    still().put(&mut c).expect("written");
+    c.len()
+}
 
 /// A signed fold and every answer of the court read back whole, and a byte
 /// left over is no fold.
@@ -23,12 +41,14 @@ fn uplink_fold_round_trips_with_answers() {
         transitions: Vec::new(),
     };
     // 78.123 B — a fold with no children writes exactly as 78.119's: its
-    // bytes end at the signature, and it signs no children's commitment.
-    let single = 1 + 32 + 32 + fold.rows_bytes().len() + 64;
+    // bytes end at the signature, and it signs no children's commitment;
+    // X1 — its crossing stands beside the rows.
+    let single = 1 + 32 + 32 + fold.rows_bytes().len() + crossing_len() + 64;
     assert_eq!(fold.children_hash(), None);
-    let signed = fold.clone().sign(&key);
-    let mut asked = encode_uplink(&signed);
-    assert_eq!(asked.len(), single, "a single-level fold's bytes unchanged");
+    let signed = crossed(fold.clone(), &key);
+    let mut asked = wire(&signed);
+    assert_eq!(asked.len(), single, "a single-level fold's bytes, its crossing beside the rows");
+    assert_eq!(encode_uplink(&fold.clone().sign(&key)), None, "the act on the wire carries its crossing");
     assert_eq!(decode_uplink(&asked), Some(signed));
     asked.push(0);
     assert_eq!(decode_uplink(&asked), None, "a byte left over is no fold");
@@ -43,8 +63,8 @@ fn uplink_fold_round_trips_with_answers() {
     };
     // A chained fold — its children after the signature — read back whole;
     // a child the court sealed itself writes untagged, as 78.123's did.
-    let sealed = TierFold { children: vec![part(Child::Sealed(FoldAt::sealed(at)))], ..fold.clone() }.sign(&key);
-    let asked = encode_uplink(&sealed);
+    let sealed = crossed(TierFold { children: vec![part(Child::Sealed(FoldAt::sealed(at)))], ..fold.clone() }, &key);
+    let asked = wire(&sealed);
     assert!(asked.len() > single, "its children ride after the signature");
     assert_eq!(decode_uplink(&asked), Some(sealed));
     // 78.138 — a line's fold CARRIED INLINE, itself carrying one, and a
@@ -62,8 +82,8 @@ fn uplink_fold_round_trips_with_answers() {
     let inside = FoldAt { stamp: at, path: vec![0, 1] };
     assert_eq!(FoldAt::from_key(&inside.key()), Some(inside.clone()), "a place inside keys and reads back");
     assert_eq!(FoldAt::sealed(at).key(), at.key(), "a fold the court sealed keys as it did");
-    let carrying = TierFold { children: vec![part(Child::Carried(Box::new(line))), part(Child::Sealed(inside))], ..fold }.sign(&key);
-    let asked = encode_uplink(&carrying);
+    let carrying = crossed(TierFold { children: vec![part(Child::Carried(Box::new(line))), part(Child::Sealed(inside))], ..fold }, &key);
+    let asked = wire(&carrying);
     assert_eq!(decode_uplink(&asked), Some(carrying.clone()));
     let mut long = asked;
     long.push(0);
@@ -113,23 +133,24 @@ fn fold_with_transitions_round_trips_with_lawful_answers() {
         handoffs: Vec::new(),
         transitions: Vec::new(),
     };
-    let plain = fold.clone().sign(&key);
+    let plain = crossed(fold.clone(), &key);
     let stating = TierFold { transitions: vec![t.clone(), Transition { motion: Mv::scalar(q(1)), ..t.clone() }], ..fold.clone() };
     assert_ne!(stating.signed_bytes(), fold.signed_bytes(), "the transitions are signed");
-    let stating = stating.sign(&key);
-    assert_eq!(decode_uplink(&encode_uplink(&stating)), Some(stating.clone()));
-    assert_eq!(encode_uplink(&plain).len(), 1 + 32 + 32 + fold.rows_bytes().len() + 64, "a fold stating none writes as before");
+    let line = stating.clone().sign(&key);
+    let stating = crossed(stating, &key);
+    assert_eq!(decode_uplink(&wire(&stating)), Some(stating.clone()));
+    assert_eq!(wire(&plain).len(), 1 + 32 + 32 + fold.rows_bytes().len() + crossing_len() + 64, "a fold stating none writes as before");
     let part = ChildNet {
-        child: Child::Carried(Box::new(stating.clone())),
+        child: Child::Carried(Box::new(line)),
         rows: Vec::new(),
         declared: Vec::new(),
         included_rows: Vec::new(),
         included_declared: Vec::new(),
         rate: [(1, 1); 4],
     };
-    let carrying = TierFold { children: vec![part], transitions: vec![t], ..fold }.sign(&key);
-    assert_eq!(decode_uplink(&encode_uplink(&carrying)), Some(carrying.clone()), "a carried line's transitions read back with it");
-    let mut long = encode_uplink(&carrying);
+    let carrying = crossed(TierFold { children: vec![part], transitions: vec![t], ..fold }, &key);
+    assert_eq!(decode_uplink(&wire(&carrying)), Some(carrying.clone()), "a carried line's transitions read back with it");
+    let mut long = wire(&carrying);
     long.push(0);
     assert_eq!(decode_uplink(&long), None, "a byte left over is no fold");
     for u in [

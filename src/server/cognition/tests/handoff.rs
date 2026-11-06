@@ -9,6 +9,7 @@ use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFol
 use super::fixtures::close_through;
 use crate::chronometry::Stamp;
 use crate::server::cognition::Court;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -52,8 +53,8 @@ fn founded() -> Court {
     // The throat's bank (78.135), funded first.
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&x()), [1, 0, 0, 0], anchor);
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(the_mouth())).sign(&x())), Handed::Sealed { .. }));
-    assert!(matches!(k.handoff(&Handoff::Accept { id: the_mouth().citation() }.sign(&y())), Handed::Sealed { state: State::Accepted, .. }));
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(the_mouth())).signed(&x())), Handed::Sealed { .. }));
+    assert!(matches!(k.handoff(&Handoff::Accept { id: the_mouth().citation() }.signed(&y())), Handed::Sealed { state: State::Accepted, .. }));
     k
 }
 
@@ -83,7 +84,7 @@ fn cargo() -> Offer {
 }
 
 fn offered(k: &mut Court, o: Offer) -> [u8; 32] {
-    match k.handoff(&through(o).sign(&x())) {
+    match k.handoff(&through(o).signed(&x())) {
         Handed::Sealed { id, state: State::Offered { .. }, .. } => id,
         other => panic!("offered: {other:?}"),
     }
@@ -116,17 +117,17 @@ fn handoff_refuses_unconserved_offer() {
     let at_home = Offer { to_tier: verifying(&x2()), ..cargo() };
     assert_eq!(refused(&mut k, at_home.clone(), &x()), HandoffRefusal::NotTheMouth, "within a domain only along its own road (78.136)");
     assert!(
-        matches!(k.handoff(&Handoff::Offer(Box::new(at_home)).sign(&x())), Handed::Refused(HandoffRefusal::Unbound)),
+        matches!(k.handoff(&Handoff::Offer(Box::new(at_home)).signed(&x())), Handed::Refused(HandoffRefusal::Unbound)),
         "a plain offer within one domain is no handoff"
     );
     assert!(
-        matches!(k.handoff(&Handoff::Offer(Box::new(cargo())).sign(&x())), Handed::Refused(HandoffRefusal::NoMouth)),
+        matches!(k.handoff(&Handoff::Offer(Box::new(cargo())).signed(&x())), Handed::Refused(HandoffRefusal::NoMouth)),
         "domains share no space: nothing crosses but through a mouth"
     );
-    let first = k.handoff(&through(cargo()).sign(&x()));
+    let first = k.handoff(&through(cargo()).signed(&x()));
     let Handed::Sealed { id, .. } = first else { panic!("offered") };
     let height = k.chain.head_height();
-    assert_eq!(k.handoff(&through(cargo()).sign(&x())), first, "a resent offer: its original receipt");
+    assert_eq!(k.handoff(&through(cargo()).signed(&x())), first, "a resent offer: its original receipt");
     assert_eq!(k.chain.head_height(), height, "nothing sealed twice");
     assert_eq!(k.handoff_read(&id), Some((State::Offered { opened: k.chain.head_height() }, false, false)));
 }
@@ -141,23 +142,23 @@ fn admit_uplink_consumes_accepted_handoff_once_per_side() {
     let mut k = founded();
     let id = offered(&mut k, cargo());
     let leaving = vec![(who(1), [-5, 0, 0, -1])];
-    assert!(matches!(k.hear_uplink(&fold(&x(), 1, leaving.clone(), Vec::new()).sign(&x())), Uplinked::Discontinuous(Discontinuous::Unbalanced { .. })));
-    assert!(matches!(k.hear_uplink(&fold(&x(), 1, leaving.clone(), vec![(id, Side::Out)]).sign(&x())), Uplinked::Admitted { .. }));
+    assert!(matches!(k.hear_uplink(&fold(&x(), 1, leaving.clone(), Vec::new()).signed(&x())), Uplinked::Discontinuous(Discontinuous::Unbalanced { .. })));
+    assert!(matches!(k.hear_uplink(&fold(&x(), 1, leaving.clone(), vec![(id, Side::Out)]).signed(&x())), Uplinked::Admitted { .. }));
     let arriving = vec![(who(8), [5, 0, 0, 1])];
     assert_eq!(
-        k.hear_uplink(&fold(&y(), 1, arriving.clone(), vec![(id, Side::In)]).sign(&y())),
+        k.hear_uplink(&fold(&y(), 1, arriving.clone(), vec![(id, Side::In)]).signed(&y())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::NotYet }
     );
-    assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&y())), Handed::Sealed { state: State::Accepted, .. }));
-    assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&y())), Handed::Refused(HandoffRefusal::Answered)));
-    assert!(matches!(k.hear_uplink(&fold(&y(), 1, arriving.clone(), vec![(id, Side::In)]).sign(&y())), Uplinked::Admitted { .. }));
+    assert!(matches!(k.handoff(&Handoff::Accept { id }.signed(&y())), Handed::Sealed { state: State::Accepted, .. }));
+    assert!(matches!(k.handoff(&Handoff::Refuse { id }.signed(&y())), Handed::Refused(HandoffRefusal::Answered)));
+    assert!(matches!(k.hear_uplink(&fold(&y(), 1, arriving.clone(), vec![(id, Side::In)]).signed(&y())), Uplinked::Admitted { .. }));
     assert_eq!(
-        k.hear_uplink(&fold(&y(), 2, arriving, vec![(id, Side::In)]).sign(&y())),
+        k.hear_uplink(&fold(&y(), 2, arriving, vec![(id, Side::In)]).signed(&y())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::Consumed },
         "a double-spend"
     );
     assert_eq!(
-        k.hear_uplink(&fold(&x(), 2, leaving, vec![(id, Side::Out)]).sign(&x())),
+        k.hear_uplink(&fold(&x(), 2, leaving, vec![(id, Side::Out)]).signed(&x())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::Consumed }
     );
     let mut booted = Court::new();
@@ -173,22 +174,22 @@ fn admit_uplink_consumes_accepted_handoff_once_per_side() {
 fn handoff_returns_refused_or_expired_offer_to_sender() {
     let mut k = founded();
     let id = offered(&mut k, cargo());
-    assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&y())), Handed::Sealed { state: State::Returned, .. }));
+    assert!(matches!(k.handoff(&Handoff::Refuse { id }.signed(&y())), Handed::Sealed { state: State::Returned, .. }));
     assert_eq!(
-        k.hear_uplink(&fold(&y(), 1, vec![(who(8), [5, 0, 0, 1])], vec![(id, Side::In)]).sign(&y())),
+        k.hear_uplink(&fold(&y(), 1, vec![(who(8), [5, 0, 0, 1])], vec![(id, Side::In)]).signed(&y())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::NotThisTier }
     );
     let both = fold(&x(), 1, Vec::new(), vec![(id, Side::Out), (id, Side::In)]);
-    assert!(matches!(k.hear_uplink(&both.sign(&x())), Uplinked::Admitted { .. }), "out and back: nothing moved");
+    assert!(matches!(k.hear_uplink(&both.signed(&x())), Uplinked::Admitted { .. }), "out and back: nothing moved");
 
     let mut k = founded();
     let id = offered(&mut k, cargo());
-    assert!(matches!(k.handoff(&Handoff::Expire { id }.sign(&x())), Handed::Refused(HandoffRefusal::Window)), "not yet");
+    assert!(matches!(k.handoff(&Handoff::Expire { id }.signed(&x())), Handed::Refused(HandoffRefusal::Window)), "not yet");
     let now = k.chain.head_height();
     close_through(&mut k, now).expect("the offer's window closes");
-    assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&y())), Handed::Refused(HandoffRefusal::Window)), "too late");
-    assert!(matches!(k.handoff(&Handoff::Expire { id }.sign(&y())), Handed::Refused(HandoffRefusal::NotTheTier)));
-    assert!(matches!(k.handoff(&Handoff::Expire { id }.sign(&x())), Handed::Sealed { state: State::Returned, .. }));
+    assert!(matches!(k.handoff(&Handoff::Accept { id }.signed(&y())), Handed::Refused(HandoffRefusal::Window)), "too late");
+    assert!(matches!(k.handoff(&Handoff::Expire { id }.signed(&y())), Handed::Refused(HandoffRefusal::NotTheTier)));
+    assert!(matches!(k.handoff(&Handoff::Expire { id }.signed(&x())), Handed::Sealed { state: State::Returned, .. }));
 }
 
 /// A REVERSED FOLD UN-CONSUMES ITS SIDE, AND FINAL FOLDS LET THE HANDOFF GO:
@@ -203,7 +204,7 @@ fn challenge_unconsumes_side_and_orbit_releases_handoff() {
     let leaving = vec![(who(1), [-5, 0, 0, -1])];
     let lying_line = vec![Entry { rows: vec![(who(1), [-4, 0, 0, -1]), (who(2), [-1, 0, 0, 0])], declared: leaving.clone() }];
     let lie = TierFold { prefix: line_head([0; 32], &lying_line), ..fold(&x(), 0, leaving.clone(), vec![(id, Side::Out)]) };
-    let Uplinked::Admitted { at: lie_at, .. } = k.hear_uplink(&lie.clone().sign(&x())) else { panic!("admitted") };
+    let Uplinked::Admitted { at: lie_at, .. } = k.hear_uplink(&lie.clone().signed(&x())) else { panic!("admitted") };
     let evidence = |f: &TierFold, at: Stamp, entries: Vec<Entry>| Challenge::Evidence {
         fold: crate::anastome::dialogue::uplink::FoldAt::sealed(at),
         rows: f.rows.clone(),
@@ -216,10 +217,10 @@ fn challenge_unconsumes_side_and_orbit_releases_handoff() {
     // Refiled honestly: its line runs on from the falsified fold's head.
     let honest_line = vec![Entry { rows: leaving.clone(), declared: leaving.clone() }];
     let honest = TierFold { prefix: line_head(lie.prefix, &honest_line), ..fold(&x(), 0, leaving, vec![(id, Side::Out)]) };
-    let Uplinked::Admitted { at: x_at, .. } = k.hear_uplink(&honest.clone().sign(&x())) else { panic!("refiled") };
+    let Uplinked::Admitted { at: x_at, .. } = k.hear_uplink(&honest.clone().signed(&x())) else { panic!("refiled") };
     assert!(matches!(k.challenge(&evidence(&honest, x_at, honest_line).sign(&key(40))), Challenged::Upheld { .. }), "the crossing reconstructs");
-    assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&y())), Handed::Sealed { .. }));
-    let Uplinked::Admitted { at: y_at, .. } = k.hear_uplink(&fold(&y(), 1, vec![(who(8), [5, 0, 0, 1])], vec![(id, Side::In)]).sign(&y())) else {
+    assert!(matches!(k.handoff(&Handoff::Accept { id }.signed(&y())), Handed::Sealed { .. }));
+    let Uplinked::Admitted { at: y_at, .. } = k.hear_uplink(&fold(&y(), 1, vec![(who(8), [5, 0, 0, 1])], vec![(id, Side::In)]).signed(&y())) else {
         panic!("consumed")
     };
     close_through(&mut k, y_at.h).expect("the folds' windows close");

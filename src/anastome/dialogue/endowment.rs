@@ -22,6 +22,7 @@
 //! nonce`.
 
 use super::atlas::{byte, head, key32};
+use super::crossing_record::{crossed, Crossing};
 use crate::chronometry::Stamp;
 use crate::economy::Mu;
 use crate::transducer::cga::Mv;
@@ -84,7 +85,18 @@ pub struct Manifest {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedManifest {
     pub manifest: Manifest,
+    /// X1 (#160) — the crossing the manifest carries.
+    pub crossing: Crossing,
     pub sig: [u8; 64],
+}
+
+impl SignedManifest {
+    /// THE BYTES THE SIGNATURE IS OVER: the manifest's own, then its
+    /// crossing written out whole. The manifest's hash stays its own
+    /// bytes'.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        crossed(self.manifest.signed_bytes()?, &self.crossing)
+    }
 }
 
 impl Manifest {
@@ -103,31 +115,42 @@ impl Manifest {
         Some(crate::chronometry::payload_hash(&self.signed_bytes()?))
     }
 
-    /// Signed by the domain's sitting reserve.
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> Option<SignedManifest> {
+    /// Signed by the domain's sitting reserve, with the crossing it carries
+    /// (X1, #160).
+    pub fn sign(self, crossing: Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedManifest> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()?).to_bytes();
-        Some(SignedManifest { manifest: self, sig })
+        let sig = key.sign(&crossed(self.signed_bytes()?, &crossing)?).to_bytes();
+        Some(SignedManifest { manifest: self, crossing, sig })
     }
 }
 
-/// The MANIFEST act on the wire.
+/// The MANIFEST act on the wire: `[nuclei][nonce 32][crossing][sig 64]`
+/// after the head.
 pub fn encode_manifest(s: &SignedManifest) -> Option<Vec<u8>> {
     let m = &s.manifest;
     let mut out = head(&m.domain, KIND_MANIFEST);
-    put_nuclei(&mut out, &m.nuclei)?;
-    out.extend_from_slice(&m.nonce);
-    out.extend_from_slice(&s.sig);
+    put_manifest_body(&mut out, s)?;
     Some(out)
+}
+
+/// The manifest's body after its sub-kind, as the wire and the held grant
+/// write it.
+pub(crate) fn put_manifest_body(out: &mut Vec<u8>, s: &SignedManifest) -> Option<()> {
+    put_nuclei(out, &s.manifest.nuclei)?;
+    out.extend_from_slice(&s.manifest.nonce);
+    s.crossing.put(out)?;
+    out.extend_from_slice(&s.sig);
+    Some(())
 }
 
 /// The MANIFEST's body after its sub-kind, read whole.
 pub(crate) fn take_manifest(domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<SignedManifest> {
     let nuclei = take_nuclei(b, p)?;
     let nonce = key32(b, p)?;
+    let crossing = Crossing::take(b, p).ok()?;
     let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
     *p += 64;
-    Some(SignedManifest { manifest: Manifest { domain, nuclei, nonce }, sig })
+    Some(SignedManifest { manifest: Manifest { domain, nuclei, nonce }, crossing, sig })
 }
 
 /// The READ-ENDOWMENT act on the wire.

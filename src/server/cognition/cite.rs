@@ -537,6 +537,10 @@ impl Court {
         if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Fold, domain) {
             return Uplinked::Boundary(why);
         }
+        // X1 (#160) — the crossing the fold carries, verified from itself.
+        if let Err(why) = crate::anastome::dialogue::crossing_record::verify_carried(f.crossing.as_ref()) {
+            return Uplinked::Boundary(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Fold, domain, why });
+        }
         // 78.125 — a fold over its tier's current head: a resend answered with
         // its original receipt, or a repeat refused; nothing sealed twice.
         if let Some(answer) = self.repeat_of(&f.fold, &domain) {

@@ -310,9 +310,10 @@ fn domain_origin() -> Result<String, String> {
 
 fn domain_statement() -> Result<String, String> {
     let stated = d::universe::Stated::Basket(vec![(1, (1, 1)), (8, (2, 3))]);
-    let signed = d::universe::Statement { domain: voice(), stated }.sign(&key());
+    let signed = d::universe::Statement { domain: voice(), stated }.sign(super::probes::crossing(voice()), &key()).ok_or("the statement does not sign")?;
     let replies = [dom::Founded::Stated { at: stamp(), receipt: CITATION }, dom::Founded::AlreadyStated, dom::Founded::NotAUniverse];
-    domain_act("the statement", &d::universe::encode_statement(&signed), dom::DomainRequest::State(signed.clone()), &replies)?;
+    let bytes = d::universe::encode_statement(&signed).ok_or("the statement does not encode")?;
+    domain_act("the statement", &bytes, dom::DomainRequest::State(signed.clone()), &replies)?;
     Ok("the basket stated and the answers decode".to_string())
 }
 
@@ -334,7 +335,7 @@ fn domain_origin_reading() -> Result<String, String> {
 
 fn domain_manifest() -> Result<String, String> {
     use d::endowment::{decode_grant_reply, encode_grant_reply, encode_manifest, GrantRefusal, Granted};
-    let signed = super::probes::manifest(voice()).sign(&key()).ok_or("the manifest does not sign")?;
+    let signed = super::probes::manifest(voice()).sign(super::probes::crossing(voice()), &key()).ok_or("the manifest does not sign")?;
     let bytes = encode_manifest(&signed).ok_or("the manifest does not encode")?;
     same("the manifest", dom::decode_domain_request(&bytes), dom::DomainRequest::Manifest(Box::new(signed)))?;
     for g in [Granted::Sealed { mu: share()?, founding: true, at: stamp(), receipt: CITATION }, Granted::Refused(GrantRefusal::Short)] {
