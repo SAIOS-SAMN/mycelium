@@ -167,7 +167,18 @@ pub(crate) fn mark_flux(
     // The thinking mind's own tubes, held across its ticks (78.71 (1)); else
     // the court's. A lock poisoned by a panic elsewhere reads this percept's
     // field into fresh tubes rather than none.
-    let in_mind = crate::transducer::mind::with_field(|field| transport_order(word_transports, circuits, field, budget)).ok();
+    // MU-CLIENT §3.2, §4.2 (#143) — and in a mind, each circuit's
+    // curvature heard in its class: the class's algebra closed with what
+    // lies outside it. The reading is not kept: a refusal leaves the class's
+    // algebra as it stood. A court's field holds no algebra per class.
+    let in_mind = crate::transducer::mind::with_field(|field| {
+        let reading = transport_order(word_transports, circuits, field, budget);
+        for (h, _) in circuits {
+            let _ = field.classes.hear(h, budget);
+        }
+        reading
+    })
+    .ok();
     let reading = match in_mind {
         Some(r) => r,
         None => match COURT_FIELD.lock() {
