@@ -62,6 +62,13 @@ impl Court {
     /// under the laws of [`Reconstructed::court`]. A refusal names its
     /// layout, its magic, or the trie and byte it stopped at.
     ///
+    /// IT TAKES `self` (approved on #190, 2026-11-06), for two reasons:
+    /// the held line is the evidence the snapshot is checked against
+    /// (45.8), so the constructor must be given it; and the court is
+    /// consumed, so a court half-restored by a refused snapshot cannot
+    /// outlive the refusal. A court whose line rides the snapshot is
+    /// reconstructed as `Court::new().reconstruct(&b)`.
+    ///
     /// The refusal is the caller's to act on, and the server's boot REFUSES
     /// on it (X8): a refusal here is a whole court's memory — its basis, its
     /// chain, its treasury — and continuing without it means the next

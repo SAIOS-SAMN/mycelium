@@ -191,6 +191,9 @@ impl Reconstructed<crate::cognition::Court> {
     /// AGAINST ITS RECEIPTS, never replayed and never restored in place.
     /// `held` carries what the snapshot is read against: the line and the
     /// eras bound from disk, or nothing where the line rides the snapshot.
+    /// `held` is taken by value: the held line is the evidence the snapshot
+    /// is checked against, and a court half-restored by a refused snapshot
+    /// is consumed with the refusal, never returned (approved on #190).
     /// The laws, each of which refuses the whole snapshot:
     /// - every receipt the snapshot carries re-derives its own chain hash
     ///   (`KStepReceipt::rederives`), and the line verifies whole on its
