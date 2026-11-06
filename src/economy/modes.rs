@@ -263,13 +263,15 @@ impl Modes {
         Ok(())
     }
 
-    /// THE MODES OF ONE MOTION, at `mass` times its amount: each mode of its
+    /// THE MODES OF ONE MOTION, at `share` times its amount, `share` the
+    /// share of the frame the motion's work covers (78.174 §1 item 9: a
+    /// mode's amount is its share of the frame, never the mass): each mode of its
     /// action read exactly (`Coordinates::of`) and set on the lane its kind
     /// names — a turn by its plane, order and side with `t` turns; a null
     /// flux by its ray and side with its count; a boost by its ray, point
     /// and side once. `None` where the motion's modes do not read (rule 11);
     /// the identity is no mode at all.
-    pub fn of_motion(motion: &Mv, mass: &Q, budget: &mut crate::physics::Budget) -> Option<Modes> {
+    pub fn of_motion(motion: &Mv, share: &Q, budget: &mut crate::physics::Budget) -> Option<Modes> {
         use crate::transducer::sentence::coordinates::{Coordinates, Winding};
         let mut out = Modes::new();
         if crate::transducer::sentence::presentation::is_still(motion) {
@@ -283,17 +285,18 @@ impl Modes {
                 Winding::Count(l) => (Mode::Flux { ray, forward: !l.is_negative() }, l.abs()),
                 Winding::Named { c, lambda } => (Mode::Boost { ray, c, forward: !lambda.is_negative() }, Q::from_integer(1.into())),
             };
-            out.add_mode(mode, amount * mass);
+            out.add_mode(mode, amount * share);
         }
         Some(out)
     }
 
-    /// THE MODES OF ONE HUE MAP, at `mass` times: each cycle and each move
-    /// once. `None` where the listing is no map.
-    pub fn of_gauge(gauge: &[(u8, u8)], mass: &Q) -> Option<Modes> {
+    /// THE MODES OF ONE HUE MAP, each cycle and each move at `share`, the
+    /// share of the frame recoloured (78.174 §1 item 9). `None` where the
+    /// listing is no map.
+    pub fn of_gauge(gauge: &[(u8, u8)], share: &Q) -> Option<Modes> {
         let mut out = Modes::new();
         for m in crate::transducer::sentence::presentation::gauge_modes(gauge)? {
-            out.add_mode(Mode::Hue(m), mass.clone());
+            out.add_mode(Mode::Hue(m), share.clone());
         }
         Some(out)
     }

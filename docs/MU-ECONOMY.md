@@ -120,8 +120,12 @@ A discharge with no frame (a rewrite's yield, a listing bound to no
 family) keeps its own measure as `n/1`. The readers are
 `DeflationRead::mu`, `Local::mu`, `transduce::share_of_enclosure` and
 `Transduction::lane_shares`. A word's magnitude, a family's metabolism, a
-demand's ask and a stroke's size stay counts and are not μ. How the share
-of the frame sets each mode's amount is §12 item 4.
+demand's ask and a stroke's size stay counts and are not μ. A mode's
+amount is its share of the frame, never the mass carried (78.174 §1 item
+9; §12 item 4): a closure's motion modes are read at the share of the
+output frame its carried mass covers, and its hue modes at the pair's G
+share, so a recolour pays G by its share (`DeflationRead::modes`,
+`Modes::of_motion`, `Modes::of_gauge`).
 
 **Lanes are open-dimensional** (ruled 2026-11-05). S, G, T and H are the
 network's base lanes. μ, the coordinate and the Concordance are
