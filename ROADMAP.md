@@ -2002,6 +2002,15 @@ Each phase is one commit:
      `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
      the solve of outputs and speech stating a perspective (they read the
      section in its default).
+   - **Built, stage 4** (branch `sensing-perspective-demand`, ruled
+     2026-11-06 on #32 (2)): a missing perspective is a demand. Where an
+     overlap's cocycle does not close because a chart is missing (its
+     agreement a residue), the cover lists a typed vertex naming the
+     sample's place and the overlap's two perspectives, carrying the
+     residue (`perspective::cover::PerspectiveDemand`, `Cover::demands`,
+     `cover::listed`). Claim
+     `missing_perspective_is_listed_as_a_typed_demand`. No wire or address
+     change. Open: carrying the vertex to a court (no act carries it yet).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
