@@ -68,7 +68,7 @@ measures it.
 - **One language.** Anastome: words as exact objects, each carrying its
   constructor derivation, reconstructed when contested (Concordance 4.4).
   Its seventeen letters were restored from ipsal-autic v0.4 (AUTIC; see
-  [`MU-ALPHABET.md`](MU-ALPHABET.md) and §2.6).
+  [`MU-ANASTOME.md`](MU-ANASTOME.md) §2, and §2.6 here).
 - **One seam.** MU-RECURSION 78.142, the SDK rule seam: a sequence of
   steps (Motion, Hue) placed on a family's frames, minted through the
   court's own constructors and checked with the judge's own decoder
@@ -384,7 +384,7 @@ Anastome is the shared language the courts adjudicate (Concordance
 and every composed word carries the steps that built it, so a court can
 reconstruct it. Today the courts admit letters and words; admitted sentences
 are still mostly single words. Its seventeen letters were restored from an
-earlier project, ipsal-autic ([`MU-ALPHABET.md`](MU-ALPHABET.md)).
+earlier project, ipsal-autic ([`MU-ANASTOME.md`](MU-ANASTOME.md) §2.9).
 
 ### 2.7 What comes next
 

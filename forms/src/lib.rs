@@ -36,6 +36,7 @@
 pub use algebra;
 
 pub mod coordinate;
+pub mod coupling;
 pub mod frame;
 pub mod passage;
 pub mod shares;
@@ -50,6 +51,7 @@ pub const LAW_IDS: &[(&str, u16)] = &[
     (passage::LAW_ID, passage::LAW_VERSION),
     (shares::LAW_ID, shares::LAW_VERSION),
     (coordinate::LAW_ID, coordinate::LAW_VERSION),
+    (coupling::LAW_ID, coupling::LAW_VERSION),
 ];
 
 /// The exact rationals every form computes over (the same object as

@@ -264,18 +264,33 @@ sequenceDiagram
 
 **Wire.** Nodes speak **Anastome** (`src/anastome/`), a closed set of
 signed speech acts whose payloads are exact geometric objects: canonical
-elements, coboundary chains and four-lane μ vectors. The protocol defines
-about forty act kinds, among them percept, task, solve, speech, docket,
-settle, offer, fold, fetch, syllabus, seat, handoff and challenge. Act
-payloads are exact objects; a refusal reply carries its named reason.
+elements, coboundary chains and four-lane μ vectors. Each act on the
+current wire is one of four kinds of expression (`docs/MU-ANASTOME.md`
+§1.5, §6):
+- **assertions**, signed claims a court adjudicates: solve (and its claim
+  of factorisation), speech, probe, syllabus;
+- **reads**, which admit nothing: task, quote, laws, receipts, entries,
+  observe, why, wallet, digests, fetch, peers;
+- **court-to-court exchanges**: cover, offer, root, tick, adopt, fold,
+  equivocation, evidence;
+- **universe crossings**: uplink (a tier's fold), domain, handoff,
+  challenge.
 
-**Language.** The language has three layers:
-- **Letters:** a fixed alphabet of seventeen Cayley letters
-  (`docs/MU-ALPHABET.md`).
+The seat relay is held and forwarded, judged by nothing. Retired acts
+(percept, gossip, demand, teach, settle, docket, installed) keep their
+bytes only to be refused by name. Act payloads are exact objects; a
+refusal reply carries its named reason.
+
+**Language.** The language has four levels (`docs/MU-ANASTOME.md` §1):
+- **Letters:** exact Cayley rotors, adjoined by court rulings; the tree
+  holds the seventeen seed letters, and by law (U14) the alphabet is
+  reseeded empty (`docs/MU-ANASTOME.md` §1.1, §2).
 - **Words:** products of letters. A word is a vertex whose meaning is its
   versor.
+- **Conjugate classes:** a word with its frame set aside, held as its
+  class vector with the conjugating element kept.
 - **Sentences:** forms built from words: vertices, faces and rings, glued
-  along shared overlaps.
+  along shared overlaps, read at their loops' holonomy.
 
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
@@ -1182,6 +1197,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 
 | Document | Subject |
 |---|---|
+| [`docs/MU-ANASTOME.md`](docs/MU-ANASTOME.md) | The anastome language in one place: its levels (letters, words, conjugate classes, sentences, expressions) mapped to the algebra, the alphabet and spelling, concurrency, growth as a presentation, the vocabulary, each wire act's expression kind, and the language's state as a reading. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-COGNITION.md`](docs/MU-COGNITION.md) | Minds and engines on the network: how any mind or engine is measured, what they share, and a summary of Mycelium's reference mind (MU-CLIENT governs the mind). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, holdings, escrow, settlement and audit. |
@@ -1203,7 +1219,6 @@ network), **Specified** (stated, not yet built) or **In progress**.
 |---|---|
 | [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) | Every equation, formula and master equation in use, with its specification section and code location. |
 | [`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md) | Multi-dimensional structure: the conformal algebra, four lanes, complexes of any dimension, holonomy as content, orbits, nested shells, and the network's own topology, with what each keeps that a flat record loses. |
-| [`docs/MU-ALPHABET.md`](docs/MU-ALPHABET.md) | The alphabet: letters, words and spelling, as built. |
 | [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
 | [`docs/proposals/`](docs/proposals/) | Design proposals and studies, each numbered by its ruling. |
 | [`CHANGELOG.md`](CHANGELOG.md) | What each release contains. |

@@ -20,6 +20,7 @@
 //! `None`, never a default; a lane set or a vector whose order is not the
 //! canonical one is a second writing and reads as none.
 
+use super::coupling::{put_coupling_fixture, put_coupling_object, take_coupling_fixture, take_coupling_object};
 use super::register::{ConcordanceClause, ConcordanceClauseId, Fixture, Object, Standing};
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 use crate::transducer::alphabet::{put_q, take_q};
@@ -28,7 +29,7 @@ use forms::coordinate::{Axis, Bounds, Coordinate, CoordinateRefusal, Interval, K
 use forms::Q;
 use num_traits::Zero;
 
-fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
+pub(super) fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
     let v = *b.get(*p)?;
     *p += 1;
     Some(v)
@@ -73,7 +74,7 @@ pub fn take_clifford(b: &[u8], p: &mut usize) -> Option<Clifford> {
 
 /// A key: its axes, each its letter's byte (a frame unit's sign, `+` or
 /// `-`) and its index.
-fn put_key(out: &mut Vec<u8>, k: &Key) {
+pub(super) fn put_key(out: &mut Vec<u8>, k: &Key) {
     put_key_count(out, k.axes().len());
     for a in k.axes() {
         let mut letter = [0u8; 4];
@@ -84,7 +85,7 @@ fn put_key(out: &mut Vec<u8>, k: &Key) {
 
 /// A key read back: one axis, or a generator's two; refused where an axis
 /// is unwritable or a generator names one axis twice.
-fn take_key(b: &[u8], p: &mut usize) -> Option<Key> {
+pub(super) fn take_key(b: &[u8], p: &mut usize) -> Option<Key> {
     let n = take_key_count(b, p)?;
     let axes = (0..n)
         .map(|_| {
@@ -266,7 +267,8 @@ fn take_depth(b: &[u8], p: &mut usize) -> Option<u32> {
 /// objects. Tags 0–3 named LAW-PASSAGE v2's operations (the product `v·q`
 /// passed twice and once, the commutator, the square); they are retired
 /// with `FORMS-PASSAGE` v3 and read as none. The pole swap's crossing is
-/// tag 8 and the riding state's pass tag 9.
+/// tag 8 and the riding state's pass tag 9; LAW-COUPLING's fixtures are
+/// tag 12, each its operation's byte then its values (`super::coupling`).
 pub fn put_fixture(out: &mut Vec<u8>, f: &Fixture) {
     match f {
         Fixture::Crossed { positive, negative, frame, flux } => {
@@ -304,6 +306,10 @@ pub fn put_fixture(out: &mut Vec<u8>, f: &Fixture) {
             put_key(out, key);
             put_interval(out, interval);
         }
+        Fixture::Coupling(c) => {
+            out.push(12);
+            put_coupling_fixture(out, c);
+        }
     }
 }
 
@@ -319,6 +325,7 @@ pub fn take_fixture(b: &[u8], p: &mut usize) -> Option<Fixture> {
         11 => Fixture::Range { held: take_bodies(b, p)?, at: take_coordinate(b, p)?, lane: take_lane(b, p)?, key: take_key(b, p)?, interval: take_interval(b, p)? },
         8 => Fixture::Crossed { positive: take_clifford(b, p)?, negative: take_clifford(b, p)?, frame: take_clifford(b, p)?, flux: take_q(b, p)? },
         9 => Fixture::Ridden { positive: take_clifford(b, p)?, negative: take_clifford(b, p)?, state: take_clifford(b, p)? },
+        12 => Fixture::Coupling(take_coupling_fixture(b, p)?),
         _ => return None,
     })
 }
@@ -386,6 +393,10 @@ pub fn put_object(out: &mut Vec<u8>, o: &Object) {
             put_lane(out, lane);
             put_key(out, key);
         }
+        Object::Coupling(c) => {
+            out.push(9);
+            put_coupling_object(out, c);
+        }
     }
 }
 
@@ -409,6 +420,7 @@ pub fn take_object(b: &[u8], p: &mut usize) -> Option<Object> {
         }
         7 => Object::Refused(CoordinateRefusal::ShapesDiffer { lane: take_lane(b, p)?, held: take_keys(b, p)?, asked: take_keys(b, p)? }),
         8 => Object::Refused(CoordinateRefusal::NoComponent { lane: take_lane(b, p)?, key: take_key(b, p)? }),
+        9 => Object::Coupling(take_coupling_object(b, p)?),
         _ => return None,
     })
 }
