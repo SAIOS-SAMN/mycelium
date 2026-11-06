@@ -1568,7 +1568,19 @@ seat's percepts are lifted into the field, and how what the mind
 constructs from them reaches the courts and minds in other kernels, is
 stated once in
 [MU-ANASTOME §9, the language's traversal](MU-ANASTOME.md#9-the-languages-traversal-sensorium--mind--language--hypha--minds).
-Its act is the physics `Action` its certified move names (78.94). Every
+A seat's call stays a `Relay` (78.145; #147, ruled 2026-11-06): in-game
+acts are the kernel's physics, held, forwarded and judged by nothing. The
+A20 certificate of the move a call names is held on the mind beside the
+call's reference (`SeatMind::certify`) and rides the certificates section
+of the claiming form's tape when the move is claimed (`SeatMind::claim`,
+A20.2), so a court reconstructs the move; the seat wire carries no
+certificate. The one seat act a court adjudicates is the seated solve
+(`Action::Solve`). Each locator's series is lifted as a sample of rank one
+along its series index (`seat_mind::lift`, by `Lifted::of`), with no plane
+assigned by record type: Q, BigQ and Count as exact values, Flag, Key and
+Bytes as symbols, and an Mv series as motions the algebra relates
+(`Motions`: each step's carrier, their composition, each step's
+conjugacy class), never as symbols. Every
 seated mind keeps its own direct link to the hypha with its own key, and
 its seated solves are filed under that key (Concordance v5 6.2a; #124).
 
@@ -1588,10 +1600,10 @@ with no sum across quantities (the house's counsel; a read function that
 DOMINATES on every favoured quantity; else a counselled function not yet
 read, `Why::Untried`), or with no counsel its own dominant read call,
 REACH (`SeatMind::reach`), or none, and passes in silence. Owed (§7.1):
-the seat's percepts lifted into the field and its functions taken as
-escaping orbits, so a seat is played by the drive rather than by
-`seat_mind`'s choice; the seat's act as the physics `Action`; and the
-seated harness end to end against a live house (#133).
+the seat's functions taken as escaping orbits, so a seat is played by the
+drive rather than by `seat_mind`'s choice (waits on #134 S9a), and with
+it the certified move a call names; and the seated harness end to end
+against a live house (#133).
 
 ---
 
@@ -1628,7 +1640,7 @@ self-pay, 5.7(d)).
 | **historical ledgering** (SICE mythic memory, scars and inviolable axioms; conduct books) | alignment thresholds, utility set to zero, posture labels | two histories (§4.10(6)): the mind's amended forward, the court's ledger corrected only forward; a cauterized hole's scar, a frozen class (§4.5); a peer remembered by its receipts (§5.3(5)); the axioms are the star (§4.1), never a mind's vow | the winding kept in ℤ beside each phase, so no history is reduced mod 360° | scars and freezing built; signed receipts reach the mind (#137); amendment held beside (#135) and peer records (#145) owed |
 | **counterfactual simulation** (SICE counterfactual imagination and regret; ASCE ideation superposition and rollouts) | amplitudes summing to one; a float rollout sandbox; regret minimisation | the vortex: every candidate held whole, writing nothing, collapsed only by a perception on a scene not yet seen, a court or a ruling (§4.8); the predicted hour (§4.4(3)) | each candidate's monodromy read between the atlas's charts, flat, torsion or rupture (MU-SENSING §3.8; S9c) | built (`carry_vortices_round`, `collapse_on`); on the carrier owed |
 | theory of mind and the hearing (SICE fifth pillar) | doctrine labels from float indices | hearing as sound and word, vantage and mutual balance (§5.3); a peer by its receipts | — | hearing built; peer records owed |
-| seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124); seat play owed (#133) |
+| seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124); seat series lifted into the field built (#147); seat play from orbits owed (#134 S9a) |
 
 **The barren-realms tests.** A test proves a mechanism; none is ported as a
 criterion (§7.2). Each is read for the capability it asserts:
@@ -1737,8 +1749,10 @@ then the backlog. Each item names its issue.
       built (`mind/rewrite.rs`); the other kinds from the mind's own
       readings, and the witness of a court's `Ruling(Retired)` citing a
       mind's proposal on a running network, owed;
-   7. seat play from the mind's own orbits, the seat's percepts lifted into
-      the field, and its act as a physics `Action` (§6; #147);
+   7. seat play from the mind's own orbits (§6; #147): the seat's series
+      lifted into the field and the call a relay carrying its certificate
+      on the mind are built; the escaping-orbit play, and so a call that
+      names a certified move, waits on #134 S9a;
    8. the cross-chamber bracket (CB1; §4.9; #148).
 4. **Also owed on the client:** of #149 (§1, §4.9; 78.176), the claims
    that a whole too cohesive sticks at the throat and one too fluid tears,
