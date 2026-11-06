@@ -48,6 +48,9 @@ pub struct Session {
     /// every act it speaks, raised by every door reply that carries a later
     /// one. `None` before the first.
     pub(crate) final_point: RefCell<Option<crate::chronometry::tuniversal::TPoint>>,
+    /// MU-CLIENT §7.1 (#137) — EACH HYPHA'S LAST SIGNED RECEIPT, read off
+    /// the digests it answered (47.1), for the equivocation proofs of 47.4.
+    pub(crate) signed: RefCell<super::SignedReceipts>,
 }
 
 impl Session {
@@ -75,6 +78,7 @@ impl Session {
             rtt: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt_window: RefCell::new(crate::network::nerve::Keyed::new()),
             final_point: RefCell::new(None),
+            signed: RefCell::new(super::SignedReceipts::new()),
         }
     }
 
@@ -266,6 +270,10 @@ impl Session {
         if !crate::court::identity::verify(&vk, &prefix, &sig) {
             return false;
         }
+        // #137 — the signed receipt the digest carries behind it, held for
+        // 47.4's proof; a digest with none, or one refused, changes nothing
+        // the digest itself says.
+        self.hold_signed_receipt(body, &vk);
         // A4: the digest is the ROOTS. A voice whose record of this hypha's
         // roots moved asks for its cover by page (`fetch_cover`), and
         // nothing here retracts a cover this reading cannot replace.
