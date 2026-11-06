@@ -69,7 +69,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
 | Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
-| The alphabet past `n = 3`; the `Frame` defect; `Act::Slide`/`Extend`'s planar ray | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
+| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
 | Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
@@ -2350,8 +2350,9 @@ Each phase is one commit:
         `slot_of_axis_stands_for_each_base_axis`.
       - No wire, tape, task, word, chart or clause address change.
       - **Remaining planar, outside the act reading:** `Speech.frame` and
-        `perceive::frame_of`, read with the measured `Frame` (MU-SENSING
-        §8, a defect, track 26 S4); the slide's and the line's ray
+        `perceive::frame_of` (the measured `Frame`, renamed `Reperiod`, is a
+        re-period per phase since branch `sensing-frame`, claim
+        `reperiod_is_read_per_phase_at_any_rank`); the slide's and the line's ray
         (`Act::Slide`/`Extend { ray: (i8, i8) }`), a clause field written
         as a pair; and comments elsewhere that say "grid".
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
