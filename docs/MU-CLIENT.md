@@ -1662,6 +1662,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_envelope`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
 | **seated solves signed by the mind**: filed under its own key, then the house's call (#124); the seat's call chosen from what calls did | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`) |
 | **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
+| **cohesion as a named reading** (#149): per plane the held share `c_k = A/(A + Q) = ν(1/t)`, the viscosity, beside the open share `ν(t)`, the fluidity; both ½ at the throat, exchanged by the passage; a keyed vector over the planes, never stored and never summed; a well reads it from its inflation on its membrane's frame plane | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`) |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
@@ -1709,9 +1710,11 @@ then the backlog. Each item names its issue.
    7. seat play from the mind's own orbits, the seat's percepts lifted into
       the field, and its act as a physics `Action` (§6; #147);
    8. the cross-chamber bracket (CB1; §4.9; #148).
-4. **Also owed on the client:** cohesion as a named reading, the held share
-   `c_k` per turning plane over the held field, and the thought's traversal
-   through open tubes (§1, §4.9; 78.176; #149); the sessions and
+4. **Also owed on the client:** of #149 (§1, §4.9; 78.176), the claims
+   that a whole too cohesive sticks at the throat and one too fluid tears,
+   which wait on an exact reading in LAW-PASSAGE or LAW-TRAVERSAL, frames
+   per turning plane of a held whole, and the thought's traversal through
+   open tubes; the sessions and
    chatter inside Noise (#132); the seated harness against a live house
    (#133); signed receipts reaching the mind, for equivocation proofs (#137).
 
