@@ -101,7 +101,10 @@ fn pairs(name: &str, train: &mycelium::transducer::family::Family) {
             }
         };
         let t_residue = t.elapsed();
-        let frame = mycelium::transducer::element::Reperiod::new(h, w, h2, w2);
+        let Some(frame) = mycelium::transducer::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()) else {
+            println!("  chart {name} pair {pair}: the two members are of different rank");
+            continue;
+        };
         let t = Instant::now();
         let Some(residue) = mycelium::transducer::element::from_residue_framed(&chain, &frame) else {
             println!("  chart {name} pair {pair}: {} links, no canonical chain", chain.len());

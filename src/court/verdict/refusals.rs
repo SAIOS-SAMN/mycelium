@@ -151,6 +151,13 @@ pub const REFUSE_BEYOND_ALPHABET: &str = "the task's samples are off the alphabe
 pub const REFUSE_FACTOR_UNSIGNED: &str = "unsigned: a claim of factorisation names its voice by the voice's signature";
 pub const REFUSE_FACTOR_NO_PAIR: &str = "no such train pair: a claim of factorisation names a train pair of the task";
 pub const REFUSE_FACTOR_MOTION: &str = "the stated motion is no motion of the posted pair";
+/// MU-SENSING §4, §6.1 (track 26 S6) — A CLAIM OF FACTORISATION WHOSE STATED
+/// PERSPECTIVE THE COURT DOES NOT READ the pair under: one of another rank
+/// than the posted pair (a section is never padded or cut), or one reading
+/// an axis in a role other than space (the transduction reads every axis it
+/// factors as a phase the bodies extend along): I.
+pub const REFUSE_FACTOR_PERSPECTIVE_RANK: &str = "the stated perspective reads another rank than the posted pair";
+pub const REFUSE_FACTOR_PERSPECTIVE_ROLE: &str = "the stated perspective reads an axis in a role a factorisation does not read: every factored axis is space";
 /// 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS: a cited form
 /// reached again while it is still being spoken. The nerve admits mutual
 /// citation (a posetal height forbade every 2-simplex), and no speech of a
@@ -214,6 +221,7 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         }
         REFUSE_CITATION_CYCLE | REFUSE_GROUND_NOT_ONE_SYMBOL | REFUSE_GROUND_NO_CANDIDATE | REFUSE_BEYOND_ALPHABET => O::Integrity,
         REFUSE_FACTOR_UNSIGNED | REFUSE_FACTOR_NO_PAIR | REFUSE_FACTOR_MOTION => O::Integrity,
+        REFUSE_FACTOR_PERSPECTIVE_RANK | REFUSE_FACTOR_PERSPECTIVE_ROLE => O::Integrity,
         REFUSE_UNREAD => O::NoQuestion,
         REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
             O::Integrity
