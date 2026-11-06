@@ -1886,6 +1886,13 @@ Each phase is one commit:
      letter for a higher rank was found to remove. Claim
      `letters_past_the_section_are_never_written_by_hand`. Open: the mind's
      word path spelling each section of a rank-3 task.
+   - **Built** (branch `sensing-dilation`): the envelopes' dilation, which
+     squared the extents (law 11), is removed; the fibre map's carried
+     site and the frame's momentum read the re-period of each phase
+     (`element::Reperiod`, `p′ᵢ/pᵢ` axis by axis). Claims
+     `reperiod_carries_sites_between_extents_phase_by_phase`,
+     `momentum_read_per_phase_across_anisotropic_reperiod`. Open: the
+     magnitude's planar chains (`family::magnitude`, MU-SENSING §8).
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
