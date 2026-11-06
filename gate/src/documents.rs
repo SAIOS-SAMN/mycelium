@@ -123,6 +123,83 @@ pub fn lint_fragments(dir: &Path, hits: &mut Vec<String>) -> Result<usize, Strin
     Ok(read)
 }
 
+/// A SECTION A DOCUMENT HOLDS AND OTHERS LINK: its home document, its
+/// headings (the first the section's own, the rest held inside it), and
+/// the documents that link the first heading's anchor.
+pub struct Section<'a> {
+    /// The home document, relative to the repository.
+    pub home: &'a str,
+    /// Each heading's text as written, without its `#` marks.
+    pub headings: &'a [&'a str],
+    /// The documents, relative to the repository, that link the section.
+    pub linked_from: &'a [&'a str],
+}
+
+/// MU-ANASTOME §9 — THE LANGUAGE'S TRAVERSAL, held with its subsection on
+/// thought and linked from the sensing and hosting documents. MU-CLIENT's
+/// link joins `linked_from` when its rewrite lands.
+pub const TRAVERSAL: Section<'static> = Section {
+    home: "docs/MU-ANASTOME.md",
+    headings: &[
+        "9. The language's traversal: sensorium → mind → language → hypha → minds",
+        "9.4 Thought: every ideation held at once",
+    ],
+    linked_from: &["docs/MU-SENSING.md", "docs/MU-HOSTING.md"],
+};
+
+/// A heading's anchor as the rendered document writes it: lower case,
+/// every character but a letter, a digit, a space, `-` and `_` dropped,
+/// each space a `-`.
+pub fn anchor_of(heading: &str) -> String {
+    heading
+        .trim()
+        .chars()
+        .flat_map(char::to_lowercase)
+        .filter(|c| c.is_alphanumeric() || matches!(c, ' ' | '-' | '_'))
+        .map(|c| if c == ' ' { '-' } else { c })
+        .collect()
+}
+
+/// The headings of `text`, outside fenced blocks, each without its `#`
+/// marks.
+pub fn headings(text: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut fenced = false;
+    for line in text.lines() {
+        if line.trim_start().starts_with("```") {
+            fenced = !fenced;
+        } else if !fenced && line.starts_with('#') {
+            out.push(line.trim_start_matches('#').trim());
+        }
+    }
+    out
+}
+
+/// THE SECTION HELD AND LINKED: a hit per heading of `section` its home
+/// does not hold, and per document of `linked_from` that holds no link
+/// `<home file>#<anchor of the first heading>`.
+pub fn lint_section(repo: &Path, section: &Section, hits: &mut Vec<String>) -> Result<(), String> {
+    let read = |rel: &str| std::fs::read_to_string(repo.join(rel)).map_err(|e| format!("{rel}: {e}"));
+    let home = read(section.home)?;
+    let held = headings(&home);
+    for h in section.headings {
+        if !held.contains(h) {
+            hits.push(format!("  {}: holds no heading `{h}`", section.home));
+        }
+    }
+    let Some(own) = section.headings.iter().next() else {
+        return Err(format!("{}: a section names its own heading", section.home));
+    };
+    let file = Path::new(section.home).file_name().and_then(|f| f.to_str()).ok_or(format!("{}: no file name", section.home))?;
+    let link = format!("{file}#{}", anchor_of(own));
+    for doc in section.linked_from {
+        if !read(doc)?.contains(&link) {
+            hits.push(format!("  {doc}: holds no link `{link}`"));
+        }
+    }
+    Ok(())
+}
+
 /// THE DOCUMENTS' PATHS: a hit per cited path of `files` (read relative to
 /// `repo`) that does not exist and whose line does not say it is gone.
 /// Returns the count of cited paths read.

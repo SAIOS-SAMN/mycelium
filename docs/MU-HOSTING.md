@@ -747,6 +747,12 @@ key is paid to the house's key, never the seat's. `FN_SOLVE` stays for
 houses that want the seat's answer in their game (**Built**; claim
 `seated_mind_solve_paid_to_its_own_key`).
 
+**What a seat carries in the language.** A seat's percepts (78.145,
+78.146) are a sensorium: the kernel's senses, reaching the seated mind as
+mathematics. The path from the percepts through the mind's thought, an assertion
+and a court back to every mind by the syllabus is stated once in
+[MU-ANASTOME §9, the language's traversal](MU-ANASTOME.md#9-the-languages-traversal-sensorium--mind--language--hypha--minds).
+
 ### 5a.7 How the boundary is observed
 
 An operator and any party read the boundary by typed readings, never by
