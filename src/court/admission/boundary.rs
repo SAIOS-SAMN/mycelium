@@ -91,13 +91,21 @@ pub enum Boundary {
     /// a register the hypha cannot read): the crossing waits, neither
     /// admitted nor refused on a reading cut short.
     Unaligned { act: UniverseAct, domain: [u8; 32], why: AlignmentRefusal },
+    /// MU-HOSTING §5a.10, X1 (#160) — the crossing record the act carries
+    /// does not verify from itself: no frame, a body with no origin, or a
+    /// motion stated as turns that breaks the conformal law, named.
+    Crossing { act: UniverseAct, domain: [u8; 32], why: crate::anastome::dialogue::crossing_record::CrossingRefusal },
 }
 
 impl Boundary {
     /// The act refused.
     pub fn act(&self) -> UniverseAct {
         match self {
-            Boundary::NotThroughCore { act, .. } | Boundary::NotSignatory { act, .. } | Boundary::Bounded { act, .. } | Boundary::Unaligned { act, .. } => *act,
+            Boundary::NotThroughCore { act, .. }
+            | Boundary::NotSignatory { act, .. }
+            | Boundary::Bounded { act, .. }
+            | Boundary::Unaligned { act, .. }
+            | Boundary::Crossing { act, .. } => *act,
         }
     }
 
@@ -107,7 +115,8 @@ impl Boundary {
             Boundary::NotThroughCore { domain, .. }
             | Boundary::NotSignatory { domain, .. }
             | Boundary::Bounded { domain, .. }
-            | Boundary::Unaligned { domain, .. } => *domain,
+            | Boundary::Unaligned { domain, .. }
+            | Boundary::Crossing { domain, .. } => *domain,
         }
     }
 
@@ -115,13 +124,15 @@ impl Boundary {
     /// nothing; `1` the clause and the reading (`0` converses, `1` vetoed,
     /// `2` collides, `3` unread; a stamp, and for a collision the refusal
     /// as a signing verdict writes it); `2` the clause; `3` `[0]` the
-    /// stroke spent or `[1][clause]` a register unread.
+    /// stroke spent or `[1][clause]` a register unread; `4` the crossing's
+    /// refusal as `CrossingRefusal::put` writes it.
     pub fn put(&self, out: &mut Vec<u8>) {
         let tag = match self {
             Boundary::NotThroughCore { .. } => 0,
             Boundary::NotSignatory { .. } => 1,
             Boundary::Bounded { .. } => 2,
             Boundary::Unaligned { .. } => 3,
+            Boundary::Crossing { .. } => 4,
         };
         out.push(tag);
         out.push(self.act().byte());
@@ -137,6 +148,16 @@ impl Boundary {
             Boundary::Unaligned { why: AlignmentRefusal::Unregistered { id }, .. } => {
                 out.push(1);
                 put_clause_id(out, id);
+            }
+            // A refusal's turns were read from a record or carried from
+            // them, so each has a period and writes; one that does not is
+            // written as the record not reading.
+            Boundary::Crossing { why, .. } => {
+                let mut w = Vec::new();
+                match why.put(&mut w) {
+                    Some(()) => out.extend_from_slice(&w),
+                    None => out.push(2),
+                }
             }
         }
     }
@@ -160,6 +181,7 @@ impl Boundary {
                     _ => return None,
                 },
             },
+            4 => Boundary::Crossing { act, domain, why: crate::anastome::dialogue::crossing_record::CrossingRefusal::take(b, p)? },
             _ => return None,
         })
     }

@@ -514,9 +514,10 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
         k @ (super::universe::KIND_GEOMETRY | super::universe::KIND_BASKET | super::universe::KIND_JOIN) => {
             p += 1;
             let statement = super::universe::Statement::take(k, domain, rest, &mut p)?;
+            let crossing = Box::new(super::crossing_record::Crossing::take(rest, &mut p).ok()?);
             let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
             p += 64;
-            return (p == rest.len()).then_some(DomainRequest::State(super::universe::SignedStatement { statement, sig }));
+            return (p == rest.len()).then_some(DomainRequest::State(super::universe::SignedStatement { statement, crossing, sig }));
         }
         KIND_READ_BOND => {
             p += 1;

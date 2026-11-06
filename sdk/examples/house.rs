@@ -197,6 +197,8 @@ fn lawful() -> Option<Transition> {
 /// the universal laws and admits only while the reserve converses on every
 /// network clause it signed above. Whether it crossed.
 fn reserve_and_cross(session: &Session, key: &mycelium_sdk::prelude::SigningKey) -> bool {
+    use mycelium_sdk::forms::{Crossing, Place};
+    use mycelium_sdk::house::tuniversal::{Origin, TPoint};
     use mycelium_sdk::house::uplink::{decode_uplink_reply, encode_uplink, TierFold, Uplinked};
     let domain = key.verifying_key().to_bytes();
     if !matches!(session.reserve_reading(domain), Ok(r) if r.current == Some(domain)) {
@@ -219,7 +221,16 @@ fn reserve_and_cross(session: &Session, key: &mycelium_sdk::prelude::SigningKey)
         handoffs: Vec::new(),
         transitions: vec![transition],
     };
-    match session.speak(encode_uplink(&fold.sign(key))) {
+    // X1 (#160) — the fold carries its crossing through the core tube: here
+    // one that moves no body of its own (the transition carries the body),
+    // at the zero point of the domain's origin, over one phase of period 1.
+    let at = TPoint { origin: Origin { genesis: domain, epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    let crossing = Crossing::still(Place { at, parents: Vec::new() }, vec![1]);
+    let Some(frame) = fold.sign_crossed(crossing, key).and_then(|f| encode_uplink(&f)) else {
+        println!("crossing: the record does not write");
+        return false;
+    };
+    match session.speak(frame) {
         Ok(reply) => match decode_uplink_reply(&reply) {
             Some(Uplinked::Admitted { at, receipt }) => {
                 println!("crossing: a lawful transition through the universal core tube, admitted at height {}, receipt {}", at.h, hex32(&receipt));

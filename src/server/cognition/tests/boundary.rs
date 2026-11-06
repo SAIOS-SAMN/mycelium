@@ -13,6 +13,7 @@ use crate::anastome::dialogue::uplink::{Child, ChildNet, TierFold, Uplinked};
 use crate::physics::equilibrium::{carried_body, BodyMoments};
 use crate::physics::laws::clauses::{register, Choice, SignedClause, Signing};
 use crate::physics::laws::{BodyState, Breach, Law, Transition};
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use crate::server::cognition::Court;
 use crate::transducer::cga::{rotator, sphere_at, Mv};
 use ed25519_dalek::SigningKey;
@@ -157,7 +158,7 @@ fn fold(tier: &SigningKey, prefix: u8, transitions: Vec<Transition>) -> TierFold
 fn crossing_refused_by_the_law_it_breaks() {
     let mut k = founded();
     let head = k.chain.head_height();
-    let refused = k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful(), still()]).sign(&reserve_key()));
+    let refused = k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful(), still()]).signed(&reserve_key()));
     let Uplinked::NotLawful { path, index, breaches } = refused else { panic!("refused by the law: {refused:?}") };
     assert_eq!((path, index), (Vec::new(), 1), "the second transition of the fold itself");
     assert_eq!(breaches, vec![(Law::Time, Breach::HeightNotAdvanced { before: 8, after: 8 })], "the law it breaks, with its breach");
@@ -172,7 +173,7 @@ fn crossing_refused_by_the_law_it_breaks() {
         rate: [(1, 1); 4],
     };
     let carrier = TierFold { children: vec![part], ..fold(&reserve_key(), 8, vec![lawful()]) };
-    let refused = k.hear_uplink(&carrier.sign(&reserve_key()));
+    let refused = k.hear_uplink(&carrier.signed(&reserve_key()));
     assert!(
         matches!(&refused, Uplinked::NotLawful { path, index: 0, breaches } if *path == vec![0] && breaches.iter().all(|(l, _)| *l == Law::Time)),
         "the carried line's transition, by its path: {refused:?}"
@@ -206,19 +207,19 @@ fn universe_act_off_the_core_refused_not_through_core() {
     assert!(matches!(k.record_origin(&origin.sign(&domain_key())), Founded::Originated { .. }), "a universe");
     let head = k.chain.head_height();
     let line = line_key();
-    assert_eq!(k.hear_uplink(&fold(&line, 7, vec![lawful()]).sign(&line)), Uplinked::Boundary(off(UniverseAct::Fold)));
+    assert_eq!(k.hear_uplink(&fold(&line, 7, vec![lawful()]).signed(&line)), Uplinked::Boundary(off(UniverseAct::Fold)));
     let entry = LedgerEntry { domain, u: 1, commitment: [1; 32], events: [0; 32], point: fp(10), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
     for by in [&line, &domain_key()] {
-        assert_eq!(k.ledger(&entry.clone().sign(by), Some(fp(10))), Ledgered::Boundary(off(UniverseAct::Anchor)), "an anchor off the core");
+        assert_eq!(k.ledger(&entry.clone().signed(by), Some(fp(10))), Ledgered::Boundary(off(UniverseAct::Anchor)), "an anchor off the core");
     }
     let map = MapAct { domain, point: fp(10), record: MapRecord::Mouth { place: ([3; 32], 0), freshness: 1 }, nonce: [1; 32] };
-    assert_eq!(k.map(&map.sign(&line), Some(fp(10))), Mapped::Boundary(off(UniverseAct::Map)));
+    assert_eq!(k.map(&map.signed(&line), Some(fp(10))), Mapped::Boundary(off(UniverseAct::Map)));
     let statement = Statement { domain, stated: Stated::Geometry(Geometry::Curved((1, 1))) };
-    assert_eq!(k.state(&statement.sign(&line)), Founded::Boundary(off(UniverseAct::Statement)));
+    assert_eq!(k.state(&statement.signed(&line)), Founded::Boundary(off(UniverseAct::Statement)));
     let manifest = Manifest { domain, nuclei: vec![(1, num_bigint::BigUint::from(1u8))], nonce: [2; 32] };
-    assert_eq!(k.manifest(&manifest.sign(&line).expect("signs")), Granted::Boundary(off(UniverseAct::Manifest)));
+    assert_eq!(k.manifest(&manifest.signed(&line).expect("signs")), Granted::Boundary(off(UniverseAct::Manifest)));
     let out = ConvertOut { tier: vk(&line), holder: [50; 32], identity: [7; 32], g: 10, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [3; 32] };
-    assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out)).sign(&line)), Handed::Boundary(off(UniverseAct::ConversionOut)));
+    assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out)).signed(&line)), Handed::Boundary(off(UniverseAct::ConversionOut)));
     assert_eq!(k.chain.head_height(), head, "nothing sealed");
 }
 
@@ -228,11 +229,47 @@ fn universe_act_off_the_core_refused_not_through_core() {
 #[test]
 fn lawful_crossing_admitted() {
     let mut k = founded();
-    let signed = fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key());
+    let signed = fold(&reserve_key(), 7, vec![lawful()]).signed(&reserve_key());
     let mut moved = signed.clone();
     moved.fold.transitions = vec![Transition { heights: (7, 9), ..lawful() }];
     assert_eq!(k.hear_uplink(&moved), Uplinked::Unsigned, "the transitions are signed, written out");
     assert!(matches!(k.hear_uplink(&signed), Uplinked::Admitted { .. }), "lawful, admitted");
+}
+
+/// X1 (#160) — A UNIVERSE ACT WHOSE CROSSING DOES NOT VERIFY FROM ITSELF IS
+/// REFUSED AT THE BOUNDARY, naming the act, the domain and why: the
+/// reserve's fold carrying no crossing (`Absent`), one stating no frame
+/// (`NoFrame`), and one whose motion stated as turns does not carry its
+/// body (`Turns`, the breach named). A crossing changed after signing no
+/// longer verifies (`Unsigned`). Nothing seals; the record that verifies is
+/// admitted.
+#[test]
+fn universe_act_with_unverified_crossing_refused_at_the_boundary() {
+    use crate::anastome::dialogue::crossing_record::{Body, Crossing, CrossingRefusal, Motion, Place, TurnBody};
+    use crate::court::admission::{Boundary, UniverseAct};
+    use crate::physics::laws::TurnBreach;
+    use crate::transducer::family::transduce::Turn;
+    let mut k = founded();
+    let domain = vk(&domain_key());
+    let refused = |why| Uplinked::Boundary(Boundary::Crossing { act: UniverseAct::Fold, domain, why });
+    let head = k.chain.head_height();
+    let f = || fold(&reserve_key(), 7, vec![lawful()]);
+    assert_eq!(k.hear_uplink(&f().sign(&reserve_key())), refused(CrossingRefusal::Absent), "no record");
+    let base = Crossing::still(Place { at: fp(10), parents: Vec::new() }, Vec::new());
+    assert_eq!(k.hear_uplink(&f().sign_crossed(base.clone(), &reserve_key()).expect("signs")), refused(CrossingRefusal::NoFrame), "no frame");
+    let body = |origin| Body { origin, boundary: TurnBody { breakpoints: vec![vec![Turn::of(1, 4)]], extent: Q::new(1.into(), 4.into()) } };
+    let mut turned = Crossing::still(Place { at: fp(10), parents: Vec::new() }, vec![4]);
+    turned.content.motion = Motion::Turns(vec![Turn::of(1, 4)]);
+    turned.content.before = vec![body(vec![Turn::of(0, 4)])];
+    turned.content.after = vec![body(vec![Turn::of(2, 4)])];
+    let uncarried = k.hear_uplink(&f().sign_crossed(turned.clone(), &reserve_key()).expect("signs"));
+    assert!(matches!(&uncarried, Uplinked::Boundary(Boundary::Crossing { act: UniverseAct::Fold, why: CrossingRefusal::Turns(b), .. }) if matches!(b[..], [TurnBreach::NotCarried { body: 0, .. }])), "{uncarried:?}");
+    let mut moved = f().signed(&reserve_key());
+    moved.crossing = Some(turned.clone());
+    assert_eq!(k.hear_uplink(&moved), Uplinked::Unsigned, "the crossing is signed, written out");
+    assert_eq!(k.chain.head_height(), head, "nothing sealed");
+    turned.content.after = vec![body(vec![Turn::of(1, 4)])];
+    assert!(matches!(k.hear_uplink(&f().sign_crossed(turned, &reserve_key()).expect("signs")), Uplinked::Admitted { .. }), "carried, admitted");
 }
 
 /// The register's network clause, by its content's name.
@@ -253,7 +290,7 @@ fn unsigned_reserve_crossing_refused_not_signatory() {
     use crate::physics::laws::clauses::ClauseReading;
     let mut k = unsigned();
     let domain = vk(&domain_key());
-    let crossing = fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key());
+    let crossing = fold(&reserve_key(), 7, vec![lawful()]).signed(&reserve_key());
     let head = k.chain.head_height();
     let Uplinked::Boundary(Boundary::NotSignatory { act, domain: named, clause, reading }) = k.hear_uplink(&crossing) else { panic!("not signatory") };
     assert_eq!((act, named, clause, *reading), (UniverseAct::Fold, domain, network_clause(), ClauseReading::Unread), "unread, named");
@@ -287,7 +324,7 @@ fn key_own_act_unbound_by_the_tube() {
     k.treasury.genesis(vk(&reserve_key()), [4, 0, 0, 0], anchor);
     let stake = StakeAct { who: vk(&reserve_key()), unstake: false, mu: [2, 0, 0, 0].into(), nonce: [1; 32] }.sign(&reserve_key());
     assert!(k.stake(&stake).is_ok(), "the key's own stake, served");
-    let refused = k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key()));
+    let refused = k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).signed(&reserve_key()));
     assert!(matches!(refused, Uplinked::Boundary(Boundary::NotSignatory { .. })), "the universe's fold, refused: {refused:?}");
 }
 
@@ -305,15 +342,15 @@ fn kernel_clause_veto_bounds_only_its_clause() {
     let mut k = unsigned();
     let domain = vk(&domain_key());
     assert!(k.hear_signing(&Signing::sign(&reserve_key(), clauses(&[forms::coordinate::LAW_ID])).to_bytes()).is_ok(), "a kernel clause vetoed");
-    assert!(matches!(k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key())), Uplinked::Admitted { .. }), "the fold crosses");
+    assert!(matches!(k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).signed(&reserve_key())), Uplinked::Admitted { .. }), "the fold crosses");
     let statement = Statement { domain, stated: Stated::Geometry(Geometry::Curved((1, 1))) };
-    assert!(matches!(k.state(&statement.sign(&reserve_key())), Founded::Stated { .. }), "the statement crosses");
+    assert!(matches!(k.state(&statement.signed(&reserve_key())), Founded::Stated { .. }), "the statement crosses");
     let coordinate = ConcordanceClauseId::of(forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION);
     let bound = |act| Boundary::Bounded { act, domain, clause: coordinate.clone() };
     let entry = LedgerEntry { domain, u: 1, commitment: [1; 32], events: [0; 32], point: fp(10), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
-    assert_eq!(k.ledger(&entry.sign(&reserve_key()), Some(fp(10))), Ledgered::Boundary(bound(UniverseAct::Anchor)));
+    assert_eq!(k.ledger(&entry.signed(&reserve_key()), Some(fp(10))), Ledgered::Boundary(bound(UniverseAct::Anchor)));
     let map = MapAct { domain, point: fp(10), record: MapRecord::Mouth { place: ([3; 32], 0), freshness: 1 }, nonce: [1; 32] };
-    assert_eq!(k.map(&map.sign(&reserve_key()), Some(fp(10))), Mapped::Boundary(bound(UniverseAct::Map)));
+    assert_eq!(k.map(&map.signed(&reserve_key()), Some(fp(10))), Mapped::Boundary(bound(UniverseAct::Map)));
 }
 
 /// B4 — A SIGNED RESERVE'S LAWFUL CROSSING IS ADMITTED: the reserve signs
@@ -325,10 +362,10 @@ fn signed_reserve_lawful_crossing_admitted() {
     use crate::anastome::dialogue::universe::{Geometry, Stated, Statement};
     let mut k = founded();
     let domain = vk(&domain_key());
-    assert!(matches!(k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key())), Uplinked::Admitted { .. }), "the fold");
+    assert!(matches!(k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).signed(&reserve_key())), Uplinked::Admitted { .. }), "the fold");
     let statement = Statement { domain, stated: Stated::Geometry(Geometry::Curved((1, 1))) };
-    assert!(matches!(k.state(&statement.sign(&reserve_key())), Founded::Stated { .. }), "the statement");
+    assert!(matches!(k.state(&statement.signed(&reserve_key())), Founded::Stated { .. }), "the statement");
     let entry = LedgerEntry { domain, u: 1, commitment: [1; 32], events: [0; 32], point: fp(10), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
-    let anchored = k.ledger(&entry.sign(&reserve_key()), Some(fp(10)));
+    let anchored = k.ledger(&entry.signed(&reserve_key()), Some(fp(10)));
     assert!(!matches!(anchored, Ledgered::Boundary(_)), "the anchor reaches the court's own checks: {anchored:?}");
 }

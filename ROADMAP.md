@@ -1619,10 +1619,21 @@ Each phase lands on its own branch, one item per commit:
      the gate does not hold.
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,
    clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
-   values (Concordance 1.4). It rides B3's change to the fold, which
-   carries the transitions section (one wire change, not two).
+   values (Concordance 1.4). Ruled 2026-11-06 (#160): X1 is its own wire
+   bump (wire v3.0), since B3's fold change shipped without it, and each of
+   the seven universe acts carries a `Crossing` in its signed bytes. The
+   content states the frame's periods and each body's origin, so the record
+   verifies from itself, and `verify_turns` runs at admission (refused
+   `Boundary::Crossing`). **In progress**, draft PR #181 (v0.5.0).
    - Claims: `crossing_round_trips_exact_values`,
-     `crossing_without_content_is_refused_address_only`.
+     `crossing_without_content_is_refused_address_only`,
+     `ring_named_from_least_vertex_round_trips`,
+     `reversed_ring_has_inverse_holonomy`,
+     `ring_writing_off_least_start_is_refused`,
+     `crossing_without_frame_or_place_is_refused_by_name`,
+     `crossing_turns_are_read_by_the_conformal_law`,
+     `crossing_refusal_round_trips_in_the_boundary`,
+     `universe_act_with_unverified_crossing_refused_at_the_boundary`.
 3. **X2, admission by reconstruction at the vertex.** `Court::admit_uplink`
    reconstructs each crossing's object from its place, content and
    holonomy under the shared clauses, and admits a

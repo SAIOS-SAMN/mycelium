@@ -63,6 +63,16 @@ pub(crate) fn origin(domain: [u8; 32]) -> BigBangRecord {
     BigBangRecord { domain, kind: 0, version: 2, commitment, universe: Some(genesis()) }
 }
 
+/// X1 (#160) — THE CROSSING A PROBE'S UNIVERSE ACT CARRIES: one that moves
+/// no body (`Crossing::still`), at the zero point of the domain's own
+/// origin, over a frame of one phase of period 1, citing nothing.
+pub(crate) fn crossing(domain: [u8; 32]) -> mycelium::anastome::dialogue::crossing_record::Crossing {
+    use mycelium::anastome::dialogue::crossing_record::{Crossing, Place};
+    use mycelium::chronometry::tuniversal::{Origin, TPoint};
+    let at = TPoint { origin: Origin { genesis: domain, epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    Crossing::still(Place { at, parents: Vec::new() }, vec![1])
+}
+
 /// A MANIFEST of one kind of nuclei, one hydrogen nucleus, under a nonce.
 pub(crate) fn manifest(domain: [u8; 32]) -> Manifest {
     let nuclei: Nuclei = vec![(1, num_bigint::BigUint::from(1u8))];

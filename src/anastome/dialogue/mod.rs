@@ -14,6 +14,7 @@ pub mod commitment;
 pub mod conformance;
 pub mod crossing;
 pub mod crossing_record;
+pub mod crossing_refusal;
 pub mod handoff;
 pub mod lease;
 pub mod cover;

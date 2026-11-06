@@ -63,8 +63,9 @@ acts, each once. Each `ActRequirement` names:
 - `fields`: the exact fields that decoder reads back.
 
 `Statement::union(profiles)` is the acts of a client declaring
-`profiles`. At this tree the statement stands at wire `0x0200` (v2.0) and
-law version 5.
+`profiles`. At this tree the statement stands at wire `0x0300` (v3.0: the
+crossing record X1 carried on the seven universe acts, MU-HOSTING §5a.10)
+and law version 5.
 
 **μ fields (wire v2.0).** Every field that carries μ — the solve verdict's
 and receipt's paid μ, the grant's μ, the wallet's balance, bond and held,

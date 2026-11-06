@@ -122,7 +122,8 @@ impl Reconstructed<crate::anastome::dialogue::uplink::SignedFold> {
     pub fn fold(
         f: &crate::anastome::dialogue::uplink::SignedFold,
     ) -> Result<Reconstructed<crate::anastome::dialogue::uplink::SignedFold>, crate::anastome::dialogue::uplink::Uplinked> {
-        if !crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig) {
+        let Some(bytes) = f.signed_bytes() else { return Err(crate::anastome::dialogue::uplink::Uplinked::Unsigned) };
+        if !crate::court::identity::verify(&f.fold.tier, &bytes, &f.sig) {
             return Err(crate::anastome::dialogue::uplink::Uplinked::Unsigned);
         }
         lawful(&f.fold, &mut Vec::new())?;
