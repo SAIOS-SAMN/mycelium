@@ -33,7 +33,8 @@
 //! - the strength is the open share, the fluidity, `o = q/(z + q) = ν(t)`,
 //!   with `ν(t) = t/(1 + t)` ([`open_share`]); the viscosity is the
 //!   cohesion, the held share `z/(z + q) = 1 − ν(t) = ν(1/t)` (ruled
-//!   2026-11-06: viscosity resists flow), both `½` at the throat. The
+//!   2026-11-06: viscosity resists flow; [`held_share`], and per plane
+//!   [`Parcels::cohesion`], a keyed vector never summed), both `½` at the throat. The
 //!   inversion reverts it: `ν(1/t) = 1 − ν(t)`, the frames exchanged
 //!   ([`Parcel::inverted`]), exchanging the fluidity and the viscosity.
 //!
