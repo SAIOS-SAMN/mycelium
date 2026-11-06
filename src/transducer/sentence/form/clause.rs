@@ -184,6 +184,61 @@ pub enum Extent {
     Interior,
 }
 
+/// THE RAY OF A SLIDE OR AN EXTEND (ruled 2026-11-06 on #32 (5)): a
+/// translation of the sample's own rank, one step per axis, `n` components
+/// for a sample of rank `n`. No plane is assumed: a ray of the alphabet's
+/// section has the section's rank of steps because the section has that
+/// rank, never because a ray is a pair. Its versor is the translator by its
+/// steps ([`Ray::versor`]), which is what the lowered element carries.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Ray {
+    steps: Vec<i8>,
+}
+
+impl Ray {
+    /// The ray of these steps, one per axis.
+    pub fn new(steps: Vec<i8>) -> Ray {
+        Ray { steps }
+    }
+
+    /// The steps, one per axis.
+    pub fn steps(&self) -> &[i8] {
+        &self.steps
+    }
+
+    /// The rank the ray is of: its count of steps.
+    pub fn rank(&self) -> usize {
+        self.steps.len()
+    }
+
+    /// THE TRANSLATION VERSOR of the ray, of its own rank: the translator by
+    /// its steps (`cga::translator_at`).
+    pub fn versor(&self) -> Mv {
+        let d: Vec<Q> = self.steps.iter().map(|&s| Q::from_integer(i64::from(s).into())).collect();
+        crate::transducer::cga::translator_at(&d)
+    }
+
+    /// Written: the count of steps by its own coordinate, then each step a
+    /// byte.
+    fn put(&self, buf: &mut Vec<u8>) {
+        put_key_count(buf, self.steps.len());
+        buf.extend(self.steps.iter().map(|s| s.to_le_bytes()[0]));
+    }
+
+    /// Read back, or `None` where the bytes do not carry the count.
+    fn take(k: &[u8], p: &mut usize) -> Option<Ray> {
+        let n = take_key_count(k, p)?;
+        if n > k.len().checked_sub(*p)? {
+            return None;
+        }
+        let mut steps = Vec::with_capacity(n);
+        for _ in 0..n {
+            steps.push(i8::from_le_bytes([take_byte(k, p)?]));
+        }
+        Some(Ray { steps })
+    }
+}
+
 /// WHAT A CLAUSE DOES TO ITS SELECTION.
 #[derive(Clone, Debug)]
 pub enum Act {
@@ -196,8 +251,8 @@ pub enum Act {
     /// CREATE: the region's cells painted.
     Fill { region: RegionKind, hue: u8 },
     /// CREATE: from every cell of each selected body, a line along the ray
-    /// `(dr, dc)` to its stop.
-    Extend { ray: (i8, i8), paint: Paint, stop: Stop },
+    /// (a translation of the sample's rank) to its stop.
+    Extend { ray: Ray, paint: Paint, stop: Stop },
     /// CREATE: the ONE body `template` selects, carried centre onto centre
     /// onto each selected body, which it replaces.
     Copy { template: Pred },
@@ -254,12 +309,13 @@ pub enum Act {
     /// bend (that is `Connect`'s).
     Bend { to: Pred, paint: Paint },
     /// A REACTION — THE IMPULSE (ruled 2026-10-25): each selected body
-    /// carried along the unit ray `ray` until its next step would leave the
+    /// carried along the unit ray `ray` (a translation of the sample's own
+    /// rank) until its next step would leave the
     /// sample or, at `Stop::Contact`, meet a painted cell; the bodies nearest
     /// the stop first, so a stack settles as it lands. Its extent is read
     /// off the meet, so it holds where the distance differs pair to pair —
     /// a fixed carriage fits each pair and fails the held-out one.
-    Slide { ray: (i8, i8), stop: Stop },
+    Slide { ray: Ray, stop: Stop },
     /// A REACTION'S HUE: every cell of each selected body painted `paint`
     /// (`Paint::Of`: the hue of the body it touches).
     Repaint { paint: Paint },
@@ -550,12 +606,12 @@ pub(super) fn put_act(buf: &mut Vec<u8>, act: &Act) {
             });
             buf.push(*hue);
         }
-        // The paint in the bytes `put_paint` writes, which are the bytes an
-        // extend was first written with: no form already minted moves.
+        // The paint in the bytes `put_paint` writes; the ray its count of
+        // steps and each step (track 26, ruled on #32 (5)). A form writes its
+        // elements (the ray's translator), so no form already minted moves.
         Act::Extend { ray, paint, stop } => {
             buf.push(3);
-            buf.extend_from_slice(&ray.0.to_le_bytes());
-            buf.extend_from_slice(&ray.1.to_le_bytes());
+            ray.put(buf);
             put_paint(buf, paint);
             put_stop(buf, *stop);
         }
@@ -615,8 +671,7 @@ pub(super) fn put_act(buf: &mut Vec<u8>, act: &Act) {
         }
         Act::Slide { ray, stop } => {
             buf.push(14);
-            buf.extend_from_slice(&ray.0.to_le_bytes());
-            buf.extend_from_slice(&ray.1.to_le_bytes());
+            ray.put(buf);
             put_stop(buf, *stop);
         }
         Act::Repaint { paint } => {
@@ -686,10 +741,9 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             Act::Fill { region, hue: take_byte(k, p)? }
         }
         3 => {
-            let dr = i8::from_le_bytes([take_byte(k, p)?]);
-            let dc = i8::from_le_bytes([take_byte(k, p)?]);
+            let ray = Ray::take(k, p)?;
             let paint = take_paint(k, p)?;
-            Act::Extend { ray: (dr, dc), paint, stop: take_stop(k, p)? }
+            Act::Extend { ray, paint, stop: take_stop(k, p)? }
         }
         4 => Act::Copy { template: take_pred(k, p, 0)? },
         5 => Act::Crop(match take_byte(k, p)? {
@@ -744,9 +798,8 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
         }
         13 => Act::Bend { to: take_pred(k, p, 0)?, paint: take_paint(k, p)? },
         14 => {
-            let dr = i8::from_le_bytes([take_byte(k, p)?]);
-            let dc = i8::from_le_bytes([take_byte(k, p)?]);
-            Act::Slide { ray: (dr, dc), stop: take_stop(k, p)? }
+            let ray = Ray::take(k, p)?;
+            Act::Slide { ray, stop: take_stop(k, p)? }
         }
         15 => Act::Repaint { paint: take_paint(k, p)? },
         _ => return None,

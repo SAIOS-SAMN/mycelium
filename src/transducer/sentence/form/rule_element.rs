@@ -23,7 +23,7 @@
 
 use super::clause::{
     put_act, put_gauge, put_paint, put_pred, put_stop, take_act, take_byte, take_gauge, take_paint, take_pred, take_stop, About, Act, Clause, Extent, Paint,
-    PlaneAxis, Pred, RegionKind, Stop,
+    PlaneAxis, Pred, Ray, RegionKind, Stop,
 };
 use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 use crate::core::Q;
@@ -125,10 +125,6 @@ pub(crate) fn substrate_step(motion: &Mv) -> Option<(i64, i64)> {
     Some((i64::try_from(dr.to_integer()).ok()?, i64::try_from(dc.to_integer()).ok()?))
 }
 
-fn translation(ray: (i8, i8)) -> Mv {
-    crate::transducer::cga::translator_at(&[q(i64::from(ray.0)), q(i64::from(ray.1))])
-}
-
 fn carriage(motion: Mv, about: About, reach: Reach, trace: Trace, paint: Paint, gauge: Vec<(u8, u8)>) -> RuleElement {
     RuleElement::Carriage(Carriage { motion, about, reach, trace, paint, gauge })
 }
@@ -139,8 +135,8 @@ fn lower_act(act: &Act) -> Option<RuleElement> {
         Act::Repaint { paint } => carriage(still(), About::Sample, Reach::Once, Trace::Clears, paint.clone(), Vec::new()),
         Act::Carry { motion, about, gauge } => carriage(motion.clone(), *about, Reach::Once, Trace::Clears, Paint::Own, gauge.clone()),
         Act::Echo { motion, about, gauge } => carriage(motion.clone(), *about, Reach::Once, Trace::Keeps, Paint::Own, gauge.clone()),
-        Act::Slide { ray, stop } => carriage(translation(*ray), About::Sample, Reach::Meet(*stop), Trace::Clears, Paint::Own, Vec::new()),
-        Act::Extend { ray, paint, stop } => carriage(translation(*ray), About::Sample, Reach::Meet(*stop), Trace::Sweeps, paint.clone(), Vec::new()),
+        Act::Slide { ray, stop } => carriage(ray.versor(), About::Sample, Reach::Meet(*stop), Trace::Clears, Paint::Own, Vec::new()),
+        Act::Extend { ray, paint, stop } => carriage(ray.versor(), About::Sample, Reach::Meet(*stop), Trace::Sweeps, paint.clone(), Vec::new()),
         Act::Fill { region, hue } => RuleElement::Chain { region: *region, hue: *hue },
         Act::Connect { paint } => RuleElement::Join { corner: None, paint: paint.clone() },
         Act::Bend { to, paint } => RuleElement::Join { corner: Some(to.clone()), paint: paint.clone() },
@@ -172,9 +168,11 @@ pub fn lower_all(clauses: &[Clause]) -> Option<Vec<Lowered>> {
 fn gloss_carriage(t: &Carriage) -> Option<Act> {
     let own = t.paint == Paint::Own;
     let fixed = t.motion.projective_eq(&still());
-    let ray = || -> Option<(i8, i8)> {
+    // The ray read back off the carriage's translator, one step per axis of
+    // the section the element is read on.
+    let ray = || -> Option<Ray> {
         let (dr, dc) = substrate_step(&t.motion)?;
-        Some((i8::try_from(dr).ok()?, i8::try_from(dc).ok()?))
+        Some(Ray::new(vec![i8::try_from(dr).ok()?, i8::try_from(dc).ok()?]))
     };
     match (t.reach, t.trace) {
         (Reach::Once, Trace::Clears) if fixed && own => Some(Act::Recolour(t.gauge.clone())),
