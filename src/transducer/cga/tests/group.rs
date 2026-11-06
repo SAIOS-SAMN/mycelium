@@ -2,7 +2,7 @@
 // is a base coordinate.
 
 use super::fixtures::q;
-use crate::transducer::cga::at_three::{base, point, sphere, translator};
+use crate::transducer::cga::at_three::{base, point, translator};
 use crate::transducer::cga::*;
 use num_traits::Zero;
 
@@ -18,9 +18,10 @@ fn dilator_acts_as_versor_like_reflector() {
     let r = reflector();
     let flipped = r.sandwich(&point(&q(2, 1), &q(5, 1), &q(7, 1)));
     assert_eq!(base(&flipped), Some((q(-2, 1), q(5, 1), q(7, 1))));
-    let s = sphere(&q(1, 1), &q(1, 1), &q(0, 1), &q(5, 1));
+    let enclosure = |rho| membrane_at(&[q(1, 1), q(1, 1), q(0, 1)], &rho).expect("a positive gauge");
+    let s = enclosure(q(2, 1));
     assert_eq!(projective_ratio(&s.scale(&q(7, 3)), &s), Some(q(7, 3)));
-    assert!(projective_ratio(&s, &sphere(&q(1, 1), &q(1, 1), &q(0, 1), &q(6, 1))).is_none());
+    assert!(projective_ratio(&s, &enclosure(q(3, 1))).is_none());
     let composed = translator(&q(1, 1), &q(0, 1), &q(2, 1)).geo(&d);
     let mut bytes = Vec::new();
     composed.to_bytes(&mut bytes);

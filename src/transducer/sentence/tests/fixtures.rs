@@ -39,8 +39,8 @@ pub fn q1() -> num_rational::BigRational {
 /// `Interface::between`, over two real nuclei.
 pub fn contact(a: i64, b: i64, grade: u8) -> Interface {
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    let sa = crate::transducer::cga::sphere_at(&[q(a), q(0), q(0)], &q(1));
-    let sb = crate::transducer::cga::sphere_at(&[q(b), q(0), q(0)], &q(1));
+    let sa = crate::transducer::cga::membrane_at(&[q(a), q(0), q(0)], &q(1)).expect("a positive gauge");
+    let sb = crate::transducer::cga::membrane_at(&[q(b), q(0), q(0)], &q(1)).expect("a positive gauge");
     Interface::between(&sa, &sb, grade).expect("two spheres tether")
 }
 

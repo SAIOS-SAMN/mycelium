@@ -250,16 +250,18 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    certificates; the mind files it as a mineral and hardens it into a
    crystal only where its own circuits re-derive it (§5.5; 80.2).
    MU-ANASTOME §4.2. **Built:** `absorb_taught_at`,
-   `MindLanguage::file_admitted`. **Owed:** the hypha's acts (Return,
-   RankStep, Reconnect) reaching the mind as perception (#136).
+   `MindLanguage::file_admitted`; the hypha's acts (Return, RankStep,
+   Reconnect) reaching the mind as flux on its lanes (§3.1; #136).
 8. **The presentation grows.** Generators are adjoined, relations proved,
    and a word the rest derive is retired with its address kept
    (MU-ANASTOME §4). A relation is two derivations meeting at one object
    (§0): two minds or two orbits reaching one vertex by two derivations,
    one meaning and two proofs (§5.2; 13.10), the face between them a
    `Rewrite` (MU-ANASTOME §4.1). **Built:** the court's `Presentation`
-   and `offer_rewrite`; convergence K1–K2 (§5.5). **Owed:** the mind
-   proposing a Rewrite (§5.4); the language's state as one reading
+   and `offer_rewrite`; convergence K1–K2 (§5.5); the mind proposing a
+   `Retire` where a ruled word decomposes over the rest without itself
+   (`Mind::propose_rewrites`, #146). **Owed:** the mind proposing the
+   other Rewrite kinds (§5.4); the language's state as one reading
    (MU-ANASTOME §7).
 9. **Amendment by experience.** A constructor experience does not renew
    is re-derived from the residue left, and the amended constructor is
@@ -402,7 +404,7 @@ export reaches it at the carrier facing that hypha (§5.1):
 | its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS` (teaching rides the syllabus; `ACT_TEACH` was retired, 78.94) | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
 | its published reading: cover, room, ruled cover, head | the shelf (78.151), read without the kernel | the language's charts the mind's rings stand against |
 | a registry task | `ACT_TASK` | an OFFER, never a command (§4.13): where it couples, its pairs are SCENES perceived as any family is, perturbing the orbits they land on, and a solve is emitted by comprehension where a rule its perspectives know binds the thought (§4.9). Every scene keeps its family's coordinates, so what the mind asserts of it names its evidence (§5.4) |
-| its acts — Return, RankStep, Reconnect | its ledger | owed (#136): until one reaches the mind, it reads the hypha's motion only through the rows above |
+| its acts — Return, RankStep, Reconnect | its ledger, read with `ACT_RECEIPTS` from where the mind last read up to the hypha's signed head, admitted only as a chain ending on that signed receipt | each act's frame `S:G:T:H` as flux on the mind's lanes, exactly as the deficit is, landed on the mind's well for that hypha (its attachment) at the act's height; the field computes what it perturbs (`Field::beat_under`). The kind carries no meaning beyond its coordinate (ruled 2026-11-06, #136): a per-kind reading would be a hand-coded predicate. A mind reads from its attachment on, never the line's history |
 
 Beside the hypha, the mind takes in other minds' assertions and answers
 (§5.3), the corpus's families met where its orbits stand (§4.13), and,
@@ -1435,7 +1437,15 @@ the court offers (`offer_rewrite`, S3), mints on a second organ, and
 reconstructs by retiring exactly the inputs that reduce to
 `NormalForm::Decomposed` over the rest (`reduce_excluding`). Nothing
 compares derivations by length or count; the yield is the modes the
-rewrite moved (78.162). The mind proposing Rewrites is owed (§7.1).
+rewrite moved (78.162). The mind proposes a `Retire`: each word its pivot
+reaches, and each ruled word standing on a hole or hue mode that word
+stands on, is read over the ruled words without itself
+(`Presentation::derived_without`, exact); where the rest composes it, the
+retirement naming it and citing the forms that compose it is asserted
+once (`Mind::propose_rewrites`, `client/sdk/mind/rewrite.rs`). The mind
+retires nothing of its own on the proposal; the court decides on its own
+reduction. The mind proposing the other kinds from its own readings, beyond
+the `Torse` and `Condense` its contemplation mints, is owed (§7.1).
 
 ### 5.5 Hardening: dialect into language
 
@@ -1672,6 +1682,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
+| **the hypha's acts as perception** (#136): each hypha's line read on the hypha carrier from the mind's attachment to its signed head, a page admitted only as a chain ending on the signed receipt; each `Return`, `RankStep` and `Reconnect` taken in as its frame, flux on the mind's lanes on that hypha's well, pressing the mind's beat with the deficit | §3.1, §1a(7) | `client/sdk/hypha_acts.rs` (`Session::read_acts_of`, `chained`, `Attachment`, `Mind::read_hypha_acts`, `Mind::pressing`); `mind/think.rs` (the beat); claims `hypha_act_reaches_the_mind_as_flux_on_its_lanes`, `act_kind_carries_no_meaning_beyond_its_coordinate` |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
@@ -1684,10 +1695,16 @@ then the backlog. Each item names its issue.
       attractor's chart, its membrane, its stage a coordinate, its
       `volume` and `potential` readings of the body (a recut);
    2. S7 stage 3, the Euclidean spheres retired, and turnings on planes
-      that share a unit composed exactly;
+      that share a unit composed exactly (in part: a sphere is the
+      membrane or its image, `cga::membrane_at`; owed on #134, a body's
+      nucleus built from its second moment, waiting on a ruling, and the
+      shared-unit product, waiting on netstratum's composition law,
+      78.173 fixture 11b);
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration;
-   4. S8, the field's motions as one exact group;
+   4. S8, the field's motions as one exact group (built on the carrier,
+      `carrier::FieldMotion`; turnings sharing a unit at other than a
+      quarter turn wait on 78.173 fixture 11b);
    5. S9a, the orbits attached to wells, shear and precession per
       revolution in the contemplation (the carrier's refusal under the
       geodesic ruling, §0, is built: a flat region refused `Unbound`, a
@@ -1704,10 +1721,8 @@ then the backlog. Each item names its issue.
    `mind_revises_a_perception_on_a_court_ruling_by_amendment`; with the
    defect #135 names, a task pulled because the corpus is empty (§4.13).
 3. **The backlog:**
-   1. the hypha's acts (Return, RankStep, Reconnect) reaching the mind as
-      perception (§3.1, §1a(7); #136), waiting on a ruling of what each
-      act perturbs in the field (§3.1's reading for the row is unwritten;
-      the question stands on the issue);
+   1. *(built, #136: the hypha's acts as flux on the mind's lanes; see
+      **Built**)*;
    2. the algebra held per class in the mind's field (§3.2, §4.2,
       §1a(4); #143);
    3. amendment held beside, the amended constructor separated by
@@ -1723,7 +1738,10 @@ then the backlog. Each item names its issue.
       which signed receipts a peer's are, the class an answer is filed by,
       and what releases the held receipts (the questions stand on the
       issue);
-   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146);
+   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): `Retire`
+      built (`mind/rewrite.rs`); the other kinds from the mind's own
+      readings, and the witness of a court's `Ruling(Retired)` citing a
+      mind's proposal on a running network, owed;
    7. seat play from the mind's own orbits, the seat's percepts lifted into
       the field, and its act as a physics `Action` (§6; #147);
    8. the cross-chamber bracket (CB1; §4.9; #148).
@@ -1817,8 +1835,7 @@ a flat region is refused, `Unbound`). These are the two items MU-ANASTOME
 §8 holds open.
 
 What the hypha has not built, which the mind's side waits on: μ as modes on
-the ledger (78.162; MU-ECONOMY §9); the hypha's acts reaching a mind as
-perception (§3.1; #136).
+the ledger (78.162; MU-ECONOMY §9).
 
 ---
 

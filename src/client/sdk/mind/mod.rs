@@ -23,6 +23,7 @@ pub(super) mod perceive;
 pub(super) mod present;
 pub(super) mod quote;
 pub(super) mod relax;
+pub(super) mod rewrite;
 pub(super) mod second_vantage;
 pub(super) mod think;
 pub(super) mod winding;
