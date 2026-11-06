@@ -76,7 +76,7 @@ fn line_write_appends_in_order_and_round_trips() {
     // The peer's fold sheds its line here: what left is named.
     let eshut = close(&mut e);
     let (_, root) = e.fold_before(eshut.stamp.place()).expect("the peer folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash.bytes() }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash }];
     let efold = e.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone();
     for _ in 0..4 {
         step(&mut c, Vec::new());

@@ -9,9 +9,9 @@ fn z(n: i64) -> num_rational::BigRational {
     q(n, 1)
 }
 
-/// A nucleus of `r² = 1/4` about each centre.
+/// A nucleus at the gauge `ρ = 1/2` about each centre.
 fn bodies(centres: &[Vec<i64>]) -> Vec<Mv> {
-    centres.iter().map(|c| sphere_at(&c.iter().map(|&x| z(x)).collect::<Vec<_>>(), &q(1, 4))).collect()
+    centres.iter().map(|c| membrane_at(&c.iter().map(|&x| z(x)).collect::<Vec<_>>(), &q(1, 2)).expect("a positive gauge")).collect()
 }
 
 /// A centre padded with zeros to `n` axes.
@@ -25,44 +25,44 @@ fn at(c: &[num_rational::BigRational], n: usize) -> Vec<num_rational::BigRationa
 }
 
 /// THE ENCLOSURE IS THE CARRIER OF THE ROUND THE CENTRES JOIN: three bodies
-/// at `(0,0,0), (2,0,0), (0,2,0)` join a circle whose carrier is the sphere
-/// about `(1,1,0)` through them, `ρ² = 2`, at `n = 3` and at `n = 4`; four
-/// at the corners of the unit tetrahedron's frame join the sphere about
-/// `(1,1,1)`, `ρ² = 3`. The bodies' radii do not enter: the join is of the bodies'
-/// centres.
+/// at `(0,0,0), (6,0,0), (0,8,0)` join a circle whose carrier is the
+/// membrane about `(3,4,0)` through them at the gauge `ρ = 5`, at `n = 3`
+/// and at `n = 4`; four at `(0,0,0), (2,0,0), (0,3,0), (0,0,6)` join the
+/// membrane about `(1, 3/2, 3)` at `ρ = 7/2`. The bodies' gauges do not
+/// enter: the join is of the bodies' centres.
 #[test]
 fn enclosure_carries_round_centres_join() {
     for n in [3usize, 4] {
         let pad = |c: &[i64]| c.iter().copied().chain(std::iter::repeat(0)).take(n).collect::<Vec<i64>>();
-        let three = bodies(&[pad(&[0, 0, 0]), pad(&[2, 0, 0]), pad(&[0, 2, 0])]);
+        let three = bodies(&[pad(&[0, 0, 0]), pad(&[6, 0, 0]), pad(&[0, 8, 0])]);
         let e = enclosure(&three).expect("three centres off one line span a round");
-        assert_eq!(e, sphere_at(&at(&[z(1), z(1)], n), &z(2)), "n = {n}: the circle's carrier");
+        assert_eq!(Some(e), membrane_at(&at(&[z(3), z(4)], n), &z(5)), "n = {n}: the circle's carrier");
     }
-    let four = bodies(&[vec![0, 0, 0], vec![2, 0, 0], vec![0, 2, 0], vec![0, 0, 2]]);
-    assert_eq!(enclosure(&four), Some(sphere_at(&[z(1), z(1), z(1)], &z(3))), "four centres join one sphere");
+    let four = bodies(&[vec![0, 0, 0], vec![2, 0, 0], vec![0, 3, 0], vec![0, 0, 6]]);
+    assert_eq!(enclosure(&four), membrane_at(&[z(1), q(3, 2), z(3)], &q(7, 2)), "four centres join one sphere");
     let collinear = bodies(&[vec![0, 0, 0], vec![1, 0, 0], vec![2, 0, 0]]);
     assert_eq!(enclosure(&collinear), None, "centres on one line span no round: the enclosure is flat");
 }
 
 /// A BODY INSIDE A THREE-BODY ENCLOSURE READS INSIDE BY SIGN, at `n = 3`
-/// and `n = 4`: the enclosure about `(1,1)`, `ρ² = 2`. A small body near its
-/// centre is inside; one far off is apart; a body of the cell stands on its
-/// own enclosure; a body about the same centre with `r² = 9` wraps it; one
-/// whose sphere crosses it stands on it; a volumeless body at its centre is
-/// inside.
+/// and `n = 4`: the enclosure about `(1,1)` through the cell's centres. A
+/// small body near its centre is inside; one far off is apart; a body of
+/// the cell stands on its own enclosure; a body about the same centre at the
+/// gauge `ρ = 3` wraps it; one whose membrane crosses it stands on it; a
+/// volumeless body at its centre, a point, is inside.
 #[test]
 fn containment_reads_body_against_enclosure_by_sign() {
     for n in [3usize, 4] {
         let pad = |c: &[i64]| c.iter().copied().chain(std::iter::repeat(0)).take(n).collect::<Vec<i64>>();
         let cell = bodies(&[pad(&[0, 0, 0]), pad(&[2, 0, 0]), pad(&[0, 2, 0])]);
         let e = enclosure(&cell).expect("the round");
-        let body = |c: &[num_rational::BigRational], r2| sphere_at(&at(c, n), &r2);
-        assert_eq!(containment(&body(&[z(1), q(1, 2)], q(1, 100)), &e), Containment::Inside, "n = {n}: inside");
-        assert_eq!(containment(&body(&[z(10)], q(1, 4)), &e), Containment::Apart, "n = {n}: apart");
+        let body = |c: &[num_rational::BigRational], rho| membrane_at(&at(c, n), &rho).expect("a positive gauge");
+        assert_eq!(containment(&body(&[z(1), q(1, 2)], q(1, 10)), &e), Containment::Inside, "n = {n}: inside");
+        assert_eq!(containment(&body(&[z(10)], q(1, 2)), &e), Containment::Apart, "n = {n}: apart");
         assert_eq!(containment(&cell[0], &e), Containment::On, "n = {n}: a body of the cell is on its enclosure");
-        assert_eq!(containment(&body(&[z(1), z(1)], z(9)), &e), Containment::Wraps, "n = {n}: wraps it");
-        assert_eq!(containment(&body(&[z(2), z(1)], q(1, 4)), &e), Containment::On, "n = {n}: crosses it");
-        assert_eq!(containment(&body(&[z(1), z(1)], z(0)), &e), Containment::Inside, "n = {n}: a point inside");
+        assert_eq!(containment(&body(&[z(1), z(1)], z(3)), &e), Containment::Wraps, "n = {n}: wraps it");
+        assert_eq!(containment(&body(&[z(2), z(1)], q(1, 2)), &e), Containment::On, "n = {n}: crosses it");
+        assert_eq!(containment(&point_at(&at(&[z(1), z(1)], n)), &e), Containment::Inside, "n = {n}: a point inside");
     }
 }
 

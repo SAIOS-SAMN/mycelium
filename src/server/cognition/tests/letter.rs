@@ -537,7 +537,7 @@ fn letter_reading_flips_derivable_after_adjunction() {
     let mut bytes = Vec::new();
     cite.put_canonical(&mut bytes).expect("the citation writes");
     let read = crate::chronometry::Cite::take_canonical(&bytes, &mut 0).expect("and reads back");
-    assert_eq!(read, cite, "the demand's citation reads back whole");
+    assert!(read.restates(&cite), "the demand's citation reads back whole");
     let crate::chronometry::Cite::Demand { residue: Some(cited), .. } = read else {
         panic!("the citation carries the residue's ray")
     };

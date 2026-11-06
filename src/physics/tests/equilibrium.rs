@@ -9,7 +9,7 @@ use crate::physics::equilibrium::{
     metric_defect, momentum, net_torque, rigid, spin_of, stability, succession, torque, BodyMoments, Constellation, PosedNucleus, Stability,
     Refusal, Star,
 };
-use crate::transducer::cga::{rotator, rotator_on_blade, sphere_at, translator_at, Mv, E1, E3};
+use crate::transducer::cga::{membrane_at, rotator, rotator_on_blade, translator_at, Mv, E1, E3};
 use num_traits::{One, Zero};
 
 fn budget() -> crate::physics::Budget {
@@ -25,9 +25,9 @@ fn turn() -> Mv {
     rotator(&q(1, 1), &q(1, 1)).widened(3)
 }
 
-/// A unit sphere at `c`, posed by `pose`.
+/// The membrane at unit gauge about `c`, posed by `pose`.
 fn frame(c: [i64; 3], pose: Mv) -> PosedNucleus {
-    PosedNucleus { nucleus: sphere_at(&c.map(|x| q(x, 1)), &q(1, 1)), pose }
+    PosedNucleus { nucleus: membrane_at(&c.map(|x| q(x, 1)), &q(1, 1)).expect("a positive gauge"), pose }
 }
 
 fn one() -> Mv {
@@ -146,7 +146,7 @@ fn succession_keeps_slide_and_reads_identity_as_none() {
 /// `−e₊`, its own ray — a collapse the unit length of `e₃e₊` makes.
 #[test]
 fn equilibrium_balances_about_centroid_not_origin() {
-    let s = sphere_at(&at([1, 0, 0]), &q(2, 1));
+    let s = membrane_at(&at([1, 0, 0]), &q(2, 1)).expect("a positive gauge");
     let r = succession(&turn(), &at([1, 0, 0])).expect("the turn winds");
     let unit = frame([1, 0, 0], one()).nucleus;
     assert!(hour(&unit, &r, 2).nucleus.projective_eq(&unit), "the unit sphere is the torus's pole");

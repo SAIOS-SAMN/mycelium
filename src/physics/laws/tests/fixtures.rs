@@ -1,6 +1,6 @@
 use super::super::*;
 use crate::physics::equilibrium::carried_body;
-use crate::transducer::cga::{rotator, sphere_at};
+use crate::transducer::cga::{membrane_at, rotator};
 
 pub(super) fn q(n: i64) -> Q {
     Q::from_integer(n.into())
@@ -32,7 +32,7 @@ pub(super) fn carried(motion: &Mv) -> Vec<(BodyState, BodyState)> {
         .iter()
         .map(|&c| {
             let b = body(c);
-            let nucleus = sphere_at(&b.centre, &q(1));
+            let nucleus = membrane_at(&b.centre, &q(1)).expect("a positive gauge");
             let after = BodyState { nucleus: motion.sandwich(&nucleus), body: carried_body(&b, motion).expect("a rigid carriage") };
             (BodyState { nucleus, body: b }, after)
         })
