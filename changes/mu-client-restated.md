@@ -6,9 +6,14 @@
   expressions, new sensoria through the game kernels, the conjugate class
   as translation between perspectives). Thought is stated as non-linear:
   every ideation held at once, read three ways at once (congruence,
-  coherence, cohesion), only a cohesive whole asserted, disagreement
-  across minds a contradiction held at the courts. Sentience is posed in
-  §8. §1 and §6 link MU-ANASTOME's traversal section, and §1 and §4.9 its
+  coherence, cohesion). Cohesion is the viscosity (ruled 2026-11-06): per
+  turning plane the held share `c_k = A/(A + Q) = ν(1/t)`, the open share
+  `ν(t)` its fluidity, both ½ at the throat and exchanged by a passage,
+  never summed across planes. Only a cohesive whole is asserted, crossing
+  only through open tubes (LAW-TRAVERSAL, 78.176) as an anastome over
+  S:G:T:H stamped at its TUniversal height; disagreement across minds is
+  a contradiction held at the courts. Sentience is posed in §8. §1 and §6
+  link MU-ANASTOME §9, the language's traversal, and §1 and §4.9 its
   section on thought.
 - **The arc, new §1a.** Perceive (the sample lifted into the atlas, the
   ground and symbols deduced) → think (geodesic orbits about the wells,
