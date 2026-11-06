@@ -254,25 +254,34 @@ fn connect(endpoint: &str, pace: Pace) -> Result<Paced, NoiseRefusal> {
 /// pinned peer presenting another key is refused by name. Without a home the
 /// channel is plaintext, named as well.
 pub fn dial(endpoint: &str, home: Option<&NoiseHome>, pace: Pace) -> Result<Channel, NoiseRefusal> {
+    dial_as(endpoint, endpoint, home, pace)
+}
+
+/// DIAL `endpoint` AS THE PEER NAMED `peer`: `dial`, the peer pinned, met and
+/// named under `peer` where the address is not its name. A mind's post
+/// listens at a port chosen afresh at each opening, so a mind is pinned
+/// under the voice it files its address by (`sdk::chatter::send_over`),
+/// never under a port another mind may take next.
+pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace) -> Result<Channel, NoiseRefusal> {
     let Some(home) = home else {
-        met(endpoint, Kind::Plain, Side::Dialled);
+        met(peer, Kind::Plain, Side::Dialled);
         return Ok(Channel::Plain(connect(endpoint, pace)?));
     };
     // A peer met in plaintext by this process and never pinned is dialled
     // in plaintext without the opening asked again.
-    if home.pinned(endpoint)?.is_none() && answered_plain(endpoint) {
-        met(endpoint, Kind::Plain, Side::Dialled);
+    if home.pinned(peer)?.is_none() && answered_plain(peer) {
+        met(peer, Kind::Plain, Side::Dialled);
         return Ok(Channel::Plain(connect(endpoint, pace)?));
     }
-    match noise::initiate(connect(endpoint, pace)?, home, endpoint) {
+    match noise::initiate(connect(endpoint, pace)?, home, peer) {
         Ok(s) => {
-            met(endpoint, Kind::Noise, Side::Dialled);
+            met(peer, Kind::Noise, Side::Dialled);
             Ok(Channel::Noise(Box::new(s)))
         }
-        Err(NoiseRefusal::NotSpoken { .. }) => match home.pinned(endpoint)? {
-            Some(pinned) => Err(NoiseRefusal::PinnedAnsweredPlain { peer: endpoint.to_string(), pinned }),
+        Err(NoiseRefusal::NotSpoken { .. }) => match home.pinned(peer)? {
+            Some(pinned) => Err(NoiseRefusal::PinnedAnsweredPlain { peer: peer.to_string(), pinned }),
             None => {
-                met(endpoint, Kind::Plain, Side::Dialled);
+                met(peer, Kind::Plain, Side::Dialled);
                 Ok(Channel::Plain(connect(endpoint, pace)?))
             }
         },
@@ -330,8 +339,10 @@ fn answered_plain(endpoint: &str) -> bool {
 /// A connection met: counted under its peer, and the first of each peer,
 /// channel and side said in the log. An entry is kept while the book's bytes
 /// fit the sealed process memory (MU-DERIVATIONS D2.5 (a)); one past it is
-/// refused by name and the book left as it stood.
-fn met(peer: &str, kind: Kind, side: Side) {
+/// refused by name and the book left as it stood. A door of its own that
+/// tells the two channels apart by more than `accept`'s first byte (a mind's
+/// post) names what it met here too.
+pub(crate) fn met(peer: &str, kind: Kind, side: Side) {
     let Ok(mut book) = BOOK.lock() else { return };
     if let Some(m) = book.iter_mut().find(|m| m.peer == peer && m.kind == kind && m.side == side) {
         // Past 2⁶⁴ connections the count stands; it is never capped at a

@@ -444,8 +444,9 @@ impl Chatter {
 }
 
 /// One frame off a connection: `[len u32 LE][frame]`, within the wire's one
-/// budget, or nothing.
-pub fn read_delimited(s: &mut TcpStream) -> io::Result<Vec<u8>> {
+/// budget, or nothing. The connection is plain TCP or the Noise channel
+/// over it (`sdk::chatter::send_over`): the framing is the same inside.
+pub fn read_delimited<S: Read + ?Sized>(s: &mut S) -> io::Result<Vec<u8>> {
     let mut len = [0u8; 4];
     s.read_exact(&mut len)?;
     let n = usize::try_from(u32::from_le_bytes(len)).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "length"))?;
@@ -458,20 +459,26 @@ pub fn read_delimited(s: &mut TcpStream) -> io::Result<Vec<u8>> {
 }
 
 /// One frame onto a connection: `[len u32 LE][frame]`.
-pub fn write_delimited(s: &mut TcpStream, frame: &[u8]) -> io::Result<()> {
+/// One write, so inside Noise the head and the frame ride one transport
+/// message where they fit.
+pub fn write_delimited<S: Write + ?Sized>(s: &mut S, frame: &[u8]) -> io::Result<()> {
     let n = u32::try_from(frame.len()).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "frame length"))?;
-    s.write_all(&n.to_le_bytes())?;
-    s.write_all(frame)?;
+    let mut out = Vec::with_capacity(4 + frame.len());
+    out.extend_from_slice(&n.to_le_bytes());
+    out.extend_from_slice(frame);
+    s.write_all(&out)?;
     s.flush()
 }
 
-/// SEND one frame to a peer, on its own connection.
+/// SEND one frame to a peer, on its own connection, in plaintext; a mind
+/// holding a Noise home sends with `sdk::chatter::send_over`.
 pub fn send(endpoint: &str, frame: &[u8]) -> io::Result<()> {
     let mut s = TcpStream::connect(endpoint)?;
     write_delimited(&mut s, frame)
 }
 
-/// ASK a mind's post one question and read its answer, on one connection.
+/// ASK a mind's post one question and read its answer, on one connection,
+/// in plaintext (`sdk::chatter::ask_over` inside Noise).
 pub fn ask(endpoint: &str, question: &[u8]) -> io::Result<Vec<u8>> {
     let mut s = TcpStream::connect(endpoint)?;
     write_delimited(&mut s, question)?;

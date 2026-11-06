@@ -41,19 +41,37 @@ impl Mind {
     }
 
     /// THE MIND OPENED toward the hypha at `endpoint`: its carrier discovers the
-    /// nerve on its own thread before it carries the first ask.
+    /// nerve on its own thread before it carries the first ask. Every session
+    /// and its chatter speak plaintext, named; `open_with_noise` seals them.
     pub fn open(endpoint: &str, voice: Voice) -> Self {
+        Mind::open_on(endpoint, voice, None)
+    }
+
+    /// THE MIND OPENED INSIDE NOISE (MU-PRECURSORS §3.1): `open`, with every
+    /// session dialled on `home`'s static key (`Session::with_noise`, each
+    /// hypha pinned under the address dialled) and the chatter it opens
+    /// sending, asking and listening on the same key (`chatter::send_over`,
+    /// `Post::listen_over`), each mind pinned under its voice.
+    pub fn open_with_noise(endpoint: &str, voice: Voice, home: crate::network::noise::NoiseHome) -> Self {
+        Mind::open_on(endpoint, voice, Some(home))
+    }
+
+    fn open_on(endpoint: &str, voice: Voice, noise: Option<crate::network::noise::NoiseHome>) -> Self {
+        let session = |voice: Voice| match &noise {
+            Some(home) => Session::open(endpoint, voice).with_noise(home.clone()),
+            None => Session::open(endpoint, voice),
+        };
         // The complex listens from the first pivot (MU-CLIENT §4.5): every
         // tether condensed and face sealed winds its strain into the field.
         let mut contemplation = crate::transducer::field::Contemplation::new();
         contemplation.complex.arm_outflow();
         // The seat's carrier lands on the mind's own waker: a house's percept
         // wakes the resting mind that is to take it up.
-        let hypha = super::hypha::HyphaLink::open(Session::open(endpoint,voice.clone()));
-        let seat = super::hypha::HyphaLink::open_beside(Session::open(endpoint,voice.clone()), hypha.waker());
+        let hypha = super::hypha::HyphaLink::open(session(voice.clone()));
+        let seat = super::hypha::HyphaLink::open_beside(session(voice.clone()), hypha.waker());
         // The held mail read on a carrier of its own, so it never stands in
         // front of a take, a solve or a declination.
-        let held = super::hypha::HyphaLink::open_beside(Session::open(endpoint,voice), hypha.waker());
+        let held = super::hypha::HyphaLink::open_beside(session(voice), hypha.waker());
         Mind {
             seat,
             held,
@@ -179,8 +197,9 @@ impl Mind {
     /// the mind's motion, never persisted (78.27, 78.49). An older file, or
     /// one that does not read whole, is refused whole. What the file came to
     /// is answered beside the mind ([`GenomeReading`]); the caller prints it.
-    pub fn open_persistent(endpoint: &str, voice: Voice, genome_path: &str) -> (Self, GenomeReading) {
-        let mut e = Mind::open(endpoint, voice);
+    /// With `noise`, the mind opens inside Noise (`open_with_noise`).
+    pub fn open_persistent(endpoint: &str, voice: Voice, noise: Option<crate::network::noise::NoiseHome>, genome_path: &str) -> (Self, GenomeReading) {
+        let mut e = Mind::open_on(endpoint, voice, noise);
         let Ok(bytes) = std::fs::read(genome_path) else {
             return (e, GenomeReading::Absent);
         };

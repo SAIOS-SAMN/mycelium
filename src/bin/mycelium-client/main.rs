@@ -12,6 +12,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh;
+use mycelium::network::noise::NoiseHome;
 use mycelium::sdk::{Mind, Voice};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -104,10 +105,19 @@ fn call_minds(args: &[String], home: &std::path::Path, line: &str) -> ! {
         }
     };
     entries.sort();
+    // MU-PRECURSORS §3.1 — asked inside Noise on the home's key where one
+    // stands, each mind pinned under its voice; a reader creates no key.
+    let noise = match mycelium::network::noise::NoiseHome::existing(home) {
+        Ok(n) => n,
+        Err(e) => {
+            eprintln!("mycelium-client: the Noise home at {} does not read: {e}", home.display());
+            std::process::exit(2)
+        }
+    };
     let mut answered = false;
     for (voice, addr) in &entries {
         println!("── MIND {voice:.8}… at {addr}");
-        match mycelium::sdk::chatter::ask(addr, &question) {
+        match mycelium::sdk::chatter::ask_over(addr, voice, &question, noise.as_ref()) {
             Ok(reply) => match mycelium::observe::live::decode_lines(&reply) {
                 Some(lines) => {
                     answered = true;
@@ -127,9 +137,9 @@ fn call_minds(args: &[String], home: &std::path::Path, line: &str) -> ! {
 /// register, read at the version this build judges by. A register at another
 /// version is told apart and named, never read as this one; the mind runs on
 /// either way, its acts judged by the court it speaks to.
-fn read_laws(bootstrap: &str, key: &HyphaKey) {
+fn read_laws(bootstrap: &str, key: &HyphaKey, noise: &NoiseHome) {
     use mycelium::physics::laws::{codec, LAW_VERSION};
-    let session = mycelium::sdk::Session::open(bootstrap, Voice::from_voice(key.verifying_bytes()));
+    let session = mycelium::sdk::Session::open(bootstrap, Voice::from_voice(key.verifying_bytes())).with_noise(noise.clone());
     match session.speak(codec::encode_register_request()) {
         Ok(reply) => match codec::decode_register_reply(&reply) {
             Some(served) => eprintln!("laws: version {LAW_VERSION}, {} laws", served.len()),
@@ -180,10 +190,17 @@ fn main() {
         false => mesh_rec.bootstrap.clone(),
     };
     let genome_path = home.join("genome").to_string_lossy().into_owned();
+    // MU-PRECURSORS §3.1 — THE MIND SPEAKS INSIDE NOISE: its sessions and its
+    // chatter on the home's static key (`noise.key`, minted once), each hypha
+    // and each mind pinned on first contact (`noise.pins`).
+    let noise = match NoiseHome::open(&home) {
+        Ok(n) => n,
+        Err(e) => refuse(format!("the Noise home at {} does not open: {e}", home.display())),
+    };
     // 78.141 — seated on its key: the solves it is paid for are signed.
-    let (mut mind, genome) = Mind::open_persistent(&bootstrap, Voice::from_key(voice_key.sk.clone()), &genome_path);
+    let (mut mind, genome) = Mind::open_persistent(&bootstrap, Voice::from_key(voice_key.sk.clone()), Some(noise.clone()), &genome_path);
     eprintln!("{genome}");
-    read_laws(&bootstrap, &voice_key);
+    read_laws(&bootstrap, &voice_key, &noise);
     mind.set_height(mycelium::chronometry::Height::default());
     mind.discover();
     mind.keep_genome(genome_path);

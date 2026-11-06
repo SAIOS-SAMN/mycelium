@@ -172,10 +172,11 @@ Ed25519 and verified on admission. The track adds:
   host, trust-on-first-use pinning with a changed key refused by name,
   and identity kept in the Ed25519-signed acts. It stands in
   `src/network/noise.rs` and `src/network/channel.rs`, wired into the
-  hypha's door, every hypha's ask and the SDK session
-  (`Session::with_noise`); a peer that does not speak it stays plaintext,
-  named in the log and the observer's `channels` reading. Still to come:
-  the reference mind's sessions on Noise, and **Noise-only** (plaintext
+  hypha's door, every hypha's ask, the SDK session
+  (`Session::with_noise`) and the reference mind's sessions and chatter
+  (`Mind::open_with_noise`, #132); a peer that does not speak it stays
+  plaintext, named in the log and the observer's `channels` reading. Still
+  to come: **Noise-only** (plaintext
   refused at the door and by the dialler) as a later release step, a
   network-contract change;
 - address discovery beyond the provisioned `peers`;
@@ -368,9 +369,8 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
 - **The client's order** is MU-CLIENT §7.1 (what is built, and what is
   owed in order), with MU-CLIENT §1a's account of how the mind builds the
   language. Its issues: the field on the mind (#134), these five claims
-  (#135), the hypha's acts as perception (#136), Noise on the mind's
-  sessions (#132), the seated harness (#133), signed receipts to the mind
-  (#137), and the backlog #143–#150 (label `client`).
+  (#135), the hypha's acts as perception (#136), the seated harness
+  (#133), signed receipts to the mind (#137), and the backlog #143–#150 (label `client`).
 
 ## 11. Specification reconciliation
 
@@ -1855,7 +1855,11 @@ Each phase is one commit:
      `orbit_holonomy_is_the_product_of_its_transitions_per_lap`,
      `flat_product_reads_no_holonomy_where_curved_field_reads_it`,
      `orbit_precesses_by_the_holonomy_its_attractors_curve`,
-     `zero_precession_orbit_refused_as_loop`,
+     `flat_region_binds_no_orbit_refused_unbound` (restated from
+     `zero_precession_orbit_refused_as_loop` under 78.171 amendment (f):
+     a flat region binds no orbit, refused `Unbound`),
+     `closed_geodesic_with_zero_precession_is_resonant` (zero precession
+     in a curved field is a resonant orbit, never refused),
      `windings_kept_as_fibre_classes`,
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
    - **Built, stage 1** (branch `field-s7`; built against LAW-FIELD v1 as
