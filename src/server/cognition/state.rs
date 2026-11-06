@@ -113,6 +113,12 @@ pub struct Court {
     /// holds there and the mark of its last filing, so a publisher re-reads
     /// a signer's eras only where one was filed.
     pub(crate) era_tallies: crate::network::nerve::Keyed<crate::chronometry::LineTally>,
+    /// Issue #118 — THE SIGNING EVENTS OF THIS COURT'S OWN FOLDED LINE, read
+    /// once from each of its eras as the alignment reading first meets it,
+    /// keyed `kernel‖stamp‖n` (`signatory::FoldedSignings`). A closed era
+    /// returns nothing new, so what was read of it stands. Volatile: a
+    /// restart reads each era once more.
+    pub(crate) folded_signings: super::signatory::FoldedSignings,
     /// The fold awaiting a witness (47.3): the reading proposed on the
     /// syntropic circuit, carried to a bonded peer by the exchange, sealed
     /// only on both signatures.

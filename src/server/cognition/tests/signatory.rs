@@ -75,7 +75,7 @@ fn head(k: &Court) -> KStepReceipt {
 }
 
 /// The one kernel's alignment as the court reads it.
-fn aligned(k: &Court) -> KernelAlignment {
+fn aligned(k: &mut Court) -> KernelAlignment {
     let a = k.alignment(Some(vk(&kernel_key())), &mut reads()).expect("read");
     assert_eq!(a.history, history(), "the signings of the past stand beside the reading");
     let [one] = a.kernels.as_slice() else { panic!("one kernel asked") };
@@ -95,7 +95,7 @@ fn signing_is_recorded_on_the_ledger_and_reads_converses() {
     let r = head(&k);
     assert_eq!(r.kind, ActKind::Domain);
     assert_eq!(r.cites, vec![Cite::Signing { kernel: vk(&kernel_key()), reserve: Some(vk(&domain_key())), verdict: Box::new(Ok(admitted)) }]);
-    let a = aligned(&k);
+    let a = aligned(&mut k);
     assert_eq!(a.reserve, Some(vk(&domain_key())));
     assert!(a.clauses.iter().all(|c| c.reading == ClauseReading::Converses { at: r.stamp }), "{a:?}");
     assert_eq!(a.clauses.len(), register().expect("stands").len());
@@ -115,7 +115,7 @@ fn refused_signing_is_recorded_as_collision_with_residue() {
     assert_eq!(k.hear_signing(&signed(wrong)), Err(refusal.clone()));
     let r = head(&k);
     assert!(matches!(r.cites.as_slice(), [Cite::Signing { verdict, .. }] if **verdict == Err(refusal.clone())), "the refusal is on the ledger");
-    for c in aligned(&k).clauses {
+    for c in aligned(&mut k).clauses {
         match c.id.law.as_str() {
             forms::passage::LAW_ID => assert_eq!(c.reading, ClauseReading::Collides { at: r.stamp, residue: Box::new(refusal.clone()) }),
             _ => assert_eq!(c.reading, ClauseReading::Converses { at: first }),
@@ -135,7 +135,7 @@ fn resigning_is_a_new_event_and_the_latest_reads() {
     let r = head(&k);
     let events = k.chain.own().filter(|r| r.cites.iter().any(|c| matches!(c, Cite::Signing { .. }))).count();
     assert_eq!(events, 2, "both acts stand on the ledger");
-    assert!(aligned(&k).clauses.iter().all(|c| c.reading == ClauseReading::Converses { at: r.stamp }));
+    assert!(aligned(&mut k).clauses.iter().all(|c| c.reading == ClauseReading::Converses { at: r.stamp }));
 }
 
 /// An act whose signature does not verify is no kernel's act: recorded
@@ -149,7 +149,7 @@ fn unverified_signing_is_recorded_nowhere() {
     assert_eq!(k.hear_signing(&[]), Err(SigningRefusal::Malformed));
     assert!(k.chain.head().is_none(), "nothing sealed");
     assert!(k.alignment(None, &mut reads()).expect("read").kernels.is_empty());
-    let a = aligned(&k);
+    let a = aligned(&mut k);
     assert_eq!(a.reserve, None);
     assert!(a.clauses.iter().all(|c| c.reading == ClauseReading::Unread));
 }
@@ -174,7 +174,7 @@ fn signing_replicates_to_a_second_hypha() {
     assert!(a.hear_signing(&signed(enabled())).is_ok());
     assert!(a.hear_signing(&signed(wrong)).is_err());
     let (b, _) = super::founding::hypha("b2-mesh-b");
-    let (b, _) = super::founding::hear(b, &a, &key);
+    let (mut b, _) = super::founding::hear(b, &a, &key);
     let read = b.alignment(None, &mut reads()).expect("read on b");
     assert_eq!(read, a.alignment(None, &mut reads()).expect("read on a"));
     assert_eq!(read.kernels.len(), 1);
