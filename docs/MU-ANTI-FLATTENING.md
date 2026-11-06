@@ -89,7 +89,11 @@ excluded from the reasoning path.
    Each frame keeps its own resolution, and each body is held by its
    boundary. A site lifts by enclosure into turns of the frame's own
    periods: a site's coordinate `s` on an axis of extent `e` is the turn
-   `s/e`, held as a fraction in ℚ/ℤ. It is
+   `s/e`, held as the fraction, the angle `360°·s/e` on its named plane.
+   Turns compose by addition and **the winding is kept with the phase**:
+   a composed motion holds its whole turns (ℤ, `K = ⌊|θ|/360⌋`) beside
+   its phase, never reduced mod 1 (LAW-FIELD amendment (c);
+   `Turn::plus`, `Turn::winding`). It is
    never a point embedding with an unenclosed `e∞` or a squared norm
    (law 11). Subdividing two frames onto a common grid (the `lcm`
    refinement of the two extents) is refused. The least common multiple of
