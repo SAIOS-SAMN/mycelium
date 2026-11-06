@@ -347,7 +347,7 @@ pub(crate) fn held_form(
     // per incidence, each keyed by the site of the boundary it leaves from.
     // Without this line every reader of the cover on a received sentence —
     // the court speaking a submitted rule, the mind comprehending an
-    // utterance, the retirement scope, the use credit — reads an empty
+    // expression, the retirement scope, the use credit — reads an empty
     // cover and resolves nothing, silently.
     f.cover = receipts.nerve.clone();
     // AND THE EVIDENCE THE KEY DOES NOT CARRY (AT1, 54.5 Road (d)): each

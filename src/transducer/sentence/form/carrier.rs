@@ -584,7 +584,7 @@ pub fn frames_of_section(section: &Keyed<()>) -> Vec<u64> {
 }
 
 /// A section over the frames it stands on.
-pub fn section_of_frames(frames: impl IntoIterator<Item = u64>) -> Keyed<()> {
+pub fn samples_of_section(frames: impl IntoIterator<Item = u64>) -> Keyed<()> {
     let mut out = Keyed::new();
     for k in frames {
         out.insert(frame_key(k), ());
@@ -648,7 +648,7 @@ impl coord::ChartAt {
     /// The vertex this chart belongs to; the Frame's chart is the Frame's.
     pub fn vertex(&self) -> coord::VertexAt {
         match self {
-            coord::ChartAt::Frame => coord::VertexAt::Frame,
+            coord::ChartAt::Frame => coord::VertexAt::Enclosure,
             coord::ChartAt::At(m) => m.vertex.clone(),
         }
     }
@@ -967,7 +967,7 @@ pub struct Form {
 impl Default for Form {
     fn default() -> Self {
         let mut vertices = Keyed::new();
-        vertices.put(&coord::VertexAt::Frame, Vertex::Frame);
+        vertices.put(&coord::VertexAt::Enclosure, Vertex::Frame);
         Form {
             n: crate::transducer::element::BASE_N,
             vertices,

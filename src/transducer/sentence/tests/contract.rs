@@ -90,7 +90,7 @@ fn contract_drops_face_that_does_not_rederive() {
 /// It also cannot be harmless, and that is why the guard is here rather
 /// than only at the court. A contraction MOVES THE ADDRESS —
 /// `form_vertex_key` of the contracted form — so the seal the voice holds
-/// on the refused address stops matching, the contracted form is uttered,
+/// on the refused address stops matching, the contracted form is asserted,
 /// the same links refuse again, and the cycle mints one word per turn with
 /// nothing in it to stop.
 ///

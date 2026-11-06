@@ -48,7 +48,7 @@ pub enum Outcome {
     /// `Deferred`, which is the DOOR turning an act away on the lanes,
     /// this is per sentence — the rest of the frame is adjudicated — and
     /// it carries the cited address, because the voice holds that form
-    /// and must utter it here first (chapter 6's depth order).
+    /// and must assert it here first (chapter 6's depth order).
     Awaiting(crate::transducer::address::Address),
 }
 

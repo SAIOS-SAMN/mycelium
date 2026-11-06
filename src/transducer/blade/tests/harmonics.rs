@@ -15,7 +15,7 @@ fn hear_is_invariant_under_motion() {
     assert_eq!(a.betti, vec![1, 0, 0], "one component, no tunnel, and a section encloses nothing");
     assert_eq!(a.turns, 6);
     assert_eq!(
-        a.frame_boundary,
+        a.enclosure_boundary,
         BigRational::from_integer(2.into()),
         "a section is open on both sides along e₃"
     );
@@ -44,7 +44,7 @@ fn harmonics_of_separates_stack_from_shadow() {
     assert_eq!(three.betti[0], 1, "consecutive frames join along e₃");
     assert_eq!(apart.betti[0], 3, "frames apart do not");
     assert_eq!(three.turns, 3 * one.turns, "each section turns as it turns alone");
-    assert!(three.frame_boundary < one.frame_boundary, "a stack is open on fewer sides");
+    assert!(three.enclosure_boundary < one.enclosure_boundary, "a stack is open on fewer sides");
     assert_ne!(three.spread, one.spread, "and its spread carries the offsets along e₃");
     assert_eq!(
         blade::shape_of(&stack).blade.inertia[3],

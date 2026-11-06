@@ -1,4 +1,4 @@
-// 24.2, 26 — COMPREHENSION: what an utterance becomes here, what is
+// 24.2, 26 — COMPREHENSION: what an expression becomes here, what is
 // learned from the syllabus, and what is retired.
 
 use crate::client::sdk::*;
@@ -51,23 +51,23 @@ impl MindLanguage {
         true
     }
 
-    /// COMPREHEND a received utterance: decompose it over the genome (the shared
+    /// COMPREHEND a received expression: decompose it over the genome (the shared
     /// projective mathematics, `cognition::decompose_over`) and fold the
     /// understanding into the mind's language —expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
-    pub(crate) fn comprehend(&mut self, utterance: &Element, budget: &mut crate::physics::Budget) -> Comprehension {
+    pub(crate) fn comprehend(&mut self, expression: &Element, budget: &mut crate::physics::Budget) -> Comprehension {
         // A taught sentence is re-derived as a form: vertices, faces, orbits.
         // Understanding is re-deriving its cochain, not matching its bytes.
-        if utterance.is_sentence() {
-            // AN UTTERANCE, not a word this mind holds: the decode is named
+        if expression.is_sentence() {
+            // AN EXPRESSION, not a word this mind holds: the decode is named
             // here, and re-deriving it as a form is the comprehension (L16).
-            if let Some(f) = crate::transducer::sentence::from_element_form(utterance) {
+            if let Some(f) = crate::transducer::sentence::from_element_form(expression) {
                 return self.comprehend_form(&f);
             }
             // A sentence tape that does not re-derive as a form: what the
-            // mind lacks is the whole utterance, and that is what it says.
+            // mind lacks is the whole expression, and that is what it says.
             return Comprehension::Novel {
-                demand: Box::new(utterance.clone()),
+                demand: Box::new(expression.clone()),
                 understood: Vec::new(),
             };
         }
@@ -75,11 +75,11 @@ impl MindLanguage {
         // glued against the representative on its fibre — the transition
         // vanishes (held), does not (dialect, the element carried), or there
         // is no representative (admitted). Never an empty covering.
-        if utterance.is_translation() {
+        if expression.is_translation() {
             return Comprehension::Admitted;
         }
-        if utterance.is_connection() && utterance.sub().is_empty() {
-            let inv = crate::transducer::stalk::invariant_of(utterance);
+        if expression.is_connection() && expression.sub().is_empty() {
+            let inv = crate::transducer::stalk::invariant_of(expression);
             let fibre = self.working_atlas().fibre(&inv);
             // M6 STEP 3, A12: the incoming word is factored through the
             // WHOLE fibre, not tested against one representative at a time.
@@ -93,7 +93,7 @@ impl MindLanguage {
             // `Understood` arm was read — and the mind then said `Admitted`
             // to a word it could exactly say what it was missing of.
             let mut demand: Option<Comprehension> = None;
-            if let Some(spoken) = utterance.letters() {
+            if let Some(spoken) = expression.letters() {
                 // THE BASIS IS THE STRATUM (42.6, A21 §2): the generators
                 // under the nearest prefix of this chart that holds any,
                 // read by `peel` and no coarser. A connection's chart is
@@ -106,7 +106,7 @@ impl MindLanguage {
                 let mut held_at = Vec::new();
                 for (a, st) in &generators {
                     let Some(held) = self.working_word(a) else { continue };
-                    if held.address() == utterance.address() {
+                    if held.address() == expression.address() {
                         continue;
                     }
                     let Some(l) = held.letters() else { continue };
@@ -176,10 +176,10 @@ impl MindLanguage {
                 let Some(held) = self.working_word(&a).cloned() else {
                     continue;
                 };
-                if held.address() == utterance.address() || held.axes().is_empty() {
+                if held.address() == expression.address() || held.axes().is_empty() {
                     continue;
                 }
-                match crate::transducer::cech::transition(&held, utterance) {
+                match crate::transducer::cech::transition(&held, expression) {
                     None => {}
                     Some(g) => match (g.axes().as_slice(), g.sub()) {
                         // A transition that vanishes is the word itself,
@@ -207,7 +207,7 @@ impl MindLanguage {
         }
         // Located through the atlas and the versor, never searched. A taught
         // word is one piece: one stroke locates it.
-        let located = self.locate(utterance.sub(), None, budget);
+        let located = self.locate(expression.sub(), None, budget);
         // The remainder decides: no residue and no fibre to deepen is the
         // understood arm; anything left over is the novelty, measured.
         match (located.residue.len(), located.punctures.len()) {
@@ -228,7 +228,7 @@ impl MindLanguage {
                 }
                 if !sentence.is_empty() {
                     let addrs: Vec<Vec<u8>> = sentence.iter().map(|(a, _)| a.clone()).collect();
-                    let key = utterance.address();
+                    let key = expression.address();
                     match self.recollections.get_mut(&key) {
                         Some((_, n)) => *n += 1,
                         None => {
@@ -244,7 +244,7 @@ impl MindLanguage {
             _ => {
                 let resident = &self.resident;
                 let open = located
-                    .open_at(&|a| resident.get(a).map(|w| w.held.element()), utterance.sub());
+                    .open_at(&|a| resident.get(a).map(|w| w.held.element()), expression.sub());
                 let understood: Vec<(Vec<u8>, Standing)> = located
                     .cites
                     .iter()
@@ -275,7 +275,7 @@ impl MindLanguage {
         // 54.7 B5a — THE CITATIONS ARE THE COVER'S, not the vertices'. A
         // `Glued` vertex states a boundary — a rank, a depth, a placement, a
         // φ — and WHICH form it mates with is `Form::cover`, filled from
-        // the utterance's `ReceiptsEnvelope` by `from_element_form`. Read
+        // the expression's `ReceiptsEnvelope` by `from_element_form`. Read
         // off the vertices after the eviction, every citation would resolve
         // at nothing and the mind would call a sentence it cannot read
         // `Admitted`.

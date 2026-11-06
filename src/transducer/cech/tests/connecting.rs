@@ -1,6 +1,6 @@
 // 78.99 (4), M8 — GLUING PRODUCES MEANING: the non-abelian connecting map
 // reads a class neither exact part held where the overlap is disconnected,
-// none where it is connected or the loop is flat, refuses an inexact glue,
+// none where it is connected or the orbit is flat, refuses an inexact glue,
 // and reads a hole one part caps.
 
 use super::fixtures::*;
@@ -25,31 +25,31 @@ fn arc(a: u8, mid: u8, b: u8, g: Rotor) -> Complex {
 
 /// TWO ARCS GLUED AT THE ENDS MAKE A RING, and its holonomy is a class
 /// neither arc held: each arc is a tree, exact on its own; the overlap is the
-/// two ends, two components; the loop out through one arc and back through
-/// the other carries the turn. With both arcs flat the loop is flat and
+/// two ends, two components; the orbit out through one arc and back through
+/// the other carries the turn. With both arcs flat the orbit is flat and
 /// makes nothing.
 #[test]
 fn connecting_makes_new_class_from_two_exact_arcs() {
     let (u, w) = (arc(1, 2, 3, turn_90()), arc(1, 4, 3, Rotor::identity()));
     let g = connecting(&u, &w).expect("two exact parts glue");
     assert_eq!(g.components, 2, "the overlap is the two ends");
-    assert_eq!(g.made.len(), 1, "one loop through the overlap, one class made: {g:?}");
+    assert_eq!(g.made.len(), 1, "one orbit through the overlap, one class made: {g:?}");
     assert!(matches!(g.made[0].2, Fill::Class(..) | Fill::Congruent(..)), "a curved class: {:?}", g.made[0].2);
     let flat = connecting(&arc(1, 2, 3, Rotor::identity()), &w).expect("glues");
-    assert!(flat.made.is_empty() && flat.flat == 1, "a flat loop makes nothing: {flat:?}");
+    assert!(flat.made.is_empty() && flat.flat == 1, "a flat orbit makes nothing: {flat:?}");
 }
 
 /// TWO VERTICES' STARS GLUED (the voice's merge): on a meet graph where two
 /// thoughts share a tether and a neighbour, and the neighbour's two tethers
 /// turn, the stars glue along the two thoughts and the neighbour, and the
-/// loop round the three is a class neither star held.
+/// orbit round the three is a class neither star held.
 #[test]
-fn connecting_reads_loop_through_neighbour_of_two_stars() {
+fn connecting_reads_orbit_through_neighbour_of_two_stars() {
     let mut c = arc(1, 3, 2, turn_90());
     c.set_edge(key(1), key(2), Rotor::identity(), ident(), vol());
     let g = connecting(&c.star_of(&key(1)), &c.star_of(&key(2))).expect("two stars glue");
     assert_eq!(g.components, 2, "the two thoughts, and the neighbour: {g:?}");
-    assert_eq!(g.made.len(), 1, "one loop through the neighbour, one class made");
+    assert_eq!(g.made.len(), 1, "one orbit through the neighbour, one class made");
 }
 
 /// A CONNECTED OVERLAP MAKES NOTHING, AND AN INEXACT ONE REFUSES. Two parts

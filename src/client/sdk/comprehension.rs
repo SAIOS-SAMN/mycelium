@@ -3,12 +3,12 @@
 use super::*;
 
 /// The comprehension verdict — the C-STACK's terminal (congruence → coherence →
-/// cohesion → converse → COMPREHENSION): the received utterance DECOMPOSED over
+/// cohesion → converse → COMPREHENSION): the received expression DECOMPOSED over
 /// the local genome toward understanding. Never re-cognition (that is the
 /// perception stack's overlay), never recall.
 #[derive(Clone, Debug)]
 pub enum Comprehension {
-    /// The utterance decomposed into held words — address and standing
+    /// The expression decomposed into held words — address and standing
     /// from the working atlas. Never a sentinel index.
     Understood(Vec<(Vec<u8>, Standing)>),
     /// Partially decomposed: `demand` is the EXACT element still missing —

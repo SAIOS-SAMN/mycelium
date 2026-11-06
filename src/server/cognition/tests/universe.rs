@@ -76,14 +76,14 @@ fn torus() -> Geometry {
 }
 
 /// The core tube from domain 4's core to domain 5's: unit mass, the near
-/// end curved of `R` 1, the far end in `to`, the far frame `to_frame`.
-fn core_to(to: Geometry, to_frame: Mv) -> Mouth {
+/// end curved of `R` 1, the far end in `to`, the far frame `to_chart`.
+fn core_to(to: Geometry, to_chart: Mv) -> Mouth {
     Mouth {
         from_tier: verifying(&reserve(4)),
         to_tier: verifying(&reserve(5)),
         keeper: verifying(&reserve(4)),
-        from_frame: crate::transducer::element::identity_versor(),
-        to_frame,
+        from_chart: crate::transducer::element::identity_versor(),
+        to_chart,
         toll: [0; 4].into(),
         nonce: [4; 32],
         tariff: None,

@@ -26,7 +26,7 @@ fn shift(dr: i64, dc: i64) -> Mv {
 
 fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>) -> Result<SectionSample, Unstated> {
     let spoken = spoken?;
-    let mut g = SectionSample::filled(spoken.frame, 0).expect("a frame");
+    let mut g = SectionSample::filled(spoken.extents, 0).expect("a frame");
     for p in spoken.painted {
         g.paint(p.site, p.symbol).expect("on the sample");
     }
@@ -103,12 +103,12 @@ fn speak_clauses_frames_output_by_plane_axis() {
     let tiled = digits(&["123", "456"]);
     let tile = Clause { select: Pred::All, act: Act::Tile { blocks: [1, 2], turns: vec![0, 1] } };
     let spoken = speak_clauses(std::slice::from_ref(&tile), &tiled, &crate::transducer::family::perceive(&tiled)).expect("the tiling is spoken");
-    assert_eq!(spoken.frame, [2, 6], "one block along the first axis, two along the second");
+    assert_eq!(spoken.extents, [2, 6], "one block along the first axis, two along the second");
     assert_eq!(drawn(Ok(spoken)), Ok(digits(&["123321", "456654"])), "the second block reversed along the second axis");
     let split = digits(&["10501", "01500"]);
     let panes = Clause { select: Pred::All, act: Act::Panes { along: PlaneAxis::Second, gap: true, table: 0b0110, paint: 2 } };
     let spoken = speak_clauses(std::slice::from_ref(&panes), &split, &crate::transducer::family::perceive(&split)).expect("the panes are spoken");
-    assert_eq!(spoken.frame, [2, 2], "the pane keeps the first axis and halves the second past the separator");
+    assert_eq!(spoken.extents, [2, 2], "the pane keeps the first axis and halves the second past the separator");
 }
 
 /// AN ELEMENT NO ACT NAMES IS SAID: a body carried to its meet keeping its

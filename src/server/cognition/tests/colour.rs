@@ -10,10 +10,10 @@ use crate::cognition::*;
 use crate::transducer::element::FibreRelation;
 
 /// A family recoloured in place: 1 → 2 and 3 → 1, the base standing still;
-/// read through the frame-fixing perspective (`raster::frame_fixed_on_ground`,
+/// read through the frame-fixing perspective (`raster::enclosure_fixed_on_ground`,
 /// ROADMAP track 26 S2).
 fn task(a: u8, b: u8, c: u8) -> crate::transducer::family::Task {
-    crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::task_of_lines(
+    crate::transducer::raster::enclosure_fixed_on_ground(crate::transducer::family::task_of_lines(
         vec![
             (vec![vec![a, a, 0, c]], vec![vec![b, b, 0, a]]),
             (vec![vec![0, c, a, 0]], vec![vec![0, a, b, 0]]),

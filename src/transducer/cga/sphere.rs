@@ -16,7 +16,7 @@ pub fn sphere_pole() -> Mv {
 /// THE POINT A FRAME STANDS AT ON THE SPHERE: its versor applied to the
 /// pole, renormalised onto `v² = +1` — `V e₊ Ṽ` has `v² = (V Ṽ)²`, so one
 /// exact rational division by the weight puts it on the sphere; the scale
-/// is the point's own coordinate, as on the sheet (`frame_base_point`).
+/// is the point's own coordinate, as on the sheet (`pose_point`).
 /// `None` where the frame has no weight or its image is not a unit vector.
 pub fn sphere_base_point(v: &Mv) -> Option<Mv> {
     let w = weight_of(v)?;

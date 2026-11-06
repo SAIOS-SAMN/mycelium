@@ -338,11 +338,11 @@ impl Court {
     /// sealed without a frame (ACT1, 78.27 Q1(a)). It read `word_at`, which
     /// does not read the listing book or the federation, so every List act
     /// on a held listing read no frame (ACT1-reading's return R1).
-    pub(crate) fn frame_of(&mut self, address: &[u8]) -> [u64; 4] {
+    pub(crate) fn measure_of(&mut self, address: &[u8]) -> [u64; 4] {
         match self.named_word(address) {
             Some(w) => w.magnitude(),
             None => {
-                self.unframed += 1;
+                self.unmeasured += 1;
                 [0; 4]
             }
         }
@@ -371,7 +371,7 @@ impl Court {
         chart: Option<crate::transducer::stalk::Invariant>,
     ) {
         let address = address.as_ref();
-        let mu = self.frame_of(address);
+        let mu = self.measure_of(address);
         let held = self.cite_of(address);
         let admits = match &held {
             None => self.named_word(address).cloned(),
@@ -407,7 +407,7 @@ impl Court {
     /// the address now, which is zero where nothing holds it. A word that
     /// no row holds any more leaves its admitting stamp with it.
     pub(super) fn append_after_removal(&mut self, kind: ActKind, address: &[u8], cite: Option<Cite>, voice: [u8; 32]) {
-        let mu = self.frame_of(address);
+        let mu = self.measure_of(address);
         let at = cite.as_ref().and_then(Cite::at);
         self.append_cited(kind, cite.into_iter().collect(), mu, voice);
         self.forget_if_unheld(address);
@@ -638,7 +638,7 @@ impl Court {
                 };
                 self.physics.regenerate_within(bonds);
                 // 78.69: AND THE PRESSURE RELAXES BY THE ORDER THE ORBIT BUILT,
-                // per lane (PHY1). It relaxed only where an utterance was
+                // per lane (PHY1). It relaxed only where an expression was
                 // heard (`reflex_open`), so a court booking order without
                 // hearing one kept its pressure whole.
                 self.physics.relax();

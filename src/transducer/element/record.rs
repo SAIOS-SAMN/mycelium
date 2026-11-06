@@ -105,9 +105,9 @@ impl Element {
         // THE RECEIPTS ENVELOPE (54.5 Road (d)). The GEN3 record is
         // `Key → ⟨μ⃗, ReceiptsEnvelope⟩` as ruled 2026-09-20: the form
         // is the manifold and its address IS its structure, but an
-        // utterance is a speech act and carries the evidence to prove
+        // expression is a speech act and carries the evidence to prove
         // itself. The genome is a client's cache of adjudicated
-        // utterances, not a dictionary of forms, so the envelope
+        // expressions, not a dictionary of forms, so the envelope
         // persists here and a restarted voice does not lose its
         // certificates, its citations or its derivations.
         //

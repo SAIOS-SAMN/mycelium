@@ -1,4 +1,4 @@
-// 25, 26 — comprehension: what an utterance becomes in a client, what is
+// 25, 26 — comprehension: what an expression becomes in a client, what is
 // withheld, and what a stood word closes.
 
 use super::fixtures::*;
@@ -6,7 +6,7 @@ use crate::client::sdk::*;
 use crate::transducer::sentence::tests::fixtures::painted;
 
 /// THE C-STACK TERMINAL: a taught word enters the GENOME (inheritance via
-/// gene expression); a received utterance is COMPREHENDED — decomposed over
+/// gene expression); a received expression is COMPREHENDED — decomposed over
 /// the genome, moving the EPIGENOME's expression weights (the local dialect's
 /// recollection) — never re-cognized, never recalled. And comprehension never
 /// mutates the genome: the inherited record cannot drift locally.
@@ -19,7 +19,7 @@ let mut epi = MindLanguage::new();
 let word = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 2)]), &painted(&[(0, 0, 4), (0, 1, 2)])).unwrap());
 assert!(matches!(epi.learn(&word.to_bytes().expect("the record writes"), &mut super::fixtures::budget()), Some(Comprehension::Novel { .. })));
 assert_eq!(epi.genome_len(), 1);
-// The same utterance again — COMPREHENDED as the held word; expression rises.
+// The same expression again — COMPREHENDED as the held word; expression rises.
 match epi.comprehend(&word, &mut super::fixtures::budget()) {
     Comprehension::Understood(v) => {
         assert_eq!(v.len(), 1);
@@ -29,7 +29,7 @@ match epi.comprehend(&word, &mut super::fixtures::budget()) {
     other => panic!("expected Understood with standing, got {other:?}"),
 }
 assert_eq!(epi.peak_expression(), Some(1), "the dialect's recollection weight moved");
-// An unrelated utterance is heard as novel — a prospective, not a failure —
+// An unrelated expression is heard as novel — a prospective, not a failure —
 // and the genome is untouched by hearing it.
 let other = from_canonical(&germinate(&painted(&[(0, 0, 5)]), &painted(&[(0, 0, 9)])).unwrap());
 assert!(matches!(epi.comprehend(&other, &mut super::fixtures::budget()), Comprehension::Novel { .. }));
@@ -462,7 +462,7 @@ assert_eq!(d.last_used_tu, 11, "tu is TUniversal");
 }
 
 /// A vertex already spoken stands in the dialect and does not go on
-/// the wire, even when the second utterance is a translated embedding.
+/// the wire, even when the second expression is a translated embedding.
 #[test]
 fn speak_stands_known_vertex_without_wire() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
