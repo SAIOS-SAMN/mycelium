@@ -248,7 +248,7 @@ gate holds the first boundary: no transport source names a carrier type
 
 | Layer | What it is | What it may know | What it must never hold |
 |---|---|---|---|
-| Transport | The connection; channel security (Noise); delimitation by a length; flow by deferral. Sources: `src/network/wire.rs`, `src/network/noise.rs`, `src/bin/mycelium-server/transport.rs` (listed once, as `TRANSPORT` in the gate) | Byte counts, the body budget, rtt in strokes, peer keys, capacity | Meaning: a lane, a rank, a coordinate, the identity of content, any carrier type |
+| Transport | The connection; channel security (Noise); delimitation by a length; flow by deferral. Sources: `src/network/wire.rs`, `src/network/noise.rs`, `src/network/channel.rs`, `src/bin/mycelium-server/transport.rs` (listed once, as `TRANSPORT` in the gate) | Byte counts, the body budget, rtt in strokes, peer keys, capacity | Meaning: a lane, a rank, a coordinate, the identity of content, any carrier type |
 | Carrier | `Mv` (`Cl(p, q)`, carrying its `n` and signature; `algebra/src/multivector.rs`), `Sample` (rank `n`; `src/transducer/sample.rs`), `Modes` (μ per lane as vectors; `src/economy/modes.rs`), `Coordinate` (lanes as keyed vectors; `forms/src/coordinate.rs`), `SectionSite`, `Turn`, and the passage's hold and reach (`forms/src/passage.rs`) | Its own description: rank, signature, lane keys; its canonical writing | A projection to fewer dimensions: a scalar per lane, a fixed four, a floor, `==` on a digest as identity |
 | Coordinate | A body at `origin / h : S:G:T:H : K` (proposal 78.173); an event at a TUniversal height on a signer's line, at its position `i`; a site within a sample | Where a thing stands; the route to it | Identity: a coordinate locates and routes, and never names what stands there. TUniversal stamps an event and never drives an advance |
 
@@ -282,7 +282,7 @@ is refused as stale.
 | `Mu` as four scalar lanes | `src/economy/mu.rs` | `Modes` replaces `Mu` (ROADMAP 1b) | v0.5.0 |
 | `[u64; 4]` in quotes and deferrals | `src/anastome/dialogue/quote.rs` (`encode_outcome`, `encode_deferral`) | `Modes` on the wire | v0.5.0 |
 | `payload_hash` and `==` on digests as identity | `src/chronometry/receipt.rs`, and the sites track 25 X0 lists | Identity is the content written out (A21); a digest only locates, links or commits | Track 25 (X0 drift guards, #28) |
-| Noise built and not wired: the mesh runs in plaintext | `src/network/noise.rs` | The door and the session open the channel | Open |
+| ~~Noise built and not wired: the mesh runs in plaintext~~ | `src/network/noise.rs` | The door and the session open the channel: `src/network/channel.rs`, the door and every ask in `src/bin/mycelium-server/transport.rs`, `Session::with_noise`; opt-in per peer, a plaintext peer named (MU-PRECURSORS §3.1) | Closed (noise-wired) |
 | `home_trie`'s `lane & 3`: a lane folded onto the base four | `src/network/nerve/home_trie.rs` | Lanes read as keys, never masked | In progress |
 
 ### 9.3 Names to settle

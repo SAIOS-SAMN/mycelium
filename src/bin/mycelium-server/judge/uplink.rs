@@ -8,9 +8,9 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::uplink::{decode_uplink, encode_uplink_reply};
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some(fold) = decode_uplink(&frame.body) else { return };
     let verdict = match crate::court_lock::held!(context.court) {
         Ok(mut h) => h.run(|k, _| k.hear_uplink(&fold)),

@@ -22,7 +22,17 @@
 //! body is allocated.
 //!
 //! The stream under the channel is BLOCKING: a `WouldBlock` in the middle of
-//! a message would lose the bytes already read of it.
+//! a message would lose the bytes already read of it. A stream read at a
+//! stroke pace (`channel::Paced`) waits inside its own `read`, so it is
+//! blocking to the channel.
+//!
+//! THE OPENING. The initiator writes [`OPEN`] alone and begins the handshake
+//! only once the responder has answered [`OPEN`]. No plaintext
+//! frame begins with `OPEN`: its first byte names no lane, and its next four,
+//! read as a plaintext length, pass the wire's budget. A door that speaks
+//! only plaintext reads it as a frame over budget and answers a plaintext
+//! refusal, which the initiator reads as `NotSpoken`; a door that speaks
+//! Noise tells the two apart by the first byte (`channel::accept`).
 
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -47,6 +57,11 @@ pub const PIN_FILE: &str = "noise.pins";
 /// A Curve25519 key's length.
 /// EXTERNAL: Curve25519/X25519 key, 32 bytes (RFC 7748).
 pub const KEY_LEN: usize = 32;
+/// THE CHANNEL'S OPENING, written by each side before its first handshake
+/// message: a first byte that is no lane byte, then four bytes that read as
+/// a plaintext length past the wire's budget (`0x0158584e`).
+/// FORMAT: Noise channel opening bytes.
+pub const OPEN: [u8; 5] = [0xff, b'N', b'X', b'X', 0x01];
 
 /// Why the channel refused, by name.
 #[derive(Debug, thiserror::Error)]
@@ -67,6 +82,14 @@ pub enum NoiseRefusal {
     /// A pinned peer presented a static key other than the one pinned.
     #[error("noise peer {peer} presented a changed static key")]
     PeerKeyChanged { peer: String, pinned: [u8; KEY_LEN], presented: [u8; KEY_LEN] },
+    /// The peer answered the opening with bytes other than [`OPEN`]: it does
+    /// not speak Noise. `answered` holds what it wrote in the opening's place.
+    #[error("noise peer does not speak Noise")]
+    NotSpoken { answered: [u8; 5] },
+    /// A pinned peer answered in plaintext: a channel once sealed is never
+    /// opened again without its seal. Re-pinning is an operator act.
+    #[error("noise peer {peer} is pinned and answered in plaintext")]
+    PinnedAnsweredPlain { peer: String, pinned: [u8; KEY_LEN] },
     /// A peer address the pin store cannot hold as one line.
     #[error("noise peer address {0:?} cannot be pinned")]
     PeerLabel(String),
@@ -150,6 +173,14 @@ impl NoiseHome {
         };
         let public = public_of(&private)?;
         Ok(NoiseHome { dir: dir.to_path_buf(), private, public })
+    }
+
+    /// The home at `dir` where its key already stands, and none where no key
+    /// was ever minted there: a reader that creates nothing (the console).
+    pub fn existing(dir: &Path) -> Result<Option<Self>, NoiseRefusal> {
+        let Some(private) = read_key(&dir.join(KEY_FILE))? else { return Ok(None) };
+        let public = public_of(&private)?;
+        Ok(Some(NoiseHome { dir: dir.to_path_buf(), private, public }))
     }
 
     /// This host's static public key: what every peer pins for it.
@@ -269,14 +300,38 @@ fn remote_static_of(hs: &snow::HandshakeState) -> Result<[u8; KEY_LEN], NoiseRef
         .ok_or(NoiseRefusal::NoPeerStatic)
 }
 
+/// The opening, alone: a door that reads it as a plaintext head has read
+/// every byte sent, so its refusal and its close reach the initiator whole.
+fn put_open<S: Write>(s: &mut S) -> Result<(), NoiseRefusal> {
+    s.write_all(&OPEN)?;
+    s.flush()?;
+    Ok(())
+}
+
+/// The peer's opening read: [`OPEN`], or `NotSpoken` with what stood in its
+/// place.
+fn take_opening<S: Read>(s: &mut S) -> Result<(), NoiseRefusal> {
+    let mut answered = [0u8; 5];
+    s.read_exact(&mut answered)?;
+    match answered == OPEN {
+        true => Ok(()),
+        false => Err(NoiseRefusal::NotSpoken { answered }),
+    }
+}
+
 /// THE INITIATOR'S HALF of XX (`-> e`, `<- e ee s es`, `-> s se`) over
 /// `stream`, pinning the responder's static key under `peer`, the address
 /// dialled. A changed key is refused before this host's static key is sent.
+/// The handshake begins once the responder has answered the opening with its
+/// own: a peer that answers anything else does not speak Noise
+/// (`NotSpoken`), and no handshake byte was sent to it.
 pub fn initiate<S: Read + Write>(mut stream: S, home: &NoiseHome, peer: &str) -> Result<NoiseStream<S>, NoiseRefusal> {
     let mut hs = builder()?
         .local_private_key(&home.private)
         .and_then(|b| b.build_initiator())
         .map_err(|_| NoiseRefusal::Handshake)?;
+    put_open(&mut stream)?;
+    take_opening(&mut stream)?;
     let mut buf = vec![0u8; MESSAGE_MAX];
     let n = hs.write_message(&[], &mut buf).map_err(|_| NoiseRefusal::Handshake)?;
     put_message(&mut stream, &buf[..n])?;
@@ -293,12 +348,15 @@ pub fn initiate<S: Read + Write>(mut stream: S, home: &NoiseHome, peer: &str) ->
 /// THE RESPONDER'S HALF of XX (`<- e`, `-> e ee s es`, `<- s se`) over
 /// `stream`. With `peer`, the initiator's static key is pinned under it; an
 /// inbound caller dials from a port of its own choosing and is pinned only
-/// under a name the caller gives it.
+/// under a name the caller gives it. The stream opens with [`OPEN`]; one
+/// that opens otherwise is `NotSpoken`.
 pub fn respond<S: Read + Write>(mut stream: S, home: &NoiseHome, peer: Option<&str>) -> Result<NoiseStream<S>, NoiseRefusal> {
     let mut hs = builder()?
         .local_private_key(&home.private)
         .and_then(|b| b.build_responder())
         .map_err(|_| NoiseRefusal::Handshake)?;
+    take_opening(&mut stream)?;
+    put_open(&mut stream)?;
     let mut buf = vec![0u8; MESSAGE_MAX];
     let m = take_message(&mut stream)?;
     hs.read_message(&m, &mut buf).map_err(|_| NoiseRefusal::Handshake)?;

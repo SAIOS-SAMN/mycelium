@@ -10,19 +10,19 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::WireFrame;
-use std::net::TcpStream;
+use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(s: &mut Channel, frame: &WireFrame, context: &Context) {
     let Some((a, b)) = dialogue::decode_equivocation(&frame.body) else {
         return;
     };
-    let say = |s: &mut TcpStream, r: dialogue::Ruled| {
+    let say = |s: &mut Channel, r: dialogue::Ruled| {
         match dialogue::encode_ruled(&r) {
             Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
             None => eprintln!("  court equivocation answer refused: the reason passes its u16"),
         }
     };
-    let refuse = |s: &mut TcpStream, why: &str| {
+    let refuse = |s: &mut Channel, why: &str| {
         eprintln!(
             "  court equivocation refused {:02x}{:02x}… K {}: {why}",
             a.receipt.stamp.vk[0], a.receipt.stamp.vk[1], a.receipt.stamp.place().print()

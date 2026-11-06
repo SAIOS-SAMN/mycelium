@@ -165,12 +165,18 @@ Lands in `src/bin/mycelium-server/admission.rs` and the court's treasury.
 
 Multi-host and wide-area operation of the mesh. Acts are signed with
 Ed25519 and verified on admission. The track adds:
-- an encrypted transport (**In progress**;
+- an encrypted transport (**Landed, opt-in per peer**;
   [MU-PRECURSORS §3.1](docs/MU-PRECURSORS.md#31-noise-xx-encrypted-transport)):
   TCP wrapped in `Noise_XX_25519_ChaChaPoly_BLAKE2s`, one static key per
   host, trust-on-first-use pinning with a changed key refused by name,
-  and identity kept in the Ed25519-signed acts. It lands as
-  `src/network/noise.rs`, opt-in per peer at first;
+  and identity kept in the Ed25519-signed acts. It stands in
+  `src/network/noise.rs` and `src/network/channel.rs`, wired into the
+  hypha's door, every hypha's ask and the SDK session
+  (`Session::with_noise`); a peer that does not speak it stays plaintext,
+  named in the log and the observer's `channels` reading. Still to come:
+  the reference mind's sessions on Noise, and **Noise-only** (plaintext
+  refused at the door and by the dialler) as a later release step, a
+  network-contract change;
 - address discovery beyond the provisioned `peers`;
 - signed re-provisioning of a node's `bind` and `peers` after first boot;
 - deployment tooling for hosts beyond one machine.

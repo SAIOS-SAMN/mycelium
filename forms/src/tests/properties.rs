@@ -8,15 +8,12 @@ use crate::Q;
 use num_traits::{Signed, ToPrimitive};
 
 /// Generated signed lanes: the `n`-th of a run of exact rationals of both
-/// signs and several denominators, S on two axes and H on two frame planes
-/// and the turning between them, in degrees.
+/// signs and several denominators, S on two axes and H on the turnings
+/// about axes 1 and 2 and τ₁₂ between planes 1 and 2, in degrees.
 fn lanes_of(n: i64) -> Lanes {
     let v = |c: Vec<(Key, Q)>| Vector::of(c).expect("distinct keys");
-    let h = v(vec![
-        (plane(('Z', 1), ('Q', 1)), q(5 * n - 11, 4) * q(360, 1)),
-        (plane(('Z', 1), ('Z', 2)), q(7 - 2 * n, 3)),
-        (plane(('Z', 2), ('Q', 2)), q(97 * n, 5)),
-    ]);
+    let (z1, z2) = about();
+    let h = v(vec![(z1, q(5 * n - 11, 4) * q(360, 1)), (turning(1, 2), q(7 - 2 * n, 3)), (z2, q(97 * n, 5))]);
     let s = v(vec![(on('S', 1), q(n - 3, 7)), (on('S', 2), q(1 - n, 9))]);
     Lanes::base(s, Vector::one(on('G', 1), q(2 * n + 1, 5)), Vector::one(on('T', 1), q(-n, 3)), h).expect("the base lanes")
 }

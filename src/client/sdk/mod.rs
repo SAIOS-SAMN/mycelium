@@ -47,7 +47,7 @@ use crate::network::wire::{Lane, WireFrame};
 use crate::transducer::element::Element;
 use std::cell::RefCell;
 use std::io::{self, Read, Write};
-use std::net::TcpStream;
+use crate::network::channel::Channel;
 
 #[cfg(test)]
 mod tests;

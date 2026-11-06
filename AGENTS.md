@@ -48,7 +48,7 @@ lawful at one site and a defect at another.
 | Drift | Correct structure | Law |
 |---|---|---|
 | Re-sampling two frames onto a common grid or lattice (an `lcm` refinement of extents, unit cells, a per-cell table past the sensor) | Transduction: the motion that carries one state onto the other, each frame at its own resolution, each body held by its boundary, incidences between boundary arcs | MU-ANTI-FLATTENING 12 |
-| Lifting a site by a conformal point embedding (`x + ½x²e∞ + e₀`) | Turns of the sample's own periods: a site's coordinate `s` on an axis of extent `e` is the turn `s/e`, held as a fraction in ℚ/ℤ, composed by addition mod 1 | MU-ANTI-FLATTENING 12; law 11 |
+| Lifting a site by a conformal point embedding (`x + ½x²e∞ + e₀`) | Turns of the sample's own periods: a site's coordinate `s` on an axis of extent `e` is the turn `s/e`, held as the fraction (`360°·s/e` on its named plane), composed by addition with the winding kept beside the phase (`K = ⌊\|θ\|/360⌋`), never reduced mod 1 | MU-ANTI-FLATTENING 12; law 11 |
 | A squared norm, `cos`/`sin`, a float, or a rational point on a circle | Exact ℚ arithmetic; turns as fractions; a named refusal where no exact value exists | MU-RECURSION law 11; Cargo lints |
 | Admitting an object because its hash, root or head equals one held | Reconstruct the object from its own evidence under the laws; a digest only locates (address), orders (link) or binds a reconstructed object (commitment) | MU-ANTI-FLATTENING 13; MU-HOSTING §5a.10 |
 | "Replay" or "rebuild" as verification; a restore that re-applies recorded outcomes | Reconstruction verifies; rebuild repeats a construction; replay reads history; resend repeats a message | MU-ANTI-FLATTENING 14; MU-SCIENCE §5.0 |

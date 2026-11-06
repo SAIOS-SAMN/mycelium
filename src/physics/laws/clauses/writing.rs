@@ -10,9 +10,10 @@
 //! its masks strictly ascending and every coefficient non-zero, so a value
 //! has one writing and a reader refuses any other. A coordinate is written
 //! `[genesis 32][epoch u32 LE][enclosure count][local …][local]`, a local
-//! (`FORMS-COORDINATE` v3) `[h u64 LE][lane count][lane …][K count][K u64
+//! (`FORMS-COORDINATE` v4) `[h u64 LE][lane count][lane …][K count][K u64
 //! LE …]`, a lane `[lane name][component count][(key, value) …]`, its keys
-//! in canonical order, a key `[axis count][(letter byte, index) …]`. A lane
+//! in canonical order, a key `[axis count][(letter byte, index) …]`, a
+//! frame unit's letter its sign (`+` for `e₊ₖ`, `-` for `e₋ₖ`). A lane
 //! name is its byte (S 0, G 1, T 2, H 3) or, for an opened lane, `4`, the
 //! name's bytes and its law version (u16 LE); a reader admits only the
 //! ruled openings. A reader that does not find what it needs answers
@@ -23,7 +24,7 @@ use super::register::{ConcordanceClause, ConcordanceClauseId, Fixture, Object, S
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 use crate::transducer::alphabet::{put_q, take_q};
 use algebra::Clifford;
-use forms::coordinate::{Axis, Bounds, Coordinate, CoordinateRefusal, Interval, Key, Lane, Lanes, Local, Openings, Origin, Sector, Side, Sides, Vector};
+use forms::coordinate::{Axis, Bounds, Coordinate, CoordinateRefusal, Interval, Key, Lane, Lanes, Local, Openings, Origin, Sector, Side, Sides, Square, Vector};
 use forms::Q;
 use num_traits::Zero;
 
@@ -70,7 +71,8 @@ pub fn take_clifford(b: &[u8], p: &mut usize) -> Option<Clifford> {
     Some(value)
 }
 
-/// A key: its axes, each its letter's byte and its index.
+/// A key: its axes, each its letter's byte (a frame unit's sign, `+` or
+/// `-`) and its index.
 fn put_key(out: &mut Vec<u8>, k: &Key) {
     put_key_count(out, k.axes().len());
     for a in k.axes() {
@@ -89,6 +91,8 @@ fn take_key(b: &[u8], p: &mut usize) -> Option<Key> {
             let letter = String::from_utf8(take_key_bytes(b, p)?).ok()?;
             let index = u32::try_from(take_key_count(b, p)?).ok()?;
             match letter.chars().collect::<Vec<_>>().as_slice() {
+                ['+'] => Axis::unit(Square::Positive, index).ok(),
+                ['-'] => Axis::unit(Square::Negative, index).ok(),
                 [c] => Axis::of(*c, index).ok(),
                 _ => None,
             }

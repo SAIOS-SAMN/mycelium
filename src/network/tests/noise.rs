@@ -198,6 +198,25 @@ fn pin_refuses_changed_peer_key() {
     assert!(matches!(a.pin("a\tb", &c.public()), Err(NoiseRefusal::PeerLabel(_))));
 }
 
+/// THE OPENING READS AS NO PLAINTEXT FRAME: its first byte names no lane,
+/// and its head, read as a plaintext length, passes the wire's budget, so a
+/// door that speaks only plaintext refuses it by length and reads no body;
+/// a responder opened with anything else answers `NotSpoken`.
+#[test]
+fn opening_reads_as_no_plaintext_frame() {
+    assert_eq!(crate::network::wire::read_lane(OPEN[0]), None);
+    let len = usize::try_from(u32::from_le_bytes([OPEN[1], OPEN[2], OPEN[3], OPEN[4]])).unwrap();
+    assert!(len > BODY_BUDGET + TPoint::TRAILER_MAX);
+    assert!(WireFrame::decode(&OPEN).is_none());
+
+    let (_db, b) = home();
+    let (mut sa, sb) = loopback();
+    let responder = std::thread::spawn(move || respond(sb, &b, None).map(|s| s.remote_static()));
+    let frame = WireFrame { lane: Lane::Spatial, body: vec![1, 2, 3] };
+    sa.write_all(&frame.encode().unwrap()).unwrap();
+    assert!(matches!(responder.join().unwrap(), Err(NoiseRefusal::NotSpoken { answered }) if answered[0] == Lane::Spatial.byte()));
+}
+
 /// The static key is minted once, `0600`, and reloads to the same key; a
 /// key file of another length is refused and left untouched.
 #[test]

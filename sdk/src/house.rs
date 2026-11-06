@@ -67,13 +67,15 @@ pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow,
 /// THE CONFORMAL LAW ON A MOTION STATED PHASE BY PHASE (MU-HOSTING
 /// §5a.10): per bell, each phase of a frame advances on its own named plane
 /// by the fraction `r/h` of its period, the degrees `360°·r/h` on that
-/// plane, held exactly in ℚ/ℤ where no exact versor exists (Niven), and
+/// plane, held exactly as the fraction where no exact versor exists
+/// (Niven), a composed motion keeping its winding with its phase, and
 /// refused `LeavesPeriods` where a phase's advance leaves the frame's
 /// periods. In process: the wire carries it with the crossing record
 /// (track 25, X1).
 pub use mycelium::physics::laws::{verify_turns, TurnBreach, TurnMotion, TurnTransition, TurnVerdict};
-/// A phase's advance in ℚ/ℤ (`Turn::of(r, h)`, the degrees `360°·r/h` on
-/// its plane); a frame's periods are [`crate::task::Enclosure`].
+/// A phase's advance (`Turn::of(r, h)`, the degrees `360°·r/h` on its
+/// plane), its winding `K = ⌊r/h⌋` kept (`Turn::winding`); a frame's
+/// periods are [`crate::task::Enclosure`].
 pub use mycelium::transducer::family::transduce::Turn;
 /// A body as A.13 reads it (centre, mass, second moments).
 pub use mycelium::physics::equilibrium::BodyMoments;

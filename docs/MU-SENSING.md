@@ -356,16 +356,23 @@ bubble (a thought bubble), renamed 2026-11-02.
   body's exact invariant coordinates, its shape class, coarsest first
   ("form vertices are charts"). The field's charts form its **atlas**,
   which compacts the field's addresses on the pivots (78.41). A **phase**
-  is a site's coordinate within a chart: a turn in ℚ/ℤ of that chart's
-  own period (§3.1). No round reference exists. A circle, a sphere or a
-  torus is never the object and never the frame the object is written
-  in.
+  is a site's coordinate within a chart: the fraction `r/h` of that
+  chart's own period (§3.1), stated as the angle `360°·r/h` exact in
+  degrees on a named plane, never as "a turn" without its plane. A
+  motion composed of phases keeps its **winding** (ℤ, `K = ⌊|θ|/360⌋`)
+  with its phase; a phase mod 1 alone is never the stored point
+  (LAW-FIELD amendment (c); `Turn::winding`). **Spheres are enclosures
+  only:** a sphere enters only as a holding's own enclosure (the throat's
+  fixed sphere, the membrane). A circle, a sphere or a torus is never a
+  reference surface the object is measured against, and never the frame
+  the object is written in.
 - **The geometry is the field's connection.** Moving from one chart to
   another is a **transition**, a versor (the refraction of A.16; the
   transitions of 25.12). The transitions are the field's connection.
 - **Curvature is the holonomy of an orbit through the atlas:** the
   product of the transitions along one lap of the orbit, read by its
-  modes. Where the product is elliptic, it is an exact turn. This is the
+  modes. Where the product is elliptic, it is an exact angle in degrees
+  on its named plane, held with its winding. This is the
   holonomy of MU-RECURSION 10.3 and 12.6, already built. A path through
   the charts is never a closed loop: it is an orbit, sheared by gravity
   (§3.9). Curvature is gravity: it is produced by the field's orbits,
@@ -375,8 +382,9 @@ bubble (a thought bubble), renamed 2026-11-02.
 - **A well is the curvature around one attractor**, produced by its local
   orbit. A held percept and a held thought are one well at two stages
   (`transducer/field/`, MU-CLIENT §4).
-- **A membrane is the field's boundary where it encloses.** The infinity
-  is enclosed there.
+- **A membrane is the field's boundary where it encloses:** the throat's
+  fixed sphere, the frame state on `e₊` alone (78.172 §1). Infinity, a
+  plane's pole `n_∞` (78.171 §1a), is enclosed there.
 - **The field deforms by its contents:** it is stretched, thinned,
   flipped, rotated, deflated and re-inflated, exactly, and stays smooth
   under every motion. This is the perceiving side of Concordance 2.10:
@@ -384,33 +392,38 @@ bubble (a thought bubble), renamed 2026-11-02.
   side. Perception is held the same way.
 
 - **The geometry is non-Euclidean.** The transitions are versors of
-  `Cl(n+1, 1)`, the algebra of the isometries of hyperbolic space
-  (MU-ANTI-FLATTENING clause 7), whose transvections do not commute: the
-  commutator of two is a rotation, the curvature read off a remainder,
-  never a constant. Where the field encloses, its membrane encloses the
-  infinity, so there is no `e∞` outside any enclosure. No Euclidean
-  metric, distance or squared norm enters.
+  `Cl(p, q)`, the signature read per plane (LAW-FIELD amendment (b)):
+  each frame plane is hyperbolic, one unit squaring to +1 and one to −1,
+  and holds a boost; a turning stands on two units of one square, on two
+  planes (netstratum docs/117 §10.3; MU-ANTI-FLATTENING clause 7). Its
+  transvections do not commute: the commutator of two is a turning, the
+  curvature read off a remainder, never a constant. Where the field
+  encloses, its membrane encloses the infinity, so there is no `e∞`
+  outside any enclosure. No Euclidean metric, distance or squared norm
+  enters.
 - **The algebra is `Cl(p, q)`, its signature read from data** (ruled
   2026-11-05). Each value carries the mask of its negative generators
   beside its `n`, and the product reads each generator's square from that
-  mask (`transducer::cga::Mv::negatives`). The field's transitions are
-  values of `Cl(n+1, 1)`: `e₋` is their one negative generator, and every
-  reading of them is unchanged. A value of another signature (a hyperbolic
+  mask (`transducer::cga::Mv::negatives`). Built today, the field's
+  transitions are values of the one signature `Cl(n+1, 1)`: `e₋` is their
+  one negative generator, and every reading of them is unchanged. A value
+  of another signature (a hyperbolic
   frame plane with one negative pole, as LAW-PASSAGE's planes are,
   [proposal 78.172](proposals/78.172-law-passage.md)) is a
   `transducer::cga::Clifford`: it composes only with values whose
   signature agrees on every generator both algebras hold, and two that
   disagree are refused `SignatureRefusal::Mismatched`, naming those
   generators, never coerced. The wire carries `Cl(n+1, 1)` values only, and
-  no signature.
+  no signature; carrying the signature per plane is a wire change, open
+  (78.171 §8).
 - **The algebra is never scalar.** Every quantity is a multivector: a
   blade, a versor, an orbit, a well, a field. A number enters only as the
   gauge of a one-dimensional reading on the base algebra:
 
   | Number | Gauge of |
   |---|---|
-  | ℤ | A winding or closure count on one phase |
-  | ℚ/ℤ | A phase (a turn) |
+  | ℤ | A winding or closure count on one phase, kept with the phase |
+  | ℚ, in degrees on a named plane | A phase, `360°·r/h`, beside its winding |
   | ℚ | A share along one line (one μ lane, law 5) |
   | ℚ(ζ_ℓ) | An exact rotation within one plane |
   | ℝ | A span between two exact bounds on one line, read until it decides and never stored |
@@ -419,9 +432,9 @@ bubble (a thought bubble), renamed 2026-11-02.
 
   | Operation | The motion |
   |---|---|
-  | Rotate | An elliptic versor: a rotation by turns, exact over `ℚ(ζ_ℓ)` |
-  | Flip | A reflection, or an inversion in the membrane |
-  | Deflate / re-inflate | A hyperbolic versor (a boost or a dilation) |
+  | Rotate | An elliptic versor: a rotation by degrees on a plane whose two units square alike, exact over `ℚ(ζ_ℓ)` |
+  | Flip | A reflection, the pole swap, or an inversion in the membrane |
+  | Deflate / re-inflate | A hyperbolic versor (a boost or a dilation) on a plane whose units square oppositely |
   | Stretch / thin | A re-period of one phase, held in the fibres (no versor carries it) |
 
   A motion that cannot be carried exactly is a named residue (78.170).
@@ -432,7 +445,8 @@ bubble (a thought bubble), renamed 2026-11-02.
   `H₁(Tⁿ) = ℤⁿ`, 78.44), but transports nothing. A geodesic on a flat
   torus is a straight line wound around it. Untouched by gravity, it
   squares the depth and volume of the manifold into one dimension, and
-  with phases in ℚ/ℤ it closes and returns exactly: the loop a thought
+  with phases read mod 1, their windings dropped, it closes and returns
+  exactly: the loop a thought
   must not be (MU-CLIENT 78.168). A field curved by its orbits is not
   flat: the transitions around a loop compose to a motion in its own right,
   so a route's meaning is held as its holonomy (MU-RECURSION 10.3, 12.6;
@@ -477,17 +491,18 @@ bubble (a thought bubble), renamed 2026-11-02.
   "base the class, fibre the gauge" (MU-RECURSION 25.12). An axis taken
   apart (§3.6) adds a level, a field within the field, which gives a
   tower of fibrations, never a flat product.
-- **Holonomy in turns, exactly.** Perception moves in orbits through the
-  charts. An orbit's holonomy is the product of the transitions along one
-  lap, read by its modes. An elliptic mode gives an exact turn in ℚ/ℤ, and its
-  order gives a winding in ℤ. There are no coordinates on a reference
-  surface and no trigonometry.
-- **Motions stay exact.** A rotation by a rational turn `t/ℓ` is exact
-  over the cyclotomic field `ℚ(ζ_ℓ)` (law 4 admits cyclotomic scalars).
-  Exact rational rotors exist only at multiples of 90° (Niven), and
-  rational points on a circle or a sphere would mean squaring, so neither
-  is used. A turn the mind cannot carry exactly is a named residue
-  (78.170).
+- **Holonomy in degrees, exactly, the winding kept.** Perception moves in
+  orbits through the charts. An orbit's holonomy is the product of the
+  transitions along one lap, read by its modes. An elliptic mode gives an
+  exact angle in degrees on its named plane, held with its winding in ℤ
+  (`K = ⌊|θ|/360⌋`, never dropped), and its order. There are no
+  coordinates on a reference surface and no trigonometric value.
+- **Motions stay exact.** A rotation by `360°·t/ℓ` on a named plane is
+  exact over the cyclotomic field `ℚ(ζ_ℓ)` (law 4 admits cyclotomic
+  scalars). Exact rational rotors exist only at multiples of 90° (Niven),
+  and rational points on a circle or a sphere would mean squaring, so
+  neither is used. An angle the mind cannot carry exactly is a named
+  residue (78.170).
 - **Orbits.** A thought's orbit lives in the fibration. It is a lap
   through charts in the base together with a winding in the fibre. On
   each lap, the base lap's holonomy, which is the curvature the
@@ -502,8 +517,8 @@ bubble (a thought bubble), renamed 2026-11-02.
 
   The windings are kept as the fibres' classes, never lost.
   An orbit with zero precession through flat space returns exactly and is
-  refused as a loop, never taken as settled. A precession of `t/ℓ` turns
-  closes after `ℓ` laps. That full return is the orbit's own period, its
+  refused as a loop, never taken as settled. A precession of `360°·t/ℓ`
+  on its plane closes after `ℓ` laps, its winding counted. That full return is the orbit's own period, its
   age as distance along the orbit (78.43), read once and not repeated. A
   precession that no turn holds exactly is a named residue.
 - **Whose mind.** Perception and its orbits belong to the mind inside a
@@ -548,8 +563,10 @@ candidate forms (`Well.vortex`).
   goes to the court (25.12).
 - **Forward from 25.12.** 25.12 computes the transitions in
   `Spin(4,0)(ℚ)`: Euclidean, with four fixed axes. Under §3.7 they are
-  read in `Spin(n+1, 1)` between the charts of the field's atlas, non-Euclidean, with
-  orders read as windings (ℤ) and phases (ℚ/ℤ), never as scalars.
+  read in `Spin(p, q)` of the values' own signature, per plane, between
+  the charts of the field's atlas, non-Euclidean, with orders read as
+  windings (ℤ) and phases in degrees on a named plane, each phase with its
+  winding, never as scalars.
 
 ### 3.9 Transduction is factorisation; every path is an orbit
 
@@ -603,8 +620,9 @@ orbit about an attractor, and its shape is set by gravity:
    claim on a match (§0).
 3. **Emergence at two levels.** A residue no word spells is a demand for
    a word. A residue no sense reads is a demand for a sense (§4.1).
-4. **Any rank.** Motions live in `Spin(n+1, 1)` with re-periods per
-   phase, so residues are read at any rank (v0.4.0, the rest of S4).
+4. **Any rank.** Motions live in `Spin(p, q)`, the signature read per
+   plane, with re-periods per phase, so residues are read at any rank
+   (v0.4.0, the rest of S4).
 
 **Built (track 26 S4b, v0.4.0 in progress).**
 - **A motion** (`transduce::Motion`) is a signed permutation of the

@@ -1,15 +1,17 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! MU-HOSTING §5a.10, MU-SENSING §3.7 — THE CONFORMAL LAW ON A MOTION STATED
-//! AS TURNS: each phase of a frame advanced by a turn in ℚ/ℤ, checked by
-//! turn arithmetic and never by a rotor.
+//! AS TURNS: each phase of a frame advanced by a turn, checked by turn
+//! arithmetic and never by a rotor.
 //!
 //! A rotation by the turn `t` has an exact rotor over ℚ only where `4t` is
 //! whole (Niven); every other rational turn is exact over the cyclotomic
 //! field `ℚ(ζ_ℓ)` and never over ℚ. So a motion the kernel states as turns
-//! is read as turns, whatever its turns are: composed by addition mod 1
-//! ([`Turn::plus`]), a place carried phase by phase, and a disagreement held
-//! as the residue `t_claim − t_rec` in ℚ/ℤ (§5a.10), never a flag. No turn
+//! is read as turns, whatever its turns are: composed by addition with its
+//! winding kept ([`Turn::plus`]; 78.171 amendment (c), `K = ⌊|θ|/360⌋` read
+//! by [`Turn::winding`]), a place carried phase by phase, and a
+//! disagreement held as the residue `t_claim − t_rec`, a phase (§5a.10),
+//! never a flag. No turn
 //! is converted to a rotor, and none is approximated by one. A turn the
 //! frame's periods do not hold (its index read on the phase's period is no
 //! whole site) leaves the frame and is refused by name, `LeavesPeriods`.
@@ -26,7 +28,8 @@ pub struct TurnMotion {
 }
 
 impl TurnMotion {
-    /// THE MOTION `self` THEN `next`: phase by phase, the sum in ℚ/ℤ.
+    /// THE MOTION `self` THEN `next`: phase by phase, the sum, each phase's
+    /// winding kept.
     /// Refused `Rank` where the two state different counts of phases, and
     /// `Unread` where a composed period passes the machine word.
     pub fn then(&self, next: &TurnMotion) -> Result<TurnMotion, TurnBreach> {
@@ -44,7 +47,8 @@ impl TurnMotion {
     }
 
     /// A PLACE CARRIED: each of its turns advanced by the motion's turn on
-    /// the same phase, mod 1. Refused as [`TurnMotion::then`].
+    /// the same phase; the residue against a claimed place reads its phase
+    /// ([`Turn::less`]). Refused as [`TurnMotion::then`].
     pub fn carry(&self, place: &[Turn]) -> Result<Vec<Turn>, TurnBreach> {
         Ok(self.then(&TurnMotion { turns: place.to_vec() })?.turns)
     }

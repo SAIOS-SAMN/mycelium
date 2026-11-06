@@ -12,6 +12,7 @@
 mod acts;
 mod carriage;
 mod carriers;
+mod channels;
 mod clock;
 mod court_stage;
 mod dispatch;
@@ -29,6 +30,7 @@ mod tuniversal;
 pub use acts::*;
 pub use carriage::*;
 pub use carriers::*;
+pub use channels::*;
 pub use clock::*;
 pub use court_stage::*;
 pub use dispatch::*;
