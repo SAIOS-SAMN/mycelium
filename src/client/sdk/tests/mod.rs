@@ -20,6 +20,7 @@ mod flux;
 mod glue;
 mod height;
 mod hypha;
+mod hypha_acts;
 mod occupancy;
 mod offer;
 mod perceive;

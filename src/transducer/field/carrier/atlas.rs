@@ -61,13 +61,16 @@ pub struct Orbit {
 }
 
 /// THE PRECESSION PER REVOLUTION (78.171 §3.3; MU-SENSING §3.9), the
-/// residue of a revolution's transitions: an advance on the planes the
-/// holonomy turns on, or none, where the closed geodesic returns exactly
-/// in a curved field and the orbit is resonant, lawful and never refused.
+/// residue of a revolution's transitions: an advance on the planes where the
+/// holonomy's motion is not the identity, or none, where the closed geodesic
+/// returns exactly in a curved field and the orbit is resonant, lawful and
+/// never refused. A resonant orbit keeps its holonomy whole, its winding
+/// with it: three 120° steps compose to 360° with `K = 1`, never read back
+/// as the flat path's 0° (`flat_and_resonant_separated_by_kept_winding`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Precession {
     Advances(Holonomy),
-    Resonant,
+    Resonant(Holonomy),
 }
 
 impl Orbit {
@@ -109,13 +112,15 @@ impl Orbit {
         self.revolution.iter().try_fold(Motion::identity(), |m, t| m.then(&t.motion)).map(Holonomy::of)
     }
 
-    /// THE PRECESSION PER REVOLUTION: the holonomy's advance where it turns
-    /// on some plane, `Resonant` where it is the identity on every plane
-    /// (`0°`, `K = 0`). Refused as [`Orbit::holonomy`] refuses.
+    /// THE PRECESSION PER REVOLUTION: the holonomy's advance where its
+    /// motion on some plane is not the identity, `Resonant` with the
+    /// holonomy, its winding kept, where the motion is the identity on every
+    /// plane (`0°` with `K = 0`, or `360°` with `K = 1`, and so on). Refused
+    /// as [`Orbit::holonomy`] refuses.
     pub fn precession(&self) -> Result<Precession, FieldRefusal> {
         let h = self.holonomy()?;
-        Ok(match h.turnings() {
-            [] => Precession::Resonant,
+        Ok(match h.monodromy() {
+            super::holonomy::Monodromy::Flat => Precession::Resonant(h),
             _ => Precession::Advances(h),
         })
     }
