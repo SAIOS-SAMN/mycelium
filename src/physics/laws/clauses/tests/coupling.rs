@@ -32,10 +32,12 @@ fn reached() -> (Standing, Vec<CouplingObject>) {
 
 /// 78.175 §5 REACHED, in order: the six parcels' dipoles; hydrogen and the
 /// kind `(4/3, 1)` founded on three planes, hydrogen bonded on `e₊₁e₊₂`
-/// and peeled back; the seven pulls (23/91, 13/89, alone, a throat
-/// neighbour, 41/181, 319/1619, 3940299/3940300); the three neighbour
-/// readings; light on each face; the two ledgers that close and the one
-/// refused with residue 1. The clause stands at kernel standing.
+/// and peeled back; the nine pulls on frames (the lock 749/3649, the split
+/// 719/3643, alone, a throat neighbour, Δ 45° 739/3647, 319/1619,
+/// 3940299/3940300, the pure Z pole as neighbour and as body, both
+/// unmoved); the three neighbour readings; light on each face; the two
+/// ledgers that close and the one refused with residue 1. The clause
+/// stands at kernel standing.
 #[test]
 fn register_reaches_stated_coupling_objects() {
     let (standing, objects) = reached();
@@ -60,13 +62,15 @@ fn register_reaches_stated_coupling_objects() {
         frames([(1, 1, 1, 3); 3]),
         frames([(2, 3, 1, 3), (2, 3, 1, 3), (1, 1, 0, 1)]),
         hydrogen,
-        pulled(held(q(-1, 3)), q(1, 3), q(1, 18), q(23, 91)),
-        pulled(held(q(1, 3)), q(1, 3), q(-1, 18), q(13, 89)),
+        pulled(held(q(-4, 27)), q(1, 3), q(4, 729), q(749, 3649)),
+        pulled(held(q(2, 27)), q(1, 3), q(-2, 729), q(719, 3643)),
         pulled(Field::Alone, q(1, 3), q(0, 1), q(1, 5)),
         pulled(held(q(0, 1)), q(1, 3), q(0, 1), q(1, 5)),
-        pulled(held(q(-1, 6)), q(1, 3), q(1, 36), q(41, 181)),
+        pulled(held(q(-2, 27)), q(1, 3), q(2, 729), q(739, 3647)),
         pulled(held(q(2, 27)), q(1, 3), q(-1, 324), q(319, 1619)),
         pulled(held(q(-1, 1)), q(-19800, 19801), q(19800, 19801), q(3_940_299, 3_940_300)),
+        pulled(held(q(0, 1)), q(1, 3), q(0, 1), q(1, 5)),
+        pulled(held(q(-4, 27)), q(1, 3), q(0, 1), q(1, 5)),
         meeting(q(1, 1), Meets::Bound),
         meeting(q(9, 10), Meets::Apart),
         meeting(q(3, 2), Meets::Within),
