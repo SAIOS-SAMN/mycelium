@@ -296,8 +296,7 @@ fn handoff_feed_keeps_throat_bank_with_draw() {
     assert_eq!(fed.mass, (13, 2), "5/2 + 4");
     let (Level::Curved(after), Level::Curved(before)) = (&fed.from_level, &before) else { panic!("curved faces") };
     assert!(after > before, "fed, the throat widens");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.tube_of(&id), Some(fed), "the bank restored");
     assert_eq!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 7, seq: 1 }, &reserve(5)), Handed::Refused(HandoffRefusal::Starved), "never massless");
     assert!(matches!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 6, seq: 1 }, &reserve(5)), Handed::Sealed { .. }));
@@ -335,8 +334,7 @@ fn handoff_mouth_tube_supersedes_untethered_mouth() {
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(again)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
     let not_legacy = Mouth { tube: Some(Tube { supersedes: Some(tube_id), ..tube() }), nonce: [6; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(not_legacy)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.tube_of(&tube_id), k.tube_of(&tube_id), "the tube restored");
     assert_eq!(booted.tube_of(&old), None, "the untethered record, untethered");
 }

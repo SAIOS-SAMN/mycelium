@@ -260,13 +260,12 @@ fn snapshot_writes_myt3_and_refuses_older_layouts() {
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
     assert_eq!(&snap[..4], b"MYT3");
-    let mut k2 = Court::new();
-    assert!(k2.restore(&snap));
+    let k2 = Court::new().reconstruct(&snap).expect("reconstructs").into_object();
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
     for magic in [b"MYT2", b"MYT1", b"MYC7", b"MYC6"] {
         let mut old = snap.clone();
         old[..4].copy_from_slice(magic);
-        assert!(!Court::new().restore(&old), "an old file is refused");
+        assert!(Court::new().reconstruct(&old).is_err(), "an old file is refused");
     }
 }
 
