@@ -318,6 +318,30 @@ no pair of axes is *the* plane.
   the blocks, blocks that repeat, or motions that act per level.
   Otherwise the axis stays one phase. Several factorings that each hold
   are held as a vortex (§3.8) until a relation collapses it.
+  - **The reading, exactly** (ruled 2026-11-06 on #32; built in track 26
+    S4, `transduce::nesting`):
+    1. *Per pair.* A factoring is read on each pair's input and output,
+       each at its own extent, the shape `a·b → a′·b′` stated per pair. A
+       candidate is named across the family by its axis, its joint and its
+       block counts on the two members. The family keeps a candidate only
+       where every pair admits it; one a pair refuses is held as that
+       pair's residue.
+    2. *Separators* are part of the fine period: blocks of `b` sites with a
+       separator after each but the last have the fine period `b + 1` and
+       the extent `a·(b + 1) − 1`, the far seam closing the last block (one
+       carrier, `Factoring`, its joint `Separated`). The separator is the
+       one symbol every site at the fine phase `b` holds, deduced.
+    3. *Repeating blocks:* two or more coarse blocks related by a sense of
+       the fine phase, the identity included, kept as the relations found
+       (which blocks, by which sense).
+    4. *Motions per level:* the product of a coarse-phase and a fine-phase
+       motion, each kept or reversed and re-periodded onto its own level,
+       that speaks the input as the output exactly.
+    5. *Collapse:* a candidate collapses the vortex where a reading of 2–4
+       holds for it on every pair and for no other kept candidate. Several
+       alike stay superposed, and the axis is not taken apart.
+
+    A pair admits a candidate where some reading of 2–4 holds on it.
 - **The nesting is a coordinate of the percept.** A percept records how
   its axes were lifted and how each was taken apart, so speech projects back
   to the source's own extents exactly. Nesting goes to any depth the data
@@ -1122,11 +1146,11 @@ track 26 S4c).
 | **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residue.rs`; track 26, S4 |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_sites`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
-| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on `main` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
-| Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
+| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse; a separated factoring `a·(b + 1) − 1` on the same carrier | **Built** | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`, `Joint`) |
+| Which factorings the family is invariant under (ruled 2026-11-06 on #32): read per pair (`a·b → a′·b′`), kept only where every pair admits it and otherwise held as the refusing pairs' residue; a separator the fine phase `b` of a period `b + 1` (`Joint::Separated`, extent `a·(b + 1) − 1`), its symbol deduced; repeating blocks kept as relations by a sense of the fine phase; motions per level the product of a coarse and a fine sense, exact; a candidate collapses the vortex where a reading holds for it alone, several alike stay superposed; the nesting recorded as a coordinate of the percept (`TaskPercept.nesting`) | **Built** (track 26, S4) | `src/transducer/family/transduce/nest.rs` (`Joint`, `Factoring::separated`, `Factorings::of_axis`); `src/transducer/family/transduce/nesting.rs` (`nesting_of`, `AxisNesting`, `Taken`); claims `axis_taken_apart_only_where_family_invariant`, `factoring_read_per_pair_and_kept_only_where_every_pair_admits`, `separator_is_the_fine_phase_of_period_b_plus_one`, `repeating_blocks_kept_as_relation_by_fine_motion`, `motion_per_level_is_coarse_times_fine`, `several_factorings_holding_alike_stay_superposed` |
 | The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |
 | `e_∅` as a typed record outside the symbols' bytes: a fibre relation's rows and its records apart, on a word's description and the law register's wire; `RESERVOIR = 10` retired, so a family using the byte 10 has its colour word | **Built** (track 26 S5; the defect of the record byte is closed) | `element::FibreRelation`, `colour_word`, `Letters::fibre`; `physics::laws::codec::put_transition` |
-| Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b); the nesting's family-invariance reading open | `transducer::perspective`; `transduce::Enclosure` |
+| Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b), and the nesting's family-invariance reading (S4) | `transducer::perspective`; `transduce::Enclosure` |
 | A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind perceives every rank since S4b and the hypha serves every rank since S4c; a solve's rule is reconstructed on the alphabet's section | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
 | **Closed (S4b):** a link was `(i64, i64, u8, u8)`, two axes and one-byte symbols. `sentence::Link` now carries a site of rank `n` and the symbols at the source's width; the alphabet's section reads `SectionLink`, a section site and two symbols (a named type since S4d, stage 2b) | **Built** (track 26 S4b) | `transducer::sentence::link` |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
