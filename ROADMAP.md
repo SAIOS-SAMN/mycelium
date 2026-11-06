@@ -1856,6 +1856,13 @@ Each phase is one commit:
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
+   - **Built** (branch `sensing-dilation`): the envelopes' dilation, which
+     squared the extents (law 11), is removed; the fibre map's carried
+     site and the frame's momentum read the re-period of each phase
+     (`element::Reperiod`, `p′ᵢ/pᵢ` axis by axis). Claims
+     `reperiod_carries_sites_between_extents_phase_by_phase`,
+     `momentum_read_per_phase_across_anisotropic_reperiod`. Open: the
+     magnitude's planar chains (`family::magnitude`, MU-SENSING §8).
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
