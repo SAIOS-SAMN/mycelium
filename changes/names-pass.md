@@ -4,12 +4,10 @@
   `b"uttered"` under the operator digest, refusal strings, axiom texts,
   console and soak labels).
 - **Expression, not utterance.** `client/sdk/mind/utter.rs` ->
-  `express.rs`, `client/sdk/utterance.rs` -> `expression.rs`
-  (`Utterance` -> `Expression`), `Action::Uttered` -> `Action::Asserted`
-  (byte `0x4B`), `forget_utterance` -> `forget_expression`, `uttered_n` /
-  `uttered` -> `asserted_n` / `asserted`, `verify_utterance` ->
-  `verify_expression`, `StrokeOutcome::uttered` -> `asserted`; comments
-  read expression / assert.
+  `express.rs`; comments read expression / assert. The carrier and
+  receipt names (`Utterance`, `Action::Uttered`, `forget_utterance`,
+  `uttered_n` / `uttered`, `verify_utterance`, `StrokeOutcome::uttered`)
+  stay until they retire with row L19 (MU-RECURSION 1.9).
 - **"Frame", by MU-ENGINEERING §9.3.** `WireFrame` -> `Delimited`,
   `read_frame` / `write_frame` -> `read_delimited` / `write_delimited`,
   `PageEnd::Frame` -> `PageEnd::Budget`, `append_frame` ->

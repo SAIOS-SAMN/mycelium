@@ -68,7 +68,7 @@ fn speak_word_goes_on_while_court_is_slow() {
     let mut mind = Mind::open(&court, Voice::named("unwaiting"));
     let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let said = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
-    assert!(matches!(mind.speak_word(&said), Ok(Expression::Spoken)), "said, and the field goes on");
+    assert!(matches!(mind.speak_word(&said), Ok(Utterance::Spoken)), "said, and the field goes on");
     // MU-CLIENT §4.4(4) — it leaves when the mind's own field comes round.
     assert!(super::fixtures::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
     let act = speeches.recv().expect("the speech reached the court");

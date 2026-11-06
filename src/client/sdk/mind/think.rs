@@ -986,7 +986,7 @@ impl Mind {
                 }
                 continue;
             }
-            if let Ok(Expression::Spoken) = self.speak_word(&e) { n += 1 }
+            if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
         }
         n
     }
@@ -1065,7 +1065,7 @@ impl Mind {
         // with it: 24.3's "nothing is asserted twice" needs the receipt only
         // while the word stands.
         for a in &dropped {
-            self.forget_expression(a);
+            self.forget_utterance(a);
         }
         // DOOR 1 (25): the addresses the dialect just dropped have lapsed
         // from the working atlas, so the wells standing at them and the

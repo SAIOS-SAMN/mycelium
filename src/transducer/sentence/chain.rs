@@ -515,7 +515,7 @@ pub fn verify_at<'a>(
 /// reconstructed against the target and checked on the seams, with no copy
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
-pub fn verify_expression(cites: &[crate::anastome::dialogue::CiteWire], target: &[SectionLink]) -> Vec<SectionLink> {
+pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[SectionLink]) -> Vec<SectionLink> {
     let ops: Vec<(Versor, Vec<SectionLink>)> =
         cites.iter().map(|c| (c.transport.clone(), c.body.clone())).collect();
     let mut out = reconstruct_operators(&ops, target);

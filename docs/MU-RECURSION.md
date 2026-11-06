@@ -6944,7 +6944,7 @@ a coordinate.
 
 `ActKind` (ruled 2026-09-09) names the act a receipt admits — `Attest`,
 `List`, `Section`, `Install`, `Ruling`, `Syllabus`, `Lapse`, `Fold`,
-`Adopted`, `Stood`, `Asserted`, `Learned`, and `Settled`, the settlement
+`Adopted`, `Stood`, `Uttered`, `Learned`, and `Settled`, the settlement
 the first paragraph names (a probe that closed a listing or descended
 its remainder) — written on the tape as one
 coordinate byte, in the chain hash after the parents, so a phase (45.9)
@@ -6956,7 +6956,7 @@ install on a peer's stratum are `Install`; a puncture of a held word is
 accepted are `Ruling`; a connection docketed by its ratifier is
 `Attest`; a page served is `Syllabus`; a released escrow is `Lapse`; a
 probe that closed or descended is `Settled`. The mind's: `Stood`,
-`Asserted`, `Learned`. `Fold` and `Adopted` are written by 45.8's fold and
+`Uttered`, `Learned`. `Fold` and `Adopted` are written by 45.8's fold and
 adoption.
 
 K orders events inside one kernel and nothing else. A mind's K is its own

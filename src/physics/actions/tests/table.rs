@@ -13,7 +13,7 @@ fn action_of_round_trips_each_byte() {
             assert_ne!(a.byte(), b.byte(), "one coordinate each");
             assert_ne!(a, b, "the table names each action once");
         }
-        assert_eq!(a.on_wire(), a.kind() != Kind::Court && !matches!(a, Action::Section | Action::Stood | Action::Asserted | Action::Learned));
+        assert_eq!(a.on_wire(), a.kind() != Kind::Court && !matches!(a, Action::Section | Action::Stood | Action::Uttered | Action::Learned));
     }
     // 0x3F is the challenge's (78.125), 0x07 the handoff's (78.126), 0x53
     // the seat relay's (78.145); 0x0A and 0x0F are reserved.

@@ -117,7 +117,7 @@ impl Mind {
 
     /// The expression receipt of a word that left the dialect leaves both
     /// indices with it (S12.6a): by address, and in its vertex stratum.
-    pub(crate) fn forget_expression(&mut self, address: &[u8]) {
+    pub(crate) fn forget_utterance(&mut self, address: &[u8]) {
         // MU-CLIENT §5.5 — and the scenes it was spoken under let it go.
         self.scenes.forget(address);
         // MU-CLIENT §4.13 — a word the dialect shed is not said again.
@@ -609,7 +609,7 @@ impl Mind {
     /// SPEAK A WORD as a one-sentence family. The word enters the dialect
     /// when it stands; the genome receives it only from the syllabus.
     /// `Spoken` is said, posted to the court; its answer files itself.
-    pub(crate) fn speak_word(&mut self, word: &Element) -> io::Result<Expression> {
+    pub(crate) fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
         self.speak_word_on(word, &[], &[])
     }
 
@@ -617,7 +617,7 @@ impl Mind {
     /// E1): `family` is the citation of the family the word's sentence was
     /// perceived on, so the court measures the word's own section there (W);
     /// empty where no family evidences it.
-    pub(crate) fn speak_word_on(&mut self, word: &Element, train: &crate::transducer::family::Family, family: &[u8]) -> io::Result<Expression> {
+    pub(crate) fn speak_word_on(&mut self, word: &Element, train: &crate::transducer::family::Family, family: &[u8]) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not asserted.
         if let [_, ..] = word.sub() {
@@ -629,26 +629,27 @@ impl Mind {
         // speech: a closed thought is spoken as the word it transcribes to
         // (78.52), a connection like any other.
         if word.is_identity() || (!word.is_connection() && word.opened_axes().is_empty()) {
-            return Ok(Expression::Silent);
+            return Ok(Utterance::Silent);
         }
         if self.already_taught(word) {
-            return Ok(Expression::Already);
+            return Ok(Utterance::Already);
         }
         self.speak_with(std::slice::from_ref(word), train, family, |_, _| {});
         // Filed as said once it is posted, so the next stroke does not say
         // it again while the court's answer is on its way.
         self.file_taught(word);
-        Ok(Expression::Spoken)
+        Ok(Utterance::Spoken)
     }
 
-    /// Addresses this mind has asserted (receipt: address at this K).
+    /// Addresses this mind has asserted (receipt: address at this K). The
+    /// receipt's name stays until it retires with row L19.
     #[cfg(test)]
-    pub(crate) fn asserted_n(&self) -> usize {
+    pub(crate) fn uttered_n(&self) -> usize {
         self.taught_up.len()
     }
 
     #[cfg(test)]
-    pub(crate) fn asserted(&self, address: &[u8]) -> bool {
+    pub(crate) fn uttered(&self, address: &[u8]) -> bool {
         self.already_taught_address(address)
     }
 
