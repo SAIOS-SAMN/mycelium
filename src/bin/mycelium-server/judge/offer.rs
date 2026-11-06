@@ -43,7 +43,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
             home[1]
         );
         match dialogue::encode_offer_reply(&dialogue::Witnessed::Refused { vk: witness, why: why.as_bytes().to_vec() }) {
-            Some(body) => answer(s, Delimited { lane: frame.lane, body }),
+            Some(body) => answer(s, Delimited { body }),
             None => eprintln!("  court offer answer refused: the reason passes its u16"),
         }
     };
@@ -176,13 +176,14 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
     // a hand-built frame for the case where a five-byte frame fails to
     // encode, which is the shape rule 11 refuses.
     let full = dialogue::encode_offer_reply(&answered)
-        .and_then(|body| Delimited { lane: frame.lane, body }.encode_at(crate::tuniversal::final_point().as_ref()));
+        .and_then(|act| crate::tuniversal::express(&act))
+        .and_then(|body| Delimited { body }.encode());
     match full {
         Some(bytes) => {
             let _ = s.write_all(&bytes);
         }
         None => match dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: witness }) {
-            Some(body) => answer(s, Delimited { lane: frame.lane, body }),
+            Some(body) => answer(s, Delimited { body }),
             None => eprintln!("  court offer answer refused: the unmeasured reply does not frame"),
         },
     }

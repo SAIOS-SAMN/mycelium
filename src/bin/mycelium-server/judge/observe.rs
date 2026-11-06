@@ -142,7 +142,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
                 eprintln!("  observe reply refused: more readings held than four bytes count");
                 return;
             };
-            answer(stream, Delimited { lane: frame.lane, body });
+            answer(stream, Delimited { body });
         }
     }
 }

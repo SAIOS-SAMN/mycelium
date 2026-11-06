@@ -8,7 +8,7 @@ use crate::chronometry::{ActKind, KStepReceipt, ReceiptChain};
 use crate::client::sdk::*;
 use crate::court::admission::{self, Reconstructed, SignedPrefix};
 use crate::court::identity::HyphaKey;
-use std::io::{Read, Write};
+use std::io::Write;
 
 const ORIGIN: ([u8; 32], u32) = ([7; 32], 2);
 
@@ -111,21 +111,9 @@ fn burning_court() -> (String, std::sync::mpsc::Receiver<Vec<u8>>) {
     std::thread::spawn(move || {
         for conn in listener.incoming() {
             let Ok(mut s) = conn else { continue };
-            loop {
-                let mut head = [0u8; 5];
-                if s.read_exact(&mut head).is_err() {
-                    break;
-                }
-                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
-                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-                let mut body = vec![0u8; len];
-                if s.read_exact(&mut body).is_err() {
-                    break;
-                }
-                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
+            while let Some(body) = super::fixtures::read_act(&mut s) {
                 let _ = shown.send(body);
-                let reply = crate::network::wire::Delimited { lane, body: dialogue::encode_ruled(&dialogue::Ruled::Applied).expect("a ruling") };
-                let _ = s.write_all(&reply.encode().expect("framed"));
+                let _ = s.write_all(&super::fixtures::reply_bytes(&dialogue::encode_ruled(&dialogue::Ruled::Applied).expect("a ruling")));
             }
         }
     });

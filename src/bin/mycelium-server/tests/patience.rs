@@ -111,15 +111,13 @@ fn read_budgeted_refuses_unmeasured_stall() {
 /// poll measures the poll that read it.
 #[test]
 fn rtt_is_nonzero_by_measurement() {
-    use std::io::{Read, Write};
+    use std::io::Write;
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();
     let responder = std::thread::spawn(move || {
         let (mut s, _) = listener.accept().expect("accept");
-        let mut head = [0u8; 6];
-        s.read_exact(&mut head).expect("the act");
-        let frame = mycelium::network::wire::Delimited { lane: mycelium::network::wire::Lane::Spatial, body: vec![7] };
-        s.write_all(&frame.encode().expect("encode")).expect("write");
+        super::read_act(&mut s).expect("the act");
+        s.write_all(&super::reply_bytes(&[7])).expect("write");
     });
     let (_, rtt) = tell_peer_within(&addr, vec![0x10], Stall::Beyond).expect("answered");
     assert!(rtt.get() >= 1);

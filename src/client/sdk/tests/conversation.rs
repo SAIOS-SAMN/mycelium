@@ -8,7 +8,7 @@ use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::identity_versor;
 use crate::transducer::element::residue::from_connection;
-use std::io::{Read, Write};
+use std::io::Write;
 
 /// A connection word spelled by `letters` at the identity carriage.
 fn word(letters: &[(LetterId, bool)]) -> crate::transducer::element::Element {
@@ -30,20 +30,8 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
     std::thread::spawn(move || {
         for conn in listener.incoming() {
             let Ok(mut s) = conn else { continue };
-            loop {
-                let mut head = [0u8; 5];
-                if s.read_exact(&mut head).is_err() {
-                    break;
-                }
-                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
-                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-                let mut body = vec![0u8; len];
-                if s.read_exact(&mut body).is_err() {
-                    break;
-                }
-                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
-                let reply = crate::network::wire::Delimited { lane, body: dialogue::encode_speech_reply(&[]).expect("a reply") };
-                let _ = s.write_all(&reply.encode().expect("framed"));
+            while let Some(body) = super::fixtures::read_act(&mut s) {
+                let _ = s.write_all(&super::fixtures::reply_bytes(&dialogue::encode_speech_reply(&[]).expect("a reply")));
                 if let Some(act) = dialogue::decode_speech(&body) {
                     if keep(&act) {
                         let _ = tx.send(act);

@@ -42,5 +42,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

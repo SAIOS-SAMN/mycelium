@@ -159,11 +159,12 @@ the transport as Ed25519-signed acts over TCP.
   makes the encrypted channel the default.
 - **The opening** (as built, `src/network/channel.rs`). A dialler with a
   Noise home writes `noise::OPEN` alone, five bytes no plaintext frame
-  begins with (the first names no lane; the next four read as a length past
-  the budget), and begins the XX handshake only once the door answers
-  `OPEN`. A door with a home reads each connection's first byte: the
-  opening is answered with the handshake, a lane byte is a plaintext frame
-  read as before. A door that speaks only plaintext refuses the opening as
+  begins with (the first four read as a length past the wire's
+  `DELIMITED_MAX`), and begins the XX handshake only once the door answers
+  `OPEN`. A door with a home reads each connection's first four bytes and
+  holds them: the opening is answered with the handshake, a length is a
+  plaintext frame read whole from its first byte (the lane byte was retired
+  by the v0.5.0 recut). A door that speaks only plaintext refuses the opening as
   a frame over budget; the dialler reads that as `NotSpoken`, dials again
   in plaintext and names the peer. A pinned peer is held to its seal:
   answering in plaintext is `PinnedAnsweredPlain`, and a changed key

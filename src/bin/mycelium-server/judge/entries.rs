@@ -28,5 +28,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         eprintln!("  entries reply refused: the page's count passes its u32");
         return;
     };
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

@@ -21,7 +21,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
     let home = p.section.receipt.stamp.vk;
     let say = |s: &mut Channel, w: dialogue::FoldWitness| {
         if let Some(body) = dialogue::encode_fold_reply(&w) {
-            answer(s, Delimited { lane: frame.lane, body });
+            answer(s, Delimited { body });
         }
     };
     let refuse = |s: &mut Channel, why: &str| {

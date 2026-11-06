@@ -42,24 +42,16 @@ assert!(!s.occluded_at("127.0.0.1:2"), "and another wire is not occluded by this
 /// parked voice unsticks when the next hypha answers.
 #[test]
 fn impedance_decays_on_any_successful_exchange() {
-use crate::network::wire::{Delimited, Lane};
-use std::io::{Read, Write};
+use std::io::Write;
 use std::net::TcpListener;
 let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
 let live = listener.local_addr().expect("addr").to_string();
 let h = std::thread::spawn(move || {
     let Ok((mut s, _)) = listener.accept() else { return };
-    let mut head = [0u8; 5];
-    if s.read_exact(&mut head).is_err() {
+    if super::fixtures::read_act(&mut s).is_none() {
         return;
     }
-    let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    let mut body = vec![0u8; len.min(1 << 16)];
-    let _ = s.read_exact(&mut body);
-    let reply = Delimited { lane: Lane::Spatial, body: vec![0] }
-        .encode()
-        .expect("a one-byte body encodes");
-    let _ = s.write_all(&reply);
+    let _ = s.write_all(&super::fixtures::reply_bytes(&[0]));
 });
 let mut s = Session::open("127.0.0.1:1", Voice::named("z-decay"));
 let cycle = crate::physics::aperture_cycle() as u64;

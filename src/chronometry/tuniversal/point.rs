@@ -51,8 +51,10 @@ impl TPoint {
     /// FORMAT: least TPoint wire length.
     pub const MIN_LEN: usize = 32 + 4 + 8 + 4 * 11 + 8;
 
-    /// The most bytes a pointed frame adds behind its body (TU-7): a point
-    /// of at most `u16::MAX` bytes and its two-byte length.
+    /// The most bytes an expression's point adds behind its act (TU-7;
+    /// `anastome::dialogue::expression`): a point of at most `u16::MAX`
+    /// bytes and its two-byte length. The wire's `DELIMITED_MAX` counts the
+    /// same tail without naming the point.
     /// FORMAT: TU-7 trailer bound, the u16 count's wall.
     pub const TRAILER_MAX: usize = u16::MAX as usize + 2;
 
@@ -152,7 +154,7 @@ impl TPoint {
     }
 
     /// THE TU-7 TRAILER: the point's wire bytes, then their count as a u16
-    /// LE, so a reader finds the point from the frame's end. `None` where the
+    /// LE, so a reader finds the point from the expression's end. `None` where the
     /// point passes `u16::MAX` bytes.
     pub fn put_trailer(&self, out: &mut Vec<u8>) -> Option<()> {
         let bytes = self.to_bytes();

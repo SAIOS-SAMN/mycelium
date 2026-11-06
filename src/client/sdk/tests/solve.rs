@@ -75,31 +75,19 @@ fn outcome_reads_seat_solve_learned_against_fn_one() {
 /// A COURT THAT HANDS EACH SOLVE IT HEARS TO THE TEST, read whole, and
 /// answers it with a bare "not solved" receipt.
 fn solve_court() -> (String, std::sync::mpsc::Receiver<crate::anastome::dialogue::SolveAct>) {
-    use std::io::{Read, Write};
+    use std::io::Write;
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the court listens");
     let addr = listener.local_addr().expect("an address").to_string();
     let (heard, solves) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         for conn in listener.incoming() {
             let Ok(mut s) = conn else { continue };
-            loop {
-                let mut head = [0u8; 5];
-                if s.read_exact(&mut head).is_err() {
-                    break;
-                }
-                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
-                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-                let mut body = vec![0u8; len];
-                if s.read_exact(&mut body).is_err() {
-                    break;
-                }
-                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
+            while let Some(body) = super::fixtures::read_act(&mut s) {
                 if let Some(act) = crate::anastome::dialogue::decode_solve(&body) {
                     let _ = heard.send(act);
                 }
                 let receipt = crate::anastome::dialogue::encode_solve_receipt(crate::anastome::dialogue::SOLVE_NOTHING, &crate::economy::Mu::zero());
-                let reply = crate::network::wire::Delimited { lane, body: receipt };
-                let _ = s.write_all(&reply.encode().expect("framed"));
+                let _ = s.write_all(&super::fixtures::reply_bytes(&receipt));
             }
         }
     });
