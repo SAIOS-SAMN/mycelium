@@ -5,6 +5,7 @@
 //! (k+1)-fold overlap of the wells' covers with shared remainder volume.
 
 
+pub mod carrier;
 pub mod contemplation;
 pub mod nerve_shape;
 pub mod plan;
