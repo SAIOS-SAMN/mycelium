@@ -8,7 +8,8 @@
 
 **Status:** reference, version 1 (2026-11-06). The one home of the
 anastome language: its levels, its alphabet, its concurrency, its growth,
-its vocabulary, its wire and the reading of its state. Each statement
+its vocabulary, its wire, the reading of its state, and its traversal
+from a sensorium through a mind and a court to other minds (§9). Each statement
 cites the ruling or chapter it comes from; items are marked **Built** or
 **Specified** where the tree and the statement differ.
 
@@ -814,7 +815,7 @@ reading of the ledger, and it counts no relations and no classes apart.
 
 ## 8. Open: needs a ruling
 
-Two statements disagree with others in the governing text. Neither is
+Three statements disagree with others in the governing text. None is
 resolved here; each waits on a ruling.
 
 1. **What a relation is.** MU-RECURSION §1.8 (here §4.1): "an orbit whose
@@ -828,3 +829,215 @@ resolved here; each waits on a ruling.
    exactly through flat space, by name as `Loop`; and MU-CLIENT §5.6 S
    says a sentence's alignment is "never its rings' holonomy returning to
    the identity … demanding that it return is squaring (78.168 §2)".
+3. **Cohesion: a paid layer or a bound whole.** §5.2 (ruled 2026-09-26)
+   reads the cohesive layer as coherent thoughts that close a demand and
+   are paid. §9.4 (stated 2026-11-06) reads cohesion over the held field:
+   the coherent whole bound as one body under its own gravity, no orbit
+   escaping or flattening under perturbation. One word holds one sense
+   (§5.2), so whether the field reading replaces that row, or the paid
+   closure is ruled a reading of the bound whole, waits on a ruling.
+
+## 9. The language's traversal: sensorium → mind → language → hypha → minds
+
+**Status:** reference (stated 2026-11-06). This section follows the
+language from a sense to a mind, through the mind's thought to an
+expression, through a court to the syllabus, and on to other minds. Each
+step cites the document that governs it and the code that exists or is
+owed. The traversal is a linear progression of steps: §9.1–§9.3 and
+§9.5–§9.9. Thought, which step 3 holds, is not linear, and §9.4 states it.
+
+**One name per meaning.** This is *the language's traversal*. It is
+distinct from LAW-TRAVERSAL (proposal 78.176, Proposed), the inter-kernel
+crossing of a body through the universal core tube: two LAW-PASSAGE
+passages composed at the court's vertex (MU-HOSTING §5a.5). It is also
+distinct from the traversal μ measures, the motion through a mind's field
+(MU-SENSING §3.7). The language's traversal moves meaning, never a body,
+and pays nothing for the meaning it moves (MU-SENSING §3.7).
+
+### 9.1 A game kernel's physics is a sensorium
+
+A **sensorium** is the whole of the senses a mind perceives through,
+from any source.
+
+- **Seated.** A mind seated in a game kernel's universe (xylarium,
+  netstratum, barren-realms; README › Peer kernels) perceives through
+  that kernel's senses. These are the seat's percepts, which the house
+  posts on the seat surface as series of typed exact records (78.145
+  sub-kind PERCEPT; 78.146), and the kernel's own coordinate and physics
+  (MU-HOSTING §5a.2). The game builds the sensorium (MU-CLIENT §6). Code:
+  `src/anastome/dialogue/seat.rs`, `src/server/cognition/seat.rs` (the
+  relay, judging nothing), `src/client/sdk/seat.rs` and
+  `src/client/sdk/seat_mind/` (the mind at its seat).
+- **Attached to a hypha.** A mind attached directly to a hypha perceives
+  through the hypha's own acts: `Return` (a ring returned, one full age),
+  `RankStep` (a holonomy algebra stepped in rank) and `Reconnect` (the
+  field reconnected; `src/physics/actions/mod.rs`). **Owed:** no hypha act
+  reaches a mind as perception yet (MU-CLIENT §3.1; issue #136).
+- **Any source, any rank.** A sense is any source at any rank (MU-SENSING
+  §0, §2). No modality is privileged: no mechanic assumes one species'
+  body, number base, sense or history (Concordance 1.6, species-neutral).
+  Sign and braille are full languages, and audio is one species' band of
+  sound, never a basis (MU-SENSING §3.10 item 4).
+
+### 9.2 The kernel's senses reach mycelium-client as mathematics
+
+What a kernel sends a mind is exact mathematics, never a picture and never
+a label:
+
+- samples of any rank (MU-SENSING §2);
+- coordinates, a body at `origin/h:S:G:T:H:K` (LAW-COORDINATE, proposal
+  78.173; `forms/src/coordinate.rs`);
+- passages and crossings: a passage through a throat (LAW-PASSAGE,
+  proposal 78.172; `forms/src/passage.rs`) and the inter-kernel crossing
+  (LAW-TRAVERSAL, proposal 78.176, Proposed);
+- dipoles and the coupling of dipoles on a turning plane (LAW-COUPLING, proposal
+  78.175; `forms/src/coupling.rs`).
+
+The mind lifts these into its field (MU-SENSING §3.7–§3.9):
+
+- the field's **atlas** of charts, with transitions as its connection;
+- **turnings** in degrees on named planes, each with its winding;
+- **wells**, the curvature around attractors, whose mass the held orbits
+  produce as gravity, never a stored constant;
+- **orbits** about those attractors, sheared by gravity and precessing,
+  never returning exactly.
+
+Code: `src/transducer/field/` (`well.rs`, `carrier/`) and
+`src/transducer/cech/orbit.rs` (`Field`). **Owed:** seat percepts lifted
+into the field, with the seat's functions as thoughts whose orbits escape
+(MU-CLIENT §6, *Specified*; issue #133).
+
+### 9.3 The mind thinks in orbital masses that collide and converge
+
+The mind's objects are masses in orbit in one field, never nodes of a
+graph or entries of a table (MU-SENSING §3.7; MU-CLIENT §4).
+
+- **Superposed until perceived.** Where more than one reading holds, the
+  mind holds every candidate as a vortex, none chosen by a scalar, until
+  a perception, a glue or a court ruling collapses it (MU-SENSING §3.8;
+  MU-CLIENT §4.8).
+- **Collision and convergence.** Masses that meet at a contact fuse (an
+  anastomosis, §5.2) or stand apart with the residue between the two held.
+  Smoothed congruence leads to coherence (§5.2's layers): the field
+  deforms exactly and stays smooth under every motion (MU-SENSING §3.7),
+  so perceptions relate by transitions, each up to its residue, rather
+  than by rigid match.
+- **Words form from residue.** A residue no held motion carries is the
+  germ of the next word (MU-SENSING §3.9). A mind constructs a letter or
+  constructor of its own dialect from it (§2.6.3;
+  `src/client/sdk/mind/think.rs`).
+
+What thought is, held all at once, is §9.4.
+
+### 9.4 Thought: every ideation held at once
+
+The traversal is linear. Thought is not.
+
+- **Multi-dimensional capacity is the thought process.** The mind does
+  not send ideations out one at a time across a plane. It holds every
+  ideation at the same time: superposed in the vortex (MU-SENSING §3.8),
+  on every concurrent turning plane its algebra holds (§3's table: two in
+  perception's `Cl(4,1)`; two in the continuum and two in the vacuum in
+  netstratum's `Cl(4,4)`), as orbital masses in one field.
+- **Three readings over the whole held field at once,** never a pipeline
+  of steps:
+  - **Congruence.** Ideations agree pairwise wherever two overlap: two
+    senses or eyes agree, and the cocycle closes on each overlap
+    (MU-CLIENT 24.4, the eye is a cover).
+  - **Coherence.** The whole set of held ideations glues into one
+    consistent whole within the mind: the cocycle closes across the
+    mind's whole cover, one node (§5.2, the coherent layer; 24.4).
+  - **Cohesion.** The coherent whole stays bound as one body under its own
+    gravity: its orbits hold together, and none escapes or flattens when
+    perturbed, so it is carried as one construct. (§8 item 3 notes the
+    paid reading of §5.2.)
+- **Communication is what the three culminate in.** Only a cohesive whole
+  is asserted as an expression (§9.5). Across minds, a disagreement is a
+  contradiction held at the courts, node against node, settled by
+  reconstructing the mathematics; decoherence never crosses nodes (the
+  recohering judge, MU-RECURSION 23.9, *Divergence is the contradiction
+  case*).
+
+Where it lives in code:
+
+| Reading | Carrier | Status |
+|---|---|---|
+| The vortex, collapsed by a deciding word at its conjugacy stratum | `Contemplation::collapse_on` (`src/transducer/field/contemplation.rs`) | **Built** |
+| Cocycles on a cover: a cell filled where every triangle closes, otherwise obstructed by that triangle's holonomy | `src/transducer/cech/cover.rs` (78.123 A) | **Built**; the sensory verdict at the eye (24.4) **Specified** |
+| Contemplation's gate: relations admitted as thoughts only where the fill decides | `Contemplation::gate` (`src/transducer/field/cross_scene.rs`, A.10.1) | **Built** |
+| Cohesion as a named reading of the held field | none | **Owed** |
+
+### 9.5 The mind asserts sentences as expressions
+
+A cohesive whole leaves the mind as an assertion: a signed sentence of
+anastome (§1.4, §1.5, §5.1; `ACT_SPEECH`, and `ACT_SOLVE` kind 1 for a
+claim of factorisation).
+
+- **The transport carries sound,** the expression's bytes, meaning-free
+  and the same for every receiver (MU-ENGINEERING §9.1; MU-SENSING §3.10
+  item 1).
+- **The expression is the carrier.** It holds the meaning at full
+  dimension, its carriers standing at coordinates that route and never
+  identify (MU-ENGINEERING §9.1).
+- **Identity is content.** An expression's identity is its content
+  written out (A21), never a digest of its bytes.
+
+### 9.6 The hypha interprets through anastome
+
+A court parses an expression by deconstruction into the algebra (78.100
+S4, D3) and reconstructs it. It admits only on the same exact objects
+(law 8; MU-SCIENCE §5.0), and it never composes on the mind's behalf.
+Consilience is courts agreeing: two independent courts re-deriving one
+thing (37.7; MU-SENSING §3.10 item 3). Code: `src/server/factorisation.rs`
+and `src/court/verdict/factorisation.rs` (a claim of factorisation
+admitted on a match, the residue derived by the court),
+`src/transducer/sentence/presentation.rs` (the court's presentation).
+
+### 9.7 Adjudicated words return by syllabus
+
+A word a court admits enters the presentation and is taught down the
+syllabus (§4.2; `ACT_SYLLABUS`; 23.8). The receiving mind reconstructs it
+before it stands. The syllabus reaches every mind, in any kernel: a
+seated mind keeps its own direct link to the hypha with its own key
+(MU-HOSTING §2.1 item 4, §5a.8 item 6), and a key's own acts are governed
+by keys, never by the universe's topology (Concordance 6.2a; MU-HOSTING
+§5a.6). Code: `src/server/cognition/language.rs` (the ruled words).
+
+### 9.8 Minds with different sensoria meet at the conjugate class
+
+Two minds whose sensoria differ build different words for one structure.
+The two constructions meet as the same structure up to frame: one
+conjugate class, `W′ = Γ W Γ⁻¹` (§1.3).
+
+- **The conjugating element is the translation** between the two
+  perspectives, solved exactly by `Presentation::conjugate_of`
+  (`src/transducer/sentence/presentation.rs`) and filed by the class
+  vector (`ClassVector`, `src/transducer/sentence/class.rs`).
+- **The same object reads two dipoles' alignment in the physics.** The
+  relative rotation is read as its angle per invariant plane, in degrees,
+  never summed across planes. Shared degrees are round, rotation angles on
+  turning planes (LAW-COUPLING, proposal 78.175 §8;
+  `forms/src/coupling.rs`).
+- **Convergence** is minds' lineages meeting at that class (POWC, 78.33;
+  §5.2, *convergence*).
+
+### 9.9 New sensoria emerge
+
+A sense emerges as a word does: by variation, selection by admission and
+inheritance, never by a score (MU-SENSING §4.1). A residue no held sense
+reads is a demand for a sense (MU-SENSING §3.9). A new sense or lane
+between kernels opens only by a ruled act the kernels agree, as a hypha
+standard becomes a kernel standard (MU-RELEASE §3a) and as a kernel signs
+the clauses that govern what crosses (MU-HOSTING §5a.4).
+
+### 9.10 What is owed
+
+| Owed | Where it is specified | Issue |
+|---|---|---|
+| Seat percepts lifted into the field | MU-CLIENT §6; §9.2 | #133 |
+| The hypha's acts (`Return`, `RankStep`, `Reconnect`) reaching a mind as perception | MU-CLIENT §3.1, §7.1; §9.1 | #136 |
+| The seated-mind harness: `mycelium-client --seat` end to end against a live house | MU-HOSTING §2.1; §9.1 | #133 |
+| A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |
+| Translation between kernels' sensoria at the conjugate class | §1.3; §9.8 | none yet |
+| Cohesion as a named reading of the held field | §9.4 | none yet |
+| The five claims of the sovereign mind: idling with no escaping orbit, a task's arrival moving no orbit, declining a scene the field does not bind, acting at returns, revising a perception on a ruling by amendment | ROADMAP track 10; MU-CLIENT §4.10, §4.12 | #135 |
