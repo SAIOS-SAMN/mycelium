@@ -70,6 +70,16 @@ impl Membrane {
         &self.throat
     }
 
+    /// THE INVERSION IN THE MEMBRANE (MU-SENSING §3.7, *flip*; ROADMAP track
+    /// 26 S8): a frame state on its plane carried by the throat's sandwich,
+    /// `x ↦ e₊·x·e₊`, read from the membrane alone, so no infinity is
+    /// written outside an enclosure: it is the pole swap, `n_Z ↔ n_Q`.
+    /// Refused as the pole basis refuses `x`.
+    pub fn invert(&self, x: &Clifford) -> Result<Clifford, FieldRefusal> {
+        self.poles.read(x).map_err(FieldRefusal::Passage)?;
+        self.throat.product(x).and_then(|tx| tx.product(&self.throat)).map_err(FieldRefusal::Mismatched)
+    }
+
     /// WHERE THE THROAT STANDS, read through the pole basis: at the throat,
     /// always (`membrane_is_the_throat_never_null`).
     pub fn place(&self) -> Result<Place, FieldRefusal> {
