@@ -68,7 +68,7 @@ pub fn frame_budget() -> usize {
 /// A wire frame: a body delimited by its length. The body is opaque
 /// transport bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WireFrame {
+pub struct Delimited {
     pub body: Vec<u8>,
 }
 
@@ -79,7 +79,7 @@ pub fn delimited_len(head: [u8; HEAD]) -> Option<usize> {
     (len <= DELIMITED_MAX).then_some(len)
 }
 
-impl WireFrame {
+impl Delimited {
     /// `[len:4 LE][body]`. `None` if the body passes [`DELIMITED_MAX`].
     pub fn encode(&self) -> Option<Vec<u8>> {
         if self.body.len() > DELIMITED_MAX {
@@ -98,9 +98,9 @@ impl WireFrame {
 
     /// Decode one frame from the head of `bytes`; returns `(frame, bytes_read)`.
     /// `None` on a length past [`DELIMITED_MAX`] or a truncated buffer.
-    pub fn decode(bytes: &[u8]) -> Option<(WireFrame, usize)> {
+    pub fn decode(bytes: &[u8]) -> Option<(Delimited, usize)> {
         let len = delimited_len(bytes.get(..HEAD)?.try_into().ok()?)?;
         let body = bytes.get(HEAD..HEAD.checked_add(len)?)?.to_vec();
-        Some((WireFrame { body }, HEAD + len))
+        Some((Delimited { body }, HEAD + len))
     }
 }

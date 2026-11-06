@@ -1,6 +1,6 @@
 use crate::chronometry::tuniversal::TPoint;
 use crate::network::noise::*;
-use crate::network::wire::{WireFrame, DELIMITED_MAX, HEAD};
+use crate::network::wire::{Delimited, DELIMITED_MAX, HEAD};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
@@ -100,31 +100,31 @@ fn initiate_completes_handshake_and_round_trips_frames() {
     use crate::chronometry::tuniversal::Origin;
     let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1].into(), k: 812 };
     let said = crate::anastome::dialogue::Expression::of(vec![0x53, 1, 2, 3], Some(point));
-    let ask = WireFrame { body: said.write().unwrap() };
-    ia.write_frame(&ask).unwrap();
-    let heard = rb.read_frame().unwrap();
+    let ask = Delimited { body: said.write().unwrap() };
+    ia.write_delimited(&ask).unwrap();
+    let heard = rb.read_delimited().unwrap();
     assert_eq!(heard, ask);
     assert_eq!(crate::anastome::dialogue::Expression::read(heard.body), Some(said), "the point rides inside the expression");
-    let reply = WireFrame { body: vec![9; 40] };
-    rb.write_frame(&reply).unwrap();
-    assert_eq!(ia.read_frame().unwrap(), reply);
+    let reply = Delimited { body: vec![9; 40] };
+    rb.write_delimited(&reply).unwrap();
+    assert_eq!(ia.read_delimited().unwrap(), reply);
 }
 
 /// A frame past one Noise message rides as ⌈bytes / CHUNK⌉ messages,
 /// none over the ceiling, and joins back to the same frame.
 #[test]
-fn write_frame_chunks_past_one_message_and_rejoins() {
+fn write_delimited_chunks_past_one_message_and_rejoins() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", Tap::new);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     rb.get_mut().seen.clear();
     let body: Vec<u8> = (0..3 * CHUNK + 7).map(|i| u8::try_from(i % 251).unwrap()).collect();
-    let frame = WireFrame { body };
+    let frame = Delimited { body };
     let sender = std::thread::spawn(move || {
-        ia.write_frame(&frame).unwrap();
+        ia.write_delimited(&frame).unwrap();
         frame
     });
-    let got = rb.read_frame().unwrap();
+    let got = rb.read_delimited().unwrap();
     let frame = sender.join().unwrap();
     assert_eq!(got, frame.clone());
     let lens = message_lengths(&rb.get_ref().seen);
@@ -137,39 +137,39 @@ fn write_frame_chunks_past_one_message_and_rejoins() {
 /// A body over the wire's budget is refused before a byte is sent: the
 /// next frame is the next thing the peer reads.
 #[test]
-fn write_frame_refuses_over_budget_before_sending() {
+fn write_delimited_refuses_over_budget_before_sending() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
-    let over = WireFrame { body: vec![0; DELIMITED_MAX + 1] };
-    assert!(matches!(ia.write_frame(&over), Err(NoiseRefusal::FrameOverBudget { len }) if len == DELIMITED_MAX + 1));
-    let next = WireFrame { body: vec![4, 2] };
-    ia.write_frame(&next).unwrap();
-    assert_eq!(rb.read_frame().unwrap(), next);
+    let over = Delimited { body: vec![0; DELIMITED_MAX + 1] };
+    assert!(matches!(ia.write_delimited(&over), Err(NoiseRefusal::FrameOverBudget { len }) if len == DELIMITED_MAX + 1));
+    let next = Delimited { body: vec![4, 2] };
+    ia.write_delimited(&next).unwrap();
+    assert_eq!(rb.read_delimited().unwrap(), next);
 }
 
 /// A head that names a body past the budget is refused by its length,
 /// the body never allocated.
 #[test]
-fn read_frame_refuses_head_past_budget() {
+fn read_delimited_refuses_head_past_budget() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     let len = DELIMITED_MAX + 1;
     ia.write_all(&u32::try_from(len).unwrap().to_le_bytes()).unwrap();
-    assert!(matches!(rb.read_frame(), Err(NoiseRefusal::FrameOverBudget { len: l }) if l == len));
+    assert!(matches!(rb.read_delimited(), Err(NoiseRefusal::FrameOverBudget { len: l }) if l == len));
 }
 
 /// One flipped bit of a transport message's ciphertext fails its tag.
 #[test]
-fn read_frame_refuses_tampered_ciphertext() {
+fn read_delimited_refuses_tampered_ciphertext() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", Tap::new);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     // Past the two-byte length, the first ciphertext byte.
     rb.get_mut().flip_in = Some(2);
-    ia.write_frame(&WireFrame { body: vec![1, 2, 3] }).unwrap();
-    assert!(matches!(rb.read_frame(), Err(NoiseRefusal::Decrypt)));
+    ia.write_delimited(&Delimited { body: vec![1, 2, 3] }).unwrap();
+    assert!(matches!(rb.read_delimited(), Err(NoiseRefusal::Decrypt)));
 }
 
 /// A peer pinned on first contact passes again with its key; the same
@@ -207,12 +207,12 @@ fn opening_reads_as_no_plaintext_frame() {
     let len = usize::try_from(u32::from_le_bytes([OPEN[0], OPEN[1], OPEN[2], OPEN[3]])).unwrap();
     assert!(len > DELIMITED_MAX);
     assert!(len > crate::network::wire::BODY_BUDGET + TPoint::TRAILER_MAX);
-    assert!(WireFrame::decode(&OPEN).is_none());
+    assert!(Delimited::decode(&OPEN).is_none());
 
     let (_db, b) = home();
     let (mut sa, sb) = loopback();
     let responder = std::thread::spawn(move || respond(sb, &b, None).map(|s| s.remote_static()));
-    let frame = WireFrame { body: vec![1, 2, 3, 4, 5] };
+    let frame = Delimited { body: vec![1, 2, 3, 4, 5] };
     sa.write_all(&frame.encode().unwrap()).unwrap();
     assert!(matches!(responder.join().unwrap(), Err(NoiseRefusal::NotSpoken { answered }) if answered[..HEAD] == 5u32.to_le_bytes()));
 }

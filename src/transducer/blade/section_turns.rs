@@ -141,13 +141,13 @@ impl SectionTurns {
         let off_plane = (0..n).filter(|&i| i != plane.0 && i != plane.1).fold(Q::zero(), |s, i| s + super::body::round_extent(n, i));
         let trace = &tr + off_plane * &count;
         let edges = q(super::boundary_length(&support));
-        let open = q(super::frame_faces(&support));
+        let open = q(super::enclosure_faces(&support));
         let heard = Harmonics {
             n: u64::try_from(n).ok()?,
             betti: super::topology(&support)?,
             turns: u64::try_from(super::turns(&support)).ok()?,
             isoperimetric: &edges * &edges / &count,
-            frame_boundary: &open / &count,
+            enclosure_boundary: &open / &count,
             anisotropy: match tr.is_zero() {
                 true => Q::zero(),
                 false => &det / (&tr * &tr),

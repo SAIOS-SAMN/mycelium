@@ -10,10 +10,10 @@ use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::lease::{decode_close, decode_lease, encode_lease_reply};
 use mycelium::anastome::dialogue::wallet::{decode_stake, decode_wallet, encode_stake_reply, encode_wallet_reply};
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     // MU-ECONOMY §5.2 — a compute lease opened or closed: a write, taken
     // under the court and acknowledged only once durable, as a stake is.
     let lease = match (decode_lease(&frame.body), decode_close(&frame.body)) {
@@ -26,7 +26,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
         if !crate::persist::durable(&context.court, &context.state_path) {
             return;
         }
-        answer(stream, WireFrame { body });
+        answer(stream, Delimited { body });
         return;
     }
     if let Some(s) = decode_stake(&frame.body) {
@@ -39,11 +39,11 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
         if !crate::persist::durable(&context.court, &context.state_path) {
             return;
         }
-        answer(stream, WireFrame { body });
+        answer(stream, Delimited { body });
         return;
     }
     let Some(who) = decode_wallet(&frame.body) else { return };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     let Some(a) = context.published.take().wallet(&who) else { return };
-    answer(stream, WireFrame { body: encode_wallet_reply(&a) });
+    answer(stream, Delimited { body: encode_wallet_reply(&a) });
 }

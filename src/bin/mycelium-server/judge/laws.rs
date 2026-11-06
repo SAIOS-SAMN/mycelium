@@ -16,11 +16,11 @@
 
 use crate::context::Context;
 use crate::transport::answer;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::physics::laws::codec::{decode_laws_request, encode_register_reply, LawsRequest};
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let Some(request) = decode_laws_request(&frame.body) else { return };
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
@@ -71,5 +71,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
             mycelium::physics::laws::codec::encode_batch_reply(&verdicts)
         }
     };
-    answer(stream, WireFrame { body });
+    answer(stream, Delimited { body });
 }

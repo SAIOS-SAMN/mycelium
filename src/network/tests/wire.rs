@@ -3,10 +3,10 @@ use crate::network::wire::*;
 /// A frame decodes to itself: a length and a body, no lane byte.
 #[test]
 fn frame_round_trips_as_length_and_body() {
-    let f = WireFrame { body: vec![1, 2, 3, 9] };
+    let f = Delimited { body: vec![1, 2, 3, 9] };
     let bytes = f.encode().unwrap();
     assert_eq!(&bytes[..HEAD], &4u32.to_le_bytes(), "the envelope opens with the body's length");
-    let (g, n) = WireFrame::decode(&bytes).unwrap();
+    let (g, n) = Delimited::decode(&bytes).unwrap();
     assert_eq!(f, g);
     assert_eq!(n, HEAD + 4);
 }
@@ -15,7 +15,7 @@ fn frame_round_trips_as_length_and_body() {
 /// truncated, and a head naming one is refused before the body is read.
 #[test]
 fn encode_refuses_body_past_delimited_max() {
-    let f = WireFrame { body: vec![0u8; DELIMITED_MAX + 1] };
+    let f = Delimited { body: vec![0u8; DELIMITED_MAX + 1] };
     assert!(f.encode().is_none(), "over MTU — refused, never truncated");
     let past = u32::try_from(DELIMITED_MAX + 1).unwrap().to_le_bytes();
     assert_eq!(delimited_len(past), None);
@@ -35,7 +35,7 @@ fn expression_carries_last_final_point_inside_the_body() {
     let e = Expression::of(vec![0x53, 1, 2], Some(point.clone()));
     let body = e.write().unwrap();
     assert_eq!(body[0], 0x53, "the act's tag stays at offset zero");
-    let (frame, n) = WireFrame::decode(&WireFrame { body: body.clone() }.encode().unwrap()).unwrap();
+    let (frame, n) = Delimited::decode(&Delimited { body: body.clone() }.encode().unwrap()).unwrap();
     assert_eq!(n, HEAD + 3 + point.to_bytes().len() + 2);
     assert_eq!(Expression::read(frame.body), Some(e));
     let none = Expression::of(vec![0x53, 1, 2], None);

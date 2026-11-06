@@ -121,7 +121,7 @@ pub fn is_spin_plus_31(f: &Mv) -> bool {
     }
     let ep = Mv::blade(EP, BigRational::from_integer(1.into()));
     let fixes_axis = f.geo(&ep).sub(&ep.geo(f)).is_zero();
-    let upper = crate::transducer::cga::frame_base_point(f).is_some_and(|v| v.coeff(EM).is_positive());
+    let upper = crate::transducer::cga::pose_point(f).is_some_and(|v| v.coeff(EM).is_positive());
     is_even(f) && fixes_axis && upper
 }
 
@@ -168,7 +168,7 @@ fn wrapped(x: &BigRational, l: &BigRational) -> BigRational {
 /// the space, or stands off the torus's axes.
 pub fn place_in(space: &Geometry, frame: &Mv) -> Option<Mv> {
     match space {
-        Geometry::Curved(_) => is_spin_plus_31(frame).then(|| crate::transducer::cga::frame_base_point(frame))?,
+        Geometry::Curved(_) => is_spin_plus_31(frame).then(|| crate::transducer::cga::pose_point(frame))?,
         Geometry::Sphere(_) => is_spin_4(frame).then(|| crate::transducer::cga::sphere_base_point(frame))?,
         Geometry::Torus { periods, .. } => {
             if !is_euclidean_motion(frame) {

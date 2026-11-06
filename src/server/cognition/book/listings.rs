@@ -78,7 +78,7 @@ impl Court {
     }
 
     /// List a residue on the book and admit its base chart. The draw occupies
-    /// the uttering voice's bond; a receipt is sealed so lapse can fire.
+    /// the asserting voice's bond; a receipt is sealed so lapse can fire.
     /// Where the listing stands is the stamp of the List act that admits
     /// it (78.24), sealed here.
     pub(crate) fn book_list(&mut self, residue: Element, voice: [u8; 32]) {
@@ -86,8 +86,8 @@ impl Court {
     }
 
     /// THE CORPUS INTAKE'S LISTING (23.8; I31, S12.5b): the hypha lists its
-    /// own corpus with no drawer. Room is a voice's — drawn by its utterance
-    /// and released by closure, ruling or lapse — and no voice uttered a
+    /// own corpus with no drawer. Room is a voice's — drawn by its expression
+    /// and released by closure, ruling or lapse — and no voice asserted a
     /// corpus task; drawn from the hypha's own bond the corpus exhausted it
     /// in the first minutes of every boot (245 refusals on hypha a in 150 s
     /// of the 2026-09-08 recut) and nothing homed here could lapse it back.

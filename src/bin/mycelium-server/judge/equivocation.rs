@@ -9,16 +9,16 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(s: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
     let Some((a, b)) = dialogue::decode_equivocation(&frame.body) else {
         return;
     };
     let say = |s: &mut Channel, r: dialogue::Ruled| {
         match dialogue::encode_ruled(&r) {
-            Some(body) => answer(s, WireFrame { body }),
+            Some(body) => answer(s, Delimited { body }),
             None => eprintln!("  court equivocation answer refused: the reason passes its u16"),
         }
     };

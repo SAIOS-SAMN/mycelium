@@ -1072,7 +1072,7 @@ pub mod coord {
     /// made it underivable.
     #[derive(Clone, Debug, PartialEq, Eq)]
     pub enum VertexAt {
-        Frame,
+        Enclosure,
         Word(Transport),
         Rebased { base: Transport, own: Transport },
         Unfolded(Unfolded),
@@ -1105,7 +1105,7 @@ pub mod coord {
         fn encode(&self) -> CompactBytes {
             let mut buf = Vec::new();
             match self {
-                VertexAt::Frame => buf.push(Self::FRAME),
+                VertexAt::Enclosure => buf.push(Self::FRAME),
                 VertexAt::Word(t) => {
                     buf.push(Self::WORD);
                     buf.extend_from_slice(t.encode().as_bytes());
@@ -1142,7 +1142,7 @@ pub mod coord {
                 return Err(Self::refuse("an empty key spells no vertex"));
             };
             match tag {
-                Self::FRAME if body.is_empty() => Ok(VertexAt::Frame),
+                Self::FRAME if body.is_empty() => Ok(VertexAt::Enclosure),
                 Self::WORD => Ok(VertexAt::Word(Transport::decode(body)?)),
                 Self::UNFOLDED => Ok(VertexAt::Unfolded(Unfolded::decode(body)?)),
                 Self::GLUED => Ok(VertexAt::Glued(GluedBoundary::decode(body)?)),

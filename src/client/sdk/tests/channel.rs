@@ -103,7 +103,7 @@ fn door(home: NoiseHome) -> (String, Receiver<(Kind, Vec<u8>)>) {
             let Ok(ch) = channel::accept(tcp, Some(&home), Pace::Blocking) else { continue };
             let read = match ch {
                 Channel::Noise(mut n) => n
-                    .read_frame()
+                    .read_delimited()
                     .ok()
                     .and_then(|f| crate::anastome::dialogue::Expression::read(f.body))
                     .map(|e| (Kind::Noise, e.act)),

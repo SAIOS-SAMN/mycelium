@@ -7,7 +7,7 @@ use crate::LAW_IDS;
 #[test]
 fn law_ids_resolve_to_shells() {
     let shells = [
-        (crate::frame::LAW_ID, crate::frame::LAW_VERSION),
+        (crate::reference::LAW_ID, crate::reference::LAW_VERSION),
         (crate::passage::LAW_ID, crate::passage::LAW_VERSION),
         (crate::shares::LAW_ID, crate::shares::LAW_VERSION),
         (crate::coordinate::LAW_ID, crate::coordinate::LAW_VERSION),

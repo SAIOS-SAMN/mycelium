@@ -202,12 +202,12 @@ fn judge_solve_refuses_rule_leaving_pair_open() {
 /// and the rule over each is its own word — so every mind that sees channel
 /// 1 names channel 1 the same. (78.53 relabelled the palette at the sensor;
 /// 78.56 II supersedes it.) Read through the frame-fixing perspective
-/// (`raster::frame_fixed_on_ground`, ROADMAP track 26 S2: a perspective a
+/// (`raster::enclosure_fixed_on_ground`, ROADMAP track 26 S2: a perspective a
 /// sensor may take after intake).
 #[test]
-fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
+fn enclosure_fixed_on_ground_reads_permuted_palette_as_other_scene() {
     let read = |a: u8, b: u8, c: u8| {
-        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::task_of_lines(
+        crate::transducer::raster::enclosure_fixed_on_ground(crate::transducer::family::task_of_lines(
             vec![(vec![vec![a, a, 0, b, 0, 0, 0]], vec![vec![0, 0, a, a, 0, b, 0]])],
             vec![(vec![vec![b, 0, a, a, 0, c, 0]], vec![vec![0, 0, b, 0, a, a, c]])],
         ))
@@ -263,7 +263,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
     // Read through the frame-fixing perspective (ROADMAP track 26, S2).
     let read = |train: &Pairs, test: &Pairs| {
         let test = test.iter().map(|(x, y)| (x.clone(), Some(y.clone()))).collect();
-        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.clone(), test })
+        crate::transducer::raster::enclosure_fixed_on_ground(crate::transducer::family::Task { train: train.clone(), test })
     };
     let one = read(&base.0, &base.1);
     let turn180 = |g: &SectionSample| turn(&turn(g));

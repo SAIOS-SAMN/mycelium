@@ -134,7 +134,7 @@ fn state_refuses_disagreeing_rederivations_as_inexact() {
     }
 }
 
-/// A second voice uttering the same residue is a USE and a settlement
+/// A second voice asserting the same residue is a USE and a settlement
 /// party. It never moves the object toward admission.
 #[test]
 fn used_by_records_party_never_witness() {

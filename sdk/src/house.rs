@@ -31,11 +31,11 @@
 //! | The universe | [`BigBangRecord`], [`Genesis`], [`Geometry`], [`encode_universe_read`], [`decode_universe_reading`], [`UniverseReading`], the statements |
 //! | The endowment | [`Manifest`], [`encode_manifest`], [`decode_grant_reply`], [`Granted`], [`encode_endowment_read`], [`decode_endowment_reading`] |
 //! | Seats | [`Post`], [`Seats`], [`Taken`], [`Percept`], [`Outcome`], [`HouseMail`], [`encode_post`], [`decode_seat_request`], the listing and the mail |
-//! | Handoff | [`SignedHandoff`], [`encode_handoff`], [`decode_handoff_reply`], [`encode_handoff_read`], [`decode_read_reply`], [`encode_loops_read`], [`decode_loops_reply`], [`encode_tube_read`], [`decode_tube_reading`] |
+//! | Handoff | [`SignedHandoff`], [`encode_handoff`], [`decode_handoff_reply`], [`encode_handoff_read`], [`decode_read_reply`], [`encode_orbits_read`], [`decode_orbits_reply`], [`encode_tube_read`], [`decode_tube_reading`] |
 //! | Traverse, ledger and map | [`encode_traverse`], [`decode_traverse_reply`], [`encode_ledger`], [`encode_ledger_read`], [`decode_ledger_reply`], [`decode_ledger_page`], [`encode_map`], [`encode_map_read`], [`decode_map_reply`], [`decode_map_reading`] |
 //! | Challenge and finality | [`encode_challenge`], [`decode_challenge_reply`], [`encode_finality_request`], [`decode_finality_reply`], [`encode_line_head_request`], [`decode_line_head_reply`], [`encode_obstructions_request`], [`decode_obstructions_reply`]; the fold sent up, [`encode_uplink`] |
 //! | Equivocation | [`equivocation_proof`], [`encode_equivocation`], [`decode_ruled`], [`ReceiptSection`] |
-//! | Framing and identity | [`WireFrame`], [`delimited_len`], [`HEAD`], [`BODY_BUDGET`], [`DELIMITED_MAX`], [`Expression`], [`write_act`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
+//! | Framing and identity | [`Delimited`], [`delimited_len`], [`HEAD`], [`BODY_BUDGET`], [`DELIMITED_MAX`], [`Expression`], [`write_act`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
 //! | Whole modules | [`domain`], [`universe`], [`endowment`], [`seat`], [`atlas`], [`uplink`], [`challenge`], [`commitment`], [`tuniversal`] |
 
 /// The Concordance's clause register (`ACT_LAWS` mode 7) and a kernel's
@@ -156,7 +156,7 @@ pub use mycelium::transducer::cga::{rotator, sphere_at, translator_at, Undecompo
 
 /// FRAMING: a frame delimited by its length, the head's length read, an
 /// act's budget and the most one envelope delimits.
-pub use mycelium::network::wire::{delimited_len, WireFrame, BODY_BUDGET, DELIMITED_MAX, HEAD};
+pub use mycelium::network::wire::{delimited_len, Delimited, BODY_BUDGET, DELIMITED_MAX, HEAD};
 /// THE EXPRESSION: an act and the TUniversal point its speaker read, written
 /// `[act][point][point count u16 LE]` inside the frame's body (TU-7).
 pub use mycelium::anastome::dialogue::expression::{write_act, Expression};
@@ -170,11 +170,11 @@ pub use mycelium::chronometry::payload_hash;
 /// HANDOFF (`ACT_HANDOFF`, MU-HOSTING §2.4): matter or a word crossing
 /// domains, a conversion of μ, a mouth or a tube — offered, accepted,
 /// refused or expired, each signed by its filer; the court's answer
-/// (`Handed`), a handoff's standing read, the open mouth loops and a mouth
+/// (`Handed`), a handoff's standing read, the open mouth orbits and a mouth
 /// pair's tube, each read without sealing.
 pub use mycelium::anastome::dialogue::handoff::{
-    decode_handoff_reply, decode_loops_reply, decode_read_reply, encode_handoff, encode_handoff_read, encode_loops_read, encode_tube_read,
-    ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Loop, Mouth, Offer as HandoffOffer, SignedHandoff, State as HandoffState, Tariff,
+    decode_handoff_reply, decode_orbits_reply, decode_read_reply, encode_handoff, encode_handoff_read, encode_orbits_read, encode_tube_read,
+    ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Mouth, MouthOrbit, Offer as HandoffOffer, SignedHandoff, State as HandoffState, Tariff,
 };
 /// A mouth pair's tube as the court reads it.
 pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeReading};

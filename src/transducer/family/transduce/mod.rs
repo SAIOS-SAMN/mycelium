@@ -41,7 +41,7 @@ pub use ground::{Candidacy, Ground, Unground};
 pub use motion::{Generated, Sense, SignedPermutation};
 pub use nest::{Factoring, Factorings};
 pub use percept::{PairFactored, PerceptRefusal, TaskPercept};
-pub use record::{arcs, family_share, need, need_of, share_of_frame, Incidence, SiteChange, Transduction};
+pub use record::{arcs, family_share, need, need_of, share_of_enclosure, Incidence, SiteChange, Transduction};
 pub use refusal::TransductionRefusal;
 pub use relation::{relation_of, PairRelation};
 pub use turn::{Enclosure, Turn};

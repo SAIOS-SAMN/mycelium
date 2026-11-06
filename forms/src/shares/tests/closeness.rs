@@ -68,7 +68,7 @@ fn closeness_reproduces_selecting_universe_vector() {
 /// as it is.
 #[test]
 fn closeness_in_round_trips_through_frame() {
-    use crate::frame::{Move, Reference};
+    use crate::reference::{Move, Reference};
     let (a, b) = (Shares::of(&qs(&[(3, 5), (2, 5)])).expect("a"), Shares::of(&qs(&[(1, 4), (3, 4)])).expect("b"));
     let delta = qs(&[(1, 8), (1, 3)]);
     assert_eq!(a.closeness_in(&b, &delta, &Reference::identity()), Ok(q(119, 240)), "the identity reads it as it is");

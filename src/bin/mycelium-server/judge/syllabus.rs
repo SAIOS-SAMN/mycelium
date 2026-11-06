@@ -8,14 +8,14 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 use crate::admission::sign_cover_digest;
 
 
 /// The section digests over this court's atlas, with the signed cover
 /// digest behind them (A19, 47.1).
-pub(crate) fn digests(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn digests(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let court = &context.court;
     let mesh = &context.mesh;
 
@@ -41,13 +41,13 @@ pub(crate) fn digests(stream: &mut Channel, frame: &WireFrame, context: &Context
         return;
     };
     body.extend(sign_cover_digest(court, &context.published, mesh));
-    let reply = WireFrame { body };
+    let reply = Delimited { body };
     answer(stream, reply);
 }
 
 /// The stratum fetch: the ruled words of the charts a peer named, up to
 /// the frame budget, with the class records behind them (A19).
-pub(crate) fn fetch(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) {
     // 78.160 P1 — a mind's residue asked of the presentation rides the
     // fetch's act under its own marker.
     if let Some((pvoice, motion)) = dialogue::decode_presentation_request(&frame.body) {
@@ -158,7 +158,7 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &WireFrame, context: &Context) 
         eprintln!("  fetch refused: the class records cannot be framed");
         return;
     }
-    let reply = WireFrame { body };
+    let reply = Delimited { body };
     let written = crate::transport::answer_written(stream, reply);
     // The words a peer court's fetch carried away, under the court that
     // asked: only on a reply the wire took.
@@ -197,7 +197,7 @@ fn cited(stream: &mut Channel, context: &Context, cvoice: [u8; 32], addrs: &[myc
         eprintln!("  citation answer refused: the page does not fit its count");
         return;
     };
-    if crate::transport::answer_written(stream, WireFrame { body }) && court {
+    if crate::transport::answer_written(stream, Delimited { body }) && court {
         mycelium::observe::note_replication(Some(cvoice), mycelium::observe::replication::FETCH_SERVED, words.len() as u64);
     }
 }
@@ -216,5 +216,5 @@ fn present(stream: &mut Channel, context: &Context, voice: [u8; 32], motion: &my
         eprintln!("  presentation refused: a count or an address passes the field that carries it");
         return;
     };
-    answer(stream, WireFrame { body });
+    answer(stream, Delimited { body });
 }

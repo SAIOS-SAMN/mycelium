@@ -1,13 +1,13 @@
 // 50.9 — THE CONTRACTION ON THE MIND: what a court's refusal does to the
 // sentence this mind spoke, the address it seals, and the sentence it
-// utters next.
+// asserts next.
 //
 //! A refusal is an admitted act of the mind (45.1): a receipt is sealed on
-//! its own chain and the refused address is sealed in the utterance index,
+//! its own chain and the refused address is sealed in the expression index,
 //! so the identical tape cannot leave again. The held form is contracted
 //! by the move the refusal names (`Form::contract`), held as an idea with
 //! its certificate, and — where a vertex still acts — minted as the next
-//! utterance, citing the receipt.
+//! expression, citing the receipt.
 
 use crate::client::sdk::*;
 use crate::transducer::sentence::{At, Contracted, Contraction, RefusalKind};
@@ -16,7 +16,7 @@ impl Mind {
     /// RECEIVE A REFUSAL (50.9). Seals the receipt and the address, executes
     /// the move on the spoken form, holds the contracted form as an idea
     /// with its certificate, and queues the contracted sentence for the
-    /// next utterance. `Quiescent` when nothing can be uttered: a malformed
+    /// next expression. `Quiescent` when nothing can be asserted: a malformed
     /// complex, a coordinate the form does not hold, or a form no vertex of
     /// which still acts — held inert until this mind's language moves.
     #[expect(clippy::too_many_arguments, reason = "the refusal's three coordinates, the sentence, its family and task, and the stroke of the act that heard it (65.5)")]
@@ -34,11 +34,11 @@ impl Mind {
         use crate::transducer::sentence::{form_vertex_key, rule_of_form};
         let address = spoken.address();
         // 78.49: the refusal is an act of this mind at its own K; the address
-        // is sealed in the utterance index. The court sealed the refusal.
+        // is sealed in the expression index. The court sealed the refusal.
         let k = self.act();
         self.sealed.insert(&address, k);
         // 24.2: the dialect is what this mind spoke THAT STOOD. The refused
-        // sentence stood there before it was uttered and did not stand at
+        // sentence stood there before it was asserted and did not stand at
         // the court; it leaves, so no form glues it and no sentence cites
         // it again — a citer of a sealed address waits at every court.
         self.language.drop_dialect(address.as_bytes());
@@ -85,7 +85,7 @@ impl Mind {
             .span_of(&form)
             .and_then(|d| mint_sentence(&rule_of_form(form), train, &self.language, d.span()));
         // No measured trajectory and no demand: the contraction is held with
-        // its certificate and nothing is uttered.
+        // its certificate and nothing is asserted.
         if let Some(sentence) = minted {
             let minted_address = sentence.address();
             self.contractions.insert(&minted_address, certificate.clone());
@@ -113,7 +113,7 @@ impl Mind {
         Contracted::Quiescent
     }
 
-    /// UTTER THE CONTRACTED SENTENCES (50.9): each one spoken to the court
+    /// ASSERT THE CONTRACTED SENTENCES (50.9): each one spoken to the court
     /// with its certificate, over the family and task it was minted for.
     /// One the court could not be reached for is pending again when the
     /// answer lands.
@@ -131,7 +131,7 @@ impl Mind {
         }
     }
 
-    /// UTTER WHAT THIS MIND OWES (21 step 3, chapter 6's depth order): for
+    /// ASSERT WHAT THIS MIND OWES (21 step 3, chapter 6's depth order): for
     /// every form a court answered `Awaiting` on, the cited form first and
     /// the citer after it, in the same frame and in that order. A cited
     /// form must precede its citer, so one frame carries both and the
@@ -180,7 +180,7 @@ impl Mind {
     /// form the citer cites. The mind owes that court the cited form before
     /// the citer, and queues both — unless the cited address is one this
     /// mind sealed, which no court will rule; unless the mind does not hold
-    /// the cited form, which is a fault of the utterance; or unless the
+    /// the cited form, which is a fault of the expression; or unless the
     /// citer has already been owed to every court this mind knows, since
     /// the owed frame goes to the courts in turn and a citer no court can
     /// stand waits for its family to come round again. Queued, or the
@@ -239,13 +239,13 @@ impl Mind {
         self.sealed.get(address).copied()
     }
 
-    /// The contracted sentences waiting to be uttered, taken.
+    /// The contracted sentences waiting to be asserted, taken.
     #[cfg(test)]
     pub(crate) fn take_contracted(&mut self) -> Vec<Pending> {
         std::mem::take(&mut self.contracted)
     }
 
-    /// How many contracted sentences wait to be uttered.
+    /// How many contracted sentences wait to be asserted.
     #[cfg(test)]
     pub(crate) fn contracted_pending(&self) -> usize {
         self.contracted.len()

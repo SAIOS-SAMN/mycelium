@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! THE ENCRYPTED CHANNEL: Noise_XX over a byte stream (a TCP connection on
-//! the mesh), carrying the wire's frames (`wire::WireFrame`) inside Noise
+//! the mesh), carrying the wire's frames (`wire::Delimited`) inside Noise
 //! transport messages.
 //!
 //! No certificate authority stands behind it. Each host keeps one static
@@ -37,7 +37,7 @@
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use super::wire::{delimited_len, WireFrame, HEAD};
+use super::wire::{delimited_len, Delimited, HEAD};
 
 /// The one handshake pattern and cipher suite of the channel.
 pub const PATTERN: &str = "Noise_XX_25519_ChaChaPoly_BLAKE2s";
@@ -440,14 +440,14 @@ impl<S: Read + Write> NoiseStream<S> {
 
     /// One wire frame sealed onto the channel. A body over the wire's
     /// budget is refused before a byte is sent.
-    pub fn write_frame(&mut self, frame: &WireFrame) -> Result<(), NoiseRefusal> {
+    pub fn write_delimited(&mut self, frame: &Delimited) -> Result<(), NoiseRefusal> {
         let bytes = frame.encode().ok_or(NoiseRefusal::FrameOverBudget { len: frame.body.len() })?;
         self.send(&bytes)
     }
 
     /// One wire frame off the channel. A head naming a body past the wire's
     /// budget is refused before the body is allocated.
-    pub fn read_frame(&mut self) -> Result<WireFrame, NoiseRefusal> {
+    pub fn read_delimited(&mut self) -> Result<Delimited, NoiseRefusal> {
         let mut head = [0u8; HEAD];
         self.take_plain(&mut head)?;
         let Some(len) = delimited_len(head) else {
@@ -456,7 +456,7 @@ impl<S: Read + Write> NoiseStream<S> {
         };
         let mut body = vec![0u8; len];
         self.take_plain(&mut body)?;
-        Ok(WireFrame { body })
+        Ok(Delimited { body })
     }
 }
 

@@ -24,7 +24,7 @@ fn chart() -> crate::transducer::stalk::Invariant {
 #[test]
 fn vertex_at_round_trips_with_chart_and_overlap() {
     let vertices = [
-        VertexAt::Frame,
+        VertexAt::Enclosure,
         VertexAt::Word(class()),
         VertexAt::Rebased { base: class(), own: class() },
         VertexAt::Demand {

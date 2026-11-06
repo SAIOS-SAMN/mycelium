@@ -133,5 +133,5 @@ pub fn read_act(s: &mut impl std::io::Read) -> Option<Vec<u8>> {
 /// framed whole.
 pub fn reply_bytes(act: &[u8]) -> Vec<u8> {
     let body = crate::anastome::dialogue::write_act(act, None).expect("an expression");
-    crate::network::wire::WireFrame { body }.encode().expect("framed")
+    crate::network::wire::Delimited { body }.encode().expect("framed")
 }

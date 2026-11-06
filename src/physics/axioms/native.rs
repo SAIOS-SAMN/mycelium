@@ -119,7 +119,7 @@ pub const A13_INVERSIVE_MOMENTUM_DOCKETED: &str =
 /// is a mode's return on the field (`founding::ORBIT_IS_A_RETURN`), and a
 /// node's cycle is not one. What stands is the LEDGER COORDINATE: a node's
 /// `K` counts its cycles — the court's exchange, deliberation, lapse and
-/// persist; the voice's quote, utter, learn and syntropy — closed BY NAME.
+/// persist; the voice's quote, assert, learn and syntropy — closed BY NAME.
 /// The close is an act, a node of kind `Orbit` (the act's wire name) at the
 /// cycle's last place, and `K` advances by one there and by nothing else:
 ///

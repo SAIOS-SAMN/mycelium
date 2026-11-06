@@ -5,12 +5,12 @@
 /// numeric order: 255 before 256 before 65 536, where u16 LE put 256 first
 /// and LEB128 orders by the low bits.
 #[test]
-fn frame_spelling_orders_as_frames() {
-    use crate::transducer::sentence::form::atlas::frame_spelling;
+fn sample_spelling_orders_as_frames() {
+    use crate::transducer::sentence::form::atlas::sample_spelling;
     let frames = [0u64, 1, 2, 255, 256, 65_535, 65_536, u64::MAX];
-    let spelled: Vec<Vec<u8>> = frames.iter().map(|&k| frame_spelling(k)).collect();
+    let spelled: Vec<Vec<u8>> = frames.iter().map(|&k| sample_spelling(k)).collect();
     assert!(spelled.windows(2).all(|w| w[0] < w[1]), "byte order is numeric order");
-    assert_eq!(frame_spelling(0), vec![0], "zero is the empty body");
-    assert_eq!(frame_spelling(256), vec![2, 1, 0]);
-    assert_eq!(frame_spelling(u64::MAX).len(), 9, "no wall below the value's own width");
+    assert_eq!(sample_spelling(0), vec![0], "zero is the empty body");
+    assert_eq!(sample_spelling(256), vec![2, 1, 0]);
+    assert_eq!(sample_spelling(u64::MAX).len(), 9, "no wall below the value's own width");
 }

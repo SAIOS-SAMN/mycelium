@@ -4,14 +4,14 @@
 // peer named and never hidden; a pinned peer held to its key and its seal,
 // refused by name with no fallback; the deferral unchanged inside.
 
-use crate::transport::{accept_with, answer, defer_unread_with, read_frame, tell_peer_over, Stall};
+use crate::transport::{accept_with, answer, defer_unread_with, read_delimited, tell_peer_over, Stall};
 use crate::Mesh;
 use ed25519_dalek::SigningKey;
 use mycelium::anastome::dialogue;
 use mycelium::network::channel::{self, Kind, Pace, Side};
 use mycelium::network::nerve::{HomeTrie, Keyed};
 use mycelium::network::noise::{NoiseHome, NoiseRefusal, KEY_LEN};
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -41,9 +41,9 @@ fn door(home: Option<NoiseHome>, connections: usize, reply: Vec<u8>) -> (String,
                 continue;
             };
             let (kind, caller) = (ch.kind(), ch.remote_static());
-            match read_frame(&mut ch) {
+            match read_delimited(&mut ch) {
                 Some(frame) => {
-                    answer(&mut ch, WireFrame { body: reply.clone() });
+                    answer(&mut ch, Delimited { body: reply.clone() });
                     heard.push(Ok((kind, caller, frame.body)));
                 }
                 None => heard.push(Err(String::from("no frame read"))),
@@ -83,8 +83,8 @@ fn client_and_hypha_speak_inside_noise() {
         let (tcp, _) = listener.accept().expect("accept");
         let mut ch = accept_with(tcp, Some(&hypha_home), Pace::Blocking).expect("the channel");
         let kind = ch.kind();
-        let _ = read_frame(&mut ch);
-        answer(&mut ch, WireFrame { body: dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit) });
+        let _ = read_delimited(&mut ch);
+        answer(&mut ch, Delimited { body: dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit) });
         kind
     });
     let session = mycelium::sdk::Session::open(&addr, mycelium::sdk::Voice::from_voice([5; 32])).with_noise(client);
@@ -144,7 +144,7 @@ fn hypha_peers_speak_inside_noise() {
     let deferring = std::thread::spawn(move || {
         let (tcp, _) = listener.accept().expect("accept");
         let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-        defer_unread_with(tcp, &m, WireFrame { body }, Some(&b_home));
+        defer_unread_with(tcp, &m, Delimited { body }, Some(&b_home));
     });
     let (reply, _) = tell_peer_over(&addr, vec![0x10], Stall::Beyond, Some(&a)).expect("the deferral");
     deferring.join().expect("the listener");

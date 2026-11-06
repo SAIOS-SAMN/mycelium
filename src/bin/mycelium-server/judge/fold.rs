@@ -12,16 +12,16 @@ use crate::context::Context;
 use crate::transport::{answer, tell_peer_measured};
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::Place;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(s: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
     let Some(p) = dialogue::decode_fold(&frame.body) else { return };
     let witness = context.mesh.vk;
     let home = p.section.receipt.stamp.vk;
     let say = |s: &mut Channel, w: dialogue::FoldWitness| {
         if let Some(body) = dialogue::encode_fold_reply(&w) {
-            answer(s, WireFrame { body });
+            answer(s, Delimited { body });
         }
     };
     let refuse = |s: &mut Channel, why: &str| {

@@ -421,7 +421,7 @@ fn challenge_part_judges_stream_at_cited_prefix() {
 #[test]
 fn challenge_part_streams_span_within_frame_budget() {
     use crate::anastome::dialogue::challenge::encode_challenge;
-    use crate::network::wire::{WireFrame, BODY_BUDGET, HEAD};
+    use crate::network::wire::{Delimited, BODY_BUDGET, HEAD};
     let (a, ..) = tiers();
     let line: Vec<Entry> =
         (0..4096).map(|_| Entry { rows: vec![(who(1), g(2)), (who(2), g(-1)), (who(3), g(-1))], declared: Vec::new() }).collect();
@@ -430,7 +430,7 @@ fn challenge_part_streams_span_within_frame_budget() {
     let at = sealed(&mut k, f.clone(), &a);
     let whole = evidence(&f, &at, line.clone()).sign(&challenger());
     let framed = |c: &crate::anastome::dialogue::challenge::SignedChallenge| {
-        crate::anastome::dialogue::write_act(&encode_challenge(c), None).and_then(|body| WireFrame { body }.encode())
+        crate::anastome::dialogue::write_act(&encode_challenge(c), None).and_then(|body| Delimited { body }.encode())
     };
     assert!(framed(&whole).is_none(), "one act past the budget is refused before it is sent");
     let open = Challenge::Open { fold: at.clone(), rows: f.rows.clone(), declared: Vec::new(), children: Vec::new() }.sign(&challenger());

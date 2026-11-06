@@ -28,7 +28,7 @@ impl MindLanguage {
     /// no count, no clock. The genome never sheds.
     ///
     /// Returns the addresses shed, so the carriers that hang off a dialect
-    /// word — its utterance receipt above all (S12.6a) — leave with it.
+    /// word — its expression receipt above all (S12.6a) — leave with it.
     pub(crate) fn shed_unreferenced(&mut self, referenced: &impl Fn(&[u8], &Dialect) -> bool) -> Vec<Vec<u8>> {
         let waits = |d: &Dialect| d.withheld && !d.missing.is_empty();
         let drop: Vec<Vec<u8>> = self.dialect.scoped().filter(|(a, d)| !waits(d) && !referenced(a, d)).map(|(a, _)| a).collect();
