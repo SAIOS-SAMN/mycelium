@@ -17,8 +17,8 @@
 //! projection is a NAMED READING ([`hemisphere_l1`], [`Parcel::arc_l1`]),
 //! never written as plain degrees.
 //!
-//! F1 AND F2, ONE LAW: THE DIPOLE PARCEL AND ITS VISCOSITY ([`Parcel`],
-//! [`Parcels`], [`Dipole`]), PER PLANE (netstratum 3Q). A kind's frames
+//! F1 AND F2, ONE LAW: THE DIPOLE PARCEL, ITS FLUIDITY AND ITS VISCOSITY
+//! ([`Parcel`], [`Parcels`], [`Dipole`]), PER PLANE (netstratum 3Q). A kind's frames
 //! are `A = W = 3Z − U` held and `Q = U` open (`Parcel::kind`). A body
 //! carries `(z_k, q_k)` on each of its turning planes, founded by the even
 //! split `((3Z − U)/n, U/n)` over its `n` planes ([`Parcels::founded`]);
@@ -30,9 +30,12 @@
 //!   electrons' phase `R`, which is the parcel's phase. Where an angle is
 //!   named for it, it is the L1 arc `θ_L1 = 180°·q/(z + q)`, labelled as
 //!   an L1 arc ([`Parcel::arc_l1`]);
-//! - the strength is the open share `o = q/(z + q) = ν(t)`, with
-//!   `ν(t) = t/(1 + t)` ([`open_share`]), and the inversion reverts it:
-//!   `ν(1/t) = 1 − ν(t)`, the frames exchanged ([`Parcel::inverted`]).
+//! - the strength is the open share, the fluidity, `o = q/(z + q) = ν(t)`,
+//!   with `ν(t) = t/(1 + t)` ([`open_share`]); the viscosity is the
+//!   cohesion, the held share `z/(z + q) = 1 − ν(t) = ν(1/t)` (ruled
+//!   2026-11-06: viscosity resists flow), both `½` at the throat. The
+//!   inversion reverts it: `ν(1/t) = 1 − ν(t)`, the frames exchanged
+//!   ([`Parcel::inverted`]), exchanging the fluidity and the viscosity.
 //!
 //! F3, THE DIPOLE COUPLING ON A TURNING PLANE ([`field`], [`pull`]). The
 //! field of a body's range acts as one, on one named turning plane

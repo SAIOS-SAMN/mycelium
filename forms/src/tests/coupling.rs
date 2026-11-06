@@ -1,5 +1,5 @@
 // LAW-COUPLING v1 (proposal 78.175 §5): the dipole parcel and its
-// viscosity (F1–F2), the dipole coupling on a turning plane (F3) and the
+// fluidity (F1–F2), the dipole coupling on a turning plane (F3) and the
 // light ledger (F4), each fixture an exact input and its exact output.
 
 use super::bodies::{q, units};
@@ -69,11 +69,12 @@ fn open_heavy_kind_needs_more_than_half() {
     }
 }
 
-/// F2, THE VISCOSITY AND ITS INVERSION: `ν(⅓) = ¼`, `ν(3) = ¾`, `ν(1) = ½`;
-/// `ν(1/t) = 1 − ν(t)` for every `t` tried; the frames exchanged give
+/// F2, THE FLUIDITY AND ITS INVERSION: `ν(⅓) = ¼`, `ν(3) = ¾`, `ν(1) = ½`;
+/// `ν(1/t) = 1 − ν(t)` for every `t` tried, so the inversion exchanges the
+/// fluidity and the viscosity (the held share); the frames exchanged give
 /// `o ↦ 1 − o` and `σ ↦ −σ`, and `o = ν(Q/A)`.
 #[test]
-fn viscosity_inverts() {
+fn fluidity_inverts() {
     assert_eq!(open_share(&q(1, 3)), Ok(q(1, 4)));
     assert_eq!(open_share(&q(3, 1)), Ok(q(3, 4)));
     assert_eq!(open_share(&q(1, 1)), Ok(q(1, 2)));

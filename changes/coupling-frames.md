@@ -34,3 +34,12 @@
   dual pair; xylarium's Cl(12,1), pending xylarium #118); a law on a
   certified interval acts on the caller's bound nearer zero and not where
   the interval straddles zero.
+- **Names only: cohesion is the viscosity** (operator ruling 2026-11-06).
+  Per plane the viscosity is the cohesion, the held share
+  `A/(A + Q) = 1 − ν(t) = ν(1/t)`; the open share `ν(t) = Q/(A + Q)`
+  (`open_share`) is the fluidity, since viscosity resists flow. Both are
+  `1/2` at the throat, and the inversion exchanges them. 78.175, the
+  `forms::coupling` documentation, its tests (`viscosity_inverts` is now
+  `fluidity_inverts`) and the MU-EQUATIONS row are renamed. No maths,
+  fixture value or encoding changes, and the law version stays 1. No
+  public function reads the held share yet; none is added.
