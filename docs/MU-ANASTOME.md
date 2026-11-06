@@ -883,8 +883,10 @@ from any source.
 - **Attached to a hypha.** A mind attached directly to a hypha perceives
   through the hypha's own acts: `Return` (a ring returned, one full age),
   `RankStep` (a holonomy algebra stepped in rank) and `Reconnect` (the
-  field reconnected; `src/physics/actions/mod.rs`). **Owed:** no hypha act
-  reaches a mind as perception yet (MU-CLIENT §3.1; issue #136).
+  field reconnected; `src/physics/actions/mod.rs`). Each reaches the mind
+  as its frame `S:G:T:H`, flux on the mind's lanes landed on its well for
+  that hypha, the kind carrying no meaning beyond its coordinate (MU-CLIENT
+  §3.1; issue #136; `src/client/sdk/hypha_acts.rs`).
 - **Any source, any rank.** A sense is any source at any rank (MU-SENSING
   §0, §2). No modality is privileged: no mechanic assumes one species'
   body, number base, sense or history (Concordance 1.6, species-neutral).
@@ -1068,7 +1070,6 @@ the clauses that govern what crosses (MU-HOSTING §5a.4).
 | Owed | Where it is specified | Issue |
 |---|---|---|
 | Seat percepts lifted into the field | MU-CLIENT §6; §9.2 | #147 |
-| The hypha's acts (`Return`, `RankStep`, `Reconnect`) reaching a mind as perception | MU-CLIENT §3.1, §7.1; §9.1 | #136 |
 | The seated-mind harness against a peer kernel's house: run end to end against the SDK house (`sdk/examples/seats.rs`, quickstart stage 8), and owed against xylarium's | MU-HOSTING §2.1; §9.1 | #133 |
 | A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |
 | Translation between kernels' sensoria at the conjugate class | §1.3; §9.8 | none yet |

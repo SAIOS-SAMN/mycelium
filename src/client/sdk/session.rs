@@ -51,6 +51,9 @@ pub struct Session {
     /// MU-CLIENT §7.1 (#137) — EACH HYPHA'S LAST SIGNED RECEIPT, read off
     /// the digests it answered (47.1), for the equivocation proofs of 47.4.
     pub(crate) signed: RefCell<super::SignedReceipts>,
+    /// MU-CLIENT §3.1 (#136) — WHERE THE READ OF EACH HYPHA'S LINE STANDS:
+    /// the last receipt read, by the hypha's key; opened at its signed head.
+    pub(crate) acts_read: RefCell<crate::network::nerve::Keyed<super::hypha_acts::LineRead>>,
 }
 
 impl Session {
@@ -79,6 +82,7 @@ impl Session {
             rtt_window: RefCell::new(crate::network::nerve::Keyed::new()),
             final_point: RefCell::new(None),
             signed: RefCell::new(super::SignedReceipts::new()),
+            acts_read: RefCell::new(crate::network::nerve::Keyed::new()),
         }
     }
 

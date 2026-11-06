@@ -189,7 +189,7 @@ pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_t
 /// the answer carries the court's signed section over its head, which the
 /// retriever checks with [`verify_retrieved`].
 pub use mycelium::anastome::dialogue::retrieve::{
-    decode_retrieve_reply, encode_retrieve, verify_retrieved, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
+    decode_retrieve_reply, encode_retrieve, verify_retrieved, Placed, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
 };
 
 /// A UNIVERSE'S LEDGER AND MAP (`ACT_DOMAIN` kinds 12–15, 78.154): an entry
