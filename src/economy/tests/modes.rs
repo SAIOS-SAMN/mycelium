@@ -107,3 +107,30 @@ fn modes_round_trips_and_refuses_zero_amount() {
     assert!(modes(&Mv::scalar(q(1, 1))).is_empty());
     let _ = Mode::Hue(crate::transducer::sentence::presentation::GaugeMode::Move(3, 0)).key().expect("a move has coordinates");
 }
+
+/// An open-dimensional enclosure scales mode amounts by its exact measure
+/// at rank n (MU-ENGINEERING §9.3; 78.174 §1 item 9): rank 1 (measure 5),
+/// rank 2 (measure 6), rank 3 (measure 24), rank 4 (measure 120),
+/// confirming that dimensions never collapse into flat 2D frames.
+#[test]
+fn of_motion_scales_by_open_dimensional_enclosure_share() {
+    let slide_mv = slide(2, 0);
+    for (periods, expected_measure) in [
+        (vec![5usize], 5i64),
+        (vec![2, 3], 6),
+        (vec![2, 3, 4], 24),
+        (vec![2, 3, 4, 5], 120),
+    ] {
+        let enclosure = crate::transducer::family::transduce::Enclosure::new(periods).expect("enclosure");
+        let measure = enclosure.measure().expect("measure") as i64;
+        assert_eq!(measure, expected_measure, "rank {} enclosure measure is exact product", enclosure.rank());
+        let mass = 3i64;
+        let share = q(mass, measure);
+        let m = Modes::of_motion(&slide_mv, &share, &mut stroke()).expect("modes read");
+        let [(mode, amount)] = m.modes().collect::<Vec<_>>()[..] else { panic!("one mode") };
+        assert_eq!(mode.lane(), T);
+        let unit_modes = modes(&slide(1, 0));
+        let unit_amount = unit_modes.modes().next().expect("unit amount").1.clone();
+        assert_eq!(*amount, unit_amount * q(2, 1) * share, "mode amount matches exact enclosure share at rank {}", enclosure.rank());
+    }
+}
