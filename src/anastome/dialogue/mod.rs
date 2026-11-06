@@ -28,6 +28,7 @@ pub mod percept;
 pub mod present;
 pub mod quote;
 pub mod receipts;
+pub mod retrieve;
 pub mod root;
 pub mod samples;
 pub mod seat;

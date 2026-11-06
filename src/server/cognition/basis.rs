@@ -56,7 +56,7 @@ impl Court {
     /// construction (law 12): when the root became a root, a copy left
     /// behind here would have compared a hash against a concatenation and
     /// dropped every heard address on every confirm.
-    pub(crate) fn stratum_root_of(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<u8> {
+    pub(crate) fn stratum_root_of(&self, inv: &crate::transducer::stalk::Invariant) -> crate::court::admission::Locator {
         crate::transducer::sheaf::stratum_root(&self.ruled.fibre(inv))
     }
 
@@ -902,7 +902,7 @@ impl Court {
 fn root_over(digests: &[crate::transducer::sheaf::StratumDigest]) -> [u8; 32] {
     let mut buf = Vec::new();
     for d in digests {
-        crate::transducer::address::put_key_bytes(&mut buf, &d.root);
+        crate::transducer::address::put_key_bytes(&mut buf, &d.root.bytes());
     }
     crate::chronometry::payload_hash(&buf)
 }

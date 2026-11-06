@@ -47,7 +47,7 @@ use mycelium_sdk::conformance::{run, Profile};
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::house::{
     decode_alignment_reply, decode_clock_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_clock_request,
-    encode_concordance_request, encode_signature_request, payload_hash, rotator, sign_concordance, sphere_at, carried_body, Assent, BodyMoments, BodyState,
+    encode_concordance_request, encode_signature_request, payload_hash, rotator, sign_concordance, membrane_at, carried_body, Assent, BodyMoments, BodyState,
     ClauseReading, DomainGenesis, Founded, Reservation, Transition,
 };
 use mycelium_sdk::prelude::*;
@@ -180,13 +180,13 @@ fn main() -> ExitCode {
     }
 }
 
-/// The (3,4,5) turn carrying a unit sphere at `(1, 0, 0)`, heights 7 → 8:
+/// The (3,4,5) turn carrying a unit membrane at `(1, 0, 0)`, heights 7 → 8:
 /// a transition lawful under every law of the register.
 fn lawful() -> Option<Transition> {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let turn = rotator(&q(2), &q(1));
     let body = BodyMoments { centre: vec![q(1), q(0), q(0)], mass: q(1), moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]] };
-    let nucleus = sphere_at(&body.centre, &q(1));
+    let nucleus = membrane_at(&body.centre, &q(1))?;
     let after = BodyState { nucleus: turn.sandwich(&nucleus), body: carried_body(&body, &turn)? };
     Some(Transition { motion: turn, heights: (7, 8), bodies: vec![(BodyState { nucleus, body }, after)], hues: Default::default(), fluxes: Vec::new() })
 }

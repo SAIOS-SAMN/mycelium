@@ -103,13 +103,13 @@ let archived = k.why(crate::anastome::dialogue::why::WhyAsk::Own(act(1))).expect
 assert_eq!((archived.kind, archived.at.place()), (ActKind::List, act(1)));
 let fold = k.chain().opening().expect("the hot line opens at the fold").clone();
 assert_eq!((fold.kind, fold.stamp.k, fold.prev_hash().bytes()), (ActKind::Fold, 3, head_hash));
-assert_eq!(
-    fold.cites,
-    vec![crate::chronometry::Cite::Root {
-        at: crate::chronometry::Stamp::new(root.height, home, root.at),
-        hash: head_hash
-    }],
-    "the fold node cites the archived head by its stamp and hash"
+let [crate::chronometry::Cite::Root { at, hash }] = fold.cites.as_slice() else {
+    panic!("the fold node cites one root: {:?}", fold.cites)
+};
+assert_eq!(*at, crate::chronometry::Stamp::new(root.height, home, root.at), "the fold node cites the archived head by its stamp");
+assert!(
+    hash.continues(&crate::court::admission::Predecessor::of_bytes(head_hash)),
+    "and names it by its chain hash, in the link sense"
 );
 assert!(k.chain().verify_chain_integrity(), "the hot chain re-verifies from its root");
 assert_eq!(k.k_step(), 3, "K continues past the fold: the fold receipt opens orbit 3");

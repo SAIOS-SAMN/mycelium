@@ -270,7 +270,7 @@ use mycelium_sdk::house::encode_batch_request as _;
 use mycelium_sdk::house::encode_verify_request as _;
 use mycelium_sdk::house::put_transition as _;
 use mycelium_sdk::house::rotator as _;
-use mycelium_sdk::house::sphere_at as _;
+use mycelium_sdk::house::membrane_at as _;
 use mycelium_sdk::house::take_transition as _;
 use mycelium_sdk::house::take_verdict as _;
 use mycelium_sdk::house::translator_at as _;

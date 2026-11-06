@@ -157,7 +157,11 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
     assert_eq!(k.challenge(&evidence(&not_it, &at, a_entries()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheFold));
     let Challenged::Upheld { prefix, .. } = k.challenge(&evidence(&f, &at, a_entries()).sign(&challenger())) else { panic!("upheld") };
     let head = k.chain.head().expect("sealed");
-    assert_eq!(head.cites, vec![Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }], "the upheld prefix on the receipt");
+    assert!(
+        super::fixtures::cites_restate(&head.cites, &[Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }]),
+        "the upheld prefix on the receipt: {:?}",
+        head.cites
+    );
     assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: None });
     close_through(&mut k, at.stamp.h).expect("the window closes, sealed");
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
@@ -646,7 +650,7 @@ fn window_close_reconstructs_from_sealed_citation() {
     let r = close_through(&mut k, at.stamp.h).expect("sealed");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
-    assert_eq!(booted.chain.node(&r.stamp).map(|n| n.cites.clone()), Some(r.cites.clone()), "the close on the line");
+    assert!(booted.chain.node(&r.stamp).is_some_and(|n| super::fixtures::cites_restate(&n.cites, &r.cites)), "the close on the line");
     assert_eq!(booted.window_close(at.stamp.h), k.window_close(at.stamp.h));
     assert_eq!(booted.finality(&at), Finality::Final { upheld: false });
 }

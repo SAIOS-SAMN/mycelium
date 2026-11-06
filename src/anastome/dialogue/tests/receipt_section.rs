@@ -50,7 +50,7 @@ fn decode_receipt_section_reads_past_cover_digest() {
     let digests = vec![crate::transducer::sheaf::StratumDigest {
         inv: Invariant::counts(&[4, 5]),
         count: 3,
-        root: vec![7u8; 12],
+        root: crate::court::admission::Locator::of_bytes([7u8; 32]),
     }];
 
     // The shape `judge` sends: the stratum-digest reply, the cover
@@ -254,4 +254,26 @@ fn encode_cover_page_serves_chart_past_one_byte() {
     let (read, more) = decode_cover_page(&page).expect("a page decodes");
     assert_eq!(read.charts, charts, "the wide chart is served whole and reads back exactly");
     assert!(!more, "and the cover is served");
+}
+
+/// A STRATUM'S ROOT IS A LOCATOR OF 32 BYTES (MU-ANTI-FLATTENING 13; ROADMAP
+/// track 25 X0): typed at its source (`StratumDigest::root`), it reads back
+/// as the locator written, and a digests reply naming a root of another
+/// width locates nothing and is refused whole, never read as a stratum.
+#[test]
+fn digests_reply_refuses_root_of_another_width() {
+    let root = crate::court::admission::Locator::of_bytes([7u8; 32]);
+    let digests = vec![crate::transducer::sheaf::StratumDigest {
+        inv: crate::transducer::stalk::Invariant::counts(&[4, 5]),
+        count: 3,
+        root,
+    }];
+    let body = encode_digests_reply(&digests).expect("the digests fit the reply's fields");
+    let back = decode_digests_reply(&body).expect("a root of 32 bytes reads back");
+    assert!(matches!(back.as_slice(), [d] if d.root.locates(&root) && d.count == 3));
+    // The root is written last: its length, then its 32 bytes.
+    let mut short = body[..body.len() - 36].to_vec();
+    short.extend_from_slice(&12u32.to_le_bytes());
+    short.extend_from_slice(&[7u8; 12]);
+    assert!(decode_digests_reply(&short).is_none(), "a root of 12 bytes is refused whole");
 }
