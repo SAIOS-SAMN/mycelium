@@ -1006,6 +1006,9 @@ impl Mind {
         let mut spoken = 0usize;
         for w in &added {
             spoken += self.pivot_on(w, &mut budget);
+            // MU-CLIENT §5.4 (S3) — and the retirements the word, now held,
+            // makes visible: proposed to the court, never applied here.
+            spoken += self.propose_rewrites(w).len();
         }
         spoken
     }
