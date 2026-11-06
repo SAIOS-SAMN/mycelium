@@ -106,9 +106,15 @@ pub fn cross_brackets(chambers: &[(&[Vec<u8>], &ChamberAlgebra)], budget: &mut c
         }
     }
     let mut out = CrossBrackets::default();
+    // A chamber's actions, where any read: a refusal and a chamber no
+    // circuit's action read are both unread, never read as commuting.
+    let read = |k: usize| match chambers[k].1.actions.as_deref() {
+        Some(xs @ [_, ..]) => Some(xs),
+        _ => None,
+    };
     for (_, &(a, b)) in pairs.scoped() {
-        let (Some(xs), Some(ys)) = (chambers[a].1.actions.as_deref(), chambers[b].1.actions.as_deref()) else {
-            let chamber = if chambers[a].1.actions.is_none() { a } else { b };
+        let (Some(xs), Some(ys)) = (read(a), read(b)) else {
+            let chamber = if read(a).is_none() { a } else { b };
             out.unread.push(CrossUnread::Actions { chamber });
             continue;
         };

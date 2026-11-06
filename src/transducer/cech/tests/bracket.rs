@@ -47,7 +47,7 @@ fn bodies(names: &[u8]) -> Vec<Vec<u8>> {
 #[test]
 fn cross_brackets_hold_in_enclosure_and_lose_without() {
     let (a, b) = turns();
-    let (ca, cb, wrap) = (chamber(&[a.clone()]), chamber(&[b.clone()]), chamber(&[a, b]));
+    let (ca, cb, wrap) = (chamber(std::slice::from_ref(&a)), chamber(std::slice::from_ref(&b)), chamber(&[a, b]));
     let (xa, xb, xw) = (bodies(&[1, 2]), bodies(&[2, 3]), bodies(&[1, 2, 3]));
     let lone = cross_brackets(&[(&xa, &ca), (&xb, &cb)], &mut stroke());
     let [one] = lone.brackets.as_slice() else { panic!("one bracket: {lone:?}") };
