@@ -25,7 +25,7 @@
 //!
 //! THE OBSERVER (A6). The shares are the body's own; the reading is exact,
 //! and carried into another observer's frame only by a frame form
-//! ([`crate::frame::Reference`], `closeness_in`) — never floored on a grid.
+//! ([`crate::reference::Reference`], `closeness_in`) — never floored on a grid.
 
 use crate::Q;
 use num_traits::{One, Signed, Zero};
@@ -91,12 +91,12 @@ impl Shares {
 impl Shares {
     /// THE CLOSENESS READ IN AN OBSERVER'S FRAME: the exact reading carried
     /// by the frame form, never floored. Refused where the closeness is, or
-    /// the frame does not carry it (`crate::frame::ReferenceRefusal`, by its name).
-    pub fn closeness_in(&self, other: &Shares, delta: &[Q], frame: &crate::frame::Reference) -> Result<Q, InFrame> {
+    /// the frame does not carry it (`crate::reference::ReferenceRefusal`, by its name).
+    pub fn closeness_in(&self, other: &Shares, delta: &[Q], frame: &crate::reference::Reference) -> Result<Q, InFrame> {
         let read = self.closeness(other, delta).map_err(InFrame::Closeness)?;
         match frame.carry(std::slice::from_ref(&read)).map_err(InFrame::Reference)?.as_slice() {
             [x] => Ok(x.clone()),
-            _ => Err(InFrame::Reference(crate::frame::ReferenceRefusal::Unmatched)),
+            _ => Err(InFrame::Reference(crate::reference::ReferenceRefusal::Unmatched)),
         }
     }
 }
@@ -106,7 +106,7 @@ impl Shares {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InFrame {
     Closeness(ClosenessRefusal),
-    Reference(crate::frame::ReferenceRefusal),
+    Reference(crate::reference::ReferenceRefusal),
 }
 
 /// A phase difference in turns, reduced to `[−½, ½]` and read as its size.

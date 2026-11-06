@@ -530,7 +530,7 @@ use mycelium_sdk::house::read_lane as _;
 use mycelium_sdk::house::split_point as _;
 use mycelium_sdk::house::take_key_bytes as _;
 use mycelium_sdk::house::take_key_count as _;
-use mycelium_sdk::house::WireFrame as _;
+use mycelium_sdk::house::Delimited as _;
 use mycelium_sdk::house::Lane as _;
 use mycelium_sdk::house::BODY_BUDGET as _;
 use mycelium_sdk::house::POINTED as _;
@@ -538,7 +538,7 @@ use mycelium_sdk::house::POINTED as _;
 // forms
 use mycelium_sdk::forms::shares::share_compounds as _;
 use mycelium_sdk::forms::shares::share_compounds::Remaining as _;
-use mycelium_sdk::forms::frame as _;
+use mycelium_sdk::forms::reference as _;
 use mycelium_sdk::forms::passage as _;
 use mycelium_sdk::forms::passage::pass_share as _;
 use mycelium_sdk::forms::passage::Breach as _;

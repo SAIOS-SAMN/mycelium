@@ -66,11 +66,11 @@ fn hyperbolic_compartment_lands_on_sheet_and_transports() {
 /// A FRAME'S BASE POINT is its versor applied to the pole, back on the
 /// sheet — one exact division, no root.
 #[test]
-fn frame_base_point_returns_to_sheet() {
+fn pose_point_returns_to_sheet() {
     let m = q(4, 1);
     let a = hyperbolic_compartment(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("a compartment");
     let r = geodesic_transvection(&hyperboloid_pole(), &a).expect("a geodesic");
-    let p = frame_base_point(&r).expect("the frame stands somewhere");
+    let p = pose_point(&r).expect("the frame stands somewhere");
     assert_eq!(p.geo(&p), Mv::scalar(-one()), "and that somewhere is on the sheet");
     assert_eq!(p, a, "the transvection's own base point is where it carried the pole");
 }

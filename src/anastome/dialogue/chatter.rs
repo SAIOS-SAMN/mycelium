@@ -445,7 +445,7 @@ impl Chatter {
 
 /// One frame off a connection: `[len u32 LE][frame]`, within the wire's one
 /// budget, or nothing.
-pub fn read_frame(s: &mut TcpStream) -> io::Result<Vec<u8>> {
+pub fn read_delimited(s: &mut TcpStream) -> io::Result<Vec<u8>> {
     let mut len = [0u8; 4];
     s.read_exact(&mut len)?;
     let n = usize::try_from(u32::from_le_bytes(len)).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "length"))?;
@@ -458,7 +458,7 @@ pub fn read_frame(s: &mut TcpStream) -> io::Result<Vec<u8>> {
 }
 
 /// One frame onto a connection: `[len u32 LE][frame]`.
-pub fn write_frame(s: &mut TcpStream, frame: &[u8]) -> io::Result<()> {
+pub fn write_delimited(s: &mut TcpStream, frame: &[u8]) -> io::Result<()> {
     let n = u32::try_from(frame.len()).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "frame length"))?;
     s.write_all(&n.to_le_bytes())?;
     s.write_all(frame)?;
@@ -468,12 +468,12 @@ pub fn write_frame(s: &mut TcpStream, frame: &[u8]) -> io::Result<()> {
 /// SEND one frame to a peer, on its own connection.
 pub fn send(endpoint: &str, frame: &[u8]) -> io::Result<()> {
     let mut s = TcpStream::connect(endpoint)?;
-    write_frame(&mut s, frame)
+    write_delimited(&mut s, frame)
 }
 
 /// ASK a mind's post one question and read its answer, on one connection.
 pub fn ask(endpoint: &str, question: &[u8]) -> io::Result<Vec<u8>> {
     let mut s = TcpStream::connect(endpoint)?;
-    write_frame(&mut s, question)?;
-    read_frame(&mut s)
+    write_delimited(&mut s, question)?;
+    read_delimited(&mut s)
 }

@@ -86,7 +86,7 @@ impl Lane {
 
 /// A lane-tagged wire frame. Body is opaque transport bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WireFrame {
+pub struct Delimited {
     pub lane: Lane,
     pub body: Vec<u8>,
 }
@@ -120,7 +120,7 @@ pub fn split_point(
     Some((body, Some(point)))
 }
 
-impl WireFrame {
+impl Delimited {
     /// `[lane:1][len:4 LE][body]`. `None` if the body exceeds the MTU budget.
     pub fn encode(&self) -> Option<Vec<u8>> {
         self.encode_at(None)
@@ -157,12 +157,12 @@ impl WireFrame {
     /// Decode one frame from the head of `bytes`; returns `(frame, bytes_read)`.
     /// `None` on a bad lane tag, a length over budget, or a truncated buffer.
     /// A point the frame carries is read and set aside (`decode_at`).
-    pub fn decode(bytes: &[u8]) -> Option<(WireFrame, usize)> {
+    pub fn decode(bytes: &[u8]) -> Option<(Delimited, usize)> {
         Self::decode_at(bytes).map(|(f, _, n)| (f, n))
     }
 
     /// One frame from the head of `bytes`, with the point it carries.
-    pub fn decode_at(bytes: &[u8]) -> Option<(WireFrame, Option<crate::chronometry::tuniversal::TPoint>, usize)> {
+    pub fn decode_at(bytes: &[u8]) -> Option<(Delimited, Option<crate::chronometry::tuniversal::TPoint>, usize)> {
         // The lane byte is the frame's own first coordinate (rule 15: a wire
         // tag's offset is content).
         let (&tag, _) = bytes.split_first()?;
@@ -173,7 +173,7 @@ impl WireFrame {
         }
         let body = bytes.get(5..5 + len)?.to_vec();
         let (body, point) = split_point(body, pointed)?;
-        Some((WireFrame { lane, body }, point, 5 + len))
+        Some((Delimited { lane, body }, point, 5 + len))
     }
 }
 

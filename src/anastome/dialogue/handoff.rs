@@ -190,8 +190,8 @@ pub struct Mouth {
     pub from_tier: [u8; 32],
     pub to_tier: [u8; 32],
     pub keeper: [u8; 32],
-    pub from_frame: crate::transducer::cga::Mv,
-    pub to_frame: crate::transducer::cga::Mv,
+    pub from_chart: crate::transducer::cga::Mv,
+    pub to_chart: crate::transducer::cga::Mv,
     pub toll: crate::economy::Mu,
     pub nonce: [u8; 32],
     /// 78.133 — the per-unit toll and its split; `None` for a flat-toll
@@ -338,8 +338,8 @@ impl Mouth {
         for k in [&self.from_tier, &self.to_tier, &self.keeper] {
             out.extend_from_slice(k);
         }
-        self.from_frame.to_bytes(&mut out);
-        self.to_frame.to_bytes(&mut out);
+        self.from_chart.to_bytes(&mut out);
+        self.to_chart.to_bytes(&mut out);
         self.toll.put(&mut out);
         out.extend_from_slice(&self.nonce);
         out
@@ -371,15 +371,15 @@ impl Mouth {
     /// face); `None` where either is not.
     pub fn places(&self) -> Option<(crate::transducer::cga::Mv, crate::transducer::cga::Mv)> {
         let t = self.tube.as_ref()?;
-        Some((place_in(&t.from_space, &self.from_frame)?, place_in(&t.to_space, &self.to_frame)?))
+        Some((place_in(&t.from_space, &self.from_chart)?, place_in(&t.to_space, &self.to_chart)?))
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mouth> {
         let (from_tier, to_tier, keeper) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
-        let from_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
-        let to_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
+        let from_chart = crate::transducer::cga::Mv::from_bytes(b, p)?;
+        let to_chart = crate::transducer::cga::Mv::from_bytes(b, p)?;
         let toll = crate::economy::Mu::take_from(b, p)?;
-        Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)?, tariff: None, tube: None })
+        Some(Mouth { from_tier, to_tier, keeper, from_chart, to_chart, toll, nonce: key32(b, p)?, tariff: None, tube: None })
     }
 
     pub fn citation(&self) -> [u8; 32] {
@@ -391,7 +391,7 @@ impl Mouth {
     /// Each frame a versor, never zero: it carries a horizon sphere onto a
     /// sphere.
     pub fn frames_hold(&self) -> bool {
-        [&self.from_frame, &self.to_frame].iter().all(|f| !f.is_zero() && crate::transducer::cga::is_versor(f))
+        [&self.from_chart, &self.to_chart].iter().all(|f| !f.is_zero() && crate::transducer::cga::is_versor(f))
     }
 }
 

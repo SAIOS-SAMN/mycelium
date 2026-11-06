@@ -217,7 +217,7 @@ fn read_chamber_capacity_is_rank_of_action_algebra() {
         // to a member on chart `[i + 1]` (AT1: a face is an overlap).
         let overlap = |i: u64| Overlap {
             from: ChartAt::Frame,
-            to: ChartAt::at(VertexAt::Frame, crate::transducer::stalk::Invariant::counts(&[i + 1]), 0),
+            to: ChartAt::at(VertexAt::Enclosure, crate::transducer::stalk::Invariant::counts(&[i + 1]), 0),
         };
         let circuits: Vec<ChamberCircuit> = hs
             .into_iter()

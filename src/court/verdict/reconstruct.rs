@@ -591,7 +591,7 @@ fn reconstruct_on_ground<'r>(
         }
         // 18: A FORM OPENS AT ITS FRAME, read at the Frame's own coordinate
         // (its tag alone, AT1).
-        let frame_is_identity = match cited.vertices.at(&crate::network::nerve::coord::VertexAt::Frame) {
+        let frame_is_identity = match cited.vertices.at(&crate::network::nerve::coord::VertexAt::Enclosure) {
             Some(fr @ Vertex::Frame) => fr.word_in(&cited.vertices).is_some_and(|w| w.is_identity()),
             _ => false,
         };
@@ -1137,7 +1137,7 @@ pub(crate) fn clauses_stated_from(
                 Unstated::OffSubstrate => REFUSE_RULE_OFF_SUBSTRATE,
                 Unstated::Still => REFUSE_RULE_STILL,
                 Unstated::Nested => REFUSE_RULE_NESTED,
-                Unstated::Unframed => REFUSE_RULE_UNFRAMED,
+                Unstated::NoEnclosure => REFUSE_RULE_UNFRAMED,
                 Unstated::Unpartnered => REFUSE_RULE_UNPARTNERED,
             };
             return Err(Halt::Refused(Refusal::of_tape(reason, spoken)));

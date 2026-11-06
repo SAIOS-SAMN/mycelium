@@ -78,7 +78,7 @@ impl Court {
     ) {
         let mut cites: Vec<crate::chronometry::Cite> = retired.into_iter().collect();
         cites.extend(rewrite.iter().chain(speakers).filter_map(|a| self.cite_of(a.as_bytes())));
-        let mu = self.frame_of(address);
+        let mu = self.measure_of(address);
         self.append_cited(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Retired), cites, mu, author);
         self.forget_if_unheld(address);
     }
@@ -299,7 +299,7 @@ impl Court {
     /// shared — a thousand unrelated descriptions (I34). A body already
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
-    pub fn intake(&mut self, chain: &[crate::transducer::sentence::SectionLink], frame: &crate::transducer::element::Frame) -> bool {
+    pub fn intake(&mut self, chain: &[crate::transducer::sentence::SectionLink], frame: &crate::transducer::element::Reperiod) -> bool {
         self.intake_prepared(&prepare_intake(chain, frame))
     }
 
@@ -331,7 +331,7 @@ impl Court {
 /// refusal that travels: never listed and never counted (U14).
 pub fn prepare_intake(
     chain: &[crate::transducer::sentence::SectionLink],
-    frame: &crate::transducer::element::Frame,
+    frame: &crate::transducer::element::Reperiod,
 ) -> Vec<(Element, crate::transducer::stalk::Invariant)> {
     if chain.is_empty() {
         return Vec::new();

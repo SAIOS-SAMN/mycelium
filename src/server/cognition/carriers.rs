@@ -108,7 +108,7 @@ impl Court {
             settlements,
             pressure_gen: _,
             deflations,
-            unframed: _,
+            unmeasured: _,
             withheld: _,
             word_fibres,
             fibre_key_at,

@@ -494,7 +494,7 @@ Concordance amendment.
   - Placing modes at the mouth. A mode's class is invariant under
     conjugation (HOLONOMIC). Each mode is carried to the face's frame `F`
     (`F M F̃`), so its plane passes through the mouth's place `v`
-    (`frame_base_point(F)` on `ℍ³`, `sphere_base_point(F)` on `S³`). All of
+    (`pose_point(F)` on `ℍ³`, `sphere_base_point(F)` on `S³`). All of
     a throat's modes then lie on ONE plane through `v`, the throat's axis,
     and commute, so the merging of equal modes in `Modes` loses no order.
   - Composition, exact, by the flow law already built
@@ -2045,7 +2045,7 @@ sensor and where a raster is spoken.
 | Extraction strokes, `extraction_spend` | `transduce::need` per non-planar pair |
 | Intake routes, `route::routes_of` | planar pairs as before; a pair of unequal enclosures has no route yet (its chart and pieces read a chain site by site, O8) |
 | Family magnitude, `family_magnitude` | the planar pairs' count, the mind's metabolism and not μ, so it stays a count; `transduce::family_share` reads every pair's exact share beside it |
-| μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output frame's `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_frame`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
+| μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output frame's `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_enclosure`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
 | `family_ratio`, `Form.ratio` | each phase's re-period (`Enclosure::reperiod`) |
 
 **Readings.**

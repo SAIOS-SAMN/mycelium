@@ -204,7 +204,7 @@ impl ReceiptChain {
     /// frames its acts measured before `before` — lanes never mixed (law
     /// 5), a close's own frame never counted in. `None` where a lane passes
     /// its u64: an unmeasured frame, never a saturated one (rule 11).
-    pub fn orbit_frame(&self, signer: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
+    pub fn orbit_measure(&self, signer: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
         let mut frame = [0u64; 4];
         for (at, n) in self.orbit_acts(signer, k) {
             if at.place() >= before || n.kind == ActKind::Orbit {
@@ -226,7 +226,7 @@ impl ReceiptChain {
             return None;
         }
         let at = self.next_place();
-        Some((at, self.orbit_frame(&self.vk, at.k, at)?))
+        Some((at, self.orbit_measure(&self.vk, at.k, at)?))
     }
 
     /// EVERY ORBIT CLOSED AT ONE TICK, read off the close nodes in
@@ -280,7 +280,7 @@ impl ReceiptChain {
     /// a height is. Any other kind is not a close and passes.
     pub fn close_rederives(&self, r: &KStepReceipt) -> bool {
         r.kind != ActKind::Orbit
-            || (r.stamp.i > 0 && self.orbit_frame(&r.stamp.vk, r.stamp.k, r.stamp.place()) == Some(r.mu))
+            || (r.stamp.i > 0 && self.orbit_measure(&r.stamp.vk, r.stamp.k, r.stamp.place()) == Some(r.mu))
     }
 
     /// The orbit the next act stands in — the current `K`.

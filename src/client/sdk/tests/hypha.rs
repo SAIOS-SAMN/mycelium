@@ -49,7 +49,7 @@ fn held_court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>, std:
                     }
                     None => Vec::new(),
                 };
-                let reply = crate::network::wire::WireFrame { lane, body: dialogue::encode_speech_reply(&refused).expect("a reply") };
+                let reply = crate::network::wire::Delimited { lane, body: dialogue::encode_speech_reply(&refused).expect("a reply") };
                 let _ = s.write_all(&reply.encode().expect("framed"));
             }
         }

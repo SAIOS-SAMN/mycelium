@@ -125,8 +125,8 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         // A star overlap: the Frame's chart to a member of the class (AT1).
         rule.form.faces.entries().any(|(o, _)| {
             use mycelium::network::nerve::coord::VertexAt;
-            (o.from_vertex() == VertexAt::Frame && o.to_vertex() == vi)
-                || (o.to_vertex() == VertexAt::Frame && o.from_vertex() == vi)
+            (o.from_vertex() == VertexAt::Enclosure && o.to_vertex() == vi)
+                || (o.to_vertex() == VertexAt::Enclosure && o.from_vertex() == vi)
         }),
         "a named face joins Frame to the class"
     );

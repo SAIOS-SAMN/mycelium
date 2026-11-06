@@ -59,13 +59,13 @@ fn tube() -> Tube {
     Tube { mass: (1, 1), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((1, 1)), supersedes: None, core: false }
 }
 
-fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
+fn mouth(a: u8, b: u8, from_chart: Mv, to_chart: Mv, toll: [u64; 4]) -> Mouth {
     Mouth {
         from_tier: verifying(&reserve(a)),
         to_tier: verifying(&reserve(b)),
         keeper: verifying(&reserve(a)),
-        from_frame,
-        to_frame,
+        from_chart,
+        to_chart,
         toll: toll.into(),
         nonce: [a; 32],
         tariff: None,
@@ -192,8 +192,8 @@ fn mouth_loops_records_turning_loop() {
 
 /// An untethered mouth as one opened before tubes stands on the record:
 /// two free frames, open, between `a` and `b`.
-fn legacy(k: &mut Court, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
-    let m = Mouth { tube: None, ..mouth(a, b, from_frame, one(), [0; 4]) };
+fn legacy(k: &mut Court, a: u8, b: u8, from_chart: Mv) -> [u8; 32] {
+    let m = Mouth { tube: None, ..mouth(a, b, from_chart, one(), [0; 4]) };
     let id = m.citation();
     let held = crate::server::cognition::domain_passage::MouthHeld { mouth: m, state: State::Accepted, opened: Some(k.chain.head_height()), at: Vec::new() };
     k.handoffs.mouths.insert(id, held);

@@ -115,10 +115,10 @@ impl Post {
                 let Ok(mut s) = conn else { continue };
                 let (deliver, answer) = (deliver.clone(), answer.clone());
                 let _ = std::thread::Builder::new().name("chatter-conn".into()).spawn(move || {
-                    let Ok(frame) = read_frame(&mut s) else { return };
+                    let Ok(frame) = read_delimited(&mut s) else { return };
                     match answer(&frame) {
                         Some(reply) => {
-                            let _ = write_frame(&mut s, &reply);
+                            let _ = write_delimited(&mut s, &reply);
                         }
                         None => deliver(frame),
                     }

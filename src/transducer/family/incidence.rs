@@ -10,7 +10,7 @@ use super::perceive::{edge_transport, EdgeTally};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::network::nerve::coord;
-use crate::transducer::sentence::{section_of_frames, Transport};
+use crate::transducer::sentence::{samples_of_section, Transport};
 
 /// Two transports are one edge: the word projectively, the carriage as a
 /// versor, the gauge as a listing (rule 3).
@@ -162,7 +162,7 @@ pub(crate) fn edge_between(
         }
     }
     let pairs = match (&edge, common) {
-        (Some(_), _) if agreeing.len() < n_reached => Some(section_of_frames(agreeing)),
+        (Some(_), _) if agreeing.len() < n_reached => Some(samples_of_section(agreeing)),
         _ => None,
     };
     // 78.103 — A PAIR WITH NO BODIES TO MEASURE (no union, no frame both

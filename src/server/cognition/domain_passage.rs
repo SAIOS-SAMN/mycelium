@@ -10,7 +10,7 @@
 //! escrowed from the sending tier and paid to the KEEPER on acceptance. Either
 //! reserve may CLOSE it: traversals in flight return, the tolls refunded.
 //! The open mouths are edges between DOMAINS carrying each pair's chart
-//! transition `to_frame · from_frame⁻¹`; a cycle of them whose holonomy is not
+//! transition `to_chart · from_chart⁻¹`; a cycle of them whose holonomy is not
 //! the identity is two routes disagreeing about how one universe lands in
 //! another — curvature, RECORDED (served as loops), never refused.
 
@@ -846,7 +846,7 @@ impl Court {
 
     /// 78.128 — THE MOUTH LOOPS: the open mouth pairs as edges between
     /// domains, in the order they opened, each carrying its chart transition
-    /// `to_frame · from_frame⁻¹` — 78.134: a motion alone, no rotor slot;
+    /// `to_chart · from_chart⁻¹` — 78.134: a motion alone, no rotor slot;
     /// every pair that closes a cycle of domains whose holonomy is not the
     /// identity, with that holonomy, TETHERED where the tubes alone close the
     /// same cycle to the same holonomy (an isometry of curved space), else a
@@ -869,7 +869,7 @@ impl Court {
         for (_, (id, m)) in open.scoped() {
             let id = *id;
             let (Some(x), Some(y)) = (self.tier_domain.get(&m.from_tier), self.tier_domain.get(&m.to_tier)) else { continue };
-            let transition = Moved { motion: m.to_frame.geo(&m.from_frame.reverse()) };
+            let transition = Moved { motion: m.to_chart.geo(&m.from_chart.reverse()) };
             let in_tubes = match m.tube.is_some() {
                 true => Some(tubes.edge(x, y, &transition)),
                 false => None,

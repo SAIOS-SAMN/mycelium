@@ -43,7 +43,7 @@ pub struct CourtClock {
     /// The last fold's root: its height and `K`.
     pub folded: Option<(u64, u64)>,
     /// Own-line acts sealed without a frame.
-    pub unframed: u64,
+    pub unmeasured: u64,
     /// Words held without an admitting stamp: basis, provisional, listing,
     /// cavity, federation.
     pub unstamped: [u64; 5],
@@ -160,7 +160,7 @@ impl Clock {
                 }
                 pair(out, c.persisted);
                 pair(out, c.folded);
-                u64s(out, &[c.unframed]);
+                u64s(out, &[c.unmeasured]);
                 u64s(out, &c.unstamped);
                 for arm in &c.rulings {
                     u64s(out, arm);
@@ -226,7 +226,7 @@ impl Clock {
                 }
                 let persisted = pair(b, p)?;
                 let folded = pair(b, p)?;
-                let unframed = u64_at(b, p)?;
+                let unmeasured = u64_at(b, p)?;
                 let mut unstamped = [0u64; 5];
                 for v in unstamped.iter_mut() {
                     *v = u64_at(b, p)?;
@@ -251,7 +251,7 @@ impl Clock {
                     peers,
                     persisted,
                     folded,
-                    unframed,
+                    unmeasured,
                     unstamped,
                     rulings,
                     ruling_refusals,

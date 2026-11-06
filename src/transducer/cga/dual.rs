@@ -22,7 +22,7 @@ use num_traits::Zero;
 
 /// THE DUAL FRAME, OR WHY THERE IS NONE.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum DualFrame {
+pub enum ReciprocalBasis {
     /// `s^a`, one per constructor, in the constructors' order.
     Frame(Vec<Mv>),
     /// The meet is zero: the constructors whose removal restores a non-zero
@@ -38,22 +38,22 @@ pub fn wedge(vs: &[Mv]) -> Mv {
 }
 
 /// THE DUAL FRAME OF `constructors` (DF1).
-pub fn dual_frame(constructors: &[Mv]) -> DualFrame {
+pub fn dual_frame(constructors: &[Mv]) -> ReciprocalBasis {
     let m = wedge(constructors);
     let others = |a: usize| -> Vec<Mv> {
         constructors.iter().enumerate().filter(|&(b, _)| b != a).map(|(_, s)| s.clone()).collect()
     };
     if m.is_zero() {
-        return DualFrame::Redundant(
+        return ReciprocalBasis::Redundant(
             (0..constructors.len()).filter(|&a| !wedge(&others(a)).is_zero()).collect(),
         );
     }
     let weight = m.geo(&m.reverse()).scalar_part();
     if weight.is_zero() {
-        return DualFrame::Degenerate;
+        return ReciprocalBasis::Degenerate;
     }
     let m_inv = m.reverse().scale(&(one() / weight));
-    DualFrame::Frame(
+    ReciprocalBasis::Frame(
         (0..constructors.len())
             .map(|a| {
                 let sign = match a % 2 {

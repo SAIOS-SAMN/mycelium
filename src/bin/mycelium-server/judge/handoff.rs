@@ -6,10 +6,10 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff_reply, encode_read_reply, HandoffRequest};
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let Some(request) = decode_handoff_request(&frame.body) else { return };
     let body = match crate::court_lock::held!(context.court) {
         Ok(mut held) => held.run(|k, _| match request {
@@ -24,5 +24,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, WireFrame { lane: frame.lane, body });
+    answer(stream, Delimited { lane: frame.lane, body });
 }

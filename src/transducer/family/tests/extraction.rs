@@ -204,7 +204,7 @@ for (o, _) in rule.form.faces.entries() {
             ks.insert(crate::transducer::sentence::frame_key(k), ());
         }
         None => {
-            star_frames.put(&v, crate::transducer::sentence::section_of_frames([k]));
+            star_frames.put(&v, crate::transducer::sentence::samples_of_section([k]));
         }
     }
 }
@@ -948,7 +948,7 @@ let bodies = rule
     .count();
 assert!(bodies >= 1, "a body vertex of the recolour class survives, got {}", rule.form.vertices.len());
 assert!(
-    matches!(rule.form.vertices.at(&crate::network::nerve::coord::VertexAt::Frame), Some(Vertex::Frame)),
+    matches!(rule.form.vertices.at(&crate::network::nerve::coord::VertexAt::Enclosure), Some(Vertex::Frame)),
     "frames match by kind, not [MAX,h,w]"
 );
 assert!(
