@@ -1,6 +1,6 @@
 // 78.128 — A WORMHOLE BETWEEN DOMAINS: a mouth pair built by two domains'
 // reserves; traversals through it alone, tolled to its keeper; closed by
-// either, what is in flight returning; loops of mouths read as curvature.
+// either, what is in flight returning; orbits of mouths read as curvature.
 
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Mouth, Offer, State, Tube};
@@ -59,13 +59,13 @@ fn tube() -> Tube {
     Tube { mass: (1, 1), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((1, 1)), supersedes: None, core: false }
 }
 
-fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
+fn mouth(a: u8, b: u8, from_chart: Mv, to_chart: Mv, toll: [u64; 4]) -> Mouth {
     Mouth {
         from_tier: verifying(&reserve(a)),
         to_tier: verifying(&reserve(b)),
         keeper: verifying(&reserve(a)),
-        from_frame,
-        to_frame,
+        from_chart,
+        to_chart,
         toll: toll.into(),
         nonce: [a; 32],
         tariff: None,
@@ -162,19 +162,19 @@ fn handoff_close_returns_in_flight_crossing() {
     assert!(matches!(k.handoff(&again.sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoMouth)));
 }
 
-/// LOOPS OF MOUTHS ARE CURVATURE, RECORDED: three domains joined in a cycle
+/// ORBITS OF MOUTHS ARE CURVATURE, RECORDED: three domains joined in a cycle
 /// whose chart transitions compose to the identity — nothing recorded; one
-/// whose transitions turn — the loop recorded at the mouth that closed it,
+/// whose transitions turn — the orbit recorded at the mouth that closed it,
 /// with its exact holonomy, and traversal still open.
 #[test]
-fn mouth_loops_records_turning_loop() {
+fn mouth_orbits_records_turning_orbit() {
     let mut k = founded();
     let r = turn();
     open(&mut k, mouth(4, 5, r.clone(), one(), [0; 4]), 4, 5);
     open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);
     let closing = open(&mut k, mouth(6, 4, one(), one(), [0; 4]), 6, 4);
-    let loops = k.mouth_loops();
-    let [l] = loops.as_slice() else { panic!("one loop: {loops:?}") };
+    let orbits = k.mouth_orbits();
+    let [l] = orbits.as_slice() else { panic!("one orbit: {orbits:?}") };
     assert_eq!(l.mouth, closing, "recorded at the mouth that closed it");
     assert!(!l.holonomy.projective_eq(&one()), "it turns");
     assert!(matches!(
@@ -187,13 +187,13 @@ fn mouth_loops_records_turning_loop() {
     open(&mut k, mouth(4, 5, r.clone(), one(), [0; 4]), 4, 5);
     open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);
     open(&mut k, mouth(6, 4, one(), r, [0; 4]), 6, 4);
-    assert!(k.mouth_loops().is_empty(), "the transitions compose to the identity");
+    assert!(k.mouth_orbits().is_empty(), "the transitions compose to the identity");
 }
 
 /// An untethered mouth as one opened before tubes stands on the record:
 /// two free frames, open, between `a` and `b`.
-fn legacy(k: &mut Court, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
-    let m = Mouth { tube: None, ..mouth(a, b, from_frame, one(), [0; 4]) };
+fn legacy(k: &mut Court, a: u8, b: u8, from_chart: Mv) -> [u8; 32] {
+    let m = Mouth { tube: None, ..mouth(a, b, from_chart, one(), [0; 4]) };
     let id = m.citation();
     let held = crate::server::cognition::domain_passage::MouthHeld { mouth: m, state: State::Accepted, opened: Some(k.chain.head_height()), at: Vec::new() };
     k.handoffs.mouths.insert(id, held);
@@ -322,8 +322,8 @@ fn handoff_mouth_tube_supersedes_untethered_mouth() {
     let old = legacy(&mut k, 4, 5, turn());
     open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);
     let closing = open(&mut k, mouth(6, 4, one(), one(), [0; 4]), 6, 4);
-    let loops = k.mouth_loops();
-    let [l] = loops.as_slice() else { panic!("one loop: {loops:?}") };
+    let orbits = k.mouth_orbits();
+    let [l] = orbits.as_slice() else { panic!("one orbit: {orbits:?}") };
     assert_eq!((l.mouth, l.tethered), (closing, false), "through an untethered mouth: history");
     let go = Handoff::Traverse { offer: Box::new(cargo(4, 5, 1)), mouth: old };
     let Handed::Sealed { id: crossing, .. } = k.handoff(&go.sign(&reserve(4))) else { panic!("an untethered mouth still carries") };

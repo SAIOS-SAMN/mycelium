@@ -118,7 +118,7 @@ fn note_attestor_files_only_where_word_stands() {
 /// The three kinds that COMMIT are `Install`, `Ruling` and `Adopted`. An
 /// act ABOUT a word — listing it, settling against it, attesting it — is not
 /// a vantage standing behind it, and does not deepen it. (78.94: the acts
-/// about a word a court seals; learning and uttering are sealed by nothing
+/// about a word a court seals; learning and asserting are sealed by nothing
 /// since the voices' chains retired.)
 #[test]
 fn depth_at_ignores_acts_about_word() {

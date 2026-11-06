@@ -64,7 +64,7 @@ pub const EXCEPTIONS: &[Exception] = &[
         file: "src/network/wire.rs",
         name: "TPoint",
         until: "v0.5.0",
-        why: "the pointed frame's trailer (78.152 TU-7): the point read rides the envelope, not the utterance; moved with the lane byte",
+        why: "the pointed frame's trailer (78.152 TU-7): the point read rides the envelope, not the expression; moved with the lane byte",
     },
     Exception {
         file: "src/network/noise.rs",

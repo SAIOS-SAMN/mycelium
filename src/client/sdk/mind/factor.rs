@@ -14,6 +14,9 @@
 //! (`Factorisation::of` reads no ground) and stating each candidate would
 //! say the same claim again. The court reconstructs each claim and answers
 //! a verdict (`dialogue::FactorVerdict`); an admitted claim pays nothing.
+//!
+//! Each claim states the perspective the percept was read under (track 26
+//! S6; MU-SENSING §4): the court reads its copy of the pair through it.
 
 use crate::client::sdk::*;
 use crate::transducer::family::transduce::Ground;
@@ -34,7 +37,7 @@ impl Mind {
         let mut out = Vec::new();
         for (pair, p) in percept.train.iter().enumerate() {
             for f in p.factored.held() {
-                if let Some(act) = dialogue::encode_factorisation(key, id, pair, &f.motion, &f.residue, ground) {
+                if let Some(act) = dialogue::encode_factorisation(key, id, pair, &f.motion, &f.residue, &percept.perspective, ground) {
                     out.push(act);
                 }
             }

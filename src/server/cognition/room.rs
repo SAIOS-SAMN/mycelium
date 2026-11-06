@@ -1,7 +1,7 @@
 // 26, 23.8 — ROOM: what a voice may draw against its bond, the shortfall a
 // draw reads, the door's deferral, and the leases on T.
 //
-//! Room is the uttering voice's remaining bond, per lane; an unbonded voice
+//! Room is the asserting voice's remaining bond, per lane; an unbonded voice
 //! has room for one claim in flight per lane (MU-ECONOMY §3.1 as ruled).
 //! No ×(reserve/spend): the genesis bond already covers a pair. Split from
 //! `market.rs` (MU-STANDARDS 1.1, one organ per file): escrow and
@@ -320,7 +320,7 @@ impl Court {
         self.physics.reserve.lanes()
     }
 
-    /// THE SHORTFALL of a draw against the uttering voice's room, per lane:
+    /// THE SHORTFALL of a draw against the asserting voice's room, per lane:
     /// what the draw needs beyond the room, zero where the lane fits (S9.6,
     /// §2.3). A reading, never a verdict. The bit this replaced threw the
     /// lane away, and its one caller then read the room a second time to

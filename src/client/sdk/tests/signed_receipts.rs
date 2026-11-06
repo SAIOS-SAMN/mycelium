@@ -124,7 +124,7 @@ fn burning_court() -> (String, std::sync::mpsc::Receiver<Vec<u8>>) {
                 }
                 let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
                 let _ = shown.send(body);
-                let reply = crate::network::wire::WireFrame { lane, body: dialogue::encode_ruled(&dialogue::Ruled::Applied).expect("a ruling") };
+                let reply = crate::network::wire::Delimited { lane, body: dialogue::encode_ruled(&dialogue::Ruled::Applied).expect("a ruling") };
                 let _ = s.write_all(&reply.encode().expect("framed"));
             }
         }

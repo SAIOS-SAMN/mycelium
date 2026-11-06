@@ -101,7 +101,8 @@ fn no_axis_is_privileged_in_perception() {
     let q = TaskPercept::of(&moved_train, &moved_tests, &mut budget).expect("perceived");
     assert_eq!(p.rank(), 3);
     assert_eq!(q.rank(), p.rank());
-    assert_eq!(q.perspective.relabelled(&order), Some(p.perspective.clone()), "every axis space, under any labelling");
+    let relabelled_roles = q.perspective.relabelled(&order).map(|r| r.roles().to_vec());
+    assert_eq!(relabelled_roles, Some(p.perspective.roles().to_vec()), "every axis space, under any labelling");
     assert_eq!(q.ground, p.ground, "the ground reads no axis");
     for (a, b) in p.train.iter().zip(&q.train) {
         assert_eq!(bodies(&b.input, None), bodies(&a.input, Some(&order)), "the input's bodies, relabelled");

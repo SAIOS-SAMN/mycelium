@@ -126,7 +126,7 @@ pub(crate) fn rederive_star_faces(form: &mut Form) {
     // interface — WHICH charts it joins is the scene's fact — and its place
     // is re-derived at its own coordinate; the word is derived on read and
     // has nothing to re-derive.
-    for o in form.overlaps_from(&crate::network::nerve::coord::VertexAt::Frame) {
+    for o in form.overlaps_from(&crate::network::nerve::coord::VertexAt::Enclosure) {
         trace::trace("extract/4 star-face", trace::Wrote::Nothing, None);
         let Some(edge) = form.faces.at(&o).map(|f| f.place.edge.clone()) else { continue };
         let Some(p) = form.face_place(&o.from, &o.to, edge) else { continue };

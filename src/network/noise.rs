@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! THE ENCRYPTED CHANNEL: Noise_XX over a byte stream (a TCP connection on
-//! the mesh), carrying the wire's frames (`wire::WireFrame`) inside Noise
+//! the mesh), carrying the wire's frames (`wire::Delimited`) inside Noise
 //! transport messages.
 //!
 //! No certificate authority stands behind it. Each host keeps one static
@@ -37,7 +37,7 @@
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use super::wire::{read_lane, split_point, WireFrame, BODY_BUDGET};
+use super::wire::{read_lane, split_point, Delimited, BODY_BUDGET};
 use crate::chronometry::tuniversal::TPoint;
 
 /// The one handshake pattern and cipher suite of the channel.
@@ -443,7 +443,7 @@ impl<S: Read + Write> NoiseStream<S> {
     /// One wire frame, with the point it carries where one is given, sealed
     /// onto the channel. A body over the wire's budget is refused before a
     /// byte is sent.
-    pub fn write_frame(&mut self, frame: &WireFrame, point: Option<&TPoint>) -> Result<(), NoiseRefusal> {
+    pub fn write_delimited(&mut self, frame: &Delimited, point: Option<&TPoint>) -> Result<(), NoiseRefusal> {
         let bytes = frame.encode_at(point).ok_or(NoiseRefusal::FrameOverBudget { len: frame.body.len() })?;
         self.send(&bytes)
     }
@@ -451,7 +451,7 @@ impl<S: Read + Write> NoiseStream<S> {
     /// One wire frame off the channel, with the point it carries. A head
     /// naming a body past the wire's budget is refused before the body is
     /// allocated.
-    pub fn read_frame(&mut self) -> Result<(WireFrame, Option<TPoint>), NoiseRefusal> {
+    pub fn read_delimited(&mut self) -> Result<(Delimited, Option<TPoint>), NoiseRefusal> {
         let mut head = [0u8; 5];
         self.take_plain(&mut head)?;
         let (lane, pointed) = read_lane(head[0]).ok_or(NoiseRefusal::FrameMalformed)?;
@@ -463,7 +463,7 @@ impl<S: Read + Write> NoiseStream<S> {
         let mut body = vec![0u8; len];
         self.take_plain(&mut body)?;
         let (body, point) = split_point(body, pointed).ok_or(NoiseRefusal::FrameMalformed)?;
-        Ok((WireFrame { lane, body }, point))
+        Ok((Delimited { lane, body }, point))
     }
 }
 

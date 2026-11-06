@@ -8,16 +8,16 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::{TICK_HEARD, TICK_REFUSED};
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
 /// A pushed ring heard and answered `TICK_HEARD`, or `TICK_REFUSED` where it
 /// does not read, its keeper is no known peer court, no origin is adopted
 /// here, or a reading was refused (counted by name in `hear_ring`).
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let ack = match crate::tuniversal::hear_tick(&context.mesh, &frame.body) {
         Ok(_) => TICK_HEARD,
         Err(_) => TICK_REFUSED,
     };
-    answer(stream, WireFrame { lane: frame.lane, body: vec![ack] });
+    answer(stream, Delimited { lane: frame.lane, body: vec![ack] });
 }
