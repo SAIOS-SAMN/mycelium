@@ -85,21 +85,32 @@ fn retrieve(stream: &mut Channel, frame: &Delimited, context: &Context, s: &myce
         Ok(mut h) => h.run(|k, _| k.retrieve_signed(s, fin)),
         Err(_) => return,
     };
-    let section = match &read {
-        Retrieved::Served { .. } => {
+    let answer_with = match &read {
+        Retrieved::Served { receipts, .. } => {
             let payload = answered_payload(&s.retrieve);
             let Some(section) = crate::admission::sign_position(&context.court, &context.mesh, &mycelium::transducer::stalk::Invariant::default(), &payload) else {
                 eprintln!("  retrieve unanswered: this court holds no position to sign");
                 return;
             };
-            Some(section)
+            // Each receipt's ancestry to the head the section signs, on the
+            // hold's stroke.
+            let head = section.receipt.stamp;
+            let paths = match crate::court_lock::held!(context.court) {
+                Ok(mut h) => h.run(|k, reads| k.ancestry(&head, receipts, reads)),
+                Err(_) => return,
+            };
+            let Some(paths) = paths else {
+                eprintln!("  retrieve unanswered: a receipt's ancestry to the signed head was not read whole");
+                return;
+            };
+            Some((section, paths))
         }
         Retrieved::Refused(_) => None,
     };
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    let Some(body) = encode_retrieve_reply(&read, section.as_ref()) else {
+    let Some(body) = encode_retrieve_reply(&read, answer_with.as_ref().map(|(s, p)| (s, p.as_slice()))) else {
         eprintln!("  retrieve unanswered: a receipt or the section cannot be written");
         return;
     };
