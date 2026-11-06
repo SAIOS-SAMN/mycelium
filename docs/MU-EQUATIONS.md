@@ -58,7 +58,7 @@ exact rational, and the computation refuses otherwise.
 
 Sources: MU-RECURSION, "The laws this document is written under", laws 1
 and 4; MU-RECURSION 78.45. Code: `src/transducer/alphabet/rotor.rs::rational_sqrt`,
-`src/transducer/family/fibre_relation.rs::exact_root`.
+`src/transducer/sentence/form/clause.rs::exact_root`.
 
 #### 1.2 The algebra Cl(p, q) over ℚ, and its conformal case Cl(n+1, 1)
 
@@ -879,41 +879,35 @@ an integer.
 
 Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::centred`.
 
-#### 4.2 The envelope and the dilation between envelopes
-
-**Refused defect.** The envelope below squares the extents
-(`r² = Σ eᵢ²/4`, an exact square root), which law 11 refuses; MU-SENSING
-§8 lists it as built and refused, and the re-period of each phase
-replaces it (MU-SENSING §3.1; track 26 S4). The formula records the code
-that still holds it.
+#### 4.2 The re-period of each phase between two samples
 
 ```text
-r² = Σᵢ eᵢ² / 4                    (circumscribed sphere of a sample of extents eᵢ)
-s  = r_to / r_from = p/q           exact only where r²_to / r²_from is a rational square
+ρᵢ = p′ᵢ / pᵢ                      (axis i: the output's period over the input's)
 
-carried site:  X_to = X_from · p/q,   x_to = (X_to + (e_to − 1)) / 2   (an integer site, or none)
+carried site:  X_to,i = X_from,i · p′ᵢ/pᵢ,   x_to,i = (X_to,i + (p′ᵢ − 1)) / 2   (an integer site, or none)
 ```
 
-A change of extent is the dilation about the centres carrying one envelope
-onto the other. The code reduces `Σ e_to² / Σ e_from²` by its gcd and takes
-exact integer roots of numerator and denominator; it answers nothing where
-either is not a square.
+A change of extent re-periods each phase by its own ratio, about the
+centres; no scale is read off a sphere (MU-SENSING §3.1). A site whose
+carried point falls between sites or outside the output carries nothing,
+and two samples of different rank have no re-period. This replaces the
+envelopes' dilation (`r² = Σ eᵢ²/4`, `s = r_to/r_from`), which squared the
+extents against law 11 and was removed in track 26 S4.
 
-Sources: MU-RECURSION 78.56, 78.45. Code:
-`src/transducer/family/fibre_relation.rs::envelope_dilation`,
-`::carried_site`. The squared extents are a defect against law 11
-(MU-SENSING §8), kept unchanged until the re-period of each phase
-replaces them (ROADMAP track 26, S4).
+Sources: MU-RECURSION 78.56; MU-SENSING §3.1. Code:
+`src/transducer/element/residue.rs::Reperiod::of_extents`;
+`src/transducer/family/fibre_relation.rs::carried_site`.
 
 #### 4.3 Momentum vanishing
 
 ```text
-Σ_train ( Σ_out X − s · Σ_in X ) = 0      per axis, each painted site a unit of mass
+Σ_train ( Σ_out Xᵢ − (p′ᵢ/pᵢ) · Σ_in Xᵢ ) = 0      per axis i, each painted site a unit of mass
 ```
 
 A task carries no polar vector when this mass-weighted displacement is
-exactly zero. Where any pair's dilation is irrational the momentum is not
-read and the orientation is held physical.
+exactly zero on every axis. Where a pair's two members are of different
+rank, or an input period is empty, the momentum is not read and the
+orientation is held physical.
 
 Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::momentum_vanishes`.
 
@@ -2102,6 +2096,7 @@ id is a hosted shell's own.
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `FORMS-COORDINATE` | 4 | `forms/src/coordinate.rs` (module documentation); LAW-COORDINATE v4, [proposal 78.173](proposals/78.173-law-coordinate.md) (ruled by both operators 2026-11-05; netstratum docs/120 §8b; v3's points agreed with netstratum and xylarium 2026-11-05; v4's H keys agreed with netstratum 2026-11-05, docs/117 §10.3); Concordance 1.6, 1.11, 1.13. Version 2 added the advance, an event's bell, the merger and fission (fixtures 7–10); version 3 holds each lane as a vector of exact signed components keyed by axis (H's by generator, in degrees, with `K_c = ⌊|θ_c| / 360⌋` per component), a lane set open to a lane only by a ruled opening, `within` and the ranges on the caller's exact intervals (base 60 display only), the re-origin across a throat by `forms::passage`'s pole swap, and dilation invariance (fixtures 11–16); version 4 keys H on turning planes alone, two frame units of one square (`e₊ₖe₊ₗ` the continuum, `e₋ₖe₋ₗ` the vacuum), refusing a frame plane, a mixed pair or unsigned axes on H `NotTurningPlane`, while S's keys may name boost planes (fixtures 7 and 11–16 restated on the new keys) | `forms::coordinate` (`Coordinate`, `Origin`, `Local`; `Lanes`, `Lane` with `Lane::Opened`, `Openings`, `Vector`, `Key` reading its `Plane`, `Axis` with `Axis::unit` and its `Square`, refusing by `FormRefusal`; the canonical order and writing; `Coordinate::within` on `Bounds` of `Interval`s reading `Sides`, refusing `OriginsDiffer` and `ShapesDiffer`; `Bodies::range` on one component, `Neighbours::filter`; `Sector` and `Reading`, display only, base 60 registered `FORMAT`, `DEGREES_PER_TURN` registered `EXTERNAL`; `Coordinate::advance` under `Rates`, `Coordinate::bell_of` reading `EventBell`, `merge` to a `Merger` with offsets, `fission`, `Coordinate::pass` to `Passed`, `flow`, refusing by `MotionRefusal`); fixtures 1–6 in `forms/src/tests/coordinate.rs`, 7–10 in `forms/src/tests/motion.rs`, 11–13 and 16 in `forms/src/tests/vectors.rs`, 14–15 in `forms/src/tests/throat.rs`, generated cases in `forms/src/tests/properties.rs`; not yet joint-read agreed. TPoint reads as its one-component non-negative case; the rewiring is the next step |
 | `FORMS-COUPLING` | 1 | `forms/src/coupling.rs` (module documentation); LAW-COUPLING v1, [proposal 78.175](proposals/78.175-law-coupling.md) (ruled by netstratum's and mycelium's operators 2026-11-06, extending LAW-FIELD; netstratum docs/121 §9–§13, docs/122 §2): the dipole parcel, its fluidity and its viscosity per turning plane (a kind's frames `A = 3Z − U` held and `Q = U` open, founded on a body's planes by the even split, a bond or peel changing one plane; on each plane the pole `σ = (z − q)/(z + q)`, the open share or fluidity `o = ν(q/z)`, `ν(t) = t/(1 + t)`, and the held share or viscosity (cohesion) `1 − ν(t) = ν(1/t)`, exchanged by the inversion); the range's field as one on a named turning plane, `F = Σ w·σ·o·n·h / Σ w`, `h = hemisphere_l1(Δ) = 1 − Δ/90°` the named L1 reading of the round separation `Δ ∈ [0°, 180°]`, and the pull `x′ = x ⊕ y`, `y = −σ·F·o·(x̄ ⊖ x)`, by LAW-COORDINATE's flow law; neighbours by their own enclosures; the light ledger, made = received + drained on the unlocked face. Shared degrees are round (ruled 2026-11-06); an L1 projection is a named reading | `forms::coupling` (`Parcel` with `Parcel::kind` and `Parcel::arc_l1`, `Parcels` with `Parcels::founded` and `Parcels::bond`, `Dipole`, `open_share`, `hemisphere_l1`; `Alignment`, `Neighbour`, `nearness`, `field` to a `Field`, `pull` to a `Pull`, `relative` (the flow law's inverse); `Enclosure`, `meets` to a `Meeting`; `Face`, `unlocked`, `take` to `Taken`, `ledger` to a `Ledger`; refusing by `CouplingRefusal`, `NotShare`, `Unbalanced` and `NoHolding` among them); the fixtures in `forms/src/tests/coupling.rs`; not yet joint-read agreed |
+| `FORMS-TURNING` | 1 | `forms/src/turning.rs` (module documentation); LAW-COORDINATE fixture 11b, [proposal 78.173](proposals/78.173-law-coordinate.md) §5 (read and stated by netstratum 2026-11-06; netstratum docs/117 §11.2–§11.4): a motion's rate is an even generator `B`, its motion `R = (1 + B)(1 − B)⁻¹` and its generator read back `B = (R − 1)(R + 1)⁻¹`, exact in the even subalgebra of `Cl(p, q)`; motions compose as `R₁R₂`, never plane by plane; on one plane `(b₁ + b₂)/(1 − b₁b₂)` elliptic and `(b₁ + b₂)/(1 + b₁b₂)` hyperbolic (the flow law); planes sharing a unit gain the turning between them on the third plane, order-dependent and with no volume, and disjoint planes keep the grade-4 volume; degrees a reading only, `tan(θ/4) = b`, as certified sectors | `forms::turning` (`motion`, `generator`, `compose`, `compose_rates`, `same`, `reversed`, refusing by `TurningRefusal`: `NotGenerator`, `NotEven`, `NotUnit`, `NoMotion`, `NoGenerator`, `Mismatched`; `forms::turning::reading`: `Regime` of a plane, `on_plane`, `composed`, `degrees` to a certified `Sector`), over `algebra::Clifford`; fixture 11b in `forms/src/tests/turning.rs`; not served in the register, not yet joint-read agreed |
 | `LAW-WAVEFRONT` | 1 | netstratum docs/111 §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |
 
 The six L0 laws share one register version (`LAW_VERSION`, 5): an
@@ -2109,6 +2104,6 @@ amendment to any of them raises it for all, and the register is served
 whole (`ACT_LAWS` mode 0, `decode_register_reply`), decoding only at the
 version the reader holds. The `forms` ids are versioned per shell
 (`frame::LAW_VERSION`, `passage::LAW_VERSION`, `shares::LAW_VERSION`,
-`coordinate::LAW_VERSION`, `coupling::LAW_VERSION`). A peer law is recorded by id
+`coordinate::LAW_VERSION`, `coupling::LAW_VERSION`, `turning::LAW_VERSION`). A peer law is recorded by id
 and version only: its canonical text and its implementation stay with the
 kernel that states it, and Mycelium neither restates nor computes it.

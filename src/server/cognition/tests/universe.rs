@@ -140,8 +140,7 @@ fn state_records_geometry_and_basket_once() {
     assert!(matches!(convert(&mut k, 2), Handed::Sealed { .. }), "converted once its basket stands");
     let read = k.universe_reading(&verifying(&domain(4)));
     assert_eq!((read.originated, read.geometry.clone(), read.parent, read.basket.clone()), (false, Some(space), None, basket.clone()));
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.universe_reading(&verifying(&domain(4))), read, "held across a restart");
 }
 
@@ -232,8 +231,7 @@ fn tube_of_reads_torus_face_flat_and_bounded() {
     assert!(matches!(k.handoff(&Handoff::Feed { mouth: tube, mu_s: 3, seq: 0 }.sign(&reserve(5))), Handed::Sealed { .. }));
     assert_eq!(k.handoff(&Handoff::Feed { mouth: tube, mu_s: 1, seq: 1 }.sign(&reserve(5))), refused(HandoffRefusal::TooWide));
     let read = k.tube_of(&tube);
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let mut booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.tube_of(&tube), read, "the same tube across a restart");
     assert!(matches!(booted.handoff(&Handoff::Draw { mouth: tube, mu_s: 1, seq: 1 }.sign(&reserve(5))), Handed::Sealed { .. }), "still a core: its far reserve keeps it");
 }
