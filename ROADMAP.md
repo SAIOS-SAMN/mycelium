@@ -69,7 +69,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
 | Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
-| The alphabet past `n = 3`; the `Frame` defect; `Act::Slide`/`Extend`'s planar ray | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
+| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
 | Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
@@ -93,7 +93,8 @@ adopted by a recut (track 6). Items:
 - **The Note** between courts (track 1; MU-XSEPTUM), carrying modes.
 - **The economic law form with the peer kernels:** μ's modes, the
   reserve and conversion at the universal core tube, with joint-read
-  fixtures, through MU-RELEASE §3a (proposal 78.174, to come; §10.4).
+  fixtures, through MU-RELEASE §3a (an amendment of proposal 78.174,
+  which records the operator's rulings of 2026-11-05; §10.4).
 
 The rulings the model still needs are listed in MU-ECONOMY §12.
 
@@ -1838,8 +1839,20 @@ Each phase is one commit:
      `axis_taken_apart_only_where_family_invariant`.
    - **Built** with T2 ([PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)):
      the transduction at rank `n` (`src/transducer/family/transduce/`) and
-     the nested map (`nest.rs`). Open: the reading of which factorings the
-     family is invariant under, which keeps or dissolves each candidate.
+     the nested map (`nest.rs`). The reading of which factorings the
+     family is invariant under is built (branch `sensing-nest`; ruled
+     2026-11-06 on #32): per pair, separators as the fine phase of a period
+     `b + 1`, repeating blocks as relations, motions per level, collapse by
+     a reading that holds for one candidate alone, several alike
+     superposed; the nesting a coordinate of the percept
+     (`transduce::nesting`, `TaskPercept.nesting`). Claims
+     `axis_taken_apart_only_where_family_invariant`,
+     `factoring_read_per_pair_and_kept_only_where_every_pair_admits`,
+     `separator_is_the_fine_phase_of_period_b_plus_one`,
+     `repeating_blocks_kept_as_relation_by_fine_motion`,
+     `motion_per_level_is_coarse_times_fine`,
+     `several_factorings_holding_alike_stay_superposed`. Nesting as a
+     fibration of levels in the field's lift stays with S4a stage 4.
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
@@ -1957,6 +1970,28 @@ Each phase is one commit:
      §6.2).
    - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
      `two_perspectives_of_one_sample_compared_as_a_cover`.
+   - **Built, stage 1** (branch `sensing-s6`, PR #167): a perspective
+     holds its pose, the signed permutation the sensor reads through,
+     beside its roles; a shift (`SensorMotion::Pose`, `Recast`) moves the
+     sensor, and a sample is read through it, never rewritten
+     (`Perspective::read`, `turn_to`). The perspectives of one sample are a
+     cover (`perspective::cover`): contacts as 0-cochains, the turn on each
+     overlap, the cocycle on triples, the residue of contacts held. The
+     frame fixing is a perspective (`raster::frame_fixing`). Claims
+     `perspective_shift_is_a_sensor_motion`,
+     `two_perspectives_of_one_sample_compared_as_a_cover`,
+     `frame_fixing_is_a_perspective_reading`. No wire or address change.
+     Open: a mind asking for a perspective as a demand; collapsing a
+     ground's vortex by a relation.
+   - **Built, stage 2** (branch `sensing-s6-claim`, a wire change inside
+     v0.4.0's break): a claim of factorisation states the perspective it
+     was perceived under (signed `mycelium factorisation v2`); the court
+     reads its copy of the pair through it and reconstructs there, refusing
+     another rank or a non-space role by name; the mind perceives under a
+     perspective (`TaskPercept::under`). Claim
+     `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
+     the solve of outputs and speech stating a perspective (they read the
+     section in its default).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
@@ -2329,8 +2364,9 @@ Each phase is one commit:
         `slot_of_axis_stands_for_each_base_axis`.
       - No wire, tape, task, word, chart or clause address change.
       - **Remaining planar, outside the act reading:** `Speech.frame` and
-        `perceive::frame_of`, read with the measured `Frame` (MU-SENSING
-        §8, a defect, track 26 S4); the slide's and the line's ray
+        `perceive::frame_of` (the measured `Frame`, renamed `Reperiod`, is a
+        re-period per phase since branch `sensing-frame`, claim
+        `reperiod_is_read_per_phase_at_any_rank`); the slide's and the line's ray
         (`Act::Slide`/`Extend { ray: (i8, i8) }`), a clause field written
         as a pair; and comments elsewhere that say "grid".
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
