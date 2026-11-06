@@ -581,7 +581,7 @@ fn extract_rule_fills_hole_closed_jointly() {
 fn speak_clauses_settles_stack_and_stops_at_border() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::statement::{speak_clauses, Unstated};
-    use crate::transducer::sentence::form::clause::{Act, Clause, Pred, Stop};
+    use crate::transducer::sentence::form::clause::{Act, Clause, Pred, Ray, Stop};
     let say = |clause: &Clause, x: &[&str]| -> Result<SectionSample, Unstated> {
         let x = digits(x);
         let spoken = speak_clauses(std::slice::from_ref(clause), &x, &crate::transducer::family::perceive(&x))?;
@@ -591,10 +591,10 @@ fn speak_clauses_settles_stack_and_stops_at_border() {
         }
         Ok(g)
     };
-    let fall = Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, 0), stop: Stop::Contact } };
+    let fall = Clause { select: Pred::Hue(1), act: Act::Slide { ray: Ray::new(vec![1, 0]), stop: Stop::Contact } };
     assert_eq!(say(&fall, &["0100", "0000", "0100", "0000", "2222"]), Ok(digits(&["0000", "0000", "0100", "0100", "2222"])), "the lower lands on the floor, the upper on it");
     assert_eq!(say(&fall, &["0100", "0000", "0000"]), Ok(digits(&["0000", "0000", "0100"])), "nothing met: the border");
-    let still = Clause { select: Pred::Hue(1), act: Act::Slide { ray: (0, 0), stop: Stop::Contact } };
+    let still = Clause { select: Pred::Hue(1), act: Act::Slide { ray: Ray::new(vec![0, 0]), stop: Stop::Contact } };
     assert_eq!(say(&still, &["0100"]), Err(Unstated::Still), "no step: refused by name");
 }
 
@@ -611,16 +611,17 @@ fn speak_clauses_refuses_partner_hue_without_one_partner() {
     }
 }
 
-/// THE REACTIONS CROSS THE WIRE, AND NO FORM ALREADY MINTED MOVES: a slide, a
-/// repaint by a partner's hue and a line painted by one read back as written;
-/// a line painted its own hue or a named one writes the bytes it always did.
+/// THE REACTIONS CROSS THE WIRE: a slide, a repaint by a partner's hue and a
+/// line painted by one read back as written; a line painted its own hue or
+/// a named one writes its ray as its count of steps and each step (ruled
+/// 2026-11-06 on #32 (5)), then the paint as it always did.
 #[test]
 fn put_clauses_round_trips_reactions() {
-    use crate::transducer::sentence::form::clause::{put_clauses, take_clauses, Act, Clause, Paint, Pred, Stop};
+    use crate::transducer::sentence::form::clause::{put_clauses, take_clauses, Act, Clause, Paint, Pred, Ray, Stop};
     let clauses = vec![
-        Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, -1), stop: Stop::Contact } },
+        Clause { select: Pred::Hue(1), act: Act::Slide { ray: Ray::new(vec![1, -1]), stop: Stop::Contact } },
         Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::Hue(3)) } },
-        Clause { select: Pred::All, act: Act::Extend { ray: (0, 1), paint: Paint::Of(Pred::All), stop: Stop::Border } },
+        Clause { select: Pred::All, act: Act::Extend { ray: Ray::new(vec![0, 1]), paint: Paint::Of(Pred::All), stop: Stop::Border } },
     ];
     let mut bytes = Vec::new();
     put_clauses(&mut bytes, &clauses);
@@ -632,15 +633,37 @@ fn put_clauses_round_trips_reactions() {
     assert_eq!(again, bytes, "read back as written");
     for (paint, tail) in [(Paint::Own, vec![0u8]), (Paint::Hue(7), vec![1u8, 7])] {
         let mut b = Vec::new();
-        put_clauses(&mut b, &[Clause { select: Pred::All, act: Act::Extend { ray: (0, 1), paint, stop: Stop::Contact } }]);
+        put_clauses(&mut b, &[Clause { select: Pred::All, act: Act::Extend { ray: Ray::new(vec![0, 1]), paint, stop: Stop::Contact } }]);
         let mut want = Vec::new();
         put_clauses(&mut want, &[]);
         let count = want.len();
         let mut expected = b[..count].to_vec();
         expected.push(0); // Pred::All
-        expected.extend_from_slice(&[3, 0, 1]);
+        expected.extend_from_slice(&[3, 2, 0, 1]); // the tag, two steps, each step
         expected.extend_from_slice(&tail);
         expected.push(1); // Stop::Contact
-        assert_eq!(b[count..], expected[count..], "an extend writes the bytes it was first written with");
+        assert_eq!(b[count..], expected[count..], "an extend writes its ray of the sample's rank, then its paint");
+    }
+}
+
+/// RULED 2026-11-06 ON #32 (5) — THE RAY OF A SLIDE OR AN EXTEND IS A
+/// TRANSLATION VERSOR OF THE SAMPLE'S OWN RANK: a ray of `n` steps is the
+/// translator of those `n` components (`cga::translator_at`), at ranks 1 to
+/// 4; a ray round-trips at every rank, and no plane is assumed of it.
+#[test]
+fn slide_ray_is_a_translation_versor_of_the_sample_rank() {
+    use crate::transducer::sentence::form::clause::{put_clauses, take_clauses, Act, Clause, Pred, Ray, Stop};
+    let q = |n: i64| crate::core::Q::from_integer(n.into());
+    for steps in [vec![3i8], vec![1, -1], vec![0, 2, -1], vec![1, 0, -2, 1]] {
+        let ray = Ray::new(steps.clone());
+        assert_eq!(ray.rank(), steps.len(), "one step per axis of the sample");
+        let d: Vec<_> = steps.iter().map(|&s| q(i64::from(s))).collect();
+        assert!(ray.versor().projective_eq(&crate::transducer::cga::translator_at(&d)), "the ray is the translator of its {} steps", steps.len());
+        let clauses = vec![Clause { select: Pred::Hue(1), act: Act::Slide { ray: ray.clone(), stop: Stop::Contact } }];
+        let mut bytes = Vec::new();
+        put_clauses(&mut bytes, &clauses);
+        let back = take_clauses(&bytes, &mut 0).expect("read back");
+        let Some(Clause { act: Act::Slide { ray: read, .. }, .. }) = back.first() else { panic!("a slide") };
+        assert_eq!(read, &ray, "the ray reads back at its own rank");
     }
 }
