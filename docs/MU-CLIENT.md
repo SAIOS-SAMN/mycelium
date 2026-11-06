@@ -1687,7 +1687,9 @@ then the backlog. Each item names its issue.
       that share a unit composed exactly;
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration;
-   4. S8, the field's motions as one exact group;
+   4. S8, the field's motions as one exact group (built on the carrier,
+      `carrier::FieldMotion`; turnings sharing a unit at other than a
+      quarter turn wait on 78.173 fixture 11b);
    5. S9a, the orbits attached to wells, shear and precession per
       revolution in the contemplation (the carrier's refusal under the
       geodesic ruling, §0, is built: a flat region refused `Unbound`, a
