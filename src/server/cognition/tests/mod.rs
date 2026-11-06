@@ -53,6 +53,7 @@ mod bond;
 mod origin;
 mod founding;
 mod signatory;
+mod retrieve;
 mod boundary;
 mod reach;
 mod sphere;
