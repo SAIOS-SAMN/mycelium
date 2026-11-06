@@ -369,7 +369,7 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
   language. Its issues: the field on the mind (#134), these five claims
   (#135), the hypha's acts as perception (#136), Noise on the mind's
   sessions (#132), the seated harness (#133), signed receipts to the mind
-  (#137). Items there marked *issue to file* have none yet.
+  (#137), and the backlog #143–#150 (label `client`).
 
 ## 11. Specification reconciliation
 

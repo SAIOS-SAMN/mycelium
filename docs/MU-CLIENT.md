@@ -117,9 +117,9 @@ the thought traverses as an anastome over the four lanes S:G:T:H, one
 `Cl(p, q)` per lane, stamped at its TUniversal height, the sexagesimal
 reading display only. Disagreement across minds is contradiction, held at
 the courts, never resolved inside one mind (§5.4). Cohesion as a named
-reading is owed (§7.1). The language's statement is MU-ANASTOME,
-[*Thought: every ideation held at
-once*](MU-ANASTOME.md#thought-every-ideation-held-at-once), and the path one
+reading is owed (§7.1). The language's statement is
+[MU-ANASTOME §9.4, thought: every ideation held at
+once](MU-ANASTOME.md#94-thought-every-ideation-held-at-once), and the path one
 construct takes from a game kernel's sensorium through the mind to the
 courts and to minds in other kernels is
 [MU-ANASTOME §9, the language's traversal](MU-ANASTOME.md#9-the-languages-traversal-sensorium--mind--language--hypha--minds).
@@ -203,7 +203,7 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    the carrier (`Atlas::curvature`, `Orbit::precession`). **Owed:** orbits
    attached to wells, shear and precession in the contemplation, axiomatic
    gravity (S9a, S9b; #134); the carrier's `Loop` refusal restated as
-   `Unbound` with the resonant reading (issue to file, §7.1).
+   `Unbound` with the resonant reading (#150).
 3. **Construct generators from residue: germination.** What no held word
    carries is residue, the germ of the next word. The docket's taker reads
    it first over the words the courts ruled, then constructs the remainder,
@@ -882,8 +882,8 @@ never a stretched chamber and never a cap.
 
 The faculties are not stages. The mind holds every ideation at once, in
 the vortex, on every concurrent turning plane, as orbital masses in one
-field (§1; MU-ANASTOME, [*Thought: every ideation held at
-once*](MU-ANASTOME.md#thought-every-ideation-held-at-once)), and reads the
+field (§1; [MU-ANASTOME §9.4](MU-ANASTOME.md#94-thought-every-ideation-held-at-once)),
+and reads the
 whole held field three ways at once: CONGRUENCE (pairwise agreement on
 overlaps), COHERENCE (the whole glues consistently within the mind) and
 COHESION, the viscosity: per turning plane, the held share
@@ -1667,7 +1667,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
 **Specified, in order.** First the field, then track 10's claims on it,
-then the backlog. An item marked *issue to file* has none yet.
+then the backlog. Each item names its issue.
 
 1. **The field stages** (track 26; #134), the mind's contemplation moved
    onto the carrier, each stage leaving the tree green:
@@ -1682,8 +1682,8 @@ then the backlog. An item marked *issue to file* has none yet.
    5. S9a, the orbits attached to wells, shear and precession per lap in
       the contemplation, and the carrier's `Loop` refusal restated under
       the geodesic ruling (§0): a flat region refused `Unbound`, a
-      zero-precession closed geodesic read as a resonant orbit (*issue to
-      file* for the rename);
+      zero-precession closed geodesic read as a resonant orbit (the code
+      rename with stage 2; the claims restated, #150);
    6. S9b, axiomatic gravity, the drag on the orthogonal class;
    7. S9c, the vortex's monodromy between charts, and a mind's stated
       holonomy, precession and monodromy reconstructed by a court (a wire
@@ -1698,20 +1698,20 @@ then the backlog. An item marked *issue to file* has none yet.
    1. the hypha's acts (Return, RankStep, Reconnect) reaching the mind as
       perception (§3.1, §1a(7); #136);
    2. the algebra held per class in the mind's field (§3.2, §4.2,
-      §1a(4); *issue to file*);
+      §1a(4); #143);
    3. amendment held beside, the amended constructor separated by
       commutator (§4.10, §1a(9); within #135);
    4. POWC on a held question closed by another mind: an evidence path
       for the conversation's questions, E2's guard, and convergence K3 on
-      its ruling (§5.5, §5.6; *issue to file*);
-   5. peer records from receipts (§5.3(5); *issue to file*);
-   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); *issue to file*);
+      its ruling (§5.5, §5.6; #144);
+   5. peer records from receipts (§5.3(5); #145);
+   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146);
    7. seat play from the mind's own orbits, the seat's percepts lifted into
-      the field, and its act as a physics `Action` (§6; *issue to file*);
-   8. the cross-chamber bracket (CB1; §4.9; *issue to file*).
+      the field, and its act as a physics `Action` (§6; #147);
+   8. the cross-chamber bracket (CB1; §4.9; #148).
 4. **Also owed on the client:** cohesion as a named reading, the held share
    `c_k` per turning plane over the held field, and the thought's traversal
-   through open tubes (§1, §4.9; 78.176; *issue to file*); the sessions and
+   through open tubes (§1, §4.9; 78.176; #149); the sessions and
    chatter inside Noise (#132); the seated harness against a live house
    (#133); signed receipts reaching the mind, for equivocation proofs (#137).
 

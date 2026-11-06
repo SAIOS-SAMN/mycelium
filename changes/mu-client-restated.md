@@ -44,7 +44,8 @@
   pivot cross, perception through understanding to comprehension,
   self-signed seated solves, the field carrier. Specified in order: the
   field stages (#134), track 10's five claims (#135), then an eight-item
-  backlog with its issues (#136, #135) and the items still needing one;
+  backlog with its issues (#136, #135, #143–#148), cohesion (#149) and the
+  `Unbound` claims (#150);
   also owed: cohesion as a reading, #132, #133, #137. ROADMAP track 10
   points to it.
 - **Vocabulary.** "Loop" and "utterance" leave the current text (quoted
