@@ -1487,8 +1487,16 @@ adjudicated reading (B2). Each phase is one commit:
      `signed_reserve_lawful_crossing_admitted`.
    - Open: the boundary reading under `ACT_OBSERVE`; a tube between two
      universes bounded by both sides' clauses (a mouth's far-end
-     acceptance is not read); the cost of the per-crossing alignment walk
-     on a long ledger, unmeasured.
+     acceptance is not read).
+   - **Built** (#118): the per-crossing alignment read costs the reserve's
+     signing events, never the ledger. The ledger keeps where each signing
+     event stands (`kernel‖stamp‖n`, coordinates only,
+     `chronometry::chain::signing`), and the court reads its own folded
+     line's events once per era (`FoldedSignings`); the reading is derived
+     on every ask. Claims `crossing_alignment_reads_only_signing_events`,
+     `alignment_equals_full_walk_across_own_fold`,
+     `alignment_equals_full_walk_on_a_peer`. Open: the stroke on a
+     long-lived mesh, recorded as an observation (D2.5).
 6. **B5, nested universes:** a sub-universe's acts only at its parent's
    vertex, with 78.155 R-3.
 
@@ -1855,7 +1863,11 @@ Each phase is one commit:
      `orbit_holonomy_is_the_product_of_its_transitions_per_lap`,
      `flat_product_reads_no_holonomy_where_curved_field_reads_it`,
      `orbit_precesses_by_the_holonomy_its_attractors_curve`,
-     `zero_precession_orbit_refused_as_loop`,
+     `flat_region_binds_no_orbit_refused_unbound` (restated from
+     `zero_precession_orbit_refused_as_loop` under 78.171 amendment (f):
+     a flat region binds no orbit, refused `Unbound`),
+     `closed_geodesic_with_zero_precession_is_resonant` (zero precession
+     in a curved field is a resonant orbit, never refused),
      `windings_kept_as_fibre_classes`,
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
    - **Built, stage 1** (branch `field-s7`; built against LAW-FIELD v1 as

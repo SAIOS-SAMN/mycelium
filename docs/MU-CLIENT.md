@@ -193,17 +193,21 @@ owed (**Owed**, with its issue; §7.1 holds the order).
 2. **Think: geodesic orbits about the wells.** A held percept curves the
    field into a well about its attractor, and every path through the
    atlas is a geodesic of that curvature: bound, an orbit precessing by
-   its residue per lap; closing with zero precession, a resonant orbit; in
-   a flat region, refused `Unbound` (§0). The contemplation winds its
-   orbits, fires the pivots where a winding changes dimension, acts at its
-   returns and rests (§4.4, §4.5, §4.12). MU-ANASTOME §1.4 (curvature),
-   §3 (which turnings run concurrently). **Built:** the winding carrier
-   (`Mind::wind`), the pivot cross (`Complex::descend`), the field's
-   orbits and beat (`cech::orbit::Field`), curvature as holonomy per lap on
-   the carrier (`Atlas::curvature`, `Orbit::precession`). **Owed:** orbits
-   attached to wells, shear and precession in the contemplation, axiomatic
-   gravity (S9a, S9b; #134); the carrier's `Loop` refusal restated as
-   `Unbound` with the resonant reading (#150).
+   its residue per revolution; closing with zero precession in a curved
+   field, a resonant orbit; in a flat region, refused `Unbound` (§0). The
+   contemplation winds its orbits, fires the pivots where a winding
+   changes dimension, acts at its returns and rests (§4.4, §4.5, §4.12).
+   MU-ANASTOME §1.4 (curvature), §3 (which turnings run concurrently).
+   **Built:** the winding carrier (`Mind::wind`), the pivot cross
+   (`Complex::descend`), the field's orbits and beat
+   (`cech::orbit::Field`), curvature as holonomy per revolution on the
+   carrier (`Atlas::curvature`, `Orbit::precession`), a flat region
+   refused `Unbound` and a zero-precession closed geodesic in a curved
+   field read `Precession::Resonant` (claims
+   `flat_region_binds_no_orbit_refused_unbound`,
+   `closed_geodesic_with_zero_precession_is_resonant`; #150). **Owed:**
+   orbits attached to wells, shear and precession in the contemplation,
+   axiomatic gravity (S9a, S9b; #134).
 3. **Construct generators from residue: germination.** What no held word
    carries is residue, the germ of the next word. The docket's taker reads
    it first over the words the courts ruled, then constructs the remainder,
@@ -1625,7 +1629,7 @@ criterion (§7.2). Each is read for the capability it asserts:
 | `test_theory_of_mind_doctrine_classification` | a counterparty modelled from its conduct | owed: peer records (§5.3(5)); a doctrine label refused |
 | `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | owed: seat play from the mind's orbits (§6; #133) |
 | `test_gauge_field_lagrangian_barrier_potential` | deliberation that is not a vote | owed: `axiomatic_gravity_shears_the_orthogonal_class` (S9b); the argmin refused |
-| `test_attractor_singularity_and_breakout` | a repetition read and left | `precession_refuses_flat_path_as_loop` (to be restated as `Unbound`); owed: `mind_idles_with_no_escaping_orbit` (#135) |
+| `test_attractor_singularity_and_breakout` | a repetition read and left | `flat_region_binds_no_orbit_refused_unbound` (a path no attractor binds is refused), `closed_geodesic_with_zero_precession_is_resonant` (a repetition in a curved field reads as a lawful resonant orbit); owed: `mind_idles_with_no_escaping_orbit` (#135) |
 | `test_cognitive_surprise_tensor` | surprise measured against prediction | exact and twofold: `hold_perceived_keeps_out_of_turn_hour_as_twist`, `hold_perceived_holds_off_orbit_slip_on_thought`. The norm refused |
 | `test_asce_state_persistence_round_trip` | what is held survives a restart | `generators_under_survives_genome_restore`; the epigenome is volatile by law (78.49) |
 | `test_metacognitive_self_model_and_gauges` | the mind models its own next state | the orbit's prediction (above); owed: `precession_stated_by_a_mind_reconstructed_by_a_court` (S9c) |
@@ -1664,6 +1668,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_envelope`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
 | **seated solves signed by the mind**: filed under its own key, then the house's call (#124); the seat's call chosen from what calls did | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`) |
 | **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
+| **cohesion as a named reading** (#149): per plane the held share `c_k = A/(A + Q) = ν(1/t)`, the viscosity, beside the open share `ν(t)`, the fluidity; both ½ at the throat, exchanged by the passage; a keyed vector over the planes, never stored and never summed; a well reads it from its inflation on its membrane's frame plane | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`) |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
@@ -1682,11 +1687,11 @@ then the backlog. Each item names its issue.
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration;
    4. S8, the field's motions as one exact group;
-   5. S9a, the orbits attached to wells, shear and precession per lap in
-      the contemplation, and the carrier's `Loop` refusal restated under
-      the geodesic ruling (§0): a flat region refused `Unbound`, a
-      zero-precession closed geodesic read as a resonant orbit (the code
-      rename with stage 2; the claims restated, #150);
+   5. S9a, the orbits attached to wells, shear and precession per
+      revolution in the contemplation (the carrier's refusal under the
+      geodesic ruling, §0, is built: a flat region refused `Unbound`, a
+      zero-precession closed geodesic in a curved field read as a resonant
+      orbit; the code with stage 2, the claims restated by #150);
    6. S9b, axiomatic gravity, the drag on the orthogonal class;
    7. S9c, the vortex's monodromy between charts, and a mind's stated
       holonomy, precession and monodromy reconstructed by a court (a wire
@@ -1712,9 +1717,11 @@ then the backlog. Each item names its issue.
    7. seat play from the mind's own orbits, the seat's percepts lifted into
       the field, and its act as a physics `Action` (§6; #147);
    8. the cross-chamber bracket (CB1; §4.9; #148).
-4. **Also owed on the client:** cohesion as a named reading, the held share
-   `c_k` per turning plane over the held field, and the thought's traversal
-   through open tubes (§1, §4.9; 78.176; #149); the seated harness against a live house
+4. **Also owed on the client:** of #149 (§1, §4.9; 78.176), the claims
+   that a whole too cohesive sticks at the throat and one too fluid tears,
+   which wait on an exact reading in LAW-PASSAGE or LAW-TRAVERSAL, frames
+   per turning plane of a held whole, and the thought's traversal through
+   open tubes; the seated harness against a live house
    (#133); signed receipts reaching the mind, for equivocation proofs (#137).
 
 Moved out of this list: paying the ledger in `Modes` is v0.5.0's
