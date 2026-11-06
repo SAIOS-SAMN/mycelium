@@ -1,7 +1,7 @@
 // MU-STANDARDS 7.1 — THE DOCUMENTS NAME WHAT EXISTS, read as tests over the
 // repository's documents beside its code.
 
-use super::super::documents::{cited, lint_documents, lint_fragments, Cited};
+use super::super::documents::{anchor_of, cited, lint_documents, lint_fragments, lint_section, Cited, Section};
 use std::path::{Path, PathBuf};
 
 /// The repository root: the gate's manifest sits one level under it.
@@ -71,6 +71,44 @@ fn lint_fragments_refuses_fragment_without_heading() {
     assert_eq!(read, 6);
     assert_eq!(hits.len(), 5, "{hits:?}");
     assert!(!hits.iter().any(|h| h.contains("entry.md")), "the entry stands: {hits:?}");
+}
+
+/// A heading's anchor drops punctuation and arrows, keeps letters and
+/// digits, and writes each space as `-`, so an arrow between two spaces
+/// leaves `--`.
+#[test]
+fn anchor_of_reads_rendered_anchor() {
+    assert_eq!(
+        anchor_of("9. The language's traversal: sensorium → mind → language → hypha → minds"),
+        "9-the-languages-traversal-sensorium--mind--language--hypha--minds"
+    );
+    assert_eq!(anchor_of("5a.6 Keys versus topology"), "5a6-keys-versus-topology");
+}
+
+/// A section is refused by name where its home lacks a heading, and where a
+/// linking document holds no link to the first heading's anchor; a fenced
+/// heading is no heading.
+#[test]
+fn lint_section_refuses_missing_heading_and_link() {
+    let dir = tempfile::tempdir().expect("a directory to write into");
+    let files = [
+        ("HOME.md", "# Home\n\n## 2. The part: a → b\n\n```\n### 2.1 Fenced\n```\n"),
+        ("LINKS.md", "see [the part](HOME.md#2-the-part-a--b)\n"),
+        ("BARE.md", "see HOME.md\n"),
+    ];
+    for (name, text) in files {
+        std::fs::write(dir.path().join(name), text).expect("written");
+    }
+    let section = Section {
+        home: "HOME.md",
+        headings: &["2. The part: a → b", "2.1 Fenced"],
+        linked_from: &["LINKS.md", "BARE.md"],
+    };
+    let mut hits = Vec::new();
+    lint_section(dir.path(), &section, &mut hits).expect("the documents read");
+    assert_eq!(hits.len(), 2, "{hits:?}");
+    assert!(hits.iter().any(|h| h.contains("HOME.md") && h.contains("2.1 Fenced")), "{hits:?}");
+    assert!(hits.iter().any(|h| h.contains("BARE.md") && h.contains("HOME.md#2-the-part-a--b")), "{hits:?}");
 }
 
 /// The rows of a markdown table's section: the lines of `text` from the

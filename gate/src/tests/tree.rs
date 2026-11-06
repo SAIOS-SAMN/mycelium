@@ -2,7 +2,7 @@
 // read against the tree it sits in. Each is a test of its own, so a red
 // check never hides another (I4).
 
-use super::super::documents::{documents, lint_documents, lint_fragments};
+use super::super::documents::{documents, lint_documents, lint_fragments, lint_section, TRAVERSAL};
 use super::super::drift::{lint_drift, REGISTER};
 use super::super::euclidean::lint_euclidean;
 use super::super::layers::{lint_layers, CARRIERS, EXCEPTIONS, TRANSPORT};
@@ -70,6 +70,17 @@ fn documents_cite_only_paths_of_tree() {
     let read = lint_documents(repo(), &files, &mut hits).expect("the documents read");
     eprintln!("documents: {} files, {read} cited paths, {} missing", files.len(), hits.len());
     assert!(hits.is_empty(), "the documents cite what is not in the tree:\n{}", hits.join("\n"));
+}
+
+/// MU-ANASTOME §9 — THE LANGUAGE'S TRAVERSAL IS DOCUMENTED: MU-ANASTOME
+/// holds the section's heading and its subsection on thought, and
+/// MU-SENSING and MU-HOSTING each link the section's anchor, so removing
+/// the section, renaming its heading or dropping a link is refused.
+#[test]
+fn traversal_documented() {
+    let mut hits = Vec::new();
+    lint_section(repo(), &TRAVERSAL, &mut hits).expect("the documents read");
+    assert!(hits.is_empty(), "the language's traversal is not held as documented:\n{}", hits.join("\n"));
 }
 
 /// THE UNRELEASED CHANGELOG: every fragment under `changes/` is a non-empty

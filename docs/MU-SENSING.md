@@ -829,6 +829,17 @@ never by a score.
   Identity stays the hypha's (§6.1). A new sense changes no task's
   address.
 
+### 4.2 Sensoria from game kernels
+
+A game kernel's physics is a sensorium. A mind seated in a game kernel's
+universe perceives through that kernel's senses (the seat's percepts, the
+kernel's own coordinate and physics), and a mind attached directly to a
+hypha perceives through the hypha's own acts. Both reach the mind as
+mathematics, lifted into its field by §3.7–§3.9, and new sensoria emerge
+by §4.1. The whole path, from a sensorium through the mind's thought and a
+court to other minds, is stated once in
+[MU-ANASTOME §9, the language's traversal](MU-ANASTOME.md#9-the-languages-traversal-sensorium--mind--language--hypha--minds).
+
 ## 5. What the mind knows: a section of a larger world
 
 The mind holds each percept with its rank and with the roles of its axes,
