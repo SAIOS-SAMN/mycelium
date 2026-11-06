@@ -140,8 +140,10 @@ pub fn verify_signature<'a>(
 
 /// The prefix and the receipt are ONE claim: the prefix's place and height
 /// are the receipt's stamp, and the predecessor the prefix commits to binds
-/// the receipt as reconstructed (MU-HOSTING §5a.10).
-fn one_claim(p: &SignedPrefix, r: &Reconstructed<KStepReceipt>) -> bool {
+/// the receipt as reconstructed (MU-HOSTING §5a.10). Public so a mind holding
+/// a hypha's signed receipt reads it by the court's own predicate (MU-CLIENT
+/// §2.1: one mathematics runs on both).
+pub fn one_claim(p: &SignedPrefix, r: &Reconstructed<KStepReceipt>) -> bool {
     p.at == r.stamp.place() && p.height == r.stamp.h && Commitment::signed(p).binds(r)
 }
 
