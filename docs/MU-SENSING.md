@@ -920,6 +920,20 @@ so it always knows how many dimensions it read and that the world has more:
   (`alphabet::ALPHABET_SAMPLE_RANK`, a rank-2 sample and its place).
   A task off that section is perceived and stops by name
   (`Stop::BeyondAlphabet`), never truncated onto the letters' planes.
+- **Letters past `n = 3` are never written by hand** (ruled 2026-11-06 on
+  #32 (4)). Past the alphabet's section, readings go through section
+  samples: a sample of a larger rank is read as one section sample per
+  plane of two of its axes and per coordinate of the rest
+  (`transducer::sections::sections_of`, each a `Section` naming its plane
+  and where it stands), each a sample the alphabet admits. A plane a larger
+  rank opens receives a letter only by the presentation's growth (an
+  adjoined generator, `Derivation::adjoined`; germination; a court
+  admitting a letter for a prime, 37.7), never as a slot of the seventeen.
+  A search of the tree found no letter written by hand for a rank past the
+  section (the planes past `e3` appear only in the conformal algebra's
+  tests, as blades and bivectors). Claim
+  `letters_past_the_section_are_never_written_by_hand`. Spelling each
+  section of a rank-3 task in the mind's word path is open.
 
 ## 6. What the hypha holds
 

@@ -1878,6 +1878,14 @@ Each phase is one commit:
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
+   - **Built, letters past `n = 3`** (branch `sensing-section-letters`,
+     ruled 2026-11-06 on #32 (4)): never written by hand. A sample past
+     the alphabet's section is read through its section samples, one per
+     plane and coordinate of the rest (`transducer::sections::sections_of`);
+     a new letter enters only by the presentation's growth. No hand-coded
+     letter for a higher rank was found to remove. Claim
+     `letters_past_the_section_are_never_written_by_hand`. Open: the mind's
+     word path spelling each section of a rank-3 task.
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
