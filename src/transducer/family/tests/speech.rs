@@ -290,7 +290,7 @@ let bodies = rule
     .count();
 assert_eq!(bodies, 1, "one body is one vertex, got {}", rule.form.vertices.len());
 assert!(
-    matches!(rule.form.vertices.at(&crate::network::nerve::coord::VertexAt::Frame), Some(Vertex::Frame)),
+    matches!(rule.form.vertices.at(&crate::network::nerve::coord::VertexAt::Enclosure), Some(Vertex::Frame)),
     "a frame vertex is on the form"
 );
 let frame_face = rule.form.faces.entries().any(|(o, _)| {

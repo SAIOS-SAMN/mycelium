@@ -78,7 +78,7 @@ impl Court {
     ) {
         let mut cites: Vec<crate::chronometry::Cite> = retired.into_iter().collect();
         cites.extend(rewrite.iter().chain(speakers).filter_map(|a| self.cite_of(a.as_bytes())));
-        let mu = self.frame_of(address);
+        let mu = self.measure_of(address);
         self.append_cited(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Retired), cites, mu, author);
         self.forget_if_unheld(address);
     }
@@ -162,7 +162,7 @@ impl Court {
         &self.spoken
     }
 
-    /// PUNCTURE held words from a verified utterance's carried bodies: the
+    /// PUNCTURE held words from a verified expression's carried bodies: the
     /// fibre deepens on what the hypha verified. A deepened basis moves the
     /// basis generation so the language snapshot refreshes.
     pub fn puncture_from(&mut self, cites: &[crate::anastome::dialogue::CiteWire]) -> usize {
@@ -285,11 +285,11 @@ impl Court {
     /// server decides what is work; the entities do the cognition.
     ///
     /// The corpus draws no room (23.8; I31, S12.5b): room is a voice's,
-    /// drawn by its utterance and released by closure, ruling or lapse, and
-    /// a corpus task was uttered by no voice. Drawn from the hypha's own
+    /// drawn by its expression and released by closure, ruling or lapse, and
+    /// a corpus task was asserted by no voice. Drawn from the hypha's own
     /// bond, the intake exhausted it in the first minutes of every boot and
     /// nothing homed here could lapse it back; the listing still tensions
-    /// the book, and room stays the throttle on what voices utter.
+    /// the book, and room stays the throttle on what voices assert.
     ///
     /// A task is listed one BODY at a time (20, 24.4 P6; S12.3a): each
     /// connected piece of the residue is its own demand on its own body
@@ -299,7 +299,7 @@ impl Court {
     /// shared — a thousand unrelated descriptions (I34). A body already
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
-    pub fn intake(&mut self, chain: &[crate::transducer::sentence::SectionLink], frame: &crate::transducer::element::Frame) -> bool {
+    pub fn intake(&mut self, chain: &[crate::transducer::sentence::SectionLink], frame: &crate::transducer::element::Reperiod) -> bool {
         self.intake_prepared(&prepare_intake(chain, frame))
     }
 
@@ -331,7 +331,7 @@ impl Court {
 /// refusal that travels: never listed and never counted (U14).
 pub fn prepare_intake(
     chain: &[crate::transducer::sentence::SectionLink],
-    frame: &crate::transducer::element::Frame,
+    frame: &crate::transducer::element::Reperiod,
 ) -> Vec<(Element, crate::transducer::stalk::Invariant)> {
     if chain.is_empty() {
         return Vec::new();

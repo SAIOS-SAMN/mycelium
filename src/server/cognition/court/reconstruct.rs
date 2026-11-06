@@ -97,7 +97,7 @@ impl Court {
         let kind = crate::chronometry::ActKind::Ruling(arm);
         match cite {
             Some(c) => {
-                let mu = self.frame_of(address);
+                let mu = self.measure_of(address);
                 self.append_cited(kind, vec![c], mu, ruler);
             }
             None => self.append_step(kind, address, ruler),

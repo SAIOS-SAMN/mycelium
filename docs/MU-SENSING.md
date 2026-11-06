@@ -264,7 +264,7 @@ transduction's lanes (`Transduction::lane_shares`).
     perception, by the rule above.
   - **Frame fixing, the sensor's scope.** Frame fixing is a perspective a
     sensor may take after intake, never before addressing.
-    `raster::frame_fixed_on_ground` fixes a frame only under
+    `raster::enclosure_fixed_on_ground` fixes a frame only under
     `Ground::One(g)`, on the sites off `g`, and leaves it as read under a
     vortex or `None`. No reader applies it at intake today: the mind reads
     every task in the frame it was posted in, which is the frame the

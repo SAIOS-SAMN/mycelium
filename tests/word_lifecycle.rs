@@ -125,8 +125,8 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         // A star overlap: the Frame's chart to a member of the class (AT1).
         rule.form.faces.entries().any(|(o, _)| {
             use mycelium::network::nerve::coord::VertexAt;
-            (o.from_vertex() == VertexAt::Frame && o.to_vertex() == vi)
-                || (o.to_vertex() == VertexAt::Frame && o.from_vertex() == vi)
+            (o.from_vertex() == VertexAt::Enclosure && o.to_vertex() == vi)
+                || (o.to_vertex() == VertexAt::Enclosure && o.from_vertex() == vi)
         }),
         "a named face joins Frame to the class"
     );
@@ -244,7 +244,7 @@ fn extract_rule_closes_single_recolour_as_one_word() {
 fn snapshot_writes_myt3_and_refuses_older_layouts() {
     let mut k = Court::new();
     // A voice's sentence for a recolour, spoken through the one door an
-    // utterance has (law 8): a listing on the book to snapshot.
+    // expression has (law 8): a listing on the book to snapshot.
     // The whole frame recoloured: read with no ground, the frame is the one
     // body (its old symbol reads as the ground by the rule, which leaves no
     // body to recolour).

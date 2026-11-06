@@ -133,7 +133,7 @@ assert_eq!(k.pending.len(), 1, "the new listing is on the page");
 
 /// 23.8, Stage 12 S12.5b (I31) — THE CORPUS INTAKE DRAWS NO ROOM. A bond
 /// that admits exactly one pair of this μ⃗ lists two corpus tasks of it:
-/// no voice uttered them, so nothing is drawn from the hypha's own room,
+/// no voice asserted them, so nothing is drawn from the hypha's own room,
 /// which stands where it stood; the listings still tension the book.
 #[test]
 fn intake_draws_no_room_from_hypha() {

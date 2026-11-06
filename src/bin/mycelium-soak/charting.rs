@@ -101,7 +101,7 @@ fn pairs(name: &str, train: &mycelium::transducer::family::Family) {
             }
         };
         let t_residue = t.elapsed();
-        let frame = mycelium::transducer::element::Frame::new(h, w, h2, w2);
+        let frame = mycelium::transducer::element::Reperiod::new(h, w, h2, w2);
         let t = Instant::now();
         let Some(residue) = mycelium::transducer::element::from_residue_framed(&chain, &frame) else {
             println!("  chart {name} pair {pair}: {} links, no canonical chain", chain.len());

@@ -223,7 +223,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                     Err(_) => "-".to_string(),
                 },
                 match record.as_ref().map_err(|u| *u).and_then(Transduction::projected) {
-                    Ok(changes) => mycelium::transducer::family::transduce::share_of_frame(
+                    Ok(changes) => mycelium::transducer::family::transduce::share_of_enclosure(
                         measure_lanes(&mycelium::transducer::raster::links_of(&changes)),
                         Some(b),
                     )

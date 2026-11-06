@@ -36,7 +36,7 @@ fn note_verdict_of(a: &crate::anastome::dialogue::Adjudication) {
 }
 
 impl Court {
-    /// PERCEIVE A FAMILY'S SPEECH — the one door an utterance has (law 8,
+    /// PERCEIVE A FAMILY'S SPEECH — the one door an expression has (law 8,
     /// ruled 2026-09-10) — read as codes: `SPEECH_STOOD` for a sentence
     /// listed, `SPEECH_RATIFIED` for one already language, `SPEECH_REFUSED`
     /// for one the reconstruction refused, and `SPEECH_DIALECT` on every sentence
@@ -234,7 +234,7 @@ impl Court {
     /// (`verify_contraction`) and a sentence that is not the contraction it
     /// claims is refused as a `MalformedComplex` at the tape. Then the
     /// sentence is heard (`hear_sentence`): a refusal is recorded by the
-    /// refused address with the receipt answered, so the next utterance's
+    /// refused address with the receipt answered, so the next expression's
     /// certificate can be verified; a listing is `Stood`, a use of held
     /// language `Ratified`. The receipt is this court's chain head after
     /// the act (47.1).

@@ -1763,7 +1763,7 @@ Each phase is one commit:
        - A task's identity is its posted samples' content (rank, extents,
          symbols, places). Neither the ground nor frame fixing enters it.
        - The decoder posts tasks as read, and `parse_task` is removed.
-       - Frame fixing (`raster::frame_fixed_on_ground`, only under `One`)
+       - Frame fixing (`raster::enclosure_fixed_on_ground`, only under `One`)
          is a perspective no reader applies at intake. It becomes one in
          S6.
        - All 1 000 training addresses change, inside v0.3.0's one break.
