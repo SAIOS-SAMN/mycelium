@@ -1713,8 +1713,15 @@ then the backlog. Each item names its issue.
       commutator (§4.10, §1a(9); within #135);
    4. POWC on a held question closed by another mind: an evidence path
       for the conversation's questions, E2's guard, and convergence K3 on
-      its ruling (§5.5, §5.6; #144);
-   5. peer records from receipts (§5.3(5); #145);
+      its ruling (§5.5, §5.6; #144). The path is proposed, unruled, in
+      [proposal 78.177](proposals/78.177-conversation-to-court.md): the
+      asker lists the evidenced question as a demand vertex and the closer
+      probes it (existing acts; `pay_convergence`), with K3's two readings
+      and four points for ruling;
+   5. peer records from receipts (§5.3(5); #145), waiting on a ruling of
+      which signed receipts a peer's are, the class an answer is filed by,
+      and what releases the held receipts (the questions stand on the
+      issue);
    6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146);
    7. seat play from the mind's own orbits, the seat's percepts lifted into
       the field, and its act as a physics `Action` (§6; #147);
