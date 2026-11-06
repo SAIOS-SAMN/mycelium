@@ -208,6 +208,9 @@ struct Carrier {
     voice: [u8; 32],
     key: ed25519_dalek::SigningKey,
     dir: std::path::PathBuf,
+    /// The mind's Noise home, where it holds one: every frame is sent inside
+    /// Noise, each peer pinned under its voice (`chatter::send_over`).
+    noise: Option<crate::network::noise::NoiseHome>,
     k: u64,
     point: Option<TPoint>,
     union: Keyed<Union>,
@@ -437,8 +440,11 @@ impl Mind {
         let (to, rx) = channel::<Inflow>();
         let deliver = to.clone();
         let voice = self.hypha.voice().id();
-        let post = chatter::Post::listen(
+        // MU-PRECURSORS §3.1 — the chatter speaks on the sessions' Noise key.
+        let noise = self.hypha.noise().cloned();
+        let post = chatter::Post::listen_over(
             "127.0.0.1:0",
+            noise.clone(),
             move |f| {
                 let _ = deliver.send(Inflow::Frame(f));
             },
@@ -453,6 +459,7 @@ impl Mind {
             voice,
             key,
             dir: dir.to_path_buf(),
+            noise,
             k: self.own_k(),
             point: self.hypha.tuniversal(),
             union: Keyed::new(),
@@ -1220,7 +1227,7 @@ impl Carrier {
             None => chatter::peers(&self.dir, &self.voice),
         };
         for p in peers {
-            if let Err(e) = chatter::send(&p, frame) {
+            if let Err(e) = chatter::send_over(&p, &chatter::named(&self.dir, &p), frame, self.noise.as_ref()) {
                 if e.kind() == std::io::ErrorKind::ConnectionRefused {
                     chatter::forget(&self.dir, &p);
                 }
