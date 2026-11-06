@@ -42,6 +42,24 @@ fn decode_reads_train_and_withheld_pairs() {
     assert!(decode(ragged).is_none(), "a ragged grid is no sample, refused at intake");
 }
 
+/// A SAMPLE IS WRITTEN BACK INTO THE CORPUS'S ROWS BY ITS SYMBOLS' BYTES
+/// (the speech end of the decoder, through the public `Symbol::bytes`): a
+/// grid decoded and written back is the grid; a sample of another rank or
+/// width is no grid of the corpus, refused.
+#[test]
+fn rows_of_writes_a_sample_back_into_the_corpus_rows() {
+    let json = r#"{"train":[{"input":[[0,1,7],[2,0,9]],"output":[[1]]}],"test":[]}"#;
+    let t = decode(json).expect("decodes");
+    let samples = samples_of(&t).expect("every grid stands");
+    assert_eq!(mycelium_source_arc_agi::rows_of(&samples[0]), Some(vec![vec![0, 1, 7], vec![2, 0, 9]]));
+    assert_eq!(mycelium_source_arc_agi::rows_of(&samples[1]), Some(vec![vec![1]]));
+    let place = mycelium::transducer::sample::Place::new(Vec::new());
+    let line = mycelium::transducer::sample::Sample::new(vec![3], 1, vec![1, 2, 3], place.clone()).expect("a sample");
+    assert_eq!(mycelium_source_arc_agi::rows_of(&line), None, "rank 1 is no grid of the corpus");
+    let wide = mycelium::transducer::sample::Sample::new(vec![1, 1], 2, vec![0, 1], place).expect("a sample");
+    assert_eq!(mycelium_source_arc_agi::rows_of(&wide), None, "two bytes per symbol is no grid of the corpus");
+}
+
 /// A CORPUS TASK DECODES INTO PLACED SAMPLES: each grid a sample of rank 2
 /// and width 1, its extents the grid's own, placed at `[split, pair,
 /// member]` in its family, a withheld output left out.

@@ -119,7 +119,8 @@ fn solve() -> Result<String, String> {
 
 /// TRACK 26 S4c — a claim of factorisation at rank 3 and width 2: the
 /// motion (a signed permutation and the enclosure it is taken onto), the
-/// residue's links and the stated ground, signed; and each of the three
+/// residue's links, the stated perspective (track 26 S6) and the stated
+/// ground, signed; and each of the three
 /// verdicts.
 fn factorisation() -> Result<String, String> {
     use mycelium::transducer::base::Site;
@@ -129,9 +130,13 @@ fn factorisation() -> Result<String, String> {
     let motion = Motion { permutation, onto: Enclosure::new(vec![3, 2, 2]).map_err(|e| format!("{e:?}"))? };
     let residue = vec![Link::new(Site::of([0, 1, 1]), vec![0, 0], vec![0, 7]), Link::new(Site::of([2, 0, 1]), vec![0, 3], vec![0, 0])];
     let ground = vec![0u8, 0];
-    let bytes = d::encode_factorisation(&key(), &CITATION, 1, &motion, &residue, Some(&ground)).ok_or("the claim does not encode")?;
+    let pose = SignedPermutation::new(vec![(2, Sense::Kept), (0, Sense::Reversed), (1, Sense::Kept)]).map_err(|e| format!("{e:?}"))?;
+    let perspective = mycelium::transducer::perspective::Perspective::of_sample(3)
+        .shifted(&mycelium::transducer::perspective::SensorMotion::Pose(pose))
+        .map_err(|e| format!("{e:?}"))?;
+    let bytes = d::encode_factorisation(&key(), &CITATION, 1, &motion, &residue, &perspective, Some(&ground)).ok_or("the claim does not encode")?;
     let act = d::decode_factorisation(&bytes).ok_or("the claim did not decode")?;
-    let want = d::FactorisationAct { voice: voice(), task: CITATION, pair: 1, motion, residue: residue.clone(), ground: Some(ground), signed: true };
+    let want = d::FactorisationAct { voice: voice(), task: CITATION, pair: 1, motion, residue: residue.clone(), perspective, ground: Some(ground), signed: true };
     same("the claim of factorisation", Some(act), want)?;
     same("the claim's kind under the solve", d::solve_kind(&bytes), d::SOLVE_KIND_FACTORISATION)?;
     same("the claim read as a solve of outputs", Some(d::decode_solve(&bytes).is_none()), true)?;
@@ -142,7 +147,7 @@ fn factorisation() -> Result<String, String> {
     ] {
         same("the factorisation verdict", d::decode_factor_verdict(&d::encode_factor_verdict(&v)), v)?;
     }
-    Ok("the signed claim of a rank-3 motion and residue at width 2, its stated ground, and the three verdicts decode to the values sent".to_string())
+    Ok("the signed claim of a rank-3 motion and residue at width 2, its stated perspective and ground, and the three verdicts decode to the values sent".to_string())
 }
 
 fn laws_register() -> Result<String, String> {
