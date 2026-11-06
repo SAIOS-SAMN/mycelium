@@ -2006,7 +2006,11 @@ Each phase is one commit:
      Ruled 2026-11-06 (78.180 ruling 6), to build: a mind asks for a
      perspective as a demand, a typed vertex naming the sample and the
      overlap where the cocycle fails for a missing chart; a ground's vortex
-     collapses as the nesting's does.
+     collapses as the nesting's does, by Stands or Painted on holding for
+     one kept candidate alone on every pair, never by Closes (claims
+     `ground_vortex_collapses_where_bodies_stand_on_one_candidate`,
+     `ground_vortex_collapses_where_residue_paints_one_candidate`,
+     `closing_rule_never_collapses_the_ground`).
    - **Built, stage 2** (branch `sensing-s6-claim`, a wire change inside
      v0.4.0's break): a claim of factorisation states the perspective it
      was perceived under (signed `mycelium factorisation v2`); the court

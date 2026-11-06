@@ -11,7 +11,9 @@
 - 78.178: the passage is ruled for mycelium as a P motion with a signed
   count. Fixture 9's return now reads `P = {e_+1: 0}`, and fixture 3 is
   two passes in one sense.
-- MU-ECONOMY §2.5 (holdings no motion made) and §12 items 5, 8 and 9;
+- MU-ECONOMY §2.5 (holdings no motion made; per-lane draws in
+  proportion to the lane's modes; the modes each mint carries) and §12
+  items 5, 8 and 9;
   MU-XSEPTUM §5.3 (a mode-0 receipt is a founding-mode receipt, closing
   #168); 78.174 §2.
 - MU-DERIVATIONS D3.3: π*'s wiring (the withheld pairs, the footprint,

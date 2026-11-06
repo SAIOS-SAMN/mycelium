@@ -93,7 +93,8 @@ on the lane its kind names, each with an exact rational amount:
 
 A holding holds its modes, each keyed by its canonical coordinates (A21).
 A payment adds modes; a draw removes modes or is refused naming the mode
-it lacks. Nothing is projected to a count (MU-RECURSION 78.162). The carrier
+it lacks. A per-lane draw takes that lane's modes in proportion to their
+amounts, and never another lane's (§2.5). Nothing is projected to a count (MU-RECURSION 78.162). The carrier
 is `economy::modes::Modes` (`src/economy/modes.rs`): add, a draw refused
 naming the mode short (`Short`), the modes of a motion
 (`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), and the
@@ -263,6 +264,32 @@ coordinator on 2026-11-06, under the operator's delegation (#169;
 - **A Note's mode-0 receipt is a founding-mode receipt** (#168). It is
   admitted under the rule that admits a genesis allocation and is not held
   for review (MU-XSEPTUM §5.3).
+
+**Draws and mints** (ruled by the coordinator on 2026-11-06, under the
+operator's delegation, on #169's follow-up; 78.180 ruling 3):
+- **A per-lane amount is drawn from the modes on that lane**, in
+  proportion to their amounts, computed exactly in ℚ. The draw is
+  deterministic: no choice is hidden in the payer, and no rounding is
+  left behind.
+- **A lane is never paid from another lane's modes.** Where the lane holds
+  too little, the draw is refused by name (`Short`, naming the mode).
+- **The modes drawn travel with the transfer**: tuition, gas, tolls,
+  conversion, stake top-up, partial slash and lease hold.
+- **A mint carries the modes of the motion its proof cites.** Every mint
+  pays for a proof, and every proof is a relation between motions (§0;
+  78.174):
+
+  | Mint | Modes it carries |
+  |---|---|
+  | Word use or citation (POWR shares) | The cited word's closure modes |
+  | POWR, or a Rewrite | The reduction's: the modes of the family the reduction absorbs |
+  | POWC | The converging orbits' class |
+  | Consilience (POWV) | The re-traversed closure's |
+  | Torse, recall | Their own motion's |
+
+- **A mint whose proof cites no motion** (a subsidy, or a mint at a door
+  with no closure) is minted at the founding mode, as genesis is, and
+  never with empty modes.
 
 ## 3. Issuance
 
