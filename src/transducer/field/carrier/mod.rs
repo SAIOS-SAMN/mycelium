@@ -14,6 +14,7 @@
 mod atlas;
 mod cyclotomic;
 mod enclosing;
+mod fibration;
 mod holding;
 mod holonomy;
 mod lift;
@@ -28,6 +29,7 @@ mod turning;
 pub use atlas::{Atlas, Attractor, Chart, Curvature, Orbit, Precession, Transition};
 pub use cyclotomic::Cyclotomic;
 pub use enclosing::{at_pole, stand, Labels, Membrane};
+pub use fibration::{Fibred, Level};
 pub use holding::{ExpansionRing, Inflation, WellBody, WellLayer, WellStage};
 pub use holonomy::{Holonomy, Monodromy, Motion};
 pub use lift::{Lifted, LiftedBody, Nested, Point};
