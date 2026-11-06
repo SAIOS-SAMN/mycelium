@@ -1855,7 +1855,11 @@ Each phase is one commit:
      `orbit_holonomy_is_the_product_of_its_transitions_per_lap`,
      `flat_product_reads_no_holonomy_where_curved_field_reads_it`,
      `orbit_precesses_by_the_holonomy_its_attractors_curve`,
-     `zero_precession_orbit_refused_as_loop`,
+     `flat_region_binds_no_orbit_refused_unbound` (restated from
+     `zero_precession_orbit_refused_as_loop` under 78.171 amendment (f):
+     a flat region binds no orbit, refused `Unbound`),
+     `closed_geodesic_with_zero_precession_is_resonant` (zero precession
+     in a curved field is a resonant orbit, never refused),
      `windings_kept_as_fibre_classes`,
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
    - **Built, stage 1** (branch `field-s7`; built against LAW-FIELD v1 as

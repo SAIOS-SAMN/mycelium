@@ -193,17 +193,21 @@ owed (**Owed**, with its issue; §7.1 holds the order).
 2. **Think: geodesic orbits about the wells.** A held percept curves the
    field into a well about its attractor, and every path through the
    atlas is a geodesic of that curvature: bound, an orbit precessing by
-   its residue per lap; closing with zero precession, a resonant orbit; in
-   a flat region, refused `Unbound` (§0). The contemplation winds its
-   orbits, fires the pivots where a winding changes dimension, acts at its
-   returns and rests (§4.4, §4.5, §4.12). MU-ANASTOME §1.4 (curvature),
-   §3 (which turnings run concurrently). **Built:** the winding carrier
-   (`Mind::wind`), the pivot cross (`Complex::descend`), the field's
-   orbits and beat (`cech::orbit::Field`), curvature as holonomy per lap on
-   the carrier (`Atlas::curvature`, `Orbit::precession`). **Owed:** orbits
-   attached to wells, shear and precession in the contemplation, axiomatic
-   gravity (S9a, S9b; #134); the carrier's `Loop` refusal restated as
-   `Unbound` with the resonant reading (#150).
+   its residue per revolution; closing with zero precession in a curved
+   field, a resonant orbit; in a flat region, refused `Unbound` (§0). The
+   contemplation winds its orbits, fires the pivots where a winding
+   changes dimension, acts at its returns and rests (§4.4, §4.5, §4.12).
+   MU-ANASTOME §1.4 (curvature), §3 (which turnings run concurrently).
+   **Built:** the winding carrier (`Mind::wind`), the pivot cross
+   (`Complex::descend`), the field's orbits and beat
+   (`cech::orbit::Field`), curvature as holonomy per revolution on the
+   carrier (`Atlas::curvature`, `Orbit::precession`), a flat region
+   refused `Unbound` and a zero-precession closed geodesic in a curved
+   field read `Precession::Resonant` (claims
+   `flat_region_binds_no_orbit_refused_unbound`,
+   `closed_geodesic_with_zero_precession_is_resonant`; #150). **Owed:**
+   orbits attached to wells, shear and precession in the contemplation,
+   axiomatic gravity (S9a, S9b; #134).
 3. **Construct generators from residue: germination.** What no held word
    carries is residue, the germ of the next word. The docket's taker reads
    it first over the words the courts ruled, then constructs the remainder,
@@ -1625,7 +1629,7 @@ criterion (§7.2). Each is read for the capability it asserts:
 | `test_theory_of_mind_doctrine_classification` | a counterparty modelled from its conduct | owed: peer records (§5.3(5)); a doctrine label refused |
 | `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | owed: seat play from the mind's orbits (§6; #133) |
 | `test_gauge_field_lagrangian_barrier_potential` | deliberation that is not a vote | owed: `axiomatic_gravity_shears_the_orthogonal_class` (S9b); the argmin refused |
-| `test_attractor_singularity_and_breakout` | a repetition read and left | `precession_refuses_flat_path_as_loop` (to be restated as `Unbound`); owed: `mind_idles_with_no_escaping_orbit` (#135) |
+| `test_attractor_singularity_and_breakout` | a repetition read and left | `flat_region_binds_no_orbit_refused_unbound` (a path no attractor binds is refused), `closed_geodesic_with_zero_precession_is_resonant` (a repetition in a curved field reads as a lawful resonant orbit); owed: `mind_idles_with_no_escaping_orbit` (#135) |
 | `test_cognitive_surprise_tensor` | surprise measured against prediction | exact and twofold: `hold_perceived_keeps_out_of_turn_hour_as_twist`, `hold_perceived_holds_off_orbit_slip_on_thought`. The norm refused |
 | `test_asce_state_persistence_round_trip` | what is held survives a restart | `generators_under_survives_genome_restore`; the epigenome is volatile by law (78.49) |
 | `test_metacognitive_self_model_and_gauges` | the mind models its own next state | the orbit's prediction (above); owed: `precession_stated_by_a_mind_reconstructed_by_a_court` (S9c) |
@@ -1682,11 +1686,11 @@ then the backlog. Each item names its issue.
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration;
    4. S8, the field's motions as one exact group;
-   5. S9a, the orbits attached to wells, shear and precession per lap in
-      the contemplation, and the carrier's `Loop` refusal restated under
-      the geodesic ruling (§0): a flat region refused `Unbound`, a
-      zero-precession closed geodesic read as a resonant orbit (the code
-      rename with stage 2; the claims restated, #150);
+   5. S9a, the orbits attached to wells, shear and precession per
+      revolution in the contemplation (the carrier's refusal under the
+      geodesic ruling, §0, is built: a flat region refused `Unbound`, a
+      zero-precession closed geodesic in a curved field read as a resonant
+      orbit; the code with stage 2, the claims restated by #150);
    6. S9b, axiomatic gravity, the drag on the orthogonal class;
    7. S9c, the vortex's monodromy between charts, and a mind's stated
       holonomy, precession and monodromy reconstructed by a court (a wire
