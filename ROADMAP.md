@@ -1892,7 +1892,9 @@ Each phase is one commit:
      nothing. The genesis bond and the mind's `family_magnitude` read
      alike; the bond's value changes, a recut. Claims
      `magnitude_reads_counts_at_rank_n_and_h_by_grade_n_minus_one`,
-     `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`.
+     `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`,
+     `scaled_pair_is_measured_refused_pair_is_residue` (a projection that
+     lands resolves an unequal enclosure; confirmed on #32).
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
