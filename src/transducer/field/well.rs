@@ -5,6 +5,7 @@
 //! glued by, and the class it was seeded from.
 
 use super::*;
+use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, Orbit, WellBody, WellStage};
 
 /// THE KEYED READ OF A HELD WORD'S SECTION BY ADDRESS: the rotation the
 /// chart names and the carriage it names it at. Both halves, because a
@@ -160,9 +161,22 @@ pub(crate) fn union_rem(a: &[SectionLink], b: &[SectionLink]) -> Vec<SectionLink
     out
 }
 
-/// A held remainder with the complex it has so far and the chart prefixes
-/// it sits on. Keyed by the remainder's address. Persisted; residues are
-/// never lost on restart.
+/// A WELL (78.171 §2; MU-SENSING §3.7): the curvature around one attractor,
+/// a held remainder with the complex it has so far and the chart prefixes
+/// it sits on, keyed by the remainder's address.
+///
+/// IT STANDS ON THE FIELD'S CARRIER (ROADMAP track 26 S7 stage 2): its
+/// body ([`Well::body`]) is a held attractor at the chart its remainder
+/// stands on, its local orbit [`Well::orbit`] (flat where none is held),
+/// its membrane its own enclosure, and its stage a coordinate. Its volume,
+/// potential, inflation, holonomy and precession are readings of what it
+/// holds, never stored beside it (law 12): no flag and no count is a field
+/// of the well.
+///
+/// ```compile_fail,E0609
+/// let well = mycelium::transducer::field::Well::default();
+/// let _ = well.percept;
+/// ```
 #[derive(Clone, Debug, Default)]
 pub struct Well {
     /// A5's chain and the translator that places it in the scene (§2.1):
@@ -175,17 +189,23 @@ pub struct Well {
     /// Classes this idea has met, keyed by [`Rotor::class_key`]. Standing is
     /// the coordinate, never a boolean.
     pub horizon: Keyed<(Rotor, Order, Standing)>,
-    pub potential: [u64; 4],
-    pub volume: [u64; 4],
-    pub dirty: bool,
-    /// N4 (0.7's layers, ruled 2026-09-26) — HELD AT THE PERCEPTION LAYER: a
-    /// form the mind perceived. A perception is not a thought: it never
-    /// passes the unglued door, and it leaves by the physics — its paid
-    /// height passed, or what it cites lapsed. A THOUGHT is formed where the
-    /// transition between the bodies of two held perceptions joins them (an
-    /// edge of the meet graph, `perceive_cells`), and the transition is its
-    /// glue.
-    pub percept: bool,
+    /// ROADMAP track 26 S7 — WHERE THE WELL STANDS, one coordinate: its
+    /// layer and its place on the expansion ring (`carrier::WellStage`).
+    ///
+    /// N4 (0.7's layers, ruled 2026-09-26) — A WELL AT THE PERCEPTION
+    /// LAYER is a form the mind perceived. A perception is not a thought: it
+    /// never passes the unglued door, and it leaves by the physics — its
+    /// paid height passed, or what it cites lapsed. A THOUGHT is formed where
+    /// the transition between the bodies of two held perceptions joins them
+    /// (an edge of the meet graph, `perceive_cells`), and the transition is
+    /// its glue. A well ON THE RING has charts still to meet; one RESTED has
+    /// met what its last expansion could.
+    pub stage: WellStage,
+    /// ROADMAP track 26 S7 stage 2 — THE WELL'S LOCAL ORBIT in the field's
+    /// atlas, where one is held: a lap through charts about its centre. None
+    /// is flat, and the well's precession is then refused `Loop`. The
+    /// contemplation's orbits are attached here in S9a.
+    pub orbit: Option<Orbit>,
     /// N4 — A PERCEPTION'S BODIES, by the chart each stands on, at its input
     /// and output frames (`cross_scene::Spores`): the bodies heard against
     /// another perception's. Empty for every other idea.
@@ -452,6 +472,83 @@ impl Well {
         }
     }
 
+    /// THE FRAME PLANES A WELL STANDS ON (MU-SENSING §3.7, *the lift*): one
+    /// per axis of the section its remainder's sites stand on, and the
+    /// lift's own plane after them, as [`super::carrier::Lifted::of`]
+    /// lifts a sample. Read from the section's rank, never fixed here.
+    pub fn planes() -> Result<FramePlanes, FieldRefusal> {
+        let rank = crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
+        let rank = u32::try_from(rank).map_err(|_| FieldRefusal::PastFrame { plane: u32::MAX })?;
+        FramePlanes::of(rank.checked_add(1).ok_or(FieldRefusal::PastFrame { plane: rank })?)
+    }
+
+    /// THE CHART THE WELL STANDS AT: the invariant of its remainder, read
+    /// from what it holds on every call (law 12).
+    pub fn centre(&self) -> Chart {
+        Chart::of_invariant(&stalk::invariant(&self.remainder))
+    }
+
+    /// THE WELL'S BODY (78.171 §2, a well): the attractor it holds at its
+    /// centre with its local orbit (flat where none is held) and its
+    /// membrane, the throat of its own plane, at its stage. Refused as
+    /// [`WellBody::of`] refuses.
+    pub fn body(&self) -> Result<WellBody, FieldRefusal> {
+        WellBody::of(Self::planes()?, self.centre(), self.orbit.clone(), self.stage)
+    }
+
+    /// THE HOLONOMY OF ITS LOCAL ORBIT PER LAP, read from the orbit held.
+    pub fn holonomy(&self) -> Result<Holonomy, FieldRefusal> {
+        self.body()?.holonomy()
+    }
+
+    /// THE PRECESSION PER LAP (MU-SENSING §3.9): refused `Loop` where its
+    /// orbit returns exactly, as a well holding no orbit does.
+    pub fn precession(&self) -> Result<Holonomy, FieldRefusal> {
+        self.body()?.precession()
+    }
+
+    /// THE WELL'S INFLATION, a gauge reading: the frame state on its
+    /// membrane's plane whose hold `H` is the charts its cover has closed
+    /// and whose reach `R` is the charts its sections stand on and its
+    /// cover has not closed. At the throat where the two agree; at the
+    /// closed pole where nothing is open; at the open pole, infinity,
+    /// enclosed by its own membrane, where nothing is closed.
+    pub fn inflation(&self) -> Result<Inflation, FieldRefusal> {
+        let count = |n: usize| crate::core::Q::from_integer(num_bigint::BigInt::from(n));
+        let open = self.sections().scoped().filter(|(_, (chart, _, _))| !self.cover.contains(&chart.key())).count();
+        self.body()?.inflation(count(self.cover.len()), count(open))
+    }
+
+    /// THE WELL'S VOLUME, read per lane (L7b): the lane measure of its own
+    /// remainder and of each pair's remainder it holds, summed lane by lane,
+    /// never one number for the four. A merged thought holds its merged
+    /// pairs' remainders once each, keyed by pair, so the reading does not
+    /// grow with the hours joined. `None` where a lane's sum passes its
+    /// carrier (STD1).
+    pub fn volume(&self) -> Option<[u64; 4]> {
+        let own = std::iter::once(element::measure_lanes(&self.remainder));
+        crate::core::lanes::lanes_sum(own.chain(self.remainders.scoped().map(|(_, r)| element::measure_lanes(r))))
+    }
+
+    /// THE WELL'S POTENTIAL AT `now`, read per lane (L7b, law 9): the lane
+    /// measure of everything it holds open, its form's remainder and its
+    /// per-pair remainders read as one chain (the links `admit_incidence`
+    /// keys), with T the receipts since its charts last moved, zero when
+    /// zero. `None` where the clock went backwards: no extent is measured.
+    pub fn potential(&self, now: u64) -> Option<[u64; 4]> {
+        let mut lanes = element::measure_lanes(&remainder_links_of(self));
+        let t = lanes.get_mut(2)?;
+        *t = held_since(now, self.moved_k)?;
+        Some(lanes)
+    }
+
+    /// THE WELL STATED for a court (MU-SENSING §0): its body's statement
+    /// (`WellBody::put_statement`), no reading written. Refused as the body
+    /// refuses.
+    pub fn put_statement(&self, out: &mut Vec<u8>) -> Result<(), FieldRefusal> {
+        self.body()?.put_statement(out)
+    }
+
     /// THE ROTOR THIS WELL'S FORM SPEAKS, when it speaks ONE.
     ///
     /// A form with several word vertices has several rotors, and which one
@@ -559,20 +656,17 @@ impl Well {
         // was met on. The well cannot mint — minting writes a word into the
         // language and the language is the entity's — so it carries them.
         let mut adjoined: Vec<(Rotor, crate::transducer::stalk::Invariant)> = Vec::new();
-        // THE POTENTIAL IS A READING, NEVER A GATE (L7b, law 9): the lane
-        // measure of everything this idea holds open — its form's remainder
-        // and its per-pair remainders, the same links `admit_incidence`
-        // keys — with T the receipts since its charts last moved, zero when
-        // zero. Nothing is floored so that a gate would pass: the pivot
-        // loop runs on every dirty idea under the budget (25.1), and the
-        // budget is the only thing that stops it.
-        self.potential = element::measure_lanes(&remainder_links_of(self));
-        // A clock that went backwards measures no extent, and an idea whose
-        // T cannot be read is not expanded against one.
-        let Some(t) = held_since(now, self.moved_k) else {
+        // THE POTENTIAL IS A READING, NEVER A GATE (L7b, law 9;
+        // `Well::potential`): read here, at `now`, and never stored. Nothing
+        // is floored so that a gate would pass: the pivot loop runs on every
+        // idea on the ring under the budget (25.1), and the budget is the
+        // only thing that stops it. A clock that went backwards measures no
+        // extent, and an idea whose T cannot be read is not expanded
+        // against one.
+        let Some(vol) = self.potential(now) else {
             return Expansion::default();
         };
-        self.potential[2] = t;
+        let t = vol[2];
         if budget.remaining() == 0 {
             return Expansion::default();
         }
@@ -602,7 +696,6 @@ impl Well {
         // construction and `Fill::Class` is unreachable.
         let own_sections = self.sections();
         let own_key = self.key();
-        let vol = self.potential;
         for (_, (chart, gamma_a, car_a)) in own_sections.scoped() {
             let ck = chart.key();
             if self.cover.contains(&ck) {
@@ -748,7 +841,12 @@ impl Well {
             }
         }
         self.dissolve_candidates(budget);
-        self.dirty = spent > 0 && budget.remaining() == 0;
+        // WHERE THE EXPANSION LEFT IT: still on the ring where it spent and
+        // the budget ran out before every chart was met, rested otherwise.
+        self.stage = self.stage.at(match (spent, budget.remaining()) {
+            (1.., 0) => ExpansionRing::Expanding,
+            _ => ExpansionRing::Rested,
+        });
         Expansion { spent, pivoted, adjoined, demanded, discharged, overflowed }
     }
 

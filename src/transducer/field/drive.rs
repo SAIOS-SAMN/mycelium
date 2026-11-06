@@ -95,7 +95,7 @@ impl Contemplation {
                     self.overflowed += 1;
                 }
                 adjoined.append(&mut x.adjoined);
-                if !b.dirty {
+                if b.stage.ring == super::carrier::ExpansionRing::Rested {
                     self.dirty.remove(&k);
                 }
                 // 78.37 — the demands its pivots left, onto the docket, and the

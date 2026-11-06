@@ -941,14 +941,18 @@ impl Contemplation {
     /// a decoherence by that adjunct.
     pub(crate) fn link_new(&mut self, key: impl AsRef<[u8]>, adjunct: super::meet::Adjunct) {
         let key = key.as_ref().to_vec();
+        // The section's volume is the well's reading (`Well::volume`); a
+        // well whose reading passes its carrier is counted and not linked
+        // (STD1).
         let (charts, vol0) = {
             let Some(b) = self.wells.get(&key) else {
                 return;
             };
-            (
-                b.cover.scoped().map(|(k, _)| k).collect::<Vec<_>>(),
-                b.volume,
-            )
+            let Some(volume) = b.volume() else {
+                self.overflowed += 1;
+                return;
+            };
+            (b.cover.scoped().map(|(k, _)| k).collect::<Vec<_>>(), volume)
         };
         self.complex.set_section(
             &key,
@@ -1052,11 +1056,8 @@ impl Contemplation {
         let key = remainder_address(&remainder);
         let inv = stalk::invariant(&remainder);
         let cover = cover_of(&inv);
-        // The volume is the remainder's own measure (L7b): a T extent of
-        // zero is zero, and no lane is floored so that a gate downstream
-        // would pass — the pivot orbit runs on every dirty idea (25.1), T
-        // paces nothing (law 9).
-        let volume = element::measure_lanes(&remainder);
+        // Its volume and potential are readings of the remainder it holds
+        // (`Well::volume`, `Well::potential`, L7b), never stored here.
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
         let well = Well {
@@ -1064,11 +1065,10 @@ impl Contemplation {
             nerve: Complex::new(),
             cover,
             horizon,
-            potential: volume,
-            volume,
-            dirty: true,
-            // A remainder held alone is no perception (N4).
-            percept: false,
+            // A remainder held alone is no perception (N4): a thought, on
+            // the ring.
+            stage: super::carrier::WellStage::thought(),
+            orbit: None,
             spores: super::cross_scene::Spores::default(),
             family: Vec::new(),
             moved_k: self.now_k,
@@ -1258,10 +1258,12 @@ impl Contemplation {
         n
     }
 
-    /// The held thoughts' potential, per lane; `None` where the sum would
-    /// pass its carrier (STD1).
+    /// The held thoughts' potential, per lane, each read at this
+    /// contemplation's K (`Well::potential`); `None` where a well's T
+    /// cannot be read or the sum would pass its carrier (STD1).
     pub fn potential(&self) -> Option<[u64; 4]> {
-        crate::core::lanes::lanes_sum(self.wells.scoped().map(|(_, b)| b.potential))
+        let each = self.wells.scoped().map(|(_, b)| b.potential(self.now_k)).collect::<Option<Vec<_>>>()?;
+        crate::core::lanes::lanes_sum(each)
     }
 
 }

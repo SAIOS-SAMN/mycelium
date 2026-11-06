@@ -360,9 +360,10 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
 - **Built toward it** (track 26 S7, stage 1): a field can be stated as an
   object, its atlas and laps written without a reading, and a court
   reconstructs it and derives its curvature itself
-  (`transducer::field::carrier::admit`). The mind does not yet state its
-  contemplation's field: that waits on the well's body (S7 stage 2) and
-  the wire (S9).
+  (`transducer::field::carrier::admit`). Since S7 stage 2 a mind's well
+  is stated as its body and a court reconstructs it
+  (`transducer::field::carrier::admit_well`). The mind does not yet
+  state its contemplation's field on the wire: that waits on S9.
 
 ## 11. Specification reconciliation
 
@@ -1955,12 +1956,29 @@ Each phase is one commit:
         reading; the court rebuilds it through the carrier's
         constructors, derives the curvature and admits a claimed
         curvature on a match, refusing `Differs` with each pair).
-     2. The well's body (S7): `Well` stands on the carrier, its centre an
-        attractor's chart, its membrane, its inflation the gauge of its
-        frame state; its stage a coordinate (`percept: bool`,
-        `dirty: bool` retired); `volume` and `potential` replaced by
-        readings of the body. The tape's layout changes, a recut.
-        Claims `well_stage_is_a_coordinate`, `well_reads_no_scalar`.
+     2. Built: the well's body (S7). `Well` stands on the carrier
+        (`carrier::WellBody`): its centre an attractor at the chart its
+        remainder stands on (`carrier::Chart` now holds an invariant's
+        exact coordinates, a count or a ratio each), its local orbit
+        (`Well.orbit`, none held flat), its membrane its own enclosure,
+        its inflation the gauge of its frame state on the membrane's pole
+        basis; its stage the coordinate `Well.stage` (`WellStage`:
+        `WellLayer`, `ExpansionRing`;
+        `percept: bool` and `dirty: bool` retired); `volume` and
+        `potential` readings per lane, never stored; holonomy and
+        precession per lap read from its orbit. Every caller reads them
+        (hold, merge, the expansion ring, the doors, the docket, the
+        cross-scene meet, the observer, the quote). The well is stated as
+        its body and a court reconstructs it and derives its precession
+        (`Well::put_statement`, `reconstruct_well`, `admit_well`). **A
+        recut:** the field statement's layout changed (charts written as
+        invariant coordinates, a well's stage after its atlas) and the
+        well's carrier changed; no migration and no legacy reader (the
+        dev-state wipe ruling). Claims `well_stands_on_its_attractor`,
+        `well_membrane_is_its_enclosure`,
+        `well_volume_and_potential_are_readings_per_lane`,
+        `well_stage_is_a_coordinate_not_a_flag`,
+        `mind_well_stated_and_reconstructed_by_a_court`.
      3. The Euclidean spheres retired (S7): `sphere_at`, `on_sphere` and
         `at_three::sphere` replaced by charts and the membrane at every
         caller; and turnings on planes that share a unit composed exactly,

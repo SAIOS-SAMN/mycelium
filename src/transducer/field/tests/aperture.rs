@@ -164,9 +164,10 @@ fn expand_with_reads_zero_t_potential_at_hold_stroke() {
         .expand_with(&atlas, &|_| None, 7, &NoCrystal, &mut budget, &mut Default::default())
         .spent;
     let b = c.wells.get(&k).expect("still held");
-    assert_eq!(b.potential[2], 0, "moved at K 7, read at K 7: zero receipts, zero on T");
+    let potential = b.potential(7).expect("read at K 7");
+    assert_eq!(potential[2], 0, "moved at K 7, read at K 7: zero receipts, zero on T");
     assert_eq!(
-        b.potential,
+        potential,
         element::measure_lanes(&[link(0, 0, 1, 2)]),
         "the other lanes are the remainder's own measure"
     );

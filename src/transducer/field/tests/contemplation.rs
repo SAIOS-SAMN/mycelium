@@ -337,8 +337,8 @@ fn hold_form_carries_bundle_and_remainder() {
         "Well.remainder is the form's own remainder, not concatenated pairs"
     );
     assert_eq!(
-        b.volume,
-        crate::transducer::element::measure_lanes(links),
+        b.volume(),
+        Some(crate::transducer::element::measure_lanes(links)),
         "volume is the lane-wise sum of per-pair remainder measures"
     );
 }

@@ -50,7 +50,9 @@ impl Mind {
                 .contemplation
                 .wells
                 .scoped()
-                .map(|(_, b)| (standing(&crate::transducer::stalk::invariant(&b.remainder)), b.volume))
+                // The well's volume is its reading per lane (`Well::volume`);
+                // a well whose reading passes its carrier routes nothing.
+                .filter_map(|(_, b)| Some((standing(&crate::transducer::stalk::invariant(&b.remainder)), b.volume()?)))
                 .collect(),
             empty,
             voice: self.hypha.voice().id(),

@@ -132,7 +132,7 @@ impl Contemplation {
                 c[0] += 1;
             } else if !b.glues.is_empty() {
                 c[1] += 1;
-            } else if b.dirty {
+            } else if b.stage.ring == super::carrier::ExpansionRing::Expanding {
                 c[2] += 1;
             } else {
                 c[3] += 1;
@@ -152,15 +152,16 @@ impl Contemplation {
         // THE UNGLUED DOOR ACTS ON THOUGHTS ONLY (N4): a perception never
         // passes it — it leaves by the physics, its line let go by the field
         // (`line`) or what it cites lapsed — and a thought's glue is also the
-        // transition that formed it, an edge of the meet graph.
+        // transition that formed it, an edge of the meet graph. It reads the
+        // well's stage: a thought, rested off the ring.
+        let rested = super::carrier::WellStage { layer: super::carrier::WellLayer::Thought, ring: super::carrier::ExpansionRing::Rested };
         let drop: Vec<Vec<u8>> = self
             .wells
             .scoped()
             .filter(|(k, b)| {
-                !b.percept
+                b.stage == rested
                     && b.glued_by.is_empty()
                     && b.glues.is_empty()
-                    && !b.dirty
                     && self.complex.link(k, 1).is_empty()
             })
             .map(|(k, _)| k)
