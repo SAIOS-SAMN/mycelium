@@ -357,7 +357,6 @@ impl Contemplation {
         let mut bundle = None;
         let mut remainders: Keyed<Vec<SectionLink>> = Keyed::new();
         let mut old_rems: Keyed<Vec<SectionLink>> = Keyed::new();
-        let mut merged_volume = [0u64; 4];
         // ESCROW CONSERVED (MU-CLIENT §7.1 Phase 3): what each merged thought
         // holds is carried whole into the merge, never re-drawn and never its
         // volume.
@@ -379,9 +378,6 @@ impl Contemplation {
                 arrived.insert([&o.to_be_bytes()[..], v.as_slice()].concat(), b.spores.clone());
             }
             old_rems.insert(v, b.remainder.to_vec());
-            for (m, x) in merged_volume.iter_mut().zip(&b.volume) {
-                *m = (*m).max(*x);
-            }
             if !crate::core::lanes::lanes_step(&mut escrow, &b.escrow) {
                 self.overflowed += 1;
             }
@@ -457,10 +453,10 @@ impl Contemplation {
             self.return_escrow(&escrow);
             return None;
         }
-        // THE THOUGHT'S VOLUME is the largest of what merged, lane by lane —
-        // never the first form's (purged), never a sum that grows with every
-        // hour joined.
-        let volume = merged_volume;
+        // THE THOUGHT'S VOLUME is a reading of what it holds (`Well::volume`):
+        // the union of the merged remainders and the merged pairs' remainders,
+        // each pair once — never the first form's (purged), never a sum that
+        // grows with every hour joined.
         // A union of two remainders can say two things at one site, and
         // such a remainder has no A5 chain. The merge yields no well
         // rather than one that cannot be named (U14).
@@ -474,11 +470,10 @@ impl Contemplation {
             nerve,
             cover,
             horizon,
-            potential: volume,
-            volume,
-            dirty: false,
-            // A merge is a thought, formed of what it merged (N4).
-            percept: false,
+            // A merge is a thought, formed of what it merged (N4), entered on
+            // the ring by its key below and rested until expanded.
+            stage: super::carrier::WellStage::default(),
+            orbit: None,
             spores,
             family,
             moved_k: 0,

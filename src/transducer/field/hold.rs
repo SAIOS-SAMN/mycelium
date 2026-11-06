@@ -198,7 +198,7 @@ impl Contemplation {
                     for k in perceptions {
                         self.dirty.insert(&k, ());
                         if let Some(b) = self.wells.get_mut(&k) {
-                            b.dirty = true;
+                            b.stage = b.stage.reopened();
                         }
                     }
                     return None;
@@ -207,7 +207,6 @@ impl Contemplation {
             }
         };
         let mut rem_keyed: Keyed<Vec<SectionLink>> = Keyed::new();
-        let mut volume = [0u64; 4];
         let mut cover = Keyed::new();
         for (i, r) in remainders.iter().enumerate() {
             #[expect(
@@ -217,12 +216,6 @@ impl Contemplation {
             rem_keyed.insert(crate::transducer::family::pair_index_key(i as u16), r.clone());
             if r.is_empty() {
                 continue;
-            }
-            let m = element::measure_lanes(r);
-            for l in 0..4 {
-                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
-                let v = volume[l].saturating_add(m[l]);
-                volume[l] = v;
             }
             for (ck, _) in cover_of(&stalk::invariant(r)).scoped() {
                 cover.insert(&ck, ());
@@ -352,11 +345,11 @@ impl Contemplation {
             nerve: Complex::new(),
             cover,
             horizon,
-            potential: volume,
-            volume,
-            dirty: true,
-            // A perceived form is held at the perception layer (N4).
-            percept: true,
+            // A perceived form is held at the perception layer (N4), on the
+            // ring.
+            stage: super::carrier::WellStage::perceived(),
+            // No orbit is held yet: the well is flat (S9a attaches them).
+            orbit: None,
             spores,
             family: family.to_vec(),
             moved_k: self.now_k,

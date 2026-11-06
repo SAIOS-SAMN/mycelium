@@ -136,15 +136,14 @@ pub struct Section<'a> {
 }
 
 /// MU-ANASTOME §9 — THE LANGUAGE'S TRAVERSAL, held with its subsection on
-/// thought and linked from the sensing and hosting documents. MU-CLIENT's
-/// link joins `linked_from` when its rewrite lands.
+/// thought and linked from the sensing, hosting and client documents.
 pub const TRAVERSAL: Section<'static> = Section {
     home: "docs/MU-ANASTOME.md",
     headings: &[
         "9. The language's traversal: sensorium → mind → language → hypha → minds",
         "9.4 Thought: every ideation held at once",
     ],
-    linked_from: &["docs/MU-SENSING.md", "docs/MU-HOSTING.md"],
+    linked_from: &["docs/MU-SENSING.md", "docs/MU-HOSTING.md", "docs/MU-CLIENT.md"],
 };
 
 /// A heading's anchor as the rendered document writes it: lower case,

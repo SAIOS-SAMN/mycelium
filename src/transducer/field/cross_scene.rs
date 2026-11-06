@@ -1795,7 +1795,7 @@ impl Contemplation {
             for v in [a, b] {
                 if let Some(well) = self.wells.get_mut(v) {
                     horizon_put(&mut well.horizon, rotor.clone(), Standing::Held);
-                    well.dirty = true;
+                    well.stage = well.stage.reopened();
                     self.dirty.insert(v, ());
                 }
             }

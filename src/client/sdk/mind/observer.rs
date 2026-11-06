@@ -101,7 +101,7 @@ impl Mind {
     fn read_now(&self) -> Vec<String> {
         let c = &self.contemplation;
         let grounded = c.wells.scoped().filter(|(_, b)| b.ground.is_some()).count();
-        let percepts = c.wells.scoped().filter(|(_, b)| b.percept).count();
+        let percepts = c.wells.scoped().filter(|(_, b)| b.stage.layer == crate::transducer::field::carrier::WellLayer::Perception).count();
         let pace = &self.board.court;
         let short = self.physics().reserve_shortfall([true; 4]);
         vec![
@@ -252,9 +252,9 @@ impl Mind {
             true => "no scene".to_string(),
             false => format!("scene {}", tail(&b.family, 4)),
         };
-        let layer = match b.percept {
-            true => "perception",
-            false => "thought",
+        let layer = match b.stage.layer {
+            crate::transducer::field::carrier::WellLayer::Perception => "perception",
+            crate::transducer::field::carrier::WellLayer::Thought => "thought",
         };
         let winding = match &b.ground {
             Some(g) => {

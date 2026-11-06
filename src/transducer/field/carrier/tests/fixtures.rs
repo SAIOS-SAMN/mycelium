@@ -43,25 +43,25 @@ pub(super) fn three_charts() -> (Lifted, Vec<Chart>) {
     (lifted, charts)
 }
 
-/// The lap through `charts` in order, each step a turning by `n/d` degrees
-/// on `plane`.
-pub(super) fn lap_turning(charts: &[Chart], plane: &TurningPlane, n: i64, d: i64) -> Orbit {
+/// The orbit of one revolution through `charts` in order, each step a
+/// turning by `n/d` degrees on `plane`.
+pub(super) fn revolution_turning(charts: &[Chart], plane: &TurningPlane, n: i64, d: i64) -> Orbit {
     let steps = charts.len();
-    let lap = (0..steps)
+    let revolution = (0..steps)
         .map(|i| Transition {
             from: charts[i].clone(),
             to: charts[(i + 1) % steps].clone(),
             motion: Motion::of(vec![turning(plane, n, d)]).expect("one turning is a motion"),
         })
         .collect();
-    Orbit::of(lap).expect("the lap closes")
+    Orbit::of(revolution).expect("the revolution closes and binds")
 }
 
 /// The atlas of `lifted`'s charts holding one attractor at its first chart,
-/// its local orbit `orbit` and its membrane on the lift's own plane.
+/// binding `orbit`, its membrane on the lift's own plane.
 pub(super) fn atlas_holding(lifted: &Lifted, orbit: Orbit) -> Atlas {
     let mut atlas = lifted.atlas();
     let centre = atlas.charts()[0].clone();
-    atlas.hold(Attractor { centre, orbit, membrane: lifted.membrane.clone() }).expect("the attractor is charted");
+    atlas.hold(Attractor { centre, orbit: Some(orbit), membrane: lifted.membrane.clone() }).expect("the attractor is charted");
     atlas
 }
