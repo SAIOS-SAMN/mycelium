@@ -185,6 +185,32 @@ impl Reconstructed<crate::physics::laws::clauses::Signing> {
     }
 }
 
+impl Reconstructed<crate::cognition::Court> {
+    /// MU-ANTI-FLATTENING 14, ROADMAP track 25 X0 (option (a), ruled on #28,
+    /// 2026-11-06) — A COURT RECONSTRUCTED FROM ITS SNAPSHOT AND CHECKED
+    /// AGAINST ITS RECEIPTS, never replayed and never restored in place.
+    /// `held` carries what the snapshot is read against: the line and the
+    /// eras bound from disk, or nothing where the line rides the snapshot.
+    /// The laws, each of which refuses the whole snapshot:
+    /// - every receipt the snapshot carries re-derives its own chain hash
+    ///   (`KStepReceipt::rederives`), and the line verifies whole on its
+    ///   root (`ReceiptChain::from_nodes`);
+    /// - a snapshot standing on a held line names a stamp that line holds,
+    ///   or one it has folded past;
+    /// - every ledger row continues the receipt at its stamp
+    ///   (`Predecessor::continues`), the fold root's at the root;
+    /// - every word re-derives the citation it is filed under.
+    ///
+    /// Everything derived (balances, the ruled stalks, the axis index, the
+    /// federation's order, the rank's ordinal, the depth index) is
+    /// re-derived from what was read, never restored. The claim
+    /// `restore_reconstructs_and_checks_receipts`.
+    pub fn court(mut held: crate::cognition::Court, b: &[u8]) -> Result<Reconstructed<crate::cognition::Court>, crate::cognition::RestoreRefusal> {
+        held.read_snapshot(b)?;
+        Ok(Reconstructed { object: held })
+    }
+}
+
 impl Reconstructed<crate::anastome::dialogue::RootProof> {
     /// 78.147, 47.3 — A FOLD ROOT RECONSTRUCTED FROM THE SIGNATURES OVER
     /// IT, as the fold was sealed: the home's signed position verifies

@@ -54,50 +54,53 @@ fn records<T>(v: &[u8], mut read: impl FnMut(&[u8], &mut usize) -> Option<T>) ->
 }
 
 impl Court {
-    /// P7 — RESTORE a snapshot into a fresh court. Returns `false` on a
-    /// bad magic or a trie that does not read whole, leaving the court
-    /// empty: nothing is partly restored.
+    /// MU-ANTI-FLATTENING 14, ROADMAP track 25 X0 (ruled on #28,
+    /// 2026-11-06) — A COURT RECONSTRUCTED FROM ITS SNAPSHOT, never
+    /// restored in place: `self` holds the evidence the snapshot is read
+    /// against (its line and eras, where they are bound on disk; nothing,
+    /// for a court with its line in the snapshot), and the snapshot is read
+    /// under the laws of [`Reconstructed::court`]. A refusal names its
+    /// layout, its magic, or the trie and byte it stopped at.
     ///
-    /// AND IT SAYS SO, naming the trie it stopped in and the byte it
-    /// stopped at. The refusal is the caller's to act on and the server's
-    /// boot REFUSES on it (X8): a `false` here is a whole court's memory —
-    /// its basis, its chain, its treasury — and continuing without it
-    /// means the next persist writes an empty court over the ledger that
-    /// would not read. Measured on the development deployment at fc75a59: hypha b's 16 MB
+    /// The refusal is the caller's to act on, and the server's boot REFUSES
+    /// on it (X8): a refusal here is a whole court's memory — its basis, its
+    /// chain, its treasury — and continuing without it means the next
+    /// persist writes an empty court over the ledger that would not read.
+    /// Measured on the development deployment at fc75a59: hypha b's 16 MB
     /// ledger restored as nothing, ran two epochs reporting `basis=0 K=0`,
     /// and was overwritten, because the only line here was the one printed
     /// when it SUCCEEDED and the only branch taken was the one that
     /// ignored the failure.
-    pub fn restore(&mut self, b: &[u8]) -> bool {
+    ///
+    /// [`Reconstructed::court`]: crate::court::admission::Reconstructed::court
+    pub fn reconstruct(self, b: &[u8]) -> Result<crate::court::admission::Reconstructed<Court>, RestoreRefusal> {
+        crate::court::admission::Reconstructed::court(self, b)
+    }
+
+    /// P7 — THE SNAPSHOT READ INTO THIS COURT, for
+    /// [`Reconstructed::court`](crate::court::admission::Reconstructed::court)
+    /// alone, which is the only reader that calls it. On a refusal the
+    /// court is left empty: nothing is partly restored.
+    pub(crate) fn read_snapshot(&mut self, b: &[u8]) -> Result<(), RestoreRefusal> {
         match b.get(0..4) {
             Some(m) if m == MAGIC => {}
             // The positional tape (78.25), refused BY NAME: a recut is the
             // road, and the file is not corrupt.
             Some(m) if m == PRE_TRIE_MAGIC => {
-                eprintln!("  ledger refused: MYC7, the positional tape (78.25) — refused by name, the recut is the road");
-                return false;
+                return Err(RestoreRefusal::Retired { magic: "MYC7", layout: "the positional tape (78.25)" });
             }
             Some(m) if m == PRE_LINE_MAGIC => {
-                eprintln!("  ledger refused: MYT1, the tries with the line and the eras inside them — refused by name, the recut is the road");
-                return false;
+                return Err(RestoreRefusal::Retired { magic: "MYT1", layout: "the tries with the line and the eras inside them" });
             }
             Some(m) if m == PRE_RATIONAL_MAGIC => {
-                eprintln!("  ledger refused: MYT2, μ as four u64 counts per holding and row — refused by name, the recut is the road");
-                return false;
+                return Err(RestoreRefusal::Retired { magic: "MYT2", layout: "μ as four u64 counts per holding and row" });
             }
             // A REFUSAL NAMES WHAT IT READ, not only what it wanted: a tape
             // that is not a ledger at all must not read the same as one an
             // older build wrote.
             found => {
-                let found = match found {
-                    Some(m) => match std::str::from_utf8(m) {
-                        Ok(s) => format!("`{s}`"),
-                        Err(_) => format!("{m:02x?}, which is not text"),
-                    },
-                    None => format!("{} bytes, too short to carry one", b.len()),
-                };
-                eprintln!("  ledger refused: the magic is {found}, not MYT2");
-                return false;
+                let found = found.and_then(|m| <[u8; 4]>::try_from(m).ok());
+                return Err(RestoreRefusal::NotLedger { found, len: b.len() });
             }
         }
         // WHERE THE READ IS. Set as each trie opens, so a refusal names one
@@ -627,13 +630,8 @@ impl Court {
             Some(())
         };
         if load(self, b, &mut pos).is_none() {
-            eprintln!(
-                "  ledger refused in trie {} at byte {pos} of {}: the court starts clean",
-                at.get(),
-                b.len()
-            );
             self.basis_clear();
-            return false;
+            return Err(RestoreRefusal::Unread { trie: at.get(), at: pos, of: b.len() });
         }
         self.occupancy = [0; 4];
         self.drawers = crate::network::nerve::Keyed::new();
@@ -740,7 +738,7 @@ impl Court {
             };
             self.docket_connection(&w, ratifier);
         }
-        true
+        Ok(())
     }
 }
 

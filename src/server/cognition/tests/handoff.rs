@@ -160,8 +160,7 @@ fn admit_uplink_consumes_accepted_handoff_once_per_side() {
         k.hear_uplink(&fold(&x(), 2, leaving, vec![(id, Side::Out)]).sign(&x())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::Consumed }
     );
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.handoff_read(&id), Some((State::Accepted, true, true)));
 }
 
