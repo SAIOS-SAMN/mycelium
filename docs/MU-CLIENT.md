@@ -1685,8 +1685,8 @@ then the backlog. Each item names its issue.
       `volume` and `potential` readings of the body (a recut);
    2. S7 stage 3, the Euclidean spheres retired, and turnings on planes
       that share a unit composed exactly (in part: a sphere is the
-      membrane or its image, `cga::membrane_at`; owed on #134, a body's
-      nucleus built from its second moment, waiting on a ruling, and the
+      membrane or its image, `cga::membrane_at`, and a body's nucleus its
+      second moment read, `blade::nucleus_form`; owed on #134, the
       shared-unit product, waiting on netstratum's composition law,
       78.173 fixture 11b);
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
