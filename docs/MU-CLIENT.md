@@ -1697,14 +1697,16 @@ then the backlog. Each item names its issue.
    2. S7 stage 3, the Euclidean spheres retired, and turnings on planes
       that share a unit composed exactly (in part: a sphere is the
       membrane or its image, `cga::membrane_at`; owed on #134, a body's
-      nucleus built from its second moment, waiting on a ruling, and the
-      shared-unit product, waiting on netstratum's composition law,
-      78.173 fixture 11b);
+      nucleus built from its second moment, waiting on a ruling; the
+      shared-unit product composes by 78.173 fixture 11b's law,
+      `carrier::Rotor`, where both motions are rational, any other angle
+      refused `IrrationalMotion`);
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration;
    4. S8, the field's motions as one exact group (built on the carrier,
       `carrier::FieldMotion`; turnings sharing a unit at other than a
-      quarter turn wait on 78.173 fixture 11b);
+      quarter turn are rational rates with no rational degree, refused
+      `Unnamed`, and wait on 78.173 §8);
    5. S9a, the orbits attached to wells, shear and precession per
       revolution in the contemplation (the carrier's refusal under the
       geodesic ruling, §0, is built: a flat region refused `Unbound`, a
