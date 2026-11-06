@@ -258,8 +258,10 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    (§0): two minds or two orbits reaching one vertex by two derivations,
    one meaning and two proofs (§5.2; 13.10), the face between them a
    `Rewrite` (MU-ANASTOME §4.1). **Built:** the court's `Presentation`
-   and `offer_rewrite`; convergence K1–K2 (§5.5). **Owed:** the mind
-   proposing a Rewrite (§5.4); the language's state as one reading
+   and `offer_rewrite`; convergence K1–K2 (§5.5); the mind proposing a
+   `Retire` where a ruled word decomposes over the rest without itself
+   (`Mind::propose_rewrites`, #146). **Owed:** the mind proposing the
+   other Rewrite kinds (§5.4); the language's state as one reading
    (MU-ANASTOME §7).
 9. **Amendment by experience.** A constructor experience does not renew
    is re-derived from the residue left, and the amended constructor is
@@ -1435,7 +1437,15 @@ the court offers (`offer_rewrite`, S3), mints on a second organ, and
 reconstructs by retiring exactly the inputs that reduce to
 `NormalForm::Decomposed` over the rest (`reduce_excluding`). Nothing
 compares derivations by length or count; the yield is the modes the
-rewrite moved (78.162). The mind proposing Rewrites is owed (§7.1).
+rewrite moved (78.162). The mind proposes a `Retire`: each word its pivot
+reaches, and each ruled word standing on a hole or hue mode that word
+stands on, is read over the ruled words without itself
+(`Presentation::derived_without`, exact); where the rest composes it, the
+retirement naming it and citing the forms that compose it is asserted
+once (`Mind::propose_rewrites`, `client/sdk/mind/rewrite.rs`). The mind
+retires nothing of its own on the proposal; the court decides on its own
+reduction. The mind proposing the other kinds from its own readings, beyond
+the `Torse` and `Condense` its contemplation mints, is owed (§7.1).
 
 ### 5.5 Hardening: dialect into language
 
@@ -1689,7 +1699,11 @@ then the backlog. Each item names its issue.
       attractor's chart, its membrane, its stage a coordinate, its
       `volume` and `potential` readings of the body (a recut);
    2. S7 stage 3, the Euclidean spheres retired, and turnings on planes
-      that share a unit composed exactly;
+      that share a unit composed exactly (in part: a sphere is the
+      membrane or its image, `cga::membrane_at`; owed on #134, a body's
+      nucleus built from its second moment, waiting on a ruling, and the
+      shared-unit product, waiting on netstratum's composition law,
+      78.173 fixture 11b);
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration;
    4. S8, the field's motions as one exact group;
@@ -1728,7 +1742,10 @@ then the backlog. Each item names its issue.
       which signed receipts a peer's are, the class an answer is filed by,
       and what releases the held receipts (the questions stand on the
       issue);
-   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146);
+   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): `Retire`
+      built (`mind/rewrite.rs`); the other kinds from the mind's own
+      readings, and the witness of a court's `Ruling(Retired)` citing a
+      mind's proposal on a running network, owed;
    7. seat play from the mind's own orbits, the seat's percepts lifted into
       the field, and its act as a physics `Action` (§6; #147);
    8. the cross-chamber bracket (CB1; §4.9; #148).

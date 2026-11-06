@@ -9,6 +9,8 @@
 //! word's motion is its least member's carriage composed with its rotor's base
 //! action (`conformal_of_rotor`), read in Cl(4,1) — never the rotor alone.
 
+mod without;
+
 use super::coordinates::{Coordinates, HoleIndex, Unread};
 use super::{Form, Vertex};
 use crate::network::nerve::Keyed;
@@ -573,7 +575,13 @@ impl Presentation {
     /// modes are read on the stroke they need. `None` where the motion's modes
     /// do not read, or its hue listing is no map (rule 11).
     pub fn read_word(&self, motion: &Mv, gauge: &[(u8, u8)], ruled_only: bool) -> Option<WordCitations> {
-        let eligible = |g: &Generator| g.ruled || !ruled_only;
+        self.read_word_where(motion, gauge, |g| g.ruled || !ruled_only)
+    }
+
+    /// [`Presentation::read_word`] over the generators `eligible` admits:
+    /// a generator it refuses is not read, and the hole or mode it stood on
+    /// is cited to the next held generator there, or left as residue.
+    fn read_word_where(&self, motion: &Mv, gauge: &[(u8, u8)], eligible: impl Fn(&Generator) -> bool) -> Option<WordCitations> {
         let mut out = WordCitations::default();
         let one = || Mv::scalar(BigRational::from_integer(1.into()));
         // THE MOTION, hole by hole.

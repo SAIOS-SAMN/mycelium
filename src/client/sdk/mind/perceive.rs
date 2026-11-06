@@ -950,7 +950,7 @@ impl Mind {
         let mut buf = Vec::new();
         for chart in super::offer::Offer::of(train).charts {
             crate::transducer::address::put_key_bytes(&mut buf, &chart);
-            crate::transducer::address::put_key_bytes(&mut buf, &crate::transducer::sheaf::stratum_root(&self.language.words_on(&chart)));
+            crate::transducer::address::put_key_bytes(&mut buf, &crate::transducer::sheaf::stratum_root(&self.language.words_on(&chart)).bytes());
         }
         crate::transducer::address::Address::new(buf)
     }

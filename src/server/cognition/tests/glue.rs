@@ -231,7 +231,7 @@ assert!(
 // And a digest that genuinely disagrees still drops it.
 let mut moved = k.ruled_digests();
 if let [d, ..] = moved.as_mut_slice() {
-    d.root = vec![0u8; 32];
+    d.root = crate::court::admission::Locator::of_bytes([0u8; 32]);
 }
 k.confirm_peer_holds(&moved, [2; 32]);
 assert!(
