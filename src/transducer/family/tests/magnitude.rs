@@ -55,6 +55,26 @@ fn magnitude_reads_counts_at_rank_n_and_h_by_grade_n_minus_one() {
     assert_eq!(cover, Some([1, 1, 0, 7]), "the two pairs summed lane by lane");
 }
 
+/// RULED 2026-11-06 ON #32 (2), CONFIRMED — A SCALED PAIR IS MEASURED, A
+/// REFUSED PAIR IS RESIDUE: 1×2 onto 2×4 re-periods each phase by 2 and
+/// its projection lands, which is the reading that resolves the unequal
+/// enclosure, so it is measured (two sites of 2 gone to ground: S 2, and H
+/// the vanished support's one component and 6 free faces); 1×2 onto 1×3
+/// does not land and is held as residue, contributing nothing.
+#[test]
+fn scaled_pair_is_measured_refused_pair_is_residue() {
+    let ground = Ground::One(vec![0]);
+    let (x, scaled) = (sample(vec![1, 2], vec![1, 2]), sample(vec![2, 4], vec![1, 1, 2, 2, 1, 1, 0, 0]));
+    let off = sample(vec![1, 3], vec![1, 1, 2]);
+    let measured = record_lanes(&pair_record(&x, &scaled).expect("an integer scaling lands"), &ground).expect("measured");
+    assert_eq!(measured, [2, 0, 0, 7], "the scaled pair is measured on its projected record");
+    let cover = family_cover_of([(&x, &scaled), (&x, &off)], &ground).expect("no lane overflows");
+    assert_eq!(cover.bond(), Some(measured), "the scaled pair alone is the bond");
+    assert_eq!(cover.residue().len(), 1, "the refused pair is held");
+    assert_eq!(cover.residue()[0].pair, 1);
+    assert!(matches!(cover.residue()[0].refusal, TransductionRefusal::OffSite { .. }));
+}
+
 /// RULED 2026-11-06 ON #32 (2) — A PAIR WHOSE RE-PERIOD DOES NOT LAND IS
 /// HELD AS RESIDUE: 1×2 onto 1×3 lands the input's middle boundary between
 /// two output sites, so the record refuses `OffSite` naming the turn and the

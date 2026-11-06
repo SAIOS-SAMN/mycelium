@@ -22,5 +22,9 @@
   unequal enclosure that projects is now counted.
 - MU-ECONOMY §12 item 4 notes that the bond's move to the share of the
   frame is v0.5.0's.
+- A pair of unequal enclosure whose projection lands (an integer scaling)
+  is resolved by that reading and measured; only a pair whose record
+  refuses is residue (confirmed on #32).
 - Claims: `magnitude_reads_counts_at_rank_n_and_h_by_grade_n_minus_one`,
-  `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`.
+  `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`,
+  `scaled_pair_is_measured_refused_pair_is_residue`.
