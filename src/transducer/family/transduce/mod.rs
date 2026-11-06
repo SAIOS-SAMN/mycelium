@@ -23,6 +23,7 @@
 mod enclosed;
 mod factor;
 mod ground;
+mod manifold;
 mod membrane;
 mod motion;
 mod nest;
@@ -39,6 +40,7 @@ mod tests;
 pub use enclosed::{Band, Enclosed};
 pub use factor::{factorisations, factorisations_need, need_of_motion, Factored, Factorisation, Motion};
 pub use ground::{Candidacy, Ground, Unground};
+pub use manifold::{AxisManifold, PhaseManifold, SampleManifold};
 pub use motion::{Generated, Sense, SignedPermutation};
 pub use nest::{Factoring, Factorings, Joint};
 pub use nesting::{nesting_of, AxisNesting, BlockRelation, Candidate, Held, LevelMotion, Member, NestRefusal, PairNesting, Reading, Taken, Unkept};

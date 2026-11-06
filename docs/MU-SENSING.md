@@ -111,6 +111,25 @@ never by re-sampling both onto a common lattice (MU-RECURSION 78.170 O4;
 MU-ANTI-FLATTENING clause 12). The `n` phases' periods are the sample's
 own gauge: no period is fixed in the code.
 
+**The sample as a manifold** (ruled 2026-11-06 on #32, the envelope;
+built in track 26, `transduce::SampleManifold`). The envelope the sensor
+builds is read as a manifold. A phase with a period is a circle `S¹` of
+that period: the sample's symbols repeat along the axis with a period `p`
+dividing its extent, so the far seam glues onto the near one, and `p`, the
+least such, is the circle's circumference (`PhaseManifold::Circle {
+period }`). A phase without one is an interval chart with boundary, its
+seam held (`PhaseManifold::Interval { extent }`). The sample is their
+product (`SampleManifold::of`), or a fibration where an axis is taken
+apart (§3.6, #176): the coarse phase the base and the fine phase the
+fibre, each read the same way on the blocks (`SampleManifold::nested`,
+`AxisManifold::Fibred`). A fully periodic sample is a torus `Tⁿ`
+(`SampleManifold::torus`, its circles' circumferences). The perspectives'
+cover (§4) is the atlas, and its cocycle the gluing; the membrane is the
+only sphere. The manifold is a reading, computed when asked and never
+stored, and no threshold decides a circle: a period holds on every site or
+it is no period. Claims `periodic_sample_reads_as_a_torus`,
+`aperiodic_phase_reads_as_an_interval`, `nested_axis_reads_as_a_fibration`.
+
 ### 3.2 Connection is read, never declared
 
 Which sites neighbour which is read from the phases: two sites are in
@@ -1185,6 +1204,7 @@ track 26 S4c).
 | **Closed (S6):** the frame fixing ordered and reversed two fixed axes by moments over the painted sites and rewrote the samples (`frame_fixed`) where §4 makes the frame a perspective | **Built** (track 26 S6): the moments name a pose (`raster::frame_fixing`, a `Perspective`), and `frame_fixed` reads the task through it; the samples are never rewritten. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One`. The moments stay on the section's plane, of the rank the letters spell | `src/transducer/raster.rs` |
 | **Closed (S4):** the measured frame was four planar counts (`Frame { h_in, w_in, h_out, w_out }`, renamed `Reperiod` by the names pass) | **Built** (track 26 S4): `element::Reperiod` holds each phase's input and output period at the pair's own rank (`of_extents`, refused for two ranks), and the word's frame fibre is the re-period every phase shares (`shared`), a dilator where it is not 1; an anisotropic re-period shares none, as before. No word, chart or listing address changes. Claim `reperiod_is_read_per_phase_at_any_rank` | `src/transducer/element/residue.rs` |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_sites`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
+| The sample as a manifold (§3.1): each phase a circle of its period or an interval with boundary, the sample their product or a fibration where an axis is taken apart; a fully periodic sample a torus `Tⁿ` | **Built** (track 26; ruled 2026-11-06 on #32) | `src/transducer/family/transduce/manifold.rs` (`SampleManifold`, `AxisManifold`, `PhaseManifold`); claims `periodic_sample_reads_as_a_torus`, `aperiodic_phase_reads_as_an_interval`, `nested_axis_reads_as_a_fibration` |
 | An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse; a separated factoring `a·(b + 1) − 1` on the same carrier | **Built** | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`, `Joint`) |
 | Which factorings the family is invariant under (ruled 2026-11-06 on #32): read per pair (`a·b → a′·b′`), kept only where every pair admits it and otherwise held as the refusing pairs' residue; a separator the fine phase `b` of a period `b + 1` (`Joint::Separated`, extent `a·(b + 1) − 1`), its symbol deduced; repeating blocks kept as relations by a sense of the fine phase; motions per level the product of a coarse and a fine sense, exact; a candidate collapses the vortex where a reading holds for it alone, several alike stay superposed; the nesting recorded as a coordinate of the percept (`TaskPercept.nesting`) | **Built** (track 26, S4) | `src/transducer/family/transduce/nest.rs` (`Joint`, `Factoring::separated`, `Factorings::of_axis`); `src/transducer/family/transduce/nesting.rs` (`nesting_of`, `AxisNesting`, `Taken`); claims `axis_taken_apart_only_where_family_invariant`, `factoring_read_per_pair_and_kept_only_where_every_pair_admits`, `separator_is_the_fine_phase_of_period_b_plus_one`, `repeating_blocks_kept_as_relation_by_fine_motion`, `motion_per_level_is_coarse_times_fine`, `several_factorings_holding_alike_stay_superposed` |
 | The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |

@@ -1878,6 +1878,16 @@ Each phase is one commit:
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
+   - **Built, the sample as a manifold** (branch `sensing-sample-manifold`,
+     ruled 2026-11-06 on #32): the envelope read as a product of phase
+     circles (each period the circumference) and intervals with boundary,
+     or a fibration where an axis is taken apart; a fully periodic sample
+     reads as a torus `Tⁿ` (`transduce::SampleManifold`,
+     `PhaseManifold::{Circle, Interval}`, `AxisManifold::Fibred`). Claims
+     `periodic_sample_reads_as_a_torus`,
+     `aperiodic_phase_reads_as_an_interval`,
+     `nested_axis_reads_as_a_fibration`. A reading, never stored; no wire
+     or address change.
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
