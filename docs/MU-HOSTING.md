@@ -341,16 +341,22 @@ a kernel (`Session::retrieve`).
 - **Request:** `[ACT_DOMAIN][domain 32][0x80 0x00][19][staker 32][point]
   [cited final point][nonce 32][sig 64]`, the staker's signature over
   `"mycelium retrieve v1" ‖ domain ‖ staker ‖ point ‖ cited ‖ nonce`.
-- **Reply:** `[1][fee μ⃗][count u32][receipt …][section]`. The receipts
-  are in the `ACT_RECEIPTS` page codec, each carrying its stamp. The
+- **Reply:** `[1][fee μ⃗][count u32]([receipt][path count u32][path
+  receipt …]) …[section]`. The receipts are in the `ACT_RECEIPTS` page
+  codec, each carrying its stamp, and each with its ancestry to the signed
+  head: the receipts on one path from it up to the head, written out whole,
+  each naming the one below it among its predecessor and parents (ruled
+  2026-11-06; height alone would admit a receipt off the chain). The
   section is the court's own 47.1 position over its head at the answer,
   signed over `"mycelium retrieved v1" ‖` the request's signed bytes. A
   refusal is `[0][code]`: unsigned, unknown domain, not final, origins (two
   origins, or the point above the cited one), folded, short, overflow.
 - **The retriever's check** (`retrieve::verify_retrieved`): the section
   verifies under the court's key, is one claim with its head receipt, and
-  signs over this request; every receipt re-derives, stands at the point's
-  tick and at or below the signed head's height. A served answer that does
+  signs over this request; every receipt re-derives and stands at the
+  point's tick, and its path leads to the head: each step re-derives and
+  names the one below it, and the head names the last. A receipt of the
+  right height off the head's chain is refused `OffChain`. A served answer that does
   not stand is the court's signed claim, presentable as its own.
 - **What stays in process.** PINPOINT, UNPACK and UNROLL are served only
   through this priced retrieval; a free read invites flooding. A tick this
