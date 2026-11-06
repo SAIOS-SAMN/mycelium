@@ -100,7 +100,10 @@ MU-ANTI-FLATTENING clause 12). Between those two ends there is no raster.
 ### 3.1 Each axis is a phase of its own period (read within the field's charts, §3.7)
 
 Axis `i` with extent `e_i` lifts by enclosure: site `s` on that axis is
-the turn `s / e_i`, a fraction in ℚ/ℤ, composed by addition mod 1. The
+the turn `s / e_i`, held as the fraction, the angle `360°·s/e_i` on its
+named plane (§3.7). Turns compose by addition, and a composed motion
+keeps its winding (ℤ, `K = ⌊|θ|/360⌋`) beside its phase, never reduced
+mod 1 (LAW-FIELD amendment (c); `Turn::plus`, `Turn::winding`). The
 axis's seam is a named boundary: it is held, never wrapped and never
 infinite. No point embedding, no `e∞`, no squared norm (law 11). Two
 samples of different extent relate by a **re-period** of each phase,
@@ -261,7 +264,7 @@ transduction's lanes (`Transduction::lane_shares`).
     perception, by the rule above.
   - **Frame fixing, the sensor's scope.** Frame fixing is a perspective a
     sensor may take after intake, never before addressing.
-    `raster::frame_fixed_on_ground` fixes a frame only under
+    `raster::enclosure_fixed_on_ground` fixes a frame only under
     `Ground::One(g)`, on the sites off `g`, and leaves it as read under a
     vortex or `None`. No reader applies it at intake today: the mind reads
     every task in the frame it was posted in, which is the frame the
@@ -315,6 +318,30 @@ no pair of axes is *the* plane.
   the blocks, blocks that repeat, or motions that act per level.
   Otherwise the axis stays one phase. Several factorings that each hold
   are held as a vortex (§3.8) until a relation collapses it.
+  - **The reading, exactly** (ruled 2026-11-06 on #32; built in track 26
+    S4, `transduce::nesting`):
+    1. *Per pair.* A factoring is read on each pair's input and output,
+       each at its own extent, the shape `a·b → a′·b′` stated per pair. A
+       candidate is named across the family by its axis, its joint and its
+       block counts on the two members. The family keeps a candidate only
+       where every pair admits it; one a pair refuses is held as that
+       pair's residue.
+    2. *Separators* are part of the fine period: blocks of `b` sites with a
+       separator after each but the last have the fine period `b + 1` and
+       the extent `a·(b + 1) − 1`, the far seam closing the last block (one
+       carrier, `Factoring`, its joint `Separated`). The separator is the
+       one symbol every site at the fine phase `b` holds, deduced.
+    3. *Repeating blocks:* two or more coarse blocks related by a sense of
+       the fine phase, the identity included, kept as the relations found
+       (which blocks, by which sense).
+    4. *Motions per level:* the product of a coarse-phase and a fine-phase
+       motion, each kept or reversed and re-periodded onto its own level,
+       that speaks the input as the output exactly.
+    5. *Collapse:* a candidate collapses the vortex where a reading of 2–4
+       holds for it on every pair and for no other kept candidate. Several
+       alike stay superposed, and the axis is not taken apart.
+
+    A pair admits a candidate where some reading of 2–4 holds on it.
 - **The nesting is a coordinate of the percept.** A percept records how
   its axes were lifted and how each was taken apart, so speech projects back
   to the source's own extents exactly. Nesting goes to any depth the data
@@ -339,8 +366,9 @@ no pair of axes is *the* plane.
     the percept is permuted exactly (claim
     `no_axis_is_privileged_in_perception`).
 
-  S6 makes perspectives general. Which factorings a family is invariant
-  under (the nesting's reading) stays open.
+  S6 makes perspectives general (§4: a pose beside the roles, shifted by
+  a sensor motion, several perspectives a cover). Which factorings a
+  family is invariant under (the nesting's reading) stays open.
 
 ### 3.7 The field: non-Euclidean, never scalar
 
@@ -783,6 +811,28 @@ runs.
   Frame fixing, the canonical turn or mirror of a sample, is a
   perspective and belongs to the sensor's scope (§6.1).
 
+**Built (track 26 S6).**
+- **The pose.** A perspective (`transducer::perspective::Perspective`)
+  holds, beside its roles, the signed permutation of the sample's phases
+  the sensor reads through; the roles are those of the axes as read. The
+  default is the identity pose with every axis space.
+- **A shift is a sensor motion** (`SensorMotion`): `Pose(σ)` moves the
+  pose to `pose ∘ σ` and each role with its axis, and `Recast` reads one
+  axis in another role. A sample is read through a perspective
+  (`Perspective::read`, `frame`) with its place kept and its content, and
+  so its address, unchanged. The turn between two perspectives is
+  `turn_to`. Claim `perspective_shift_is_a_sensor_motion`.
+- **The cover** (`perspective::cover::Cover`). A perspective's 0-cochain
+  is the contacts it reads: two neighbouring sites of one symbol along a
+  sample axis it reads as space (§3.2). An overlap holds the turn between
+  two perspectives and their agreement (`Agreement::Congruent`, or the
+  `Residue` of contacts each alone reads). The cocycle closes where the
+  turns compose around a triple, and otherwise names the turn around it.
+  Claim `two_perspectives_of_one_sample_compared_as_a_cover`.
+- **Frame fixing is a perspective** (`raster::frame_fixing`): the moments
+  of 78.54 name a pose, and `frame_fixed` reads the task through it. Claim
+  `frame_fixing_is_a_perspective_reading`.
+
 ### 4.1 Emergent senses: variation, selection by admission, inheritance
 
 **Specified** (ruled 2026-11-04; ROADMAP track 26 S10). Senses and
@@ -1027,6 +1077,21 @@ refused by the same names. The motion and the residue are read under no
 ground, so the stated ground is checked and never changes the residue
 derived. Claim `factorisation_claim_states_its_ground`.
 
+**A claim of factorisation states its perspective** (track 26 S6, stage 2).
+The act carries the perspective the pair was perceived under after its
+residue (`[rank u16][(source u16)(sense u8) · rank][role u8 · rank]`), and
+is signed as `mycelium factorisation v2`. The court reads its own copy of
+the posted pair through the stated perspective (`Perspective::read`) and
+reconstructs there; it never chooses a perspective. One of another rank
+than the pair is refused `REFUSE_FACTOR_PERSPECTIVE_RANK`, and one reading
+an axis as other than space `REFUSE_FACTOR_PERSPECTIVE_ROLE`, since the
+transduction factors every axis as a phase the bodies extend along. The
+mind perceives under a perspective (`TaskPercept::under`) and states the
+percept's own. The perspective is part of the claim, never of the task.
+Claim `claim_states_its_perspective_and_court_reconstructs_under_it`. The
+solve of outputs and speech read the alphabet's section in its default
+perspective and do not yet state one.
+
 ## 7. Who owns a source's code
 
 Source-specific code exists only as a **decoder** from the source's format
@@ -1082,7 +1147,7 @@ track 26 S4c).
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
 | The transduction at rank `n`: each axis a phase of its own period read from the sample, re-period between samples, bodies as `n`-dimensional bands of one symbol, each held by its boundary, contact by grade `n − 1`, the `2ⁿ·n!` signed permutations of the phases (generated), μ's shares over the product of the extents; no axis privileged | **Built** (v0.3.0 T2 with track 26 S4, [PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)); rasters reach it only through `raster::sample_of` | `src/transducer/family/transduce/` (`Enclosure`, `Band`, `SignedPermutation`, `SiteChange`) |
 | The chart of a section read as turns (§3.1, §3.7): the section's span is its frame, one phase per plane axis of the span's extent, and each site the turn `s/p` of its offset from the span's least corner (`Turn::of`); the cube complex reads the turns landed on their periods, and each second moment is read in the frame's own gauge, a turn's offset from the mean turn times the period, with each round's extent. The conformal lift (`lift`'s sphere, quartic moments and towers) is no longer read by the chart. Every chart reading is unchanged, axis for axis: claim `chart_reads_sections_as_turns` reads all 4 095 sections of a `3 × 4` window and four more, translated and in place, against the lift's chart, and the oracle golden reproduces | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)); routing a pair of unequal enclosures through it is open (MU-DERIVATIONS D3.2, O8) | `src/transducer/blade/section_turns.rs` (`SectionTurns`); `blade::section_moduli` |
-| A motion stated as turns (§3.7), read by the court's Conformal law in ℚ/ℤ where no exact versor exists (Niven): composed by addition mod 1, never a rotor; a turn off the frame's periods refused `LeavesPeriods` | **Built** (v0.4.0 T3); its wire form rides the crossing record (MU-HOSTING §5a.10, track 25 X1) | `src/physics/laws/turns.rs` (`verify_turns`) |
+| A motion stated as turns (§3.7), read by the court's Conformal law as turns where no exact versor exists (Niven): composed by addition with each phase's winding kept, never a rotor; a place carried and its residue read as a phase (ℚ/ℤ); a turn off the frame's periods refused `LeavesPeriods` | **Built** (v0.4.0 T3); its wire form rides the crossing record (MU-HOSTING §5a.10, track 25 X1) | `src/physics/laws/turns.rs` (`verify_turns`) |
 | The well: a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built** | `transducer/field/well.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
 | The well's body (§3.7): a held attractor at the chart its remainder stands on (`Well::centre`, a `carrier::Chart` of the invariant's exact coordinates), the geodesic orbit it binds (`Well.orbit`, none: flat, its holonomy and precession refused `Unbound`), its membrane its own enclosure (the throat of its own plane, the last of the section's rank plus the lift's), its inflation a gauge reading (the frame state `H·n_Z + R·n_Q` on the membrane's pole basis, `H` the charts its cover closed, `R` its sections' charts still open, stood inside the membrane); its stage a coordinate (`WellStage`: `WellLayer` perception/thought, `ExpansionRing` expanding/rested); its volume and potential readings per lane, its holonomy and precession per revolution read from its orbit; the well stated as its body and reconstructed by a court that derives its curvature (`Well::put_statement`, `admit_well`) | **Built** (track 26 S7, stage 2); the contemplation's orbits attached to wells are S9a's. The statement's layout changed, a recut | `src/transducer/field/carrier/holding.rs` (`WellBody`, `WellStage`, `Inflation`); `Well::{body, centre, inflation, volume, potential, holonomy, precession, put_statement}`; claims `well_stands_on_its_attractor`, `well_membrane_is_its_enclosure`, `well_volume_and_potential_are_readings_per_lane`, `well_stage_is_a_coordinate_not_a_flag`, `mind_well_stated_and_reconstructed_by_a_court` |
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
@@ -1116,17 +1181,17 @@ track 26 S4c).
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
-| **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
+| **Closed (S6):** the frame fixing ordered and reversed two fixed axes by moments over the painted sites and rewrote the samples (`frame_fixed`) where §4 makes the frame a perspective | **Built** (track 26 S6): the moments name a pose (`raster::frame_fixing`, a `Perspective`), and `frame_fixed` reads the task through it; the samples are never rewritten. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One`. The moments stay on the section's plane, of the rank the letters spell | `src/transducer/raster.rs` |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residue.rs`; track 26, S4 |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_sites`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
-| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on `main` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
-| Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
+| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse; a separated factoring `a·(b + 1) − 1` on the same carrier | **Built** | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`, `Joint`) |
+| Which factorings the family is invariant under (ruled 2026-11-06 on #32): read per pair (`a·b → a′·b′`), kept only where every pair admits it and otherwise held as the refusing pairs' residue; a separator the fine phase `b` of a period `b + 1` (`Joint::Separated`, extent `a·(b + 1) − 1`), its symbol deduced; repeating blocks kept as relations by a sense of the fine phase; motions per level the product of a coarse and a fine sense, exact; a candidate collapses the vortex where a reading holds for it alone, several alike stay superposed; the nesting recorded as a coordinate of the percept (`TaskPercept.nesting`) | **Built** (track 26, S4) | `src/transducer/family/transduce/nest.rs` (`Joint`, `Factoring::separated`, `Factorings::of_axis`); `src/transducer/family/transduce/nesting.rs` (`nesting_of`, `AxisNesting`, `Taken`); claims `axis_taken_apart_only_where_family_invariant`, `factoring_read_per_pair_and_kept_only_where_every_pair_admits`, `separator_is_the_fine_phase_of_period_b_plus_one`, `repeating_blocks_kept_as_relation_by_fine_motion`, `motion_per_level_is_coarse_times_fine`, `several_factorings_holding_alike_stay_superposed` |
 | The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |
 | `e_∅` as a typed record outside the symbols' bytes: a fibre relation's rows and its records apart, on a word's description and the law register's wire; `RESERVOIR = 10` retired, so a family using the byte 10 has its colour word | **Built** (track 26 S5; the defect of the record byte is closed) | `element::FibreRelation`, `colour_word`, `Letters::fibre`; `physics::laws::codec::put_transition` |
-| Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b); the nesting's family-invariance reading open | `transducer::perspective`; `transduce::Enclosure` |
+| Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b), and the nesting's family-invariance reading (S4) | `transducer::perspective`; `transduce::Enclosure` |
 | A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind perceives every rank since S4b and the hypha serves every rank since S4c; a solve's rule is reconstructed on the alphabet's section | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
 | **Closed (S4b):** a link was `(i64, i64, u8, u8)`, two axes and one-byte symbols. `sentence::Link` now carries a site of rank `n` and the symbols at the source's width; the alphabet's section reads `SectionLink`, a section site and two symbols (a named type since S4d, stage 2b) | **Built** (track 26 S4b) | `transducer::sentence::link` |
-| Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
+| Perspective as a sensor motion (a pose beside the roles, shifted by a signed permutation or a recast; a sample read through it, never rewritten); the perspectives of one sample as a cover (contacts as 0-cochains, the turn on each overlap, the cocycle on triples, the residue held) | **Built** (track 26, S6) | `src/transducer/perspective.rs` (`Perspective::shifted`, `turn_to`, `read`, `SensorMotion`); `src/transducer/perspective/cover.rs` (`Cover`, `Agreement`, `Cocycle`) |
 
 **The defect** ([ROADMAP track 26](../ROADMAP.md#26-sensing-any-source-at-any-rank);
 the issue linked there). The sensor and everything downstream are written

@@ -91,7 +91,7 @@ impl Court {
     /// THE WORD THEY WAITED ON LAPSED: every sentence waiting on it is
     /// released as the demand it is — it cites a word this court does not
     /// hold, D (78.9, GLUED_UNRULED) — answered and recorded, so the voice's
-    /// next utterance can contract against it (50.9).
+    /// next expression can contract against it (50.9).
     pub(crate) fn release_awaiting(&mut self, form: &[u8]) {
         let Some(waiting) = self.awaiting.remove(form) else {
             return;
@@ -124,7 +124,7 @@ impl Court {
             // Through `adjudicate_one`, not `hear_sentence`. A re-hearing
             // is an adjudication like any other: a refusal on it must be
             // RECORDED in `refusals` with its receipt, or the voice's next
-            // utterance cannot cite it as a contraction certificate (50.9)
+            // expression cannot cite it as a contraction certificate (50.9)
             // and the refusal exists only in a log line. Dropping the
             // outcome here made the second hearing the one hearing whose
             // verdict nobody kept. Heard under the ground its claim was

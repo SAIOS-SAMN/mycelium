@@ -39,7 +39,7 @@ pub enum Unstated {
     /// splits into, or a 90° turn of a tile that is not square; or the
     /// family reads no one ground for the act to clear cells onto or lay a
     /// new canvas on (a vortex, or no ground; MU-SENSING §3.4).
-    Unframed,
+    NoEnclosure,
     /// A hue read off a partner (`Paint::Of`) found no touched body the
     /// predicate selects, or bodies of more than one hue; or a join, which
     /// has two ends and no one partner, was asked for one.
@@ -126,7 +126,7 @@ pub struct Spoken {
     /// The output frame's extents along the perspective's plane, one per
     /// plane axis in the plane's order (`PlaneAxis::index`), as
     /// `SectionSample::extents` reads them.
-    pub frame: [usize; ALPHABET_SAMPLE_RANK],
+    pub extents: [usize; ALPHABET_SAMPLE_RANK],
     /// The sites the clauses painted on that frame.
     pub painted: Vec<PaintedSite>,
 }
@@ -518,7 +518,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
     // A cleared cell is laid on the scene's one ground, read where a cell is
     // cleared; a stop reads the ground as membership.
     let ground = crate::transducer::raster::ground();
-    let void = || crate::transducer::raster::void().map_err(|_| Unstated::Unframed);
+    let void = || crate::transducer::raster::void().map_err(|_| Unstated::NoEnclosure);
     let colour = |b: usize, h: u8| -> Result<u8, Unstated> { Ok(mapped(&t.gauge, seen.painted(&t.paint, b, h)?)) };
     match t.reach {
         Reach::Once => {
@@ -728,7 +728,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 }
                 for &b in &seeds {
                     for p in &seen.cells[b] {
-                        paint(&mut canvas, p.site, crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?);
+                        paint(&mut canvas, p.site, crate::transducer::raster::void().map_err(|_| Unstated::NoEnclosure)?);
                     }
                 }
                 for p in landed {
@@ -748,21 +748,21 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 // The panes' unpainted cells are laid on the scene's one
                 // ground; with none, no pane is spoken.
                 let ground = crate::transducer::raster::ground();
-                let void = crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?;
+                let void = crate::transducer::raster::void().map_err(|_| Unstated::NoEnclosure)?;
                 // The split runs along the plane axis `along`: the pane keeps
                 // the input's extent along every other axis of the plane.
                 let axis = along.index();
                 let mut extents = x.extents();
-                let n = extents.get_mut(axis).ok_or(Unstated::Unframed)?;
-                let k = n.checked_sub(usize::from(*gap)).filter(|m| m % 2 == 0).map(|m| m / 2).ok_or(Unstated::Unframed)?;
+                let n = extents.get_mut(axis).ok_or(Unstated::NoEnclosure)?;
+                let k = n.checked_sub(usize::from(*gap)).filter(|m| m % 2 == 0).map(|m| m / 2).ok_or(Unstated::NoEnclosure)?;
                 if k == 0 {
-                    return Err(Unstated::Unframed);
+                    return Err(Unstated::NoEnclosure);
                 }
                 *n = k;
                 // The second pane stands one pane and the gap further along
                 // the split.
                 let mut across = [0i64; ALPHABET_SAMPLE_RANK];
-                *across.get_mut(axis).ok_or(Unstated::Unframed)? = k.checked_add(usize::from(*gap)).and_then(|f| i64::try_from(f).ok()).ok_or(Unstated::Unframed)?;
+                *across.get_mut(axis).ok_or(Unstated::NoEnclosure)? = k.checked_add(usize::from(*gap)).and_then(|f| i64::try_from(f).ok()).ok_or(Unstated::NoEnclosure)?;
                 // The pane's cell at `site`: the table read on whether each
                 // pane is painted there.
                 let at = |site: SectionSite| -> Option<u8> {
@@ -771,13 +771,13 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                     let bit = 2 * usize::from(first) + usize::from(second);
                     Some(if (table >> bit) & 1 == 1 { *hue } else { void })
                 };
-                let mut out = SectionSample::filled(extents, void).map_err(|_| Unstated::Unframed)?;
+                let mut out = SectionSample::filled(extents, void).map_err(|_| Unstated::NoEnclosure)?;
                 let mut writes = Vec::with_capacity(out.symbols().len());
                 for (site, _) in out.sites() {
-                    writes.push((site, at(site).ok_or(Unstated::Unframed)?));
+                    writes.push((site, at(site).ok_or(Unstated::NoEnclosure)?));
                 }
                 for (site, h) in writes {
-                    out.paint(site, h).ok_or(Unstated::Unframed)?;
+                    out.paint(site, h).ok_or(Unstated::NoEnclosure)?;
                 }
                 framed = Some(out);
             }
@@ -788,14 +788,14 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 // plane without a block.
                 let mut count = 1usize;
                 for &b in &blocks {
-                    count = count.checked_mul(b).ok_or(Unstated::Unframed)?;
+                    count = count.checked_mul(b).ok_or(Unstated::NoEnclosure)?;
                 }
                 if turns.len() != count || blocks.contains(&0) {
-                    return Err(Unstated::Unframed);
+                    return Err(Unstated::NoEnclosure);
                 }
                 let mut tiled = extents;
                 for (e, b) in tiled.iter_mut().zip(blocks) {
-                    *e = e.checked_mul(b).ok_or(Unstated::Unframed)?;
+                    *e = e.checked_mul(b).ok_or(Unstated::NoEnclosure)?;
                 }
                 // Every cell is a block's: each block holds the canvas's
                 // extents, so the blocks lay every cell of the tiling once,
@@ -803,16 +803,16 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 // written in for a cell it leaves. The tiling opens as the
                 // canvas's symbol at the origin, written over at every cell.
                 let laid = canvas.clone();
-                let opening = laid.at(origin()).ok_or(Unstated::Unframed)?;
-                let mut out = SectionSample::filled(tiled, opening).map_err(|_| Unstated::Unframed)?;
+                let opening = laid.at(origin()).ok_or(Unstated::NoEnclosure)?;
+                let mut out = SectionSample::filled(tiled, opening).map_err(|_| Unstated::NoEnclosure)?;
                 for (i, &t) in turns.iter().enumerate() {
-                    let block = turn_of(&laid, t).ok_or(Unstated::Unframed)?;
+                    let block = turn_of(&laid, t).ok_or(Unstated::NoEnclosure)?;
                     if block.extents() != extents {
-                        return Err(Unstated::Unframed);
+                        return Err(Unstated::NoEnclosure);
                     }
-                    let corner = block_corner(i, blocks, extents).ok_or(Unstated::Unframed)?;
+                    let corner = block_corner(i, blocks, extents).ok_or(Unstated::NoEnclosure)?;
                     for (site, v) in block.sites() {
-                        out.paint(site.moved(corner).ok_or(Unstated::Unframed)?, v).ok_or(Unstated::Unframed)?;
+                        out.paint(site.moved(corner).ok_or(Unstated::NoEnclosure)?, v).ok_or(Unstated::NoEnclosure)?;
                     }
                 }
                 framed = Some(out);
@@ -956,7 +956,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
         Some((up, down)) => scaled(&out, up, down)?,
     };
     let painted = crate::transducer::raster::painted_sites(&out);
-    Ok(Spoken { frame: out.extents(), painted })
+    Ok(Spoken { extents: out.extents(), painted })
 }
 
 /// THE CANVAS CROPPED to the window from `low` to `high`, both corners

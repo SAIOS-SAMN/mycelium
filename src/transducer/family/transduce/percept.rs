@@ -30,8 +30,9 @@ pub struct PairFactored {
 /// A TASK PERCEIVED AT ITS OWN RANK.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskPercept {
-    /// The roles of the samples' axes: the default perspective of the
-    /// family's rank.
+    /// The perspective the samples were read under: the default of the
+    /// family's rank ([`TaskPercept::of`]), or the one stated
+    /// ([`TaskPercept::under`]). A claim on the percept states it.
     pub perspective: Perspective,
     /// The ground the family's relations show (MU-SENSING §3.4).
     pub ground: Ground<Vec<u8>>,
@@ -39,6 +40,11 @@ pub struct TaskPercept {
     pub train: Vec<PairFactored>,
     /// Each test input, lifted.
     pub tests: Vec<Enclosed>,
+    /// HOW EACH AXIS WAS TAKEN APART (MU-SENSING §3.6): per axis, the
+    /// factorings every pair admits, those some pair refuses, and whether
+    /// one collapsed the vortex. A coordinate of the percept, so speech
+    /// projects back to the source's own extents.
+    pub nesting: Vec<super::AxisNesting>,
 }
 
 /// WHY A TASK IS NOT PERCEIVED, named.
@@ -74,7 +80,27 @@ impl TaskPercept {
             ground: Ground::of(train),
             train: pairs,
             tests: tests.iter().map(Enclosed::of).collect(),
+            nesting: super::nesting_of(train),
         })
+    }
+
+    /// PERCEIVE A FAMILY UNDER `perspective` (MU-SENSING §4; track 26 S6):
+    /// every sample read through it ([`Perspective::read`], its place kept),
+    /// then perceived as [`TaskPercept::of`] perceives, the percept holding
+    /// the perspective it was read under. The posted samples are not
+    /// rewritten. `Rank` where a sample's rank is not the perspective's.
+    pub fn under(
+        perspective: &Perspective,
+        train: &[(Sample, Sample)],
+        tests: &[Sample],
+        budget: &mut crate::physics::Budget,
+    ) -> Result<TaskPercept, PerceptRefusal> {
+        let read = |s: &Sample| perspective.read(s).map_err(|_| PerceptRefusal::Rank { family: perspective.rank(), sample: s.rank() });
+        let train = train.iter().map(|(x, y)| Ok((read(x)?, read(y)?))).collect::<Result<Vec<_>, PerceptRefusal>>()?;
+        let tests = tests.iter().map(read).collect::<Result<Vec<_>, PerceptRefusal>>()?;
+        let mut percept = TaskPercept::of(&train, &tests, budget)?;
+        percept.perspective = perspective.clone();
+        Ok(percept)
     }
 
     /// The rank the task was read at: the count of its axes, every one of

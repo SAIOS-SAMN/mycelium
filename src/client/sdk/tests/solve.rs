@@ -98,7 +98,7 @@ fn solve_court() -> (String, std::sync::mpsc::Receiver<crate::anastome::dialogue
                     let _ = heard.send(act);
                 }
                 let receipt = crate::anastome::dialogue::encode_solve_receipt(crate::anastome::dialogue::SOLVE_NOTHING, &crate::economy::Mu::zero());
-                let reply = crate::network::wire::WireFrame { lane, body: receipt };
+                let reply = crate::network::wire::Delimited { lane, body: receipt };
                 let _ = s.write_all(&reply.encode().expect("framed"));
             }
         }

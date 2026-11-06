@@ -9,13 +9,13 @@
 //! channel its caller speaks (`accept`), and every ask to a peer is dialled
 //! on Noise where the peer speaks it (`tell_peer_over`); the host's static
 //! key and its pins are its Noise home (`seal`). Frames inside a Noise
-//! channel ride `NoiseStream::{write_frame, read_frame}`; a plaintext peer's
+//! channel ride `NoiseStream::{write_delimited, read_delimited}`; a plaintext peer's
 //! ride the stream as they always did.
 
 use crate::Mesh;
 use mycelium::network::channel::{self, Channel, Pace};
 use mycelium::network::noise::NoiseHome;
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
@@ -64,11 +64,11 @@ pub(crate) fn accept_with(tcp: TcpStream, home: Option<&NoiseHome>, pace: Pace) 
 /// stalls its opening holds the listener no longer than a silent peer holds
 /// an ask, and `frame` (the deferral) written on it unread — inside Noise
 /// for a Noise caller, as before for a plaintext one.
-pub(crate) fn defer_unread(tcp: TcpStream, mesh: &Mesh, frame: WireFrame) {
+pub(crate) fn defer_unread(tcp: TcpStream, mesh: &Mesh, frame: Delimited) {
     defer_unread_with(tcp, mesh, frame, home());
 }
 
-pub(crate) fn defer_unread_with(tcp: TcpStream, mesh: &Mesh, frame: WireFrame, home: Option<&NoiseHome>) {
+pub(crate) fn defer_unread_with(tcp: TcpStream, mesh: &Mesh, frame: Delimited, home: Option<&NoiseHome>) {
     let Some(pace) = pace_of(Stall::of(prior(mesh)).resolved()) else { return };
     let Some(mut s) = accept_with(tcp, home, pace) else { return };
     answer(&mut s, frame);
@@ -144,7 +144,7 @@ fn spoke_pointed(s: &Channel) -> bool {
     was
 }
 
-pub(crate) fn answer(s: &mut Channel, frame: WireFrame) {
+pub(crate) fn answer(s: &mut Channel, frame: Delimited) {
     let _ = answer_written(s, frame);
 }
 
@@ -154,7 +154,7 @@ pub(crate) fn answer(s: &mut Channel, frame: WireFrame) {
 /// is never silent there (2026-10-08). A LOWER BOUND: a reply written just
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
-pub(crate) fn answer_written(s: &mut Channel, frame: WireFrame) -> bool {
+pub(crate) fn answer_written(s: &mut Channel, frame: Delimited) -> bool {
     // 78.152 TU-7: a reply carries this door's final point where the speaker
     // carried one (`note_pointed`); otherwise it is the frame it always was.
     let point = match spoke_pointed(s) {
@@ -163,7 +163,7 @@ pub(crate) fn answer_written(s: &mut Channel, frame: WireFrame) -> bool {
     };
     let refused = || eprintln!("  court reply refused: body {} over the wire budget", frame.body.len());
     match s {
-        Channel::Noise(n) => match n.write_frame(&frame, point.as_ref()) {
+        Channel::Noise(n) => match n.write_delimited(&frame, point.as_ref()) {
             Ok(()) => true,
             Err(mycelium::network::noise::NoiseRefusal::FrameOverBudget { .. }) => {
                 refused();
@@ -181,9 +181,9 @@ pub(crate) fn answer_written(s: &mut Channel, frame: WireFrame) -> bool {
     }
 }
 
-pub(crate) fn read_frame(s: &mut Channel) -> Option<WireFrame> {
+pub(crate) fn read_delimited(s: &mut Channel) -> Option<Delimited> {
     let Channel::Noise(n) = s else { return read_plain_frame(s) };
-    let read = n.read_frame();
+    let read = n.read_delimited();
     match read {
         Ok((frame, point)) => {
             note_pointed(s, point.is_some());
@@ -205,10 +205,10 @@ pub(crate) fn read_frame(s: &mut Channel) -> Option<WireFrame> {
 fn refuse_over_budget(s: &mut Channel, lane: mycelium::network::wire::Lane) {
     let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
     let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
-    answer(s, WireFrame { lane, body });
+    answer(s, Delimited { lane, body });
 }
 
-fn read_plain_frame(s: &mut Channel) -> Option<WireFrame> {
+fn read_plain_frame(s: &mut Channel) -> Option<Delimited> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
@@ -230,7 +230,7 @@ fn read_plain_frame(s: &mut Channel) -> Option<WireFrame> {
     s.read_exact(&mut buf[5..]).ok()?;
     // 78.152 TU-7: the point the speaker carried is heard at the door as the
     // frame is read, beside the published reading and outside the court.
-    let (frame, point, _) = WireFrame::decode_at(&buf)?;
+    let (frame, point, _) = Delimited::decode_at(&buf)?;
     // A SPEAKER THAT CARRIED A POINT IS ANSWERED WITH ONE; one that carried
     // none is answered as it spoke. A kernel still on a mycelium before 78.152
     // refuses a pointed frame whole, so the door's point rides only to a
@@ -433,7 +433,7 @@ pub(crate) fn tell_peer_over(endpoint: &str, body: Vec<u8>, stall: Stall, home: 
     // slow, and one that has said nothing at all still is. A poll costs the
     // processor its scheduler floor (the stroke-duration ruling), so a peer
     // whose listener has merely not been scheduled is not counted silent.
-    let frame = WireFrame { lane: mycelium::network::wire::Lane::Spatial, body };
+    let frame = Delimited { lane: mycelium::network::wire::Lane::Spatial, body };
     // 78.152 TU-7: a court's act to a peer carries its door's final point.
     let carried = crate::tuniversal::final_point();
     // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this court
@@ -446,8 +446,8 @@ pub(crate) fn tell_peer_over(endpoint: &str, body: Vec<u8>, stall: Stall, home: 
     s.paced_mut().measure();
     let (reply, point) = match &mut s {
         Channel::Noise(n) => {
-            n.write_frame(&frame, carried.as_ref()).ok()?;
-            let (reply, point) = n.read_frame().ok()?;
+            n.write_delimited(&frame, carried.as_ref()).ok()?;
+            let (reply, point) = n.read_delimited().ok()?;
             (reply.body, point)
         }
         Channel::Plain(p) => {

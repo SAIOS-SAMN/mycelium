@@ -115,7 +115,7 @@ fn factoring_court(book: std::sync::Arc<std::sync::Mutex<crate::server::registry
                     }
                     None => Vec::new(),
                 };
-                let frame = crate::network::wire::WireFrame { lane, body: reply };
+                let frame = crate::network::wire::Delimited { lane, body: reply };
                 let _ = s.write_all(&frame.encode().expect("framed"));
             }
         }

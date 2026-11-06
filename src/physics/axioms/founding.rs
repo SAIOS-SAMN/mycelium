@@ -14,9 +14,9 @@
 //! - **LUMINAL** — the parabolic mode: a null generator, `B² = 0`, on the
 //!   light cone. It has no length, only its ray and its ratios on it; flux
 //!   along it is frozen into its tube and conserved by the flow.
-//! - **HOLONOMIC** — the closed loop: what a circuit of transports composes to
-//!   is its content. Moving the loop's base point conjugates it and changes
-//!   none of its modes, so the class is the loop's, never the frame's.
+//! - **HOLONOMIC** — the closed orbit: what a circuit of transports composes to
+//!   is its content. Moving the orbit's base point conjugates it and changes
+//!   none of its modes, so the class is the orbit's, never the frame's.
 //!
 //! The hyperbolic mode (a boost or a dilation) is the luminal one off the
 //! cone: two null rays, the field's expansion between them.
@@ -39,7 +39,7 @@ pub const HARMONIC_RETURN: &str =
 pub const LUMINAL_NULL_FLUX: &str =
     "a parabolic mode is null: B² = 0, no length, only its ray and ratios; conjugation keeps it null and its flux on its tube";
 
-/// HOLONOMIC — a loop's composite is its content, invariant under its base.
+/// HOLONOMIC — an orbit's composite is its content, invariant under its base.
 pub const HOLONOMIC_CONTENT: &str =
     "a closed loop's holonomy is its content: moving its base point conjugates it, and its modes — its class — are unchanged";
 

@@ -606,7 +606,7 @@ fn faces_follows_constancy_on_row_of_three() {
     let charts: usize = tree
         .vertices
         .entries()
-        .filter(|(k, _)| *k != coord::VertexAt::Frame)
+        .filter(|(k, _)| *k != coord::VertexAt::Enclosure)
         .map(|(_, v)| v.charts().len())
         .sum();
     assert_eq!(charts, 3, "three spokes, three member charts");

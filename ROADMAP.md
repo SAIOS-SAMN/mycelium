@@ -1487,8 +1487,16 @@ adjudicated reading (B2). Each phase is one commit:
      `signed_reserve_lawful_crossing_admitted`.
    - Open: the boundary reading under `ACT_OBSERVE`; a tube between two
      universes bounded by both sides' clauses (a mouth's far-end
-     acceptance is not read); the cost of the per-crossing alignment walk
-     on a long ledger, unmeasured.
+     acceptance is not read).
+   - **Built** (#118): the per-crossing alignment read costs the reserve's
+     signing events, never the ledger. The ledger keeps where each signing
+     event stands (`kernel‖stamp‖n`, coordinates only,
+     `chronometry::chain::signing`), and the court reads its own folded
+     line's events once per era (`FoldedSignings`); the reading is derived
+     on every ask. Claims `crossing_alignment_reads_only_signing_events`,
+     `alignment_equals_full_walk_across_own_fold`,
+     `alignment_equals_full_walk_on_a_peer`. Open: the stroke on a
+     long-lived mesh, recorded as an observation (D2.5).
 6. **B5, nested universes:** a sub-universe's acts only at its parent's
    vertex, with 78.155 R-3.
 
@@ -1745,7 +1753,7 @@ Each phase is one commit:
        - A task's identity is its posted samples' content (rank, extents,
          symbols, places). Neither the ground nor frame fixing enters it.
        - The decoder posts tasks as read, and `parse_task` is removed.
-       - Frame fixing (`raster::frame_fixed_on_ground`, only under `One`)
+       - Frame fixing (`raster::enclosure_fixed_on_ground`, only under `One`)
          is a perspective no reader applies at intake. It becomes one in
          S6.
        - All 1 000 training addresses change, inside v0.3.0's one break.
@@ -1830,8 +1838,20 @@ Each phase is one commit:
      `axis_taken_apart_only_where_family_invariant`.
    - **Built** with T2 ([PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)):
      the transduction at rank `n` (`src/transducer/family/transduce/`) and
-     the nested map (`nest.rs`). Open: the reading of which factorings the
-     family is invariant under, which keeps or dissolves each candidate.
+     the nested map (`nest.rs`). The reading of which factorings the
+     family is invariant under is built (branch `sensing-nest`; ruled
+     2026-11-06 on #32): per pair, separators as the fine phase of a period
+     `b + 1`, repeating blocks as relations, motions per level, collapse by
+     a reading that holds for one candidate alone, several alike
+     superposed; the nesting a coordinate of the percept
+     (`transduce::nesting`, `TaskPercept.nesting`). Claims
+     `axis_taken_apart_only_where_family_invariant`,
+     `factoring_read_per_pair_and_kept_only_where_every_pair_admits`,
+     `separator_is_the_fine_phase_of_period_b_plus_one`,
+     `repeating_blocks_kept_as_relation_by_fine_motion`,
+     `motion_per_level_is_coarse_times_fine`,
+     `several_factorings_holding_alike_stay_superposed`. Nesting as a
+     fibration of levels in the field's lift stays with S4a stage 4.
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
@@ -1855,7 +1875,11 @@ Each phase is one commit:
      `orbit_holonomy_is_the_product_of_its_transitions_per_lap`,
      `flat_product_reads_no_holonomy_where_curved_field_reads_it`,
      `orbit_precesses_by_the_holonomy_its_attractors_curve`,
-     `zero_precession_orbit_refused_as_loop`,
+     `flat_region_binds_no_orbit_refused_unbound` (restated from
+     `zero_precession_orbit_refused_as_loop` under 78.171 amendment (f):
+     a flat region binds no orbit, refused `Unbound`),
+     `closed_geodesic_with_zero_precession_is_resonant` (zero precession
+     in a curved field is a resonant orbit, never refused),
      `windings_kept_as_fibre_classes`,
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
    - **Built, stage 1** (branch `field-s7`; built against LAW-FIELD v1 as
@@ -1945,6 +1969,28 @@ Each phase is one commit:
      §6.2).
    - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
      `two_perspectives_of_one_sample_compared_as_a_cover`.
+   - **Built, stage 1** (branch `sensing-s6`, PR #167): a perspective
+     holds its pose, the signed permutation the sensor reads through,
+     beside its roles; a shift (`SensorMotion::Pose`, `Recast`) moves the
+     sensor, and a sample is read through it, never rewritten
+     (`Perspective::read`, `turn_to`). The perspectives of one sample are a
+     cover (`perspective::cover`): contacts as 0-cochains, the turn on each
+     overlap, the cocycle on triples, the residue of contacts held. The
+     frame fixing is a perspective (`raster::frame_fixing`). Claims
+     `perspective_shift_is_a_sensor_motion`,
+     `two_perspectives_of_one_sample_compared_as_a_cover`,
+     `frame_fixing_is_a_perspective_reading`. No wire or address change.
+     Open: a mind asking for a perspective as a demand; collapsing a
+     ground's vortex by a relation.
+   - **Built, stage 2** (branch `sensing-s6-claim`, a wire change inside
+     v0.4.0's break): a claim of factorisation states the perspective it
+     was perceived under (signed `mycelium factorisation v2`); the court
+     reads its copy of the pair through it and reconstructs there, refusing
+     another rank or a non-space role by name; the mind perceives under a
+     perspective (`TaskPercept::under`). Claim
+     `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
+     the solve of outputs and speech stating a perspective (they read the
+     section in its default).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where

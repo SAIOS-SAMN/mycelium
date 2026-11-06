@@ -236,21 +236,21 @@ pub fn from_canonical(chain: &CanonicalChain) -> Element {
 /// The former `arc::frame_ratio` and its gcd had no caller and are deleted
 /// (ROADMAP track 26, S1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct Frame {
+pub struct Reperiod {
     pub h_in: usize,
     pub w_in: usize,
     pub h_out: usize,
     pub w_out: usize,
 }
 
-impl Frame {
+impl Reperiod {
     /// Identity: no scale. Unframed speech uses this so its key matches a
     /// planar intake.
-    pub const IDENTITY: Frame = Frame { h_in: 1, w_in: 1, h_out: 1, w_out: 1 };
+    pub const IDENTITY: Reperiod = Reperiod { h_in: 1, w_in: 1, h_out: 1, w_out: 1 };
 
     /// The frame of a pair whose extents are known.
-    pub const fn new(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Frame {
-        Frame { h_in, w_in, h_out, w_out }
+    pub const fn new(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Reperiod {
+        Reperiod { h_in, w_in, h_out, w_out }
     }
 }
 
@@ -267,24 +267,24 @@ impl Frame {
 /// (U14).
 pub fn listing_key(
     chain: &[SectionLink],
-    frame: &Frame,
+    frame: &Reperiod,
 ) -> Option<crate::transducer::address::Address> {
     Some(from_residue_framed(&chain.to_vec(), frame)?.address())
 }
 
 /// Identity frame: no scale. Unframed speech uses this so its key matches
 /// a planar intake.
-pub const IDENTITY_FRAME: Frame = Frame::IDENTITY;
+pub const IDENTITY_FRAME: Reperiod = Reperiod::IDENTITY;
 
-pub fn from_residue_framed(g: &ResidueGerm, frame: &Frame) -> Option<Element> {
+pub fn from_residue_framed(g: &ResidueGerm, frame: &Reperiod) -> Option<Element> {
     Some(from_canonical_framed(&canonical_chain(g)?, frame))
 }
 
 /// The framed word of a chain A5 has already accepted. Total, as
 /// [`from_canonical`] is.
-pub fn from_canonical_framed(chain: &CanonicalChain, frame: &Frame) -> Element {
+pub fn from_canonical_framed(chain: &CanonicalChain, frame: &Reperiod) -> Element {
     let mut e = from_canonical(chain);
-    let Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *frame;
+    let Reperiod { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *frame;
     if hi > 0 && wi > 0 && (hi, wi) != (ho, wo) {
         let rh = Q::new(BigInt::from(ho as u64), BigInt::from(hi as u64));
         let rw = Q::new(BigInt::from(wo as u64), BigInt::from(wi as u64));

@@ -38,7 +38,7 @@ assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
 assert!(k.quote().1.is_empty(), "the market cleared");
 }
 
-/// A docket draws the chain's μ⃗ from the uttering voice's remaining bond;
+/// A docket draws the chain's μ⃗ from the asserting voice's remaining bond;
 /// a short lane refuses the act with REFUSE_ROOM, and nothing is listed,
 /// drawn, escrowed or sealed (23.8, S9.6). A second voice's bond is its
 /// own; the hypha's identity is not the drawer.

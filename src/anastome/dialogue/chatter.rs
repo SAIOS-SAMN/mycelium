@@ -28,7 +28,7 @@
 //!   HOLONOMY, what the round trip said → heard carried it to. The holonomy
 //!   is the content: what one mind's language does to the other's thought;
 //!   still only where the hearer echoed.
-//! - HOLD, the same fields as ACK: the hearer's own reading of every loop,
+//! - HOLD, the same fields as ACK: the hearer's own reading of every relation,
 //!   re-derived from what it heard and what it derived, then the exact
 //!   strain per lane.
 //!
@@ -51,9 +51,9 @@ pub const ACK: u8 = 2;
 pub const HOLD: u8 = 3;
 const SIGNED: &[u8] = b"mycelium chatter v6";
 
-/// ONE RING SAID (MU-CLIENT §4.9, 78.31): an utterance that returns — its
+/// ONE RING SAID (MU-CLIENT §4.9, 78.31): an expression that returns — its
 /// coordinate in the speaker's form, its holonomy `Ω` (the ring's whole
-/// motion, what a loop said → heard is read against), its hue map, and its
+/// motion, what a relation said → heard is read against), its hue map, and its
 /// TERMS, each word with the transport to the next, from which the hearer
 /// composes the ring again in its own field (`compose`). A single word is a
 /// ring of one term, its transport the identity. Its VANTAGE (MU-CLIENT
@@ -96,8 +96,8 @@ pub struct HeardWord {
 }
 
 /// 78.163 — ONE WORD'S LOOP, ACKNOWLEDGED: the holonomy of said → heard on
-/// the motion (`None`: no loop closed — nothing derived, or no versor said)
-/// and on the hue map (`None`: the said map is no permutation, so the loop
+/// the motion (`None`: no relation closed — nothing derived, or no versor said)
+/// and on the hue map (`None`: the said map is no permutation, so the relation
 /// cannot close on G).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AckWord {
@@ -126,9 +126,9 @@ pub enum Said {
     Say { said: Vec<u8>, words: Vec<Spoken>, evidence: Option<Evidence> },
     /// What the hearer re-derived of something said, word by word.
     Heard { said: Vec<u8>, words: Vec<HeardWord> },
-    /// 78.163 — the speaker's reading of every loop the hearer's thought closed.
+    /// 78.163 — the speaker's reading of every relation the hearer's thought closed.
     Ack { said: Vec<u8>, words: Vec<AckWord> },
-    /// 78.163 — the hearer's own reading of the same loops, and (78.112 H5)
+    /// 78.163 — the hearer's own reading of the same relations, and (78.112 H5)
     /// the exact strain they carried, per lane: how far the hearer's language
     /// moved the thought, priced in its own field.
     Hold { said: Vec<u8>, words: Vec<AckWord>, deviation: [num_rational::BigRational; 4] },
@@ -446,7 +446,7 @@ impl Chatter {
 /// One frame off a connection: `[len u32 LE][frame]`, within the wire's one
 /// budget, or nothing. The connection is plain TCP or the Noise channel
 /// over it (`sdk::chatter::send_over`): the framing is the same inside.
-pub fn read_frame<S: Read + ?Sized>(s: &mut S) -> io::Result<Vec<u8>> {
+pub fn read_delimited<S: Read + ?Sized>(s: &mut S) -> io::Result<Vec<u8>> {
     let mut len = [0u8; 4];
     s.read_exact(&mut len)?;
     let n = usize::try_from(u32::from_le_bytes(len)).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "length"))?;
@@ -461,7 +461,7 @@ pub fn read_frame<S: Read + ?Sized>(s: &mut S) -> io::Result<Vec<u8>> {
 /// One frame onto a connection: `[len u32 LE][frame]`.
 /// One write, so inside Noise the head and the frame ride one transport
 /// message where they fit.
-pub fn write_frame<S: Write + ?Sized>(s: &mut S, frame: &[u8]) -> io::Result<()> {
+pub fn write_delimited<S: Write + ?Sized>(s: &mut S, frame: &[u8]) -> io::Result<()> {
     let n = u32::try_from(frame.len()).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "frame length"))?;
     let mut out = Vec::with_capacity(4 + frame.len());
     out.extend_from_slice(&n.to_le_bytes());
@@ -474,13 +474,13 @@ pub fn write_frame<S: Write + ?Sized>(s: &mut S, frame: &[u8]) -> io::Result<()>
 /// holding a Noise home sends with `sdk::chatter::send_over`.
 pub fn send(endpoint: &str, frame: &[u8]) -> io::Result<()> {
     let mut s = TcpStream::connect(endpoint)?;
-    write_frame(&mut s, frame)
+    write_delimited(&mut s, frame)
 }
 
 /// ASK a mind's post one question and read its answer, on one connection,
 /// in plaintext (`sdk::chatter::ask_over` inside Noise).
 pub fn ask(endpoint: &str, question: &[u8]) -> io::Result<Vec<u8>> {
     let mut s = TcpStream::connect(endpoint)?;
-    write_frame(&mut s, question)?;
-    read_frame(&mut s)
+    write_delimited(&mut s, question)?;
+    read_delimited(&mut s)
 }

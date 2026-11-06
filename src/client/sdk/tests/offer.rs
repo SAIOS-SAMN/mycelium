@@ -112,7 +112,7 @@ fn task_inflow_takes_offer_in_restored_language() {
 /// pairs with the frame fixed on the family's own ground, as every decoder
 /// hands a task through, and no test.
 fn posted_family(train: &[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]) -> Vec<u8> {
-    let task = crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.to_vec(), test: Vec::new() });
+    let task = crate::transducer::raster::enclosure_fixed_on_ground(crate::transducer::family::Task { train: train.to_vec(), test: Vec::new() });
     crate::anastome::dialogue::encode_posted_task(&task).expect("the family posts")
 }
 

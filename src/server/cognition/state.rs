@@ -113,6 +113,12 @@ pub struct Court {
     /// holds there and the mark of its last filing, so a publisher re-reads
     /// a signer's eras only where one was filed.
     pub(crate) era_tallies: crate::network::nerve::Keyed<crate::chronometry::LineTally>,
+    /// Issue #118 — THE SIGNING EVENTS OF THIS COURT'S OWN FOLDED LINE, read
+    /// once from each of its eras as the alignment reading first meets it,
+    /// keyed `kernel‖stamp‖n` (`signatory::FoldedSignings`). A closed era
+    /// returns nothing new, so what was read of it stands. Volatile: a
+    /// restart reads each era once more.
+    pub(crate) folded_signings: super::signatory::FoldedSignings,
     /// The fold awaiting a witness (47.3): the reading proposed on the
     /// syntropic circuit, carried to a bonded peer by the exchange, sealed
     /// only on both signatures.
@@ -338,8 +344,8 @@ pub struct Court {
     /// verified. In-memory, never persisted: a restart refuses afresh.
     pub(crate) refusals: crate::network::nerve::Keyed<crate::court::verdict::ReceiptedRefusal>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
-    /// the utterance, magnitude before, magnitude after). The court reconstructs
-    /// the utterance and measures the deflation itself — proof of
+    /// the expression, magnitude before, magnitude after). The court reconstructs
+    /// the expression and measures the deflation itself — proof of
     /// convergence on the work that actually happens. Bounded by the
     /// reserve ceiling; drained as the court pulls the docket.
     pub(crate) settlements: Vec<crate::anastome::dialogue::Settlement>,
@@ -352,7 +358,7 @@ pub struct Court {
     /// ACT1 — OWN-LINE ACTS SEALED WITHOUT A FRAME (78.27 Q1(a)): acts that
     /// named a word no row of this court measures, so each act's μ⃗ was read as
     /// `[0; 4]` because nothing measured it. Counted at seal, since boot.
-    pub(crate) unframed: u64,
+    pub(crate) unmeasured: u64,
     /// OK1 — CLOSES WITHHELD FOR SEPARATION: strokes at whose boundary this
     /// court's orbit frame coincided on every lane with a peer's closed at
     /// the same tick, so the close was withheld (78.23 as amended). Since
@@ -917,7 +923,7 @@ impl Court {
             eprintln!("  era refused: a receipt of its payload cannot be written");
             return;
         };
-        match Self::append_frame(&path, self.eras_end, &frame) {
+        match Self::append_record(&path, self.eras_end, &frame) {
             Some(at) => {
                 self.eras_end = at.offset + at.len;
                 self.hold_filed(era.filed_at(at));
@@ -936,11 +942,11 @@ impl Court {
         run.take_while(|e| e.root.at == era.root.at).any(|e| era_locates(e, era))
     }
 
-    /// ONE ERA'S FRAME APPENDED after the last whole era, at `end` — what
+    /// ONE ERA'S RECORD APPENDED after the last whole era, at `end` — what
     /// stands past it is an append that did not land, and is cut — the
     /// segment's magic first where it is new: where its payload landed, or
     /// `None` where the write did not.
-    fn append_frame(path: &std::path::Path, end: u64, frame: &[u8]) -> Option<crate::chronometry::Filed> {
+    fn append_record(path: &std::path::Path, end: u64, frame: &[u8]) -> Option<crate::chronometry::Filed> {
         use std::io::{Seek, Write};
         let mut f = std::fs::OpenOptions::new().create(true).write(true).truncate(false).open(path).ok()?;
         f.set_len(end).ok()?;
