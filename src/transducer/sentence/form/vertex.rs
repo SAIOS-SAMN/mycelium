@@ -28,7 +28,7 @@ impl Vertex {
         frames: impl IntoIterator<Item = u64>,
         contact: Option<alphabet::Contact>,
     ) -> Vertex {
-        let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
+        let member = super::Acting { chart, carriage, gauge, frames: samples_of_section(frames) };
         let mut acts: Keyed<super::Acting, coord::ChartCarriage> = Keyed::new();
         acts.put(&member.key(), member);
         // 54.2 — the vertex's address is its own coordinates, derived.
@@ -50,7 +50,7 @@ impl Vertex {
         gauge: Vec<(u8, u8)>,
         frames: impl IntoIterator<Item = u64>,
     ) -> Vertex {
-        let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
+        let member = super::Acting { chart, carriage, gauge, frames: samples_of_section(frames) };
         let mut acts: Keyed<super::Acting, coord::ChartCarriage> = Keyed::new();
         acts.put(&member.key(), member);
         Vertex::Rebased { by, class, acts }
@@ -86,7 +86,7 @@ impl Vertex {
     /// has none — and such a vertex has no place in a form (rule 11).
     pub fn at(&self) -> Option<coord::VertexAt> {
         Some(match self {
-            Vertex::Frame => coord::VertexAt::Frame,
+            Vertex::Frame => coord::VertexAt::Enclosure,
             Vertex::Word { .. } => coord::VertexAt::Word(self.class()?),
             Vertex::Rebased { by, class, .. } => {
                 coord::VertexAt::Rebased { base: base_class(by)?, own: class.clone() }
@@ -465,7 +465,7 @@ pub(crate) fn base_class(by: &coord::VertexAt) -> Option<coord::Transport> {
     match by {
         coord::VertexAt::Word(t) => Some(t.clone()),
         coord::VertexAt::Rebased { base, .. } => Some(base.clone()),
-        coord::VertexAt::Frame => Some(coord::Transport {
+        coord::VertexAt::Enclosure => Some(coord::Transport {
             kind: crate::transducer::layers::LayerKind::Whole,
             class: Word::identity().rotor().holonomy_key()?,
         }),

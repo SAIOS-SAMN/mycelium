@@ -12,6 +12,7 @@ pub mod concluded;
 pub mod genome;
 mod house;
 pub mod hypha_acts;
+mod retrieval;
 pub mod mind;
 pub mod quote;
 pub mod rule;
@@ -46,7 +47,7 @@ pub use working_atlas::*;
 
 use crate::anastome::dialogue;
 use crate::transducer::family::SectionSample;
-use crate::network::wire::{Lane, WireFrame};
+use crate::network::wire::{Lane, Delimited};
 use crate::transducer::element::Element;
 use std::cell::RefCell;
 use std::io::{self, Read, Write};

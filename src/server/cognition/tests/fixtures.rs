@@ -7,6 +7,13 @@ use crate::transducer::element::Element;
 use crate::transducer::family::TrainPair;
 pub use crate::transducer::sentence::tests::fixtures::painted;
 
+/// Two lists of citations cite the same things, in order: each pair by
+/// `Cite::restates`, since a citation has no `==` (a fold root's hash is a
+/// `Predecessor`; ROADMAP track 25 X0).
+pub fn cites_restate(cites: &[crate::chronometry::Cite], held: &[crate::chronometry::Cite]) -> bool {
+    cites.len() == held.len() && cites.iter().zip(held).all(|(c, h)| c.restates(h))
+}
+
 /// A pair of painted scenes as the one-pair family a voice reads it as:
 /// each scene on its own plane, exactly as the eyes of the voice would (20),
 /// the fixtures' unpainted sites written `0`.
@@ -28,7 +35,7 @@ pub fn speaker_ground(family: &crate::transducer::family::Family) -> Option<Vec<
 
 /// THE VOICE'S F, IN-PROCESS (50.2, law 8): the rule the form engine
 /// extracts over an empty genome and the sentence it mints for the pair —
-/// with its demand vertices, uttered whole (50.5). `None` where the eyes
+/// with its demand vertices, asserted whole (50.5). `None` where the eyes
 /// admit no body pair: a form with no vertex that acts is a chain (50.6),
 /// and a voice speaks nothing for it.
 pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element> {
@@ -45,7 +52,7 @@ pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element
     mint_sentence(&rule, &family, &NoCrystal, 0)
 }
 
-/// A VOICE SPEAKS A PAIR TO THE COURT through the one door an utterance has
+/// A VOICE SPEAKS A PAIR TO THE COURT through the one door an expression has
 /// (law 8, ruled 2026-09-10): the voice's sentence for the pair, bound to a
 /// task of that family (the voice's own binding, as the task arm binds it),
 /// heard by `perceive_sentence`. `Outcome::Pivot` where the voice has no

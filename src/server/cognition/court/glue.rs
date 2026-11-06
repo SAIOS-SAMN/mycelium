@@ -524,7 +524,13 @@ impl Court {
             }
             self.confirm_cursor.insert(peer, d.inv.key().as_bytes().to_vec());
             let members = self.ruled.fibre(&d.inv);
-            if locates_stratum(&crate::transducer::sheaf::stratum_root(&members), &d.root) {
+            // ADDRESS SENSE ON A STRATUM (MU-HOSTING §5a.10): this court's
+            // root, recomputed from the members it holds under the chart,
+            // and the root the peer's digest names locate one stratum. It
+            // says where the peer stands, never that a word is admitted: the
+            // words installed on it are this court's own, reconstructed and
+            // ruled here.
+            if crate::transducer::sheaf::stratum_root(&members).locates(&d.root) {
                 let held: Vec<Vec<u8>> = members.into_iter().filter(|a| self.provisional.contains(a)).collect();
                 for address in held {
                     self.home_install(&address, peer, budget);
@@ -534,7 +540,7 @@ impl Court {
                 None => Vec::new(),
                 Some(here) => here
                     .scoped()
-                    .filter(|(address, _)| self.heard.get(address).is_some_and(|(_, stored)| !locates_stratum(stored, &d.root)))
+                    .filter(|(address, _)| self.heard.get(address).is_some_and(|(_, stored)| !stored.locates(&d.root)))
                     .map(|(address, _)| address)
                     .collect(),
             };
@@ -780,16 +786,4 @@ fn cover_vertices(
         }
     }
     verts.scoped().map(|(k, _)| k).collect()
-}
-
-/// ADDRESS SENSE ON A STRATUM (MU-HOSTING §5a.10): the root `held` (this
-/// court's, recomputed from the members it holds under the chart, or the
-/// one it recorded when it heard a word) and the root a peer's digest
-/// `named` locate one stratum. It says where the peer stands, never that a
-/// word is admitted: the words installed on it are this court's own,
-/// reconstructed and ruled here. A root that is not 32 bytes locates
-/// nothing.
-fn locates_stratum(held: &[u8], named: &[u8]) -> bool {
-    let locator = |root: &[u8]| <[u8; 32]>::try_from(root).ok().map(crate::court::admission::Locator::of_bytes);
-    locator(held).zip(locator(named)).is_some_and(|(h, n)| h.locates(&n))
 }

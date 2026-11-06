@@ -76,14 +76,14 @@ fn torus() -> Geometry {
 }
 
 /// The core tube from domain 4's core to domain 5's: unit mass, the near
-/// end curved of `R` 1, the far end in `to`, the far frame `to_frame`.
-fn core_to(to: Geometry, to_frame: Mv) -> Mouth {
+/// end curved of `R` 1, the far end in `to`, the far frame `to_chart`.
+fn core_to(to: Geometry, to_chart: Mv) -> Mouth {
     Mouth {
         from_tier: verifying(&reserve(4)),
         to_tier: verifying(&reserve(5)),
         keeper: verifying(&reserve(4)),
-        from_frame: crate::transducer::element::identity_versor(),
-        to_frame,
+        from_chart: crate::transducer::element::identity_versor(),
+        to_chart,
         toll: [0; 4].into(),
         nonce: [4; 32],
         tariff: None,
@@ -123,7 +123,8 @@ fn state_records_geometry_and_basket_once() {
         assert_eq!(state(&mut k, 4, Stated::Geometry(bad), &reserve(4)), Founded::Malformed);
     }
     assert!(matches!(state(&mut k, 4, Stated::Geometry(space.clone()), &reserve(4)), Founded::Stated { .. }));
-    assert_eq!(k.chain.head().map(|h| h.cites.clone()), Some(vec![Cite::Stated { domain: verifying(&domain(4)), kind: 8, body: Stated::Geometry(space.clone()).hash() }]));
+    let stated = [Cite::Stated { domain: verifying(&domain(4)), kind: 8, body: Stated::Geometry(space.clone()).hash() }];
+    assert!(k.chain.head().is_some_and(|h| super::fixtures::cites_restate(&h.cites, &stated)), "the statement on the line");
     assert_eq!(state(&mut k, 4, Stated::Geometry(torus()), &reserve(4)), Founded::AlreadyStated, "never an edit");
     // The basket gates conversions at the reserve.
     let out = ConvertOut { tier: verifying(&reserve(4)), holder: [7; 32], identity: [8; 32], g: 4, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [1; 32] };

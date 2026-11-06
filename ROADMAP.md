@@ -69,7 +69,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
 | Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
-| The alphabet past `n = 3`; the `Frame` defect; `Act::Slide`/`Extend`'s planar ray | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
+| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
 | Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
@@ -93,7 +93,8 @@ adopted by a recut (track 6). Items:
 - **The Note** between courts (track 1; MU-XSEPTUM), carrying modes.
 - **The economic law form with the peer kernels:** μ's modes, the
   reserve and conversion at the universal core tube, with joint-read
-  fixtures, through MU-RELEASE §3a (proposal 78.174, to come; §10.4).
+  fixtures, through MU-RELEASE §3a (an amendment of proposal 78.174,
+  which records the operator's rulings of 2026-11-05; §10.4).
 
 The rulings the model still needs are listed in MU-ECONOMY §12.
 
@@ -1609,13 +1610,23 @@ Each phase lands on its own branch, one item per commit:
      and no claim in the tree. `Court::restore` returns `bool`, not a
      `Reconstructed<State>`, and
      `restore_reconstructs_and_checks_receipts` is not written.
-   - Open (the next stage): `Cite::Root`'s hash, still bare, which would
-     drop `PartialEq` from `Cite`; the stratum root itself
-     (`transducer::sheaf::StratumDigest::root`, a `Vec<u8>`) typed at its
-     source; the clause 14 guard type and claim; the report of
-     changed document sentences. The report of changed document sentences that put a typed
-     term beside an admission verb is not built: it needs a base commit
-     the gate does not hold.
+   - **Built**, third stage ([#28](https://github.com/SAIOS-SAMN/mycelium/issues/28)):
+     `Cite::Root`'s hash is a `Predecessor`, so `Cite` has no
+     `PartialEq`; two citations are compared by `Cite::restates` (two
+     roots in the link sense, any other pair by its canonical writing).
+     The stratum root is typed at its source: `StratumDigest::root` is a
+     `Locator` (`sheaf::stratum_root`), compared by `Locator::locates`,
+     and a digests reply naming a root that is not 32 bytes is refused
+     whole. Claims `cite_has_no_equality`,
+     `stratum_digest_has_no_equality` (`compile_fail`, in the drift
+     register), `digests_reply_refuses_root_of_another_width`.
+   - Open, each asked on [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28):
+     the clause 14 guard type and claim (which object a restore's
+     `Reconstructed<State>` carries); the report of changed document
+     sentences that put a typed term beside an admission verb, which
+     needs a base commit the gate does not hold. The issue's
+     mutation-audit entry is not built: the mutation audit is retired
+     (*Test assurance* item 9, ruled 2026-11-04).
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,
    clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
    values (Concordance 1.4). It rides B3's change to the fold, which
@@ -1753,7 +1764,7 @@ Each phase is one commit:
        - A task's identity is its posted samples' content (rank, extents,
          symbols, places). Neither the ground nor frame fixing enters it.
        - The decoder posts tasks as read, and `parse_task` is removed.
-       - Frame fixing (`raster::frame_fixed_on_ground`, only under `One`)
+       - Frame fixing (`raster::enclosure_fixed_on_ground`, only under `One`)
          is a perspective no reader applies at intake. It becomes one in
          S6.
        - All 1 000 training addresses change, inside v0.3.0's one break.
@@ -1838,8 +1849,20 @@ Each phase is one commit:
      `axis_taken_apart_only_where_family_invariant`.
    - **Built** with T2 ([PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)):
      the transduction at rank `n` (`src/transducer/family/transduce/`) and
-     the nested map (`nest.rs`). Open: the reading of which factorings the
-     family is invariant under, which keeps or dissolves each candidate.
+     the nested map (`nest.rs`). The reading of which factorings the
+     family is invariant under is built (branch `sensing-nest`; ruled
+     2026-11-06 on #32): per pair, separators as the fine phase of a period
+     `b + 1`, repeating blocks as relations, motions per level, collapse by
+     a reading that holds for one candidate alone, several alike
+     superposed; the nesting a coordinate of the percept
+     (`transduce::nesting`, `TaskPercept.nesting`). Claims
+     `axis_taken_apart_only_where_family_invariant`,
+     `factoring_read_per_pair_and_kept_only_where_every_pair_admits`,
+     `separator_is_the_fine_phase_of_period_b_plus_one`,
+     `repeating_blocks_kept_as_relation_by_fine_motion`,
+     `motion_per_level_is_coarse_times_fine`,
+     `several_factorings_holding_alike_stay_superposed`. Nesting as a
+     fibration of levels in the field's lift stays with S4a stage 4.
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
@@ -1957,6 +1980,28 @@ Each phase is one commit:
      §6.2).
    - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
      `two_perspectives_of_one_sample_compared_as_a_cover`.
+   - **Built, stage 1** (branch `sensing-s6`, PR #167): a perspective
+     holds its pose, the signed permutation the sensor reads through,
+     beside its roles; a shift (`SensorMotion::Pose`, `Recast`) moves the
+     sensor, and a sample is read through it, never rewritten
+     (`Perspective::read`, `turn_to`). The perspectives of one sample are a
+     cover (`perspective::cover`): contacts as 0-cochains, the turn on each
+     overlap, the cocycle on triples, the residue of contacts held. The
+     frame fixing is a perspective (`raster::frame_fixing`). Claims
+     `perspective_shift_is_a_sensor_motion`,
+     `two_perspectives_of_one_sample_compared_as_a_cover`,
+     `frame_fixing_is_a_perspective_reading`. No wire or address change.
+     Open: a mind asking for a perspective as a demand; collapsing a
+     ground's vortex by a relation.
+   - **Built, stage 2** (branch `sensing-s6-claim`, a wire change inside
+     v0.4.0's break): a claim of factorisation states the perspective it
+     was perceived under (signed `mycelium factorisation v2`); the court
+     reads its copy of the pair through it and reconstructs there, refusing
+     another rank or a non-space role by name; the mind perceives under a
+     perspective (`TaskPercept::under`). Claim
+     `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
+     the solve of outputs and speech stating a perspective (they read the
+     section in its default).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
@@ -2030,6 +2075,19 @@ Each phase is one commit:
         a versor over `ℚ(ζ_ℓ) ⊗ Cl(p, q)`, its angle a named residue
         where no rational degree holds it. Claim
         `sphere_built_without_squared_radius`.
+        **Built in part** (branch `field-s3-membrane`): a sphere is the
+        membrane `−e₊` or its image under the dilation by a gauge and the
+        slide to a centre (`cga::membrane`, `cga::membrane_at`), read by
+        the horizon, the chart's inversion, the house's nuclei, the
+        conformance probes and the oracle's fixtures; `on_sphere` and
+        `at_three::sphere` retired; the SDK's `house::sphere_at` is
+        `house::membrane_at`. Claim `sphere_built_without_squared_radius`.
+        **Stopped:** a body's nucleus (`blade::Blade::nucleus`), whose
+        extent is a polar second moment with no rational root in general,
+        still built from `r²` by the crate-private `cga::sphere_at`, waiting
+        on a ruling of the reading that replaces it (#134); and turnings on
+        planes that share a unit, waiting on netstratum's composition law
+        (78.173 fixture 11b; the Cayley form on generators).
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.
@@ -2316,8 +2374,9 @@ Each phase is one commit:
         `slot_of_axis_stands_for_each_base_axis`.
       - No wire, tape, task, word, chart or clause address change.
       - **Remaining planar, outside the act reading:** `Speech.frame` and
-        `perceive::frame_of`, read with the measured `Frame` (MU-SENSING
-        §8, a defect, track 26 S4); the slide's and the line's ray
+        `perceive::frame_of` (the measured `Frame`, renamed `Reperiod`, is a
+        re-period per phase since branch `sensing-frame`, claim
+        `reperiod_is_read_per_phase_at_any_rank`); the slide's and the line's ray
         (`Act::Slide`/`Extend { ray: (i8, i8) }`), a clause field written
         as a pair; and comments elsewhere that say "grid".
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the

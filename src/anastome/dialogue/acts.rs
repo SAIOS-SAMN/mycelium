@@ -131,8 +131,8 @@ pub enum Adjudication {
     /// no receipt because no act was admitted — a receipt would be a
     /// chain position for something that did not happen (rule 11) — and
     /// it carries the CITED address instead, which is what the voice
-    /// needs: it holds that form, and utters it to this court before it
-    /// utters the citer again (chapter 6's depth order).
+    /// needs: it holds that form, and asserts it to this court before it
+    /// asserts the citer again (chapter 6's depth order).
     ///
     /// It is per sentence. The rest of the frame is adjudicated as
     /// normal, so a sentence that stood beside it keeps its verdict.
@@ -379,7 +379,7 @@ pub struct CiteWire {
     /// coordinate, so a hypha can weight a held idea below a ruled word —
     /// never a filter that drops one.
     pub standing: u8,
-    /// The transport carrying the word's chain into the utterance's frame.
+    /// The transport carrying the word's chain into the expression's frame.
     pub transport: crate::transducer::element::Versor,
     // THE GAUGE IS NOT ON THE WIRE. It was a `u32` index into the word's
     // assignments beside a body that already carries the assignment (law
@@ -697,8 +697,8 @@ pub struct WorkItem {
 pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
-/// utterance that settled it, and the magnitudes before and after as the
-/// hypha measured them. The court reconstructs the utterance and measures for
+/// expression that settled it, and the magnitudes before and after as the
+/// hypha measured them. The court reconstructs the expression and measures for
 /// itself: two measurements of one deflation are the proof of convergence.
 /// The last field is the stamp of the act the settlement follows on the
 /// hypha's own line (78.27 (6)): its place orders it inside one court and
@@ -711,7 +711,7 @@ pub struct Settlement {
     pub chain: Vec<SectionLink>,
     /// The voice that settled it.
     pub voice: [u8; 32],
-    /// The utterance: the citations the voice spoke. The court reconstructs
+    /// The expression: the citations the voice spoke. The court reconstructs
     /// these and measures for itself — two measurements of one deflation
     /// are the proof of convergence.
     pub cites: Vec<CiteWire>,

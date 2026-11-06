@@ -14,8 +14,14 @@
 //!
 //! `[ACT_SOLVE][SOLVE_KIND_FACTORISATION][voice 32][task citation
 //! 32][pair][rank u16][(source u16)(sense u8) · rank][period u16 ·
-//! rank][link count][link · count]`, then optionally `[GRND][len
-//! u32][symbol]`, then `[SIGN][sig 64]`.
+//! rank][link count][link · count][perspective]`, then optionally
+//! `[GRND][len u32][symbol]`, then `[SIGN][sig 64]`.
+//!
+//! The perspective the claim was perceived under (MU-SENSING §4, §6.1;
+//! track 26 S6) is written `[rank u16][(source u16)(sense u8) ·
+//! rank][role u8 · rank]`: its pose, read axis by read axis, then each read
+//! axis's role (`0` space, `1` sequence, `2` value). Every claim states it;
+//! the default is the identity pose with every axis space.
 //!
 //! - The kind byte tells the claim from a solve of outputs
 //!   (`SOLVE_KIND_OUTPUTS`); neither reader reads the other's act.
@@ -31,8 +37,8 @@
 //!   `p′/p` is exact from the two.
 //! - Each link is a site of rank `n` and its two symbols
 //!   (`sentence::Link::put`).
-//! - The voice signs the domain `mycelium factorisation v1` and the act up
-//!   to its signature.
+//! - The voice signs the domain `mycelium factorisation v2` and the act up
+//!   to its signature (v2 since the perspective, track 26 S6).
 //!
 //! The reply is the verdict: admitted, the residue of the residues
 //! (`unclaimed`, `uncarried`), or a refusal by name. An admitted claim pays
@@ -43,10 +49,11 @@
 use super::{solve_kind, ACT_SOLVE, SOLVE_KIND_FACTORISATION};
 use crate::transducer::address::{put_bytes, put_key_bytes, put_key_count, put_u16_count, take_bytes, take_key_bytes, take_key_count, take_u16_count};
 use crate::transducer::family::transduce::{Enclosure, Motion, Sense, SignedPermutation};
+use crate::transducer::perspective::{Perspective, Role};
 use crate::transducer::sentence::Link;
 
 /// The signed bytes' domain of a claim of factorisation.
-const SIGNED_FACTORISATION: &[u8] = b"mycelium factorisation v1";
+const SIGNED_FACTORISATION: &[u8] = b"mycelium factorisation v2";
 
 /// A CLAIM OF FACTORISATION AS THE COURT READS IT.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -61,6 +68,9 @@ pub struct FactorisationAct {
     pub motion: Motion,
     /// The residue stated: links of the pair's rank and width.
     pub residue: Vec<Link>,
+    /// The perspective the pair was perceived under (MU-SENSING §4): the
+    /// motion and the residue are read on the pair as it reads it.
+    pub perspective: Perspective,
     /// The ground the claim was spoken under (MU-SENSING §6.2): one symbol
     /// at the source's width, or none.
     pub ground: Option<Vec<u8>>,
@@ -130,6 +140,60 @@ fn take_motion(b: &[u8], p: &mut usize) -> Option<Motion> {
     Some(Motion { permutation, onto })
 }
 
+/// A role's byte.
+fn role_byte(r: Role) -> u8 {
+    match r {
+        Role::Space => 0,
+        Role::Sequence => 1,
+        Role::Value => 2,
+    }
+}
+
+/// The role a byte names, or none.
+fn role_of(b: u8) -> Option<Role> {
+    match b {
+        0 => Some(Role::Space),
+        1 => Some(Role::Sequence),
+        2 => Some(Role::Value),
+        _ => None,
+    }
+}
+
+/// THE PERSPECTIVE WRITTEN: its rank, each read axis's source and sense in
+/// the pose, then each read axis's role. `None` where a rank or a source
+/// passes its `u16` field.
+fn put_perspective(out: &mut Vec<u8>, p: &Perspective) -> Option<()> {
+    put_u16_count(out, p.rank())?;
+    for &(source, sense) in p.pose().images() {
+        put_u16_count(out, source)?;
+        out.push(sense_byte(sense));
+    }
+    out.extend(p.roles().iter().map(|&r| role_byte(r)));
+    Some(())
+}
+
+/// The perspective read back, or `None` where its pose is no signed
+/// permutation or a role byte names none.
+fn take_perspective(b: &[u8], p: &mut usize) -> Option<Perspective> {
+    let rank = take_u16_count(b, p)?;
+    if rank > b.len().checked_sub(*p)? {
+        return None;
+    }
+    let mut images = Vec::with_capacity(rank);
+    for _ in 0..rank {
+        let source = take_u16_count(b, p)?;
+        let sense = sense_of(*b.get(*p)?)?;
+        *p += 1;
+        images.push((source, sense));
+    }
+    let mut roles = Vec::with_capacity(rank);
+    for _ in 0..rank {
+        roles.push(role_of(*b.get(*p)?)?);
+        *p += 1;
+    }
+    Perspective::posed(roles, SignedPermutation::new(images).ok()?).ok()
+}
+
 /// Links written: their count by its own coordinate, then each.
 fn put_links(out: &mut Vec<u8>, links: &[Link]) {
     put_key_count(out, links.len());
@@ -159,15 +223,17 @@ fn signed_bytes(unsigned: &[u8]) -> Vec<u8> {
 }
 
 /// A CLAIM OF FACTORISATION WRITTEN AND SIGNED by `key`: the train pair
-/// `pair` of the task `citation`, its `motion` and `residue`, and the
-/// `ground` it was spoken under. `None` where a field passes its field's
-/// width: a claim is never sent short.
+/// `pair` of the task `citation`, its `motion` and `residue`, the
+/// `perspective` the pair was perceived under and the `ground` it was
+/// spoken under. `None` where a field passes its field's width: a claim is
+/// never sent short.
 pub fn encode_factorisation(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
     pair: usize,
     motion: &Motion,
     residue: &[Link],
+    perspective: &Perspective,
     ground: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
     use ed25519_dalek::Signer;
@@ -177,6 +243,7 @@ pub fn encode_factorisation(
     put_key_count(&mut out, pair);
     put_motion(&mut out, motion)?;
     put_links(&mut out, residue);
+    put_perspective(&mut out, perspective)?;
     if let Some(g) = ground {
         out.extend_from_slice(b"GRND");
         put_bytes(&mut out, g)?;
@@ -200,6 +267,7 @@ pub fn decode_factorisation(body: &[u8]) -> Option<FactorisationAct> {
     let pair = take_key_count(body, &mut p)?;
     let motion = take_motion(body, &mut p)?;
     let residue = take_links(body, &mut p)?;
+    let perspective = take_perspective(body, &mut p)?;
     let ground = match body.get(p..p + 4) == Some(&b"GRND"[..]) {
         true => {
             p += 4;
@@ -219,7 +287,7 @@ pub fn decode_factorisation(body: &[u8]) -> Option<FactorisationAct> {
         }
         _ => return None,
     };
-    Some(FactorisationAct { voice, task, pair, motion, residue, ground, signed })
+    Some(FactorisationAct { voice, task, pair, motion, residue, perspective, ground, signed })
 }
 
 /// THE COURT'S VERDICT ON A CLAIM OF FACTORISATION.

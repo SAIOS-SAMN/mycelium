@@ -1,6 +1,6 @@
 // 78.128 — A WORMHOLE BETWEEN DOMAINS: a mouth pair built by two domains'
 // reserves, the only way anything crosses between universes
-// with no shared space; kept and tolled by its builders; its loops read as
+// with no shared space; kept and tolled by its builders; its orbits read as
 // curvature (ruled 2026-10-07).
 //
 //! A MOUTH PAIR is offered by one domain's reserve tier and accepted by the
@@ -10,13 +10,13 @@
 //! escrowed from the sending tier and paid to the KEEPER on acceptance. Either
 //! reserve may CLOSE it: traversals in flight return, the tolls refunded.
 //! The open mouths are edges between DOMAINS carrying each pair's chart
-//! transition `to_frame · from_frame⁻¹`; a cycle of them whose holonomy is not
+//! transition `to_chart · from_chart⁻¹`; a cycle of them whose holonomy is not
 //! the identity is two routes disagreeing about how one universe lands in
-//! another — curvature, RECORDED (served as loops), never refused.
+//! another — curvature, RECORDED (served as orbits), never refused.
 
 use super::handoff::toll_key;
 use super::Court;
-use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Loop, Mouth, SignedHandoff, State, TubeReading};
+use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Mouth, MouthOrbit, SignedHandoff, State, TubeReading};
 use crate::anastome::dialogue::universe::Geometry;
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::transducer::address::{put_key_bytes, take_key_bytes};
@@ -268,8 +268,9 @@ fn fits_both(t: &crate::anastome::dialogue::handoff::Tube, mass: &num_rational::
 /// and never on a grid (MU-DERIVATIONS D1.2 Phase A): a curved face always
 /// holds it; a sphere face holds the cap of angular radius `r = 2m/R` short of
 /// the antipode, `r < π`, decided by refining `π` until its enclosure leaves
-/// `r` (`certified::separates`); a torus face holds the horizon sphere of
-/// radius `2m` APART from its image under every period (`enclosure::
+/// `r` (`certified::separates`); a torus face holds the horizon, the
+/// membrane at the gauge `2m` (`cga::membrane_at`, no squared radius),
+/// APART from its image under every period (`enclosure::
 /// containment`), the meet 78.162 (5) names, no ratio formed. `None` for a
 /// non-positive mass or radius, or a period that does not read.
 pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Option<bool> {
@@ -291,7 +292,7 @@ pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Opt
         Geometry::Torus { periods, .. } => {
             let rho = &two * mass;
             let origin = vec![Q::zero(); periods.len()];
-            let horizon = crate::transducer::cga::sphere_at(&origin, &(&rho * &rho));
+            let horizon = crate::transducer::cga::membrane_at(&origin, &rho)?;
             for (axis, (n, d)) in periods.iter().enumerate() {
                 if *d == 0 || *n == 0 {
                     return None;
@@ -846,13 +847,13 @@ impl Court {
 
     /// 78.128 — THE MOUTH LOOPS: the open mouth pairs as edges between
     /// domains, in the order they opened, each carrying its chart transition
-    /// `to_frame · from_frame⁻¹` — 78.134: a motion alone, no rotor slot;
+    /// `to_chart · from_chart⁻¹` — 78.134: a motion alone, no rotor slot;
     /// every pair that closes a cycle of domains whose holonomy is not the
     /// identity, with that holonomy, TETHERED where the tubes alone close the
     /// same cycle to the same holonomy (an isometry of curved space), else a
     /// cycle through an untethered mouth, history. Read, never stored (law
     /// 12); never a refusal — curvature, recorded.
-    pub fn mouth_loops(&self) -> Vec<Loop> {
+    pub fn mouth_orbits(&self) -> Vec<MouthOrbit> {
         // In the order they opened: keyed by the opening height, then the id.
         let mut open: crate::network::nerve::Keyed<([u8; 32], Mouth)> = crate::network::nerve::Keyed::new();
         for (k, m) in self.handoffs.mouths.scoped() {
@@ -865,11 +866,11 @@ impl Court {
             open.insert(at, (id, m.mouth.clone()));
         }
         let (mut all, mut tubes): (Gauge<Moved>, Gauge<Moved>) = (Gauge::default(), Gauge::default());
-        let mut loops = Vec::new();
+        let mut orbits = Vec::new();
         for (_, (id, m)) in open.scoped() {
             let id = *id;
             let (Some(x), Some(y)) = (self.tier_domain.get(&m.from_tier), self.tier_domain.get(&m.to_tier)) else { continue };
-            let transition = Moved { motion: m.to_frame.geo(&m.from_frame.reverse()) };
+            let transition = Moved { motion: m.to_chart.geo(&m.from_chart.reverse()) };
             let in_tubes = match m.tube.is_some() {
                 true => Some(tubes.edge(x, y, &transition)),
                 false => None,
@@ -877,10 +878,10 @@ impl Court {
             if let Gauged::Obstructed(h) = all.edge(x, y, &transition) {
                 if !h.is_identity() {
                     let tethered = matches!(in_tubes, Some(Gauged::Obstructed(t)) if crate::transducer::element::same_versor(&t.motion, &h.motion));
-                    loops.push(Loop { mouth: id, holonomy: h.motion, tethered });
+                    orbits.push(MouthOrbit { mouth: id, holonomy: h.motion, tethered });
                 }
             }
         }
-        loops
+        orbits
     }
 }

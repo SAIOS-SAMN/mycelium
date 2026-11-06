@@ -156,7 +156,11 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
     assert_eq!(k.challenge(&evidence(&not_it, &at, a_entries()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheFold));
     let Challenged::Upheld { prefix, .. } = k.challenge(&evidence(&f, &at, a_entries()).sign(&challenger())) else { panic!("upheld") };
     let head = k.chain.head().expect("sealed");
-    assert_eq!(head.cites, vec![Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }], "the upheld prefix on the receipt");
+    assert!(
+        super::fixtures::cites_restate(&head.cites, &[Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }]),
+        "the upheld prefix on the receipt: {:?}",
+        head.cites
+    );
     assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: None });
     close_through(&mut k, at.stamp.h).expect("the window closes, sealed");
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
@@ -421,7 +425,7 @@ fn challenge_part_judges_stream_at_cited_prefix() {
 #[test]
 fn challenge_part_streams_span_within_frame_budget() {
     use crate::anastome::dialogue::challenge::encode_challenge;
-    use crate::network::wire::{WireFrame, Lane, BODY_BUDGET};
+    use crate::network::wire::{Delimited, Lane, BODY_BUDGET};
     let (a, ..) = tiers();
     let line: Vec<Entry> =
         (0..4096).map(|_| Entry { rows: vec![(who(1), g(2)), (who(2), g(-1)), (who(3), g(-1))], declared: Vec::new() }).collect();
@@ -429,7 +433,7 @@ fn challenge_part_streams_span_within_frame_budget() {
     let mut k = founded();
     let at = sealed(&mut k, f.clone(), &a);
     let whole = evidence(&f, &at, line.clone()).sign(&challenger());
-    let framed = |c: &crate::anastome::dialogue::challenge::SignedChallenge| WireFrame { lane: Lane::Spatial, body: encode_challenge(c) }.encode();
+    let framed = |c: &crate::anastome::dialogue::challenge::SignedChallenge| Delimited { lane: Lane::Spatial, body: encode_challenge(c) }.encode();
     assert!(framed(&whole).is_none(), "one act past the budget is refused before it is sent");
     let open = Challenge::Open { fold: at.clone(), rows: f.rows.clone(), declared: Vec::new(), children: Vec::new() }.sign(&challenger());
     assert!(matches!(k.challenge(&open), Challenged::Streaming { .. }));
@@ -645,7 +649,7 @@ fn window_close_reconstructs_from_sealed_citation() {
     let r = close_through(&mut k, at.stamp.h).expect("sealed");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
-    assert_eq!(booted.chain.node(&r.stamp).map(|n| n.cites.clone()), Some(r.cites.clone()), "the close on the line");
+    assert!(booted.chain.node(&r.stamp).is_some_and(|n| super::fixtures::cites_restate(&n.cites, &r.cites)), "the close on the line");
     assert_eq!(booted.window_close(at.stamp.h), k.window_close(at.stamp.h));
     assert_eq!(booted.finality(&at), Finality::Final { upheld: false });
 }

@@ -60,8 +60,9 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
         }
         // One enclosure: the speech reaches every site and needs no ground.
         let Ok(chain) = crate::transducer::family::speak::residue_of(Some(a), b) else { continue };
-        let ([h, w], [h2, w2]) = (a.extents(), b.extents());
-        let frame = crate::transducer::element::Frame::new(h, w, h2, w2);
+        let Some(frame) = crate::transducer::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()) else {
+            continue;
+        };
         let Some(residue) = crate::transducer::element::from_residue_framed(&chain, &frame) else {
             continue;
         };

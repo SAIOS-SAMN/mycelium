@@ -11,26 +11,30 @@ use crate::transport::answer;
 use mycelium::anastome::dialogue::atlas::{encode_ledger_page, encode_ledger_reply, encode_map_reading, encode_map_reply};
 use mycelium::anastome::dialogue::crossing::encode_traverse_reply;
 use mycelium::anastome::dialogue::domain::{decode_domain_request, encode_domain_reply, DomainRequest};
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
 /// 78.154 — READ-LEDGER off the published reading: `true` where the frame
 /// was one and was answered here.
-pub(crate) fn serve_ledger(stream: &mut Channel, frame: &WireFrame, context: &Context) -> bool {
+pub(crate) fn serve_ledger(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
     let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&frame.body) else { return false };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     let page = context.published.take().ledger_page(&domain, after);
-    answer(stream, WireFrame { lane: frame.lane, body: encode_ledger_page(&page) });
+    answer(stream, Delimited { lane: frame.lane, body: encode_ledger_page(&page) });
     true
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let Some(request) = decode_domain_request(&frame.body) else { return };
     if serve_ledger(stream, frame, context) {
         return;
     }
     // The final point is read off the shelf before the court is taken.
     let fin = crate::tuniversal::final_point();
+    if let DomainRequest::Retrieve(s) = &request {
+        retrieve(stream, frame, context, s, fin);
+        return;
+    }
     let body = match crate::court_lock::held!(context.court) {
         // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
         // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
@@ -57,6 +61,8 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
             DomainRequest::ReadEndowment(domain) => {
                 k.endowment_reading(&domain).and_then(|r| mycelium::anastome::dialogue::endowment::encode_endowment_reading(&r)).into_iter().flatten().collect()
             }
+            // Answered above, beside the court's signed position.
+            DomainRequest::Retrieve(_) => Vec::new(),
         }),
         Err(_) => return,
     };
@@ -64,5 +70,38 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, WireFrame { lane: frame.lane, body });
+    answer(stream, Delimited { lane: frame.lane, body });
+}
+
+/// #159 — A COORDINATE RETRIEVAL (`ACT_DOMAIN` sub-kind 19), answered beside
+/// the court's own 47.1 section over its head at the answer, signed over the
+/// request (`retrieve::answered_payload`): the retriever verifies the
+/// section and that the receipts stand under its head. A served answer this
+/// court cannot sign is answered with nothing, never unsigned; it is
+/// acknowledged only once the claim it drew is durable (78.137).
+fn retrieve(stream: &mut Channel, frame: &Delimited, context: &Context, s: &mycelium::anastome::dialogue::retrieve::SignedRetrieve, fin: Option<mycelium::chronometry::tuniversal::TPoint>) {
+    use mycelium::anastome::dialogue::retrieve::{answered_payload, encode_retrieve_reply, Retrieved};
+    let read = match crate::court_lock::held!(context.court) {
+        Ok(mut h) => h.run(|k, _| k.retrieve_signed(s, fin)),
+        Err(_) => return,
+    };
+    let section = match &read {
+        Retrieved::Served { .. } => {
+            let payload = answered_payload(&s.retrieve);
+            let Some(section) = crate::admission::sign_position(&context.court, &context.mesh, &mycelium::transducer::stalk::Invariant::default(), &payload) else {
+                eprintln!("  retrieve unanswered: this court holds no position to sign");
+                return;
+            };
+            Some(section)
+        }
+        Retrieved::Refused(_) => None,
+    };
+    if !crate::persist::durable(&context.court, &context.state_path) {
+        return;
+    }
+    let Some(body) = encode_retrieve_reply(&read, section.as_ref()) else {
+        eprintln!("  retrieve unanswered: a receipt or the section cannot be written");
+        return;
+    };
+    answer(stream, Delimited { lane: frame.lane, body });
 }

@@ -3,7 +3,7 @@
 
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cech::*;
-use crate::transducer::cga::{self, DualFrame, Mv, PairRegime, E1, E2, E3};
+use crate::transducer::cga::{self, ReciprocalBasis, Mv, PairRegime, E1, E2, E3};
 use num_rational::BigRational;
 
 fn q(n: i64, d: i64) -> BigRational {
@@ -100,14 +100,14 @@ fn coxeter_product_gives_rosette_pair_infinite_order() {
 /// a turn, two disjoint a boost, two tangent a slip.
 #[test]
 fn coxeter_product_reads_turn_boost_or_slip() {
-    let sphere = |x: i64, r2: (i64, i64)| cga::sphere_at(&[q(x, 1), q(0, 1), q(0, 1)], &q(r2.0, r2.1));
+    let sphere = |x: i64, rho: (i64, i64)| cga::membrane_at(&[q(x, 1), q(0, 1), q(0, 1)], &q(rho.0, rho.1)).expect("a positive gauge");
     let kind = |a: Mv, b: Mv| {
         let p = coxeter_product(&[a, b], &[0, 1], true, &mut stroke()).expect("a product");
         let Some(Ok(ms)) = p.modes else { panic!("modes read") };
         ms.iter().map(|m| m.kind).collect::<Vec<_>>()
     };
     assert_eq!(kind(sphere(0, (1, 1)), sphere(1, (1, 1))), vec![BivectorKind::Elliptic], "intersecting: a turn");
-    assert_eq!(kind(sphere(0, (1, 4)), sphere(3, (1, 4))), vec![BivectorKind::Hyperbolic], "disjoint: a boost");
+    assert_eq!(kind(sphere(0, (1, 2)), sphere(3, (1, 2))), vec![BivectorKind::Hyperbolic], "disjoint: a boost");
     assert_eq!(kind(plane(E1, 0), plane(E1, 1)), vec![BivectorKind::Parabolic], "parallel planes: a slip");
 }
 
@@ -159,7 +159,7 @@ fn coxeter_product_splits_seal_and_shared() {
 #[test]
 fn dual_frame_contracts_meet_to_each_face() {
     let s = [v(&[(E1, 1)]), v(&[(E1, 1), (E2, 1)]), v(&[(E2, 1), (E3, 2)])];
-    let DualFrame::Frame(dual) = cga::dual_frame(&s) else { panic!("a frame") };
+    let ReciprocalBasis::Frame(dual) = cga::dual_frame(&s) else { panic!("a frame") };
     for (a, d) in dual.iter().enumerate() {
         for (b, t) in s.iter().enumerate() {
             let expect = if a == b { q(1, 1) } else { q(0, 1) };
@@ -178,8 +178,8 @@ fn dual_frame_contracts_meet_to_each_face() {
 #[test]
 fn dual_frame_names_a2_roots_and_corner_polars() {
     let (a, b) = (v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]));
-    assert_eq!(cga::dual_frame(&[a.clone(), b.clone(), a.add(&b)]), DualFrame::Redundant(vec![0, 1, 2]));
+    assert_eq!(cga::dual_frame(&[a.clone(), b.clone(), a.add(&b)]), ReciprocalBasis::Redundant(vec![0, 1, 2]));
     let corner = [plane(E1, 0), plane(E2, 0), plane(E3, 0)];
-    let DualFrame::Frame(polars) = cga::dual_frame(&corner) else { panic!("a frame") };
+    let ReciprocalBasis::Frame(polars) = cga::dual_frame(&corner) else { panic!("a frame") };
     assert_eq!(polars, corner.to_vec(), "an orthonormal set is its own dual");
 }

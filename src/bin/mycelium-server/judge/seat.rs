@@ -8,7 +8,7 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::seat::{decode_seat_request, encode_mail_reply, encode_mail_reply_standing, encode_post_reply, MailRead, ReadMail, Refusal, SeatRequest};
-use mycelium::network::wire::WireFrame;
+use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
 /// A READ'S REPLY in the layout its sub-kind asked: v1.4's (sub-kind 8) with
@@ -27,7 +27,7 @@ fn mail_reply(r: &ReadMail, read: Result<MailRead, Refusal>) -> Option<Vec<u8>> 
 /// (`SharedRelay::exempt_read`). `false` where the frame is no read, or the
 /// read is not exempt: the caller defers it as before. A task read, a
 /// wallet read and a seat post are served here too (2026-10-09).
-pub(crate) fn serve_exempt(stream: &mut Channel, frame: &WireFrame, context: &Context) -> bool {
+pub(crate) fn serve_exempt(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
     // A TASK READ takes the registry's lock and never the court's, so a
     // full pool waiting on cognition has no reason to defer it: a seated
     // mind's fetch of the task before its seat was deferred 2026-10-08 on
@@ -47,24 +47,24 @@ pub(crate) fn serve_exempt(stream: &mut Channel, frame: &WireFrame, context: &Co
     let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return false };
     let Some(mail) = context.seat_relay.exempt_read(&r) else { return false };
     let Some(body) = mail_reply(&r, mail) else { return false };
-    answer(stream, WireFrame { lane: frame.lane, body });
+    answer(stream, Delimited { lane: frame.lane, body });
     true
 }
 
 /// 78.151 — A SEAT LISTING, read on the relay's own lock: relay state, never
 /// the court's, so no court is taken. `false` where the frame is no listing.
 /// v1.4: at the sub-origin it names, where it names one.
-pub(crate) fn serve_listing(stream: &mut Channel, frame: &WireFrame, context: &Context) -> bool {
+pub(crate) fn serve_listing(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
     let Some(Ok(SeatRequest::ReadListing(domain, sub_origin))) = decode_seat_request(&frame.body) else { return false };
     // A domain with no listing is answered with none: an empty body.
     match context.seat_relay.listing(&domain, sub_origin.as_ref()) {
-        Some(body) => answer(stream, WireFrame { lane: frame.lane, body }),
-        None => answer(stream, WireFrame { lane: frame.lane, body: Vec::new() }),
+        Some(body) => answer(stream, Delimited { lane: frame.lane, body }),
+        None => answer(stream, Delimited { lane: frame.lane, body: Vec::new() }),
     }
     true
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
     let Some(request) = decode_seat_request(&frame.body) else { return };
     let body = match request {
         Err(why) => {
@@ -98,5 +98,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &WireFrame, context: &Context) 
             Err(_) => return,
         },
     };
-    answer(stream, WireFrame { lane: frame.lane, body });
+    answer(stream, Delimited { lane: frame.lane, body });
 }

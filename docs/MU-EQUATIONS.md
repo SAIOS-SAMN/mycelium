@@ -242,18 +242,24 @@ null cone, `X(x)² = 0`.
 Sources: MU-RECURSION A4, 51.2, 71.2(3). Code:
 `src/transducer/cga/embedding.rs::point_at`, `::base_vector`, `::base_at`.
 
-#### 2.7 The dual sphere
+#### 2.7 The membrane and its images
 
 ```text
-S(c, r²) = X(c) − ½ r² e_∞
-on_sphere(p, S)  ⇔  ⟨X(p) S⟩₀ = 0
+M = −e₊ = e_o − ½ e_∞                  (the throat's fixed sphere, unit weight)
+S(c, ρ) = T(c) D(ρ) M D̃(ρ) T̃(c),   read at −⟨S e_∞⟩₀ = 1     (ρ > 0)
 ```
 
-The one producer of a sphere. `r² = 0` recovers the point; `r² ≠ 0` lies
-off the cone.
+The one producer of a sphere (78.171 amendment (d), track 26 S7 stage 3).
+A sphere is a holding's own enclosure: the membrane, or its image under
+the dilation by the gauge `ρ` and the slide to `c`. No squared radius is
+written; a point `p` stands on it where `⟨X(p) S⟩₀ = 0`. A gauge `ρ ≤ 0`
+names no enclosure. A body's nucleus, whose extent is a polar second
+moment with no rational root in general, is still built from `r²` by a
+crate-private producer; that defect waits on a ruling (#134; MU-SENSING
+§8).
 
-Sources: MU-RECURSION A4, 51.2. Code:
-`src/transducer/cga/embedding.rs::sphere_at`, `::on_sphere`.
+Sources: MU-RECURSION A4, 51.2; 78.171 §1a. Code:
+`src/transducer/cga/embedding.rs::membrane`, `::membrane_at`.
 
 #### 2.8 The fascicle and the translator
 
@@ -419,7 +425,7 @@ puts a frame's point on the 3-sphere `v² = +1`.
 
 Sources: MU-RECURSION 54.7 Axiom B (ruled 2026-09-21). Code:
 `src/transducer/cga/hyperboloid.rs::hyperbolic_compartment`,
-`::hyperboloid_pole`, `::geodesic_transvection`, `::frame_base_point`;
+`::hyperboloid_pole`, `::geodesic_transvection`, `::pose_point`;
 `src/transducer/cga/sphere.rs::sphere_pole`, `::sphere_base_point`.
 
 #### 2.16 A chart base point on the null cone of hyperbolic space
@@ -2091,7 +2097,7 @@ id is a hosted shell's own.
 | L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
 | L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
 | Concordance (the clause register, `CLAUSES`) | 5 (the agreement's version, draft 4 approved 2026-11-05; version 4 was signed at v0.3.0 by its text's hash, retired); each clause by its law form's id and version (`FORMS-PASSAGE` 4, `FORMS-COORDINATE` 4, `FORMS-COUPLING` 1), identified by its content and signed by adjudicated reading, never by a hash of the text (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md` §0; the fixtures of proposals 78.172 §5, 78.173 §5 and 78.175 §5 | `src/physics/laws/clauses/`; served on `ACT_LAWS` mode 7, signing acts on mode 8 |
-| `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
+| `FORMS-FRAME` | 1 | `forms/src/reference.rs` (module documentation); Concordance 2.10, A6 | `forms::reference` (core shell) |
 | `FORMS-PASSAGE` | 4 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v3, [proposal 78.172](proposals/78.172-law-passage.md) (adopted by both operators 2026-11-05; netstratum docs/117 §10, §12): the passage is the pole swap, the reflection `x ↦ e₊·x·e₊` of the frame state `H·n_Z + R·n_Q` (hold and reach), the riding state's one-sided pass `q ↦ e₊·q`, and the flux `T ↦ T − 2·(H − R)`. v2's product `q ↦ v_k·q` is retired as the passage (v_k stays the plane's direction in the advance); v1's `2H − R` struck 2026-11-05; ROADMAP track 24 B3 | `forms::passage` (`Poles`: `swap`, `cross` to a `Crossing` with the span on `S` and the flux on `T`, `ride`, `read` to a `Frame` with its `whole`, `span`, `share` and `Place`; refusing `NotUnit`, `WrongSign`, `NotFrame`, `MixedParity`, `NoWhole`, `NotShare` and `Mismatched`; the refusal of a moved reach; the face read from the other pole), over the exact algebra `algebra::Clifford`; the five fixtures and the roles' exchange in `forms/src/tests/crossing.rs`, for the joint read |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `FORMS-COORDINATE` | 4 | `forms/src/coordinate.rs` (module documentation); LAW-COORDINATE v4, [proposal 78.173](proposals/78.173-law-coordinate.md) (ruled by both operators 2026-11-05; netstratum docs/120 §8b; v3's points agreed with netstratum and xylarium 2026-11-05; v4's H keys agreed with netstratum 2026-11-05, docs/117 §10.3); Concordance 1.6, 1.11, 1.13. Version 2 added the advance, an event's bell, the merger and fission (fixtures 7–10); version 3 holds each lane as a vector of exact signed components keyed by axis (H's by generator, in degrees, with `K_c = ⌊|θ_c| / 360⌋` per component), a lane set open to a lane only by a ruled opening, `within` and the ranges on the caller's exact intervals (base 60 display only), the re-origin across a throat by `forms::passage`'s pole swap, and dilation invariance (fixtures 11–16); version 4 keys H on turning planes alone, two frame units of one square (`e₊ₖe₊ₗ` the continuum, `e₋ₖe₋ₗ` the vacuum), refusing a frame plane, a mixed pair or unsigned axes on H `NotTurningPlane`, while S's keys may name boost planes (fixtures 7 and 11–16 restated on the new keys) | `forms::coordinate` (`Coordinate`, `Origin`, `Local`; `Lanes`, `Lane` with `Lane::Opened`, `Openings`, `Vector`, `Key` reading its `Plane`, `Axis` with `Axis::unit` and its `Square`, refusing by `FormRefusal`; the canonical order and writing; `Coordinate::within` on `Bounds` of `Interval`s reading `Sides`, refusing `OriginsDiffer` and `ShapesDiffer`; `Bodies::range` on one component, `Neighbours::filter`; `Sector` and `Reading`, display only, base 60 registered `FORMAT`, `DEGREES_PER_TURN` registered `EXTERNAL`; `Coordinate::advance` under `Rates`, `Coordinate::bell_of` reading `EventBell`, `merge` to a `Merger` with offsets, `fission`, `Coordinate::pass` to `Passed`, `flow`, refusing by `MotionRefusal`); fixtures 1–6 in `forms/src/tests/coordinate.rs`, 7–10 in `forms/src/tests/motion.rs`, 11–13 and 16 in `forms/src/tests/vectors.rs`, 14–15 in `forms/src/tests/throat.rs`, generated cases in `forms/src/tests/properties.rs`; not yet joint-read agreed. TPoint reads as its one-component non-negative case; the rewiring is the next step |

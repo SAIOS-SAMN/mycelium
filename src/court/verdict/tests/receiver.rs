@@ -137,8 +137,8 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     );
     assert!(
         f.faces.entries().all(|(o, _)| {
-            o.from_vertex() == crate::network::nerve::coord::VertexAt::Frame
-                || o.to_vertex() == crate::network::nerve::coord::VertexAt::Frame
+            o.from_vertex() == crate::network::nerve::coord::VertexAt::Enclosure
+                || o.to_vertex() == crate::network::nerve::coord::VertexAt::Enclosure
         }),
         "what is left is the Frame star and nothing between the bodies: {:?}",
         f.faces

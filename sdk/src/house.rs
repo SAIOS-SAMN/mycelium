@@ -31,11 +31,11 @@
 //! | The universe | [`BigBangRecord`], [`Genesis`], [`Geometry`], [`encode_universe_read`], [`decode_universe_reading`], [`UniverseReading`], the statements |
 //! | The endowment | [`Manifest`], [`encode_manifest`], [`decode_grant_reply`], [`Granted`], [`encode_endowment_read`], [`decode_endowment_reading`] |
 //! | Seats | [`Post`], [`Seats`], [`Taken`], [`Percept`], [`Outcome`], [`HouseMail`], [`encode_post`], [`decode_seat_request`], the listing and the mail |
-//! | Handoff | [`SignedHandoff`], [`encode_handoff`], [`decode_handoff_reply`], [`encode_handoff_read`], [`decode_read_reply`], [`encode_loops_read`], [`decode_loops_reply`], [`encode_tube_read`], [`decode_tube_reading`] |
+//! | Handoff | [`SignedHandoff`], [`encode_handoff`], [`decode_handoff_reply`], [`encode_handoff_read`], [`decode_read_reply`], [`encode_orbits_read`], [`decode_orbits_reply`], [`encode_tube_read`], [`decode_tube_reading`] |
 //! | Traverse, ledger and map | [`encode_traverse`], [`decode_traverse_reply`], [`encode_ledger`], [`encode_ledger_read`], [`decode_ledger_reply`], [`decode_ledger_page`], [`encode_map`], [`encode_map_read`], [`decode_map_reply`], [`decode_map_reading`] |
 //! | Challenge and finality | [`encode_challenge`], [`decode_challenge_reply`], [`encode_finality_request`], [`decode_finality_reply`], [`encode_line_head_request`], [`decode_line_head_reply`], [`encode_obstructions_request`], [`decode_obstructions_reply`]; the fold sent up, [`encode_uplink`] |
 //! | Equivocation | [`equivocation_proof`], [`encode_equivocation`], [`decode_ruled`], [`ReceiptSection`] |
-//! | Framing and identity | [`WireFrame`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
+//! | Framing and identity | [`Delimited`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
 //! | Whole modules | [`domain`], [`universe`], [`endowment`], [`seat`], [`atlas`], [`uplink`], [`challenge`], [`commitment`], [`tuniversal`] |
 
 /// The Concordance's clause register (`ACT_LAWS` mode 7) and a kernel's
@@ -150,14 +150,15 @@ pub use mycelium::sdk::seat_mind::task::{FN_DECLINE, FN_SOLVE, KIND_TASK};
 
 /// A body carried rigidly by a motion: its state after a transition.
 pub use mycelium::physics::equilibrium::carried_body;
-/// Building a transition: a rational rotor, a translator, a sphere at a
-/// centre; and why a motion's modes did not split.
-pub use mycelium::transducer::cga::{rotator, sphere_at, translator_at, Undecomposed};
+/// Building a transition: a rational rotor, a translator, a body's own
+/// enclosure (the membrane at a centre and a gauge; 78.171 amendment (d));
+/// and why a motion's modes did not split.
+pub use mycelium::transducer::cga::{membrane_at, rotator, translator_at, Undecomposed};
 
 /// FRAMING: a lane-tagged frame, the four lanes, a lane byte read (and
 /// whether its frame carries a point), the point split off a body, the
 /// body's budget and the pointed bit.
-pub use mycelium::network::wire::{read_lane, split_point, Lane, WireFrame, BODY_BUDGET, POINTED};
+pub use mycelium::network::wire::{read_lane, split_point, Lane, Delimited, BODY_BUDGET, POINTED};
 /// A count, and a byte run, each written by its own coordinate (LEB128,
 /// minimal), as every count on the wire is.
 pub use mycelium::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
@@ -168,11 +169,11 @@ pub use mycelium::chronometry::payload_hash;
 /// HANDOFF (`ACT_HANDOFF`, MU-HOSTING §2.4): matter or a word crossing
 /// domains, a conversion of μ, a mouth or a tube — offered, accepted,
 /// refused or expired, each signed by its filer; the court's answer
-/// (`Handed`), a handoff's standing read, the open mouth loops and a mouth
+/// (`Handed`), a handoff's standing read, the open mouth orbits and a mouth
 /// pair's tube, each read without sealing.
 pub use mycelium::anastome::dialogue::handoff::{
-    decode_handoff_reply, decode_loops_reply, decode_read_reply, encode_handoff, encode_handoff_read, encode_loops_read, encode_tube_read,
-    ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Loop, Mouth, Offer as HandoffOffer, SignedHandoff, State as HandoffState, Tariff,
+    decode_handoff_reply, decode_orbits_reply, decode_read_reply, encode_handoff, encode_handoff_read, encode_orbits_read, encode_tube_read,
+    ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Mouth, MouthOrbit, Offer as HandoffOffer, SignedHandoff, State as HandoffState, Tariff,
 };
 /// A mouth pair's tube as the court reads it.
 pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeReading};
@@ -181,6 +182,15 @@ pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeRead
 /// a mapped wormhole, signed by the payer; the court's answer (`Crossed`):
 /// the crossing's hash, the gas and the map fee, or the refusal by name.
 pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, CrossRefusal, Crossed, Declaration, Gas, SignedTraverse, Traverse};
+
+/// RETRIEVE (`ACT_DOMAIN` kind 19, 78.154 (4), #159): a coordinate
+/// retrieval of the receipts at a final point's tick, signed by the staker
+/// and priced from its stake ([`Session::retrieve`](crate::session::Session));
+/// the answer carries the court's signed section over its head, which the
+/// retriever checks with [`verify_retrieved`].
+pub use mycelium::anastome::dialogue::retrieve::{
+    decode_retrieve_reply, encode_retrieve, verify_retrieved, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
+};
 
 /// A UNIVERSE'S LEDGER AND MAP (`ACT_DOMAIN` kinds 12–15, 78.154): an entry
 /// chained and sealed, never judged; the ledger read by pages; a map act
