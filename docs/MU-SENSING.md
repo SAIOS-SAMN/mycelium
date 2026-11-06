@@ -280,7 +280,26 @@ as one of the vortex's sections, and nothing picks among them.
   (§6.2).
 - Under `Ground::None` the support is the whole sample. A writer that
   would leave a site needing a ground is refused.
-- Collapsing a vortex by a relation remains S6's.
+- **A vortex collapses by a relation** (ruled 2026-11-06 on #32 (3);
+  track 26 S6, stage 5), as the nesting's does (§3.6). Two relations
+  between the bodies and the ground are read per candidate, at any rank
+  and with no threshold (`transduce::collapse`, `Ground::collapse`):
+  - **Stands:** on every train input, a body stands on the candidate (its
+    one body covers a whole seam and a body lies inside it).
+  - **Painted on:** every pair's residue changes only the candidate's
+    sites: at every site where a held factorisation's speech and the
+    output differ, the symbol before or after is the candidate.
+
+  A candidate collapses the vortex where one of the two holds for it on
+  every pair and for no other candidate (`Collapse::Collapsed`, the
+  ground then `Ground::One`); otherwise the candidates stay superposed
+  (`Collapse::Superposed`). **A closing rule never collapses the ground:**
+  whether the family's rule closes under a candidate decides perception by
+  the solve, which inverts description and solution, and is kept only as
+  an observation per candidate. Claims
+  `ground_vortex_collapses_where_bodies_stand_on_one_candidate`,
+  `ground_vortex_collapses_where_residue_paints_one_candidate`,
+  `closing_rule_never_collapses_the_ground`.
 
 ### 3.5 Gauges are deduced
 
@@ -1179,7 +1198,8 @@ track 26 S4c).
 | A claim of factorisation on the wire (the solve's claim kind 1, `SOLVE_KIND_FACTORISATION`), admitted by reconstruction, recorded and never paid (ruled); the mind speaking one claim per held factorisation of a task beyond the alphabet | **Built** (track 26 S4c) | `dialogue::factorisation`; `server::factorisation`; `client::sdk::mind::factor` |
 | The hypha posting, serving and addressing tasks of any rank; the word machinery's readers on the section, refused by the alphabet's name alone | **Built** (track 26 S4c) | `server::registry` (`post`, `section`), `server::route`; `PostedTask::envelope` |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
-| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
+| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2) | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
+| A ground's vortex collapsed by a relation (§3.4): `Stands` or `PaintedOn` holding for one candidate on every pair and for no other; otherwise superposed; a closing rule never collapses it | **Built** (track 26 S6, stage 5; ruled 2026-11-06 on #32 (3)) | `src/transducer/family/transduce/collapse.rs` (`collapse_of`, `GroundReading`, `Collapse`); `Ground::of`, `Ground::collapse` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
 | **Closed (S6):** the frame fixing ordered and reversed two fixed axes by moments over the painted sites and rewrote the samples (`frame_fixed`) where §4 makes the frame a perspective | **Built** (track 26 S6): the moments name a pose (`raster::frame_fixing`, a `Perspective`), and `frame_fixed` reads the task through it; the samples are never rewritten. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One`. The moments stay on the section's plane, of the rank the letters spell | `src/transducer/raster.rs` |

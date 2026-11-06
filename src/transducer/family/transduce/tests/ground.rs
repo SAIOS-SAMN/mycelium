@@ -99,12 +99,16 @@ fn painting_onto_the_ground_keeps_it_ground() {
 /// candidate on the outer seam; inside it, 0 meets the frame's entire
 /// inner seam and a body (a dot of 1) stands on it in the input. The ground
 /// is what bodies stand on: the framed interior joins the vortex beside
-/// the frame, neither picked.
+/// the frame, neither picked by the conditions. (The dot moving on the 0
+/// is the relation that collapses the vortex to 0, ruled 2026-11-06 on #32
+/// (3): `ground_vortex_collapses_where_residue_paints_one_candidate`.)
 #[test]
 fn always_framed_interior_holding_bodies_joins_the_vortex() {
+    use crate::transducer::family::transduce::Candidacy;
     let x = sample(&["888888", "800008", "801008", "800008", "800008", "888888"]);
     let y = sample(&["888888", "800008", "800108", "800008", "800008", "888888"]);
-    assert_eq!(Ground::of(&[(x, y)]), Ground::Vortex(vec![vec![8], vec![0]]));
+    let kept: Vec<Vec<u8>> = Ground::candidacies(&[(x, y)]).into_iter().filter(|(_, c)| *c == Candidacy::Candidate).map(|(s, _)| s).collect();
+    assert_eq!(kept, vec![vec![8], vec![0]]);
 }
 
 /// The frame stands in every sample and nothing stands inside it: 0 fills
