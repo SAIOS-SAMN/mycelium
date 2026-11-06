@@ -1,5 +1,5 @@
 // LAW-COUPLING v1 (proposal 78.175 §5): the dipole parcel and its
-// viscosity (F1–F2), the dipole coupling on a turning plane (F3) and the
+// fluidity (F1–F2), the dipole coupling on a turning plane (F3) and the
 // light ledger (F4), each fixture an exact input and its exact output.
 
 use super::bodies::{q, units};
@@ -69,11 +69,12 @@ fn open_heavy_kind_needs_more_than_half() {
     }
 }
 
-/// F2, THE VISCOSITY AND ITS INVERSION: `ν(⅓) = ¼`, `ν(3) = ¾`, `ν(1) = ½`;
-/// `ν(1/t) = 1 − ν(t)` for every `t` tried; the frames exchanged give
+/// F2, THE FLUIDITY AND ITS INVERSION: `ν(⅓) = ¼`, `ν(3) = ¾`, `ν(1) = ½`;
+/// `ν(1/t) = 1 − ν(t)` for every `t` tried, so the inversion exchanges the
+/// fluidity and the viscosity (the held share); the frames exchanged give
 /// `o ↦ 1 − o` and `σ ↦ −σ`, and `o = ν(Q/A)`.
 #[test]
-fn viscosity_inverts() {
+fn fluidity_inverts() {
     assert_eq!(open_share(&q(1, 3)), Ok(q(1, 4)));
     assert_eq!(open_share(&q(3, 1)), Ok(q(3, 4)));
     assert_eq!(open_share(&q(1, 1)), Ok(q(1, 2)));
@@ -149,52 +150,118 @@ fn parcel_refusals_are_named() {
     assert!(matches!(Dipole::stated(q(0, 1), q(3, 2)), Err(CouplingRefusal::NotDipole { .. })));
 }
 
-/// F3, OPPOSED DIPOLES LOCK: `x = ⅕`, `x̄ = ½`, the body `σ = +1, o = ½`;
-/// one neighbour `w = 1, σ = −1, o = ½, n = ⅔`, `Δ = 0°` (`h = 1`): `F = −⅓`,
-/// `x̄ ⊖ x = ⅓`, `y = 1/18`, `x′ = 23/91`, and `⅕ < 23/91 < ½`.
+/// Hydrogen's dipole on its frames, `Z = 1, U = 1`: `(2, 1)`, `σ = ⅓`,
+/// `o = ⅓`.
+fn hydrogen() -> Dipole {
+    Parcel::kind(&q(1, 1), &q(1, 1)).and_then(|p| p.dipole()).expect("hydrogen")
+}
+
+/// The open-heavy kind `Z = 2, U = 4` on its frames: `(2, 4)`, `σ = −⅓`,
+/// `o = ⅔`.
+fn open_heavy() -> Parcel {
+    Parcel::kind(&q(2, 1), &q(4, 1)).expect("an open-heavy kind")
+}
+
+/// F3 ON FRAMES, OPPOSED POLES LOCK: `x = ⅕`, `x̄ = ½`, the body hydrogen
+/// (`σ = ⅓`, `o = ⅓`); one neighbour the open-heavy kind `(2, 4)` (`σ = −⅓`,
+/// `o = ⅔`), `w = 1`, `n = ⅔`, `Δ = 0°` (`h = 1`): `F = −4/27`,
+/// `x̄ ⊖ x = ⅓`, `y = 4/729`, `x′ = (⅕ + 4/729)/(1 + 4/3645) = 749/3649`,
+/// and `⅕ < 749/3649 < ½`.
 #[test]
-fn opposed_dipoles_lock() {
-    let body = stated(q(1, 1), q(1, 2));
-    let f = field_of(&[neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(0, 1))]);
-    assert_eq!(f, Field::Held { holding: q(1, 1), field: q(-1, 3) });
-    let p = pull(&q(1, 5), &q(1, 2), &body, &f).expect("a pull");
-    assert_eq!(p, Pull { gap: q(1, 3), push: q(1, 18), rate: q(23, 91) });
+fn opposed_poles_lock_on_frames() {
+    let f = field_of(&[neighbour(q(1, 1), open_heavy().dipole().expect("a dipole"), q(2, 3), q(0, 1))]);
+    assert_eq!(f, Field::Held { holding: q(1, 1), field: q(-4, 27) });
+    let p = pull(&q(1, 5), &q(1, 2), &hydrogen(), &f).expect("a pull");
+    assert_eq!(p, Pull { gap: q(1, 3), push: q(4, 729), rate: q(749, 3649) });
     assert!(q(1, 5) < p.rate && p.rate < q(1, 2));
 }
 
-/// F3, ALIGNED DIPOLES SPLIT: the same with the neighbour's pole reversed,
-/// `F = +⅓`, `y = −1/18`, `x′ = (⅕ − 1/18)/(1 − 1/90) = 13/89`, below ⅕.
+/// F3 ON FRAMES, THE POLES REVERSED SPLIT: the neighbour's pair of frames
+/// with its roles swapped, `(2, 4) ↦ (4, 2)` (`σ = ⅓`, `o = ⅓`), against the
+/// hydrogen body: `F = 2/27`, `y = −2/729`,
+/// `x′ = (⅕ − 2/729)/(1 − 2/3645) = 719/3643`, below ⅕.
 #[test]
-fn aligned_dipoles_split() {
-    let body = stated(q(1, 1), q(1, 2));
-    let f = field_of(&[neighbour(q(1, 1), stated(q(1, 1), q(1, 2)), q(2, 3), q(0, 1))]);
-    assert_eq!(f.value(), q(1, 3));
-    let p = pull(&q(1, 5), &q(1, 2), &body, &f).expect("a pull");
-    assert_eq!(p, Pull { gap: q(1, 3), push: q(-1, 18), rate: q(13, 89) });
+fn reversed_poles_split_on_frames() {
+    let reversed = open_heavy().inverted();
+    assert_eq!((reversed.held(), reversed.open()), (&q(4, 1), &q(2, 1)));
+    let f = field_of(&[neighbour(q(1, 1), reversed.dipole().expect("a dipole"), q(2, 3), q(0, 1))]);
+    assert_eq!(f.value(), q(2, 27));
+    let p = pull(&q(1, 5), &q(1, 2), &hydrogen(), &f).expect("a pull");
+    assert_eq!(p, Pull { gap: q(1, 3), push: q(-2, 729), rate: q(719, 3643) });
     assert!(p.rate < q(1, 5));
 }
 
-/// F3, A BODY ALONE IS UNTOUCHED, and a neighbour at the throat (`σ = 0`)
-/// contributes nothing: `x′ = x = ⅕` both.
+/// F3 ON FRAMES, A BODY ALONE IS UNTOUCHED, and a neighbour at the throat
+/// (frames `(1, 1)`, `σ = 0`) contributes nothing: the hydrogen body keeps
+/// `x′ = x = ⅕` both.
 #[test]
 fn alone_or_throat_keeps_rate() {
-    let body = stated(q(1, 1), q(1, 2));
     let alone = field_of(&[]);
     assert_eq!(alone, Field::Alone);
-    assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &alone).map(|p| (p.push, p.rate)), Ok((q(0, 1), q(1, 5))));
+    assert_eq!(pull(&q(1, 5), &q(1, 2), &hydrogen(), &alone).map(|p| (p.push, p.rate)), Ok((q(0, 1), q(1, 5))));
     let throat = parcel(1, 1).dipole().expect("the throat");
     let f = field_of(&[neighbour(q(1, 1), throat, q(2, 3), q(0, 1))]);
-    assert_eq!(f.value(), q(0, 1));
-    assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &f).map(|p| p.rate), Ok(q(1, 5)));
+    assert_eq!(f, Field::Held { holding: q(1, 1), field: q(0, 1) });
+    assert_eq!(pull(&q(1, 5), &q(1, 2), &hydrogen(), &f).map(|p| (p.push, p.rate)), Ok((q(0, 1), q(1, 5))));
 }
 
-/// F3, A HALF ALIGNMENT: `Δ = 45°` (`h = ½`) with `σ_j = −1` gives `F = −⅙`,
-/// `y = 1/36`, `x′ = (⅕ + 1/36)/(1 + 1/180) = 41/181`. Two neighbours of
-/// holdings 1 and 3 weigh by holding: `F = (1·(−⅓) + 3·⅓)/4 = ⅙`.
+/// F3 ON FRAMES, A HALF ALIGNMENT: the lock's pair at `Δ = 45°` (`h = ½`):
+/// `F = −2/27`, `y = 2/729`, `x′ = (⅕ + 2/729)/(1 + 2/3645) = 739/3647`.
+/// Two neighbours weigh by holding: the open-heavy kind at `w = 1` and
+/// hydrogen at `w = 3`, `F = (−4/27 + 3·2/27)/4 = 1/54`.
 #[test]
 fn field_weighs_alignment_and_holding() {
+    let half = field_of(&[neighbour(q(1, 1), open_heavy().dipole().expect("a dipole"), q(2, 3), q(45, 1))]);
+    assert_eq!(half.value(), q(-2, 27));
+    assert_eq!(pull(&q(1, 5), &q(1, 2), &hydrogen(), &half), Ok(Pull { gap: q(1, 3), push: q(2, 729), rate: q(739, 3647) }));
+    let two = field_of(&[
+        neighbour(q(1, 1), open_heavy().dipole().expect("a dipole"), q(2, 3), q(0, 1)),
+        neighbour(q(3, 1), hydrogen(), q(2, 3), q(0, 1)),
+    ]);
+    assert_eq!(two, Field::Held { holding: q(4, 1), field: q(1, 54) });
+}
+
+/// THE PURE Z POLE HAS NO MOMENT: frames `(1, 0)`, `σ = 1`, `o = 0`. As a
+/// neighbour its term `w·σ·o·n·h` is 0 (it does not couple): alone in the
+/// range `F = 0`, and beside the open-heavy kind it adds its holding and no
+/// term, `F = −4/27 / 2 = −2/27`. As the body it is not moved by any field
+/// (it is not coupled): against the open-heavy kind (`F = −4/27`) its push
+/// `−σ·F·o·(x̄ ⊖ x)` is 0 and `x′ = x = ⅕`; so for every field in `[−1, 1]`.
+#[test]
+fn pure_z_pole_neither_couples_nor_is_coupled() {
+    let pole = parcel(1, 0).dipole().expect("the pure Z pole");
+    assert_eq!((pole.pole.clone(), pole.open.clone()), (q(1, 1), q(0, 1)));
+    let alone = field_of(&[neighbour(q(1, 1), pole.clone(), q(2, 3), q(0, 1))]);
+    assert_eq!(alone, Field::Held { holding: q(1, 1), field: q(0, 1) });
+    assert_eq!(pull(&q(1, 5), &q(1, 2), &hydrogen(), &alone).map(|p| (p.push, p.rate)), Ok((q(0, 1), q(1, 5))));
+    let beside = field_of(&[neighbour(q(1, 1), pole.clone(), q(2, 3), q(0, 1)), neighbour(q(1, 1), open_heavy().dipole().expect("a dipole"), q(2, 3), q(0, 1))]);
+    assert_eq!(beside, Field::Held { holding: q(2, 1), field: q(-2, 27) });
+    let f = field_of(&[neighbour(q(1, 1), open_heavy().dipole().expect("a dipole"), q(2, 3), q(0, 1))]);
+    assert_eq!(pull(&q(1, 5), &q(1, 2), &pole, &f), Ok(Pull { gap: q(1, 3), push: q(0, 1), rate: q(1, 5) }));
+    for value in [q(-1, 1), q(-1, 3), q(1, 2), q(1, 1)] {
+        let any = Field::Held { holding: q(1, 1), field: value };
+        assert_eq!(pull(&q(-99, 100), &q(99, 100), &pole, &any).map(|p| p.rate), Ok(q(-99, 100)));
+    }
+}
+
+/// ALGEBRA CHECK OF `pull`, on stated dipoles no frames hold (on frames
+/// `σ = 1 − 2o`, so `σ = ±1` with `o = ½` is no body); not served as a
+/// fixture. The body `σ = +1, o = ½`; a neighbour `w = 1, σ = −1, o = ½,
+/// n = ⅔`, `Δ = 0°`: `F = −⅓`, `y = 1/18`, `x′ = 23/91`; its pole
+/// reversed, `F = ⅓`, `y = −1/18`, `x′ = 13/89`; at `Δ = 45°`, `F = −⅙`,
+/// `y = 1/36`, `x′ = 41/181`; two of holdings 1 and 3, poles `−1` and `+1`,
+/// `F = ⅙`.
+#[test]
+fn algebra_check_of_pull() {
     let body = stated(q(1, 1), q(1, 2));
-    let half = field_of(&[neighbour(q(1, 1), stated(q(-1, 1), q(1, 2)), q(2, 3), q(45, 1))]);
+    let one = |pole: i64, delta: i64| field_of(&[neighbour(q(1, 1), stated(q(pole, 1), q(1, 2)), q(2, 3), q(delta, 1))]);
+    let lock = one(-1, 0);
+    assert_eq!(lock, Field::Held { holding: q(1, 1), field: q(-1, 3) });
+    assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &lock), Ok(Pull { gap: q(1, 3), push: q(1, 18), rate: q(23, 91) }));
+    let split = one(1, 0);
+    assert_eq!(split.value(), q(1, 3));
+    assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &split), Ok(Pull { gap: q(1, 3), push: q(-1, 18), rate: q(13, 89) }));
+    let half = one(-1, 45);
     assert_eq!(half.value(), q(-1, 6));
     assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &half), Ok(Pull { gap: q(1, 3), push: q(1, 36), rate: q(41, 181) }));
     let two = field_of(&[
@@ -210,8 +277,7 @@ fn field_weighs_alignment_and_holding() {
 #[test]
 fn frames_read_pull() {
     let body = parcel(3, 1).dipole().expect("a dipole");
-    let hydrogen = Parcel::kind(&q(1, 1), &q(1, 1)).and_then(|p| p.dipole()).expect("hydrogen");
-    let f = field_of(&[neighbour(q(1, 1), hydrogen, q(2, 3), q(0, 1))]);
+    let f = field_of(&[neighbour(q(1, 1), hydrogen(), q(2, 3), q(0, 1))]);
     assert_eq!(f.value(), q(2, 27));
     assert_eq!(pull(&q(1, 5), &q(1, 2), &body, &f), Ok(Pull { gap: q(1, 3), push: q(-1, 324), rate: q(319, 1619) }));
 }
