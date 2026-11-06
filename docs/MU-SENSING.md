@@ -1199,7 +1199,7 @@ stands:
   superseded by §3.4.
 - MU-ANTI-FLATTENING clause 8's three point coordinates are the value at
   one source (71).
-- MU-ALPHABET §2's sensor plane `(0, 1)` is the plane a perspective
+- MU-ANASTOME §2.2's sensor plane `(0, 1)` is the plane a perspective
   assigns, not a fixed pair of axes (built in track 26 S4b:
   `alphabet::sensor_plane` reads the default perspective of the
   alphabet's base).

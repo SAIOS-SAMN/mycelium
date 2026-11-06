@@ -10,7 +10,7 @@ court organ and the mesh module by module;
 where a part is specified and not wired, the section says so. Later
 changes are recorded in [`CHANGELOG.md`](../CHANGELOG.md); plans are in
 [`ROADMAP.md`](../ROADMAP.md). Companion documents: `MU-ECONOMY.md`,
-`MU-PRODUCT.md`, `MU-XSEPTUM.md`, `MU-ALPHABET.md`.
+`MU-PRODUCT.md`, `MU-XSEPTUM.md`, `MU-ANASTOME.md`.
 
 ## 1. Two binaries
 
@@ -29,7 +29,7 @@ corpus manifests (configuration) and the ledger or genome it writes
 
 ## 2. The language
 
-- **Alphabet** (`transducer/alphabet/`, `MU-ALPHABET.md`): seventeen
+- **Alphabet** (`transducer/alphabet/`, `MU-ANASTOME.md` §2): seventeen
   immutable Cayley letters as exact Cl(4,0) rotors. Words are oriented
   tapes; spelling is a peel; a motion the alphabet cannot spell is a
   remainder, never a word.
@@ -257,7 +257,9 @@ its tag, its content, its signature and the TUniversal point its speaker
 read. An utterance's identity is its content written out
 (`MU-RECURSION.md` A21), never a digest of its bytes. Its carriers stand
 at coordinates. An admitted utterance is an event of the
-multi-dimensional ledger (lane × layer × grade).
+multi-dimensional ledger (lane × layer × grade). What the transport
+carries is anastome: its expressions, their five kinds and each act's
+kind are [MU-ANASTOME](MU-ANASTOME.md) §1.5 and §6.
 
 **Sound is a case of the model** (MU-SENSING §3.10, stated there once).
 The transport carries sound's bytes meaning-free, the same for every

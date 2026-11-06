@@ -271,7 +271,7 @@ payloads are exact objects; a refusal reply carries its named reason.
 
 **Language.** The language has three layers:
 - **Letters:** a fixed alphabet of seventeen Cayley letters
-  (`docs/MU-ALPHABET.md`).
+  (`docs/MU-ANASTOME.md` §2).
 - **Words:** products of letters. A word is a vertex whose meaning is its
   versor.
 - **Sentences:** forms built from words: vertices, faces and rings, glued
@@ -1182,6 +1182,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 
 | Document | Subject |
 |---|---|
+| [`docs/MU-ANASTOME.md`](docs/MU-ANASTOME.md) | The anastome language in one place: its levels (letters, words, conjugate classes, sentences, expressions) mapped to the algebra, the alphabet and spelling, concurrency, growth as a presentation, the vocabulary, each wire act's expression kind, and the language's state as a reading. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-COGNITION.md`](docs/MU-COGNITION.md) | Minds and engines on the network: how any mind or engine is measured, what they share, and a summary of Mycelium's reference mind (MU-CLIENT governs the mind). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, holdings, escrow, settlement and audit. |
@@ -1203,7 +1204,6 @@ network), **Specified** (stated, not yet built) or **In progress**.
 |---|---|
 | [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) | Every equation, formula and master equation in use, with its specification section and code location. |
 | [`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md) | Multi-dimensional structure: the conformal algebra, four lanes, complexes of any dimension, holonomy as content, orbits, nested shells, and the network's own topology, with what each keeps that a flat record loses. |
-| [`docs/MU-ALPHABET.md`](docs/MU-ALPHABET.md) | The alphabet: letters, words and spelling, as built. |
 | [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
 | [`docs/proposals/`](docs/proposals/) | Design proposals and studies, each numbered by its ruling. |
 | [`CHANGELOG.md`](CHANGELOG.md) | What each release contains. |

@@ -647,7 +647,7 @@ Each letter is a rotor of `Cl(4,0)` with its carried inverse, exact over
 ℚ. The sensor plane is `(e0, e1)`: rows on `e0`, columns on `e1`, the frame
 on `e3`.
 
-Sources: MU-RECURSION 1.1, 1.2, law 6; MU-ALPHABET.md. Code:
+Sources: MU-RECURSION 1.1, 1.2, law 6; MU-ANASTOME.md §2.2. Code:
 `src/transducer/alphabet/letters.rs::rotor_pair`, `::letter`,
 `::letter_inverse`, `CAYLEY_ALPHABET_LEN`, `PAIR_PLANES`.
 
@@ -676,7 +676,7 @@ append:  W ← W · λ   (or W · λ⁻¹)
 A word's rotor is the product of its letters; two words are equal when
 the words' rotors are projectively equal, never when the words' tapes are.
 
-Sources: MU-RECURSION 1.5, law 2, 78.68; MU-ALPHABET.md "Words". Code:
+Sources: MU-RECURSION 1.5, law 2, 78.68; MU-ANASTOME.md §2.3 "Words". Code:
 `src/transducer/alphabet/word.rs::Word::push`, `::rotor`, `::key`.
 
 #### 3.4 Powers of a generator
@@ -731,7 +731,7 @@ A measured rotor is spelled one commuting plane pair at a time, each plane
 by its Gaussian peel. A prime outside 5 and 13, or a half letter, is a
 typed demand; the court opens the letter on two independent witnesses.
 
-Sources: MU-RECURSION 50.4, A22, 36.3, 37.7, law 6; MU-ALPHABET.md. Code:
+Sources: MU-RECURSION 50.4, A22, 36.3, 37.7, law 6; MU-ANASTOME.md §2.4–§2.7. Code:
 `src/transducer/alphabet/factor.rs::factor_rotor`, `BLOCK_ORDER`,
 `::prime_outside_the_alphabet`; `src/transducer/family/derivation.rs::peel_versor`,
 `::peel_versor_with`; `src/transducer/layers.rs::peel_nest`.

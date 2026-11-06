@@ -922,7 +922,7 @@ is decided here, and binds the slice (S1–S4):
    forward as punctures.
 6. **Rule 14 and checklist (k).** Amended in place by the override above:
    scoped tests on touched modules, the whole suite never the gate.
-   MU-ALPHABET.md and the other mentions of "the seventeen" read through
+   MU-ANASTOME.md §2 (formerly MU-ALPHABET.md) and the other mentions of "the seventeen" read through
    1.1 as amended.
 
 ### The ruling on refused solves as held questions, 2026-10-09
@@ -1188,7 +1188,7 @@ Moved to [MU-ANASTOME.md](MU-ANASTOME.md) §5.2, as ruled.
 
 ### 1.1 Generators
 
-Seventeen letters (`MU-ALPHABET.md`): the identity, six 90° turns on the
+Seventeen letters (`MU-ANASTOME.md` §2): the identity, six 90° turns on the
 six pair planes of the Euclidean chart `e0..e3`, six (3,4,5) rotors on the
 same planes, four (5,12,13) rotors on four of them. Each is an exact rotor
 in Cl(4,0) over ℚ with its inverse carried. They never change.
