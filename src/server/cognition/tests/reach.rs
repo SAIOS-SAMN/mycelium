@@ -298,7 +298,7 @@ fn fold_root_waits_for_a_signature() {
     let (_, frame) = chain.open_orbit().expect("an orbit is open");
     let shut = chain.append(ActKind::Orbit, frame, Vec::new(), [9; 32], Vec::new()).expect("the close").clone();
     let (_, root) = chain.fold_before(shut.stamp.place()).expect("the orbit folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, e, root.at), hash: root.hash.bytes() }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e, root.at), hash: root.hash }];
     let folded = chain.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone();
     line.extend([shut.clone(), folded.clone()]);
     let mut c = Court::new();
