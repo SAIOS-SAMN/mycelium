@@ -357,6 +357,12 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
   - `mind_revises_a_perception_on_a_court_ruling_by_amendment`
 - A live run of `mycelium-client` on a local network shows these. Solve
   counts are observations only.
+- **Built toward it** (track 26 S7, stage 1): a field can be stated as an
+  object, its atlas and laps written without a reading, and a court
+  reconstructs it and derives its curvature itself
+  (`transducer::field::carrier::admit`). The mind does not yet state its
+  contemplation's field: that waits on the well's body (S7 stage 2) and
+  the wire (S9).
 
 ## 11. Specification reconciliation
 
@@ -1827,6 +1833,27 @@ Each phase is one commit:
      `zero_precession_orbit_refused_as_loop`,
      `windings_kept_as_fibre_classes`,
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
+   - **Built, stage 1** (branch `field-s7`; built against LAW-FIELD v1 as
+     proposed, `src/transducer/field/carrier/`). A sample of any rank is
+     lifted (`Lifted::of`): each body on its chart (rank, measure,
+     boundary faces of grade `n − 1`, coarsest first), each band's two
+     corners as points of one phase per axis, exact in degrees on the
+     turning plane `e₊ᵢe₊₍ₙ₊₁₎` with its winding (`Turning`), on `n + 1`
+     frame planes of `Cl(p, q)` read per plane (`FramePlanes`), the
+     sample's membrane the throat of its own plane. A turning's motion is
+     `ζ_ℓ^t` in `ℚ(ζ_ℓ)`, reduced by `Φ_ℓ` (`Cyclotomic`), never a
+     trigonometric value. The claims above stand as:
+     `lift_holds_one_phase_per_axis_on_turning_planes` (without unit
+     norm), `precession_of_three_thirty_degree_steps_equals_ninety_degrees`
+     (holonomy as the product per lap), `atlas_lap_reads_holonomy_only_where_orbit_held`
+     (flat against curved, precession by the attractors' curvature),
+     `precession_refuses_flat_path_as_loop`,
+     `five_seventy_two_degree_turnings_keep_winding_one` and
+     `lift_keeps_far_seam_as_whole_turn_with_winding_one` (windings
+     kept), `turning_then_agrees_with_motion_product` (exact over the
+     cyclotomic field). Open for stage 4: lifting a family's pairs as
+     transitions between their bodies' charts, and nesting as a fibration
+     of levels in the lift.
 6. **S5, samples on the wire.**
    - A task carries samples of rank `n`: `n`, the extents, then the
      symbols at the source's width.
@@ -1908,6 +1935,54 @@ Each phase is one commit:
      for the field's charts and the membrane.
    - Claims: `well_stage_is_a_coordinate`, `well_reads_no_scalar`,
      `sphere_built_without_squared_radius`.
+   - **Built, stage 1** (with S4a's stage 1): the atlas (`Atlas`,
+     `Chart`), its connection the transitions of the orbits held
+     (`Atlas::connection`, flat where none is held), attractors with their
+     local orbits and membranes (`Attractor`), curvature as the holonomy
+     of an orbit's transitions per lap (`Orbit::precession`,
+     `Atlas::curvature`), read per named plane in degrees with its
+     winding and order (`Holonomy`), monodromy flat, torsion or rupture,
+     and the membrane on the pole basis (`Membrane`, `stand`). LAW-FIELD
+     v1's six fixtures stand as claims
+     (`src/transducer/field/carrier/tests/law_field.rs`). Turnings on two
+     planes that share one unit are refused `NotExact` naming both (open
+     in 78.171 §8).
+   - **Stages** (each about 1 500 changed lines or less, each leaving the
+     tree green; planned 2026-11-06):
+     1. Built: the lift and the field's carrier (S4a, S7), and the field
+        stated as an object a court reconstructs (`Atlas::put_statement`,
+        `reconstruct`, `admit`: the statement writes the atlas and no
+        reading; the court rebuilds it through the carrier's
+        constructors, derives the curvature and admits a claimed
+        curvature on a match, refusing `Differs` with each pair).
+     2. The well's body (S7): `Well` stands on the carrier, its centre an
+        attractor's chart, its membrane, its inflation the gauge of its
+        frame state; its stage a coordinate (`percept: bool`,
+        `dirty: bool` retired); `volume` and `potential` replaced by
+        readings of the body. The tape's layout changes, a recut.
+        Claims `well_stage_is_a_coordinate`, `well_reads_no_scalar`.
+     3. The Euclidean spheres retired (S7): `sphere_at`, `on_sphere` and
+        `at_three::sphere` replaced by charts and the membrane at every
+        caller; and turnings on planes that share a unit composed exactly,
+        a versor over `ℚ(ζ_ℓ) ⊗ Cl(p, q)`, its angle a named residue
+        where no rational degree holds it. Claim
+        `sphere_built_without_squared_radius`.
+     4. The rest of S4a: a family's pairs lifted as transitions between
+        their bodies' charts (the factorisation's motion), and nesting as
+        a fibration of levels where the family is invariant.
+     5. S8, the field's motions as one group: the turning, the reflection
+        and the pole swap (`forms::passage::Poles::swap`) and the
+        inversion in the membrane, the boost on a frame plane, the
+        re-period; `NotExact` for a motion not carried.
+     6. S9a: `cech::orbit::Field`'s orbits attached to wells as their
+        local orbits; shear and precession per lap in the contemplation;
+        `Loop` refused there; the court's pressure on the well it faces.
+     7. S9b: axiomatic gravity, the drag on the orthogonal class
+        (disjoint turning planes, `Meeting::Disjoint`).
+     8. S9c: the vortex's monodromy read between charts, and a mind's
+        stated holonomy, precession and monodromy reconstructed by a
+        court on the wire (a wire change, stated as a Network contract;
+        track 10's claims follow).
 9. **S8, the field's motions as one exact group:**
    - rotate (a rotor by turns, cyclotomic);
    - flip (a reflection, or an inversion in the membrane);
