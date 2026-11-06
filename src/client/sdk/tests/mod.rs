@@ -28,6 +28,7 @@ mod remainders;
 mod rule;
 mod rule_language;
 mod seat_mind;
+mod signed_receipts;
 mod solve;
 mod speech;
 mod taught;
