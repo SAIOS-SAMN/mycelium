@@ -1957,7 +1957,7 @@ Each phase is one commit:
      §6.2).
    - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
      `two_perspectives_of_one_sample_compared_as_a_cover`.
-   - **Built, stage 1** (branch `s6-perspective-motion`): a perspective
+   - **Built, stage 1** (branch `sensing-s6`, PR #167): a perspective
      holds its pose, the signed permutation the sensor reads through,
      beside its roles; a shift (`SensorMotion::Pose`, `Recast`) moves the
      sensor, and a sample is read through it, never rewritten
