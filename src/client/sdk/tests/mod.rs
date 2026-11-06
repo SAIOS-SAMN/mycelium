@@ -25,6 +25,7 @@ mod offer;
 mod perceive;
 mod rank;
 mod remainders;
+mod rewrite;
 mod rule;
 mod rule_language;
 mod seat_mind;
