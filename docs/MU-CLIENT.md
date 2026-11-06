@@ -288,6 +288,12 @@ by the class's coordinates. Two minds, or a mind and a court, align on the
 class; each reads it on its own planes. A chart is a coordinate of one node,
 never the place two nodes meet.
 
+**Sound, harmonic structure, signal and noise are stated once, in
+MU-SENSING §3.10.** What the harmonic core reads here (§3.2) is harmonic
+structure, a reading, never the medium; whether a ring the mind takes in
+is signal or noise is read against this mind's own key, language and
+cover, never against a scalar.
+
 ---
 
 ## 4. Understanding: the mind's own field

@@ -699,6 +699,52 @@ orbit about an attractor, and its shape is set by gravity:
   `mind_speaks_factorisations_beyond_the_alphabet`, end to end in
   process at rank 3).
 
+### 3.10 Sound, harmonic structure, signal and noise
+
+**Specified** (ruled 2026-11-05/06). The model is stated once, here; other
+documents cross-link to it rather than restate it.
+
+1. **Sound is the medium's wave.** On the wire it is the transport's
+   bytes, meaning-free and the same for every receiver (MU-ENGINEERING
+   §9: the transport never holds meaning). In perception it is the
+   samples a sensor takes in (§2): the one input the sensor reads,
+   before any lift.
+2. **Harmonic structure is a reading of sound**, never the sound itself:
+   periods and their whole-number multiples, phases in degrees with
+   windings, re-periods, torsion of period ℓ (§3.1, §3.7; MU-CLIENT
+   §3.2's harmonic shell reads rings the same way). The harmonic sense
+   computes it, one of the three founding eyes (§1, §4.1), and it
+   belongs to the carrier layer: a carrier holds meaning at full
+   dimension, and the transport that moved the sound it was read from
+   never does (MU-ENGINEERING §9).
+3. **Signal or noise is decided by the reader's capacity to reconstruct
+   the structure**: its key, its language (the words its genome and
+   dialect carry), its cover of eyes (where the cocycle closes, §4.1),
+   and its two strongest separators, each a reconstruction at its own
+   level (reconstruction is never a re-run, GLOSSARY *Reconstruction*)
+   — **consilience**, independent courts re-deriving one thing
+   (MU-RECURSION 37.7, read with verification, POWV), at the court's
+   level, and **convergence**, many minds' lineages — disjoint, or
+   sharing a cause but disagreeing before they meet — reaching one
+   class (POWC), at the minds' level (MU-ECONOMY §0).
+   - **Noise is a flat reading for that reader**, never a substance and
+     never discarded (law 7). The ruling of 2026-09-26 already read it
+     so: what a reader re-derives is signal, what it does not is noise
+     (MU-RECURSION 78.44(5), 1271, 1275).
+   - **What doesn't resolve is held as a named residue**: the demand,
+     tomorrow's signal (GLOSSARY *Residue*; MU-CLIENT §4.6's held
+     orbit).
+   - **There are no thresholds, no "signal strength" scalar, and no
+     denoising or filtering that discards information** (never scalar,
+     §3.7; MU-STANDARDS 2.3).
+4. **Audio is one species' band of sound**, never a basis. Concordance
+   1.6 (species-neutral: no mechanic assumes a human body, number base,
+   sense or history) rules it out.
+5. **The Noise Protocol Framework keeps its name** (MU-ENGINEERING
+   §9.3; GLOSSARY *Noise transport*). Ciphertext reads flat (noise) to
+   any reader without the key and resolves fully for the keyed reader —
+   in agreement with this model, not by coincidence.
+
 ## 4. Perspective: one sample, many readings
 
 A **perspective** is the sensor's assignment of the sample's axes and its
