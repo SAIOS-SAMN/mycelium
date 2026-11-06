@@ -53,7 +53,7 @@ level where a word's class, and so its order, lives (corrected
 | Letter | An adjoined generator: the Cayley rotor of two reflections a mind composed, opened in the language by a court (U14, U15; §1.1) | A turning on one plane; with `∇B = ΔB = ∅` a `Cl(4,1)` versor at rank 3 (§2.8) | Projective rotor equality (1.5) | Admission **Built**; the empty seed and the triad **Specified** (§2) |
 | Word | A product of letters, spelled by the peel (§2.4) | The whole even element: scalar, a bivector per plane, and the grade-4 volume `b₁∧b₂` where two disjoint planes turn together (§3) | Projective equality; the key is the canonical coordinates written out (A21) | Words over the seed **Built**; the volume **Specified** |
 | Conjugate class | The word with its frame set aside | Its angles on mutually disjoint invariant planes (§3) | Class-vector equality (law 3's third equality; 15.3) | **Built** (`ClassVector`) |
-| Sentence | A closure composing words | The loop's holonomy per lap: curvature; precession the residue per lap | Read at loop holonomy, never by the letters of the whole | Composition **Built**; precession and `Loop` **Specified** |
+| Sentence | A closure composing words | Its orbit's holonomy per revolution: curvature; precession the residue per revolution | Read at the orbit's holonomy, never by the letters of the whole | Composition **Built**; precession in the contemplation **Specified**; resonance and `Unbound` **Built** in the field's carrier |
 | Expression | What crosses the wire: an assertion, a read, a court-to-court exchange or a universe crossing (§1.5) | Carriers at coordinates; the transport carries sound | Its content written out (A21), never a digest of its bytes | Vocabulary ruled; code names owed (§5.1) |
 
 ### 1.1 Letters
@@ -129,16 +129,20 @@ A sentence is a closure composing words: `Ω(s) = g_{k→1} W_k ⋯ g_{1→2} W�
 (`compose::compose`), grammatical where it closes, `Ω^ℓ ~ 1` (78.69;
 MU-CLIENT §4.1). Its meaning beyond its words is its curvature:
 
-- **The loop's holonomy per lap is curvature** (MU-SENSING §3.7; GLOSSARY
-  *Atlas (of a field)*).
-- **Precession is the residue per lap** (MU-SENSING §3.9, ruled
+- **The orbit's holonomy per revolution is curvature** (MU-SENSING §3.7;
+  GLOSSARY *Atlas (of a field)*). Every path is a geodesic of the field's
+  gravitational curvature; a bound geodesic is an orbit (ruled
+  2026-11-06; 78.171 amendment (f)).
+- **Precession is the residue per revolution** (MU-SENSING §3.9, ruled
   2026-11-04).
-- **Zero precession is refused.** A path that returns exactly through flat
-  space is a loop and is refused by name, `Loop` (MU-SENSING §3.9).
-  **Specified** (track 26 S9).
+- **Zero precession in a curved field is resonance**, a lawful resonant
+  orbit, never refused; a path through a flat region binds no orbit and
+  is refused by name, `Unbound` (MU-SENSING §3.9). The `Loop` refusal is
+  retired. **Built** in the field's carrier (track 26 S7 stage 2); in the
+  contemplation, S9.
 
 A question asked of a sentence (its cost, its order, its identity) is
-answered at loop holonomy: an orbit's holonomy is a word and `κ(ℓ)` is its
+answered at the orbit's holonomy: an orbit's holonomy is a word and `κ(ℓ)` is its
 class (23.9), never the letters of the whole sentence or its chain alone
 (the four-levels ruling, 2026-09-08).
 
@@ -558,7 +562,7 @@ the syllabus:
 
 ### 4.3 Relations are proved
 
-A relation is proved by reduction: a filled loop whose holonomy is
+A relation is proved by reduction: a filled closed path whose holonomy is
 trivial, a closed sentence held as its citation structure `∏ gᵉ · r` with
 `Ω^ℓ ~ 1` and its certificate (78.100 S1; 78.101 adds the nilpotent
 relations `Ω(s)^m ∝ 1 + m·N_s`). The proof of work that pays it is POWR,
@@ -821,10 +825,15 @@ resolved here; each waits on a ruling.
    holonomy composes to the identity is a relation among the generators".
    MU-RECURSION §1.9, the plexus table, depth 4: "a relator: two depth-3
    proofs of one vertex whose holonomy is non-trivial".
-2. **Trivial holonomy against `Loop`.** A relation is proved as a filled
-   loop with trivial holonomy (POWR; §4.3), and a sentence is grammatical
-   where it closes, `Ω^ℓ ~ 1` (78.69; MU-CLIENT §4.1). Against these:
-   MU-SENSING §3.9 refuses a path with zero precession, one that returns
-   exactly through flat space, by name as `Loop`; and MU-CLIENT §5.6 S
-   says a sentence's alignment is "never its rings' holonomy returning to
-   the identity … demanding that it return is squaring (78.168 §2)".
+2. **Trivial holonomy against zero precession.** A relation is proved as
+   a filled closed path with trivial holonomy (POWR; §4.3), and a
+   sentence is grammatical where it closes, `Ω^ℓ ~ 1` (78.69; MU-CLIENT
+   §4.1). MU-SENSING §3.9 refused a path with zero precession by name as
+   `Loop`. The ruling of 2026-11-06 (78.171 amendment (f)) retires `Loop`:
+   a closed geodesic with zero precession in a curved field is a lawful
+   resonant orbit, and only a path through a flat region is refused, as
+   `Unbound`; it also reads a relation as two derivations meeting at one
+   object, their holonomy recorded, which bears on item 1. Still to
+   reconcile: MU-CLIENT §5.6 S says a sentence's alignment is "never its
+   rings' holonomy returning to the identity … demanding that it return is
+   squaring (78.168 §2)".

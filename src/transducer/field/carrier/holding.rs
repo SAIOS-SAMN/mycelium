@@ -71,6 +71,11 @@ impl WellStage {
 /// back through the pole basis, and where it stands: at the throat (the
 /// membrane itself, `H = R`), at a pole, or between. The open pole is
 /// infinity and stands only because the well's own membrane encloses it.
+///
+/// THE TWO SHARES OF ITS PLANE (the ruling of 2026-11-06): the held share
+/// `H/(H + R)` (`Frame::share`, the closed count `A` over `A + Q`) is the
+/// plane's cohesion, its viscosity; the open share `R/(H + R)` is its
+/// fluidity, never its viscosity.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Inflation {
     pub gauge: Frame,
@@ -157,7 +162,8 @@ impl WellBody {
     }
 
     /// THE INFLATION AT `hold` AND `reach`: the frame state built on the
-    /// membrane's pole basis, stood inside the membrane (so its open pole,
+    /// membrane's pole basis (its held share the viscosity, its open share
+    /// the fluidity), stood inside the membrane (so its open pole,
     /// infinity, is enclosed), and read back as its gauge and place.
     /// Refused as the pole basis refuses the state.
     pub fn inflation(&self, hold: Q, reach: Q) -> Result<Inflation, FieldRefusal> {

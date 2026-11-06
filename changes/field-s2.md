@@ -15,7 +15,10 @@
   holonomy and precession per revolution read from the orbit, a flat
   well's refused `Unbound`; its inflation the gauge of the frame state
   `H·n_Z + R·n_Q` on the membrane's pole basis, stood inside the membrane
-  and read back with its place (`Inflation`).
+  and read back with its place (`Inflation`). Under the ruling of
+  2026-11-06, cohesion is the viscosity: the held share `A/(A + Q)` per
+  plane, here `H/(H + R)` (`Frame::share`); the open share is the
+  fluidity, never the viscosity. The inflation's docs name the shares so.
 - **The well's stage is a coordinate** (`WellStage`: `WellLayer`
   perception or thought, then `ExpansionRing` expanding or rested;
   ordered). It replaces `percept: bool` and `dirty: bool`.

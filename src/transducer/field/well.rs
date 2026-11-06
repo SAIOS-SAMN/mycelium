@@ -515,7 +515,9 @@ impl Well {
     /// and whose reach `R` is the charts its sections stand on and its
     /// cover has not closed. At the throat where the two agree; at the
     /// closed pole where nothing is open; at the open pole, infinity,
-    /// enclosed by its own membrane, where nothing is closed.
+    /// enclosed by its own membrane, where nothing is closed. Its held share
+    /// `H/(H + R)` is the well's cohesion, the viscosity; its open share is
+    /// the fluidity (the ruling of 2026-11-06).
     pub fn inflation(&self) -> Result<Inflation, FieldRefusal> {
         let count = |n: usize| crate::core::Q::from_integer(num_bigint::BigInt::from(n));
         let open = self.sections().scoped().filter(|(_, (chart, _, _))| !self.cover.contains(&chart.key())).count();
