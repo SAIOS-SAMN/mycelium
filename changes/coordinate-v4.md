@@ -25,3 +25,10 @@
   fixture 16's key order follows its keys (`(-1e/1,190/1,438/1)`,
   `K = (0, 1, 3)`), and 16c (the turning-plane refusals) is new. Claimed
   in `forms/src/tests/vectors.rs` (`h_keys_are_turning_planes`).
+- **The winding is kept** (78.171 amendment (c)): `Turn::plus` composes on
+  the `lcm` of the periods without reducing mod 1, so a composed motion
+  holds its whole turns with its phase (`Turn::winding`, `K = ⌊|θ|/360⌋`;
+  `Turn::phase`); a place's residue (`Turn::less`) reads the phase.
+  `TurnMotion::then` and `verify_turns` follow; every chart reading is
+  unchanged (`chart_reads_sections_as_turns`). Claimed by
+  `composed_turns_keep_their_winding`.

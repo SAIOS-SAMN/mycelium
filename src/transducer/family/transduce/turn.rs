@@ -1,18 +1,22 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE TURN AND THE ENCLOSURE: a boundary on one phase of a frame, as an
-//! element of `ℚ/ℤ` held by its index and the period it was read in; and
-//! the frame's `n` phases.
+//! THE TURN AND THE ENCLOSURE: a boundary on one phase of a frame, held by
+//! its index and the period it was read in, and a motion composed of
+//! turns, which keeps its winding (ℤ) with its phase; and the frame's `n`
+//! phases.
 
 use super::TransductionRefusal;
 use crate::transducer::sample::{AxisReading, Sample};
 use std::cmp::Ordering;
 
-/// A BOUNDARY TURN `index / period` on one circle, `0 ≤ index ≤ period`.
-/// Both ends are kept: `0` and `period` are the two sides of the seam, held
-/// apart because nothing wraps. Two turns are compared by cross-multiplying
-/// the indices and periods, never by reducing either; `1/2` and `2/4` are
-/// one turn.
+/// A TURN `index / period` on one phase. A boundary turn stands at
+/// `0 ≤ index ≤ period`, both ends kept: `0` and `period` are the two sides
+/// of the seam, held apart because nothing wraps. A composed motion
+/// ([`Turn::plus`]) may stand past `period`: its winding, the whole turns
+/// it holds, is kept with its phase and never reduced away. Two turns are
+/// compared by cross-multiplying the indices and periods, never by reducing
+/// either; `1/2` and `2/4` are one turn, and `1/1` is a whole turn, never
+/// `0/1`.
 ///
 /// THE GUARD OF MU-ANTI-FLATTENING 12 (`turn_has_one_constructor`): a
 /// site's lift has one constructor, [`Turn::of`], and the index and the
@@ -45,7 +49,8 @@ pub struct Turn {
 
 impl Turn {
     /// THE TURN `r / h` (MU-ANTI-FLATTENING 12): index `r` read on a phase
-    /// of period `h`, an element of ℚ/ℤ held as the pair, never reduced.
+    /// of period `h`, held as the pair, never reduced: its whole turns, if
+    /// any, are kept.
     pub const fn of(r: usize, h: usize) -> Turn {
         Turn { index: r, period: h }
     }
@@ -57,13 +62,14 @@ impl Turn {
         Turn { index: self.period - self.index, period: self.period }
     }
 
-    /// THE SUM IN ℚ/ℤ (MU-SENSING §3.1): `r/h + r′/h′` mod 1, held on the
-    /// least common multiple of the two periods, the period of the composed
-    /// orbit (MU-ANTI-FLATTENING 12: an `lcm` of the periods of turns, never
-    /// of two frames' extents). As a motion the seam's two sides are one
-    /// point of ℚ/ℤ, so the sum's index lies below its period. `None` where
-    /// a period is 0 (no circle to turn on) or the composed period passes
-    /// the machine word.
+    /// THE COMPOSED MOTION (MU-SENSING §3.1; 78.171 amendment (c)):
+    /// `r/h + r′/h′`, held on the least common multiple of the two periods,
+    /// the period of the composed orbit (MU-ANTI-FLATTENING 12: an `lcm` of
+    /// the periods of turns, never of two frames' extents). THE WINDING IS
+    /// KEPT: the index is never reduced below its period, so a composed
+    /// motion holds its whole turns (ℤ, [`Turn::winding`]) with its phase,
+    /// and none is dropped. `None` where a period is 0 (no circle to turn
+    /// on) or the composed period or index passes the machine word.
     pub fn plus(&self, other: &Turn) -> Option<Turn> {
         let (p, q) = (self.period, other.period);
         if p == 0 || q == 0 {
@@ -72,17 +78,35 @@ impl Turn {
         let period = (p / num_integer::gcd(p, q)).checked_mul(q)?;
         let a = (self.index as u128).checked_mul((period / p) as u128)?;
         let b = (other.index as u128).checked_mul((period / q) as u128)?;
-        let index = usize::try_from(a.checked_add(b)? % period as u128).ok()?;
+        let index = usize::try_from(a.checked_add(b)?).ok()?;
         Some(Turn { index, period })
     }
 
-    /// THE DIFFERENCE IN ℚ/ℤ, `self − other` mod 1: the sum with `other`'s
-    /// inverse, `(h − (r mod h))/h`. The residue of a claimed turn against
-    /// a reconstructed one (MU-HOSTING §5a.10). `None` as [`Turn::plus`].
+    /// THE WHOLE TURNS A MOTION HOLDS: `K = ⌊|θ|/360⌋` for its angle
+    /// `θ = 360·r/h` degrees, that is `⌊r/h⌋`, read exactly with no angle
+    /// formed. 0 for a boundary turn below the seam. `None` for a period of
+    /// 0, which holds no turn.
+    pub fn winding(&self) -> Option<usize> {
+        self.index.checked_div(self.period)
+    }
+
+    /// THE PHASE ALONE: the turn less its whole turns, `(r mod h)/h`, on
+    /// the same period. A place's residue reads it (a place on a phase has
+    /// no winding of its own); a motion keeps its winding beside it.
+    /// `None` for a period of 0.
+    pub fn phase(&self) -> Option<Turn> {
+        Some(Turn { index: self.index.checked_rem(self.period)?, period: self.period })
+    }
+
+    /// THE RESIDUE OF A PLACE, `self − other` in ℚ/ℤ: the phase of the sum
+    /// with `other`'s inverse, `(h − (r mod h))/h`. The residue of a claimed
+    /// place against a reconstructed one (MU-HOSTING §5a.10): a place on a
+    /// phase has no winding, so the residue is a phase, whole exactly where
+    /// the two agree. `None` as [`Turn::plus`].
     pub fn less(&self, other: &Turn) -> Option<Turn> {
         let h = other.period;
         let r = other.index.checked_rem(h)?;
-        self.plus(&Turn { index: h - r, period: h })
+        self.plus(&Turn { index: h - r, period: h })?.phase()
     }
 
     /// Is the turn whole, the zero of ℚ/ℤ (`h` divides `r`)? A period of
