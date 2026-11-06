@@ -191,16 +191,43 @@ impl Ground<Vec<u8>> {
 
     /// THE GROUND OF A FAMILY OF PAIRS (MU-SENSING §3.4): the candidates
     /// that are ambient, enclosing and never carried as a body. A family
-    /// with no sample has no ambient symbol and reads `None`.
+    /// with no sample has no ambient symbol and reads `None`. Several
+    /// candidates are a vortex, collapsed to one only by a relation that
+    /// holds for that candidate and no other (ruled 2026-11-06 on #32 (3);
+    /// [`Ground::collapse`]); otherwise they stay superposed.
     pub fn of(family: &[(Sample, Sample)]) -> Ground<Vec<u8>> {
-        let candidates = Ground::candidacies(family)
+        let candidates: Vec<Vec<u8>> = Ground::candidacies(family)
             .into_iter()
             .filter_map(|(symbol, reading)| match reading {
                 Candidacy::Candidate => Some(symbol),
                 _ => None,
             })
             .collect();
+        if candidates.len() > 1 {
+            if let (_, super::Collapse::Collapsed { candidate, .. }) = super::collapse_of(family, &candidates) {
+                if let Some(g) = candidates.get(candidate) {
+                    return Ground::One(g.clone());
+                }
+            }
+        }
         Ground::from_candidates(candidates)
+    }
+
+    /// THE VORTEX'S CANDIDATES READ BY THE RELATIONS THAT COLLAPSE IT
+    /// (MU-SENSING §3.8; ruled 2026-11-06 on #32 (3)): each candidate with
+    /// the relations that hold for it on every pair (`Stands`, `PaintedOn`),
+    /// and whether one collapses the vortex. A reading of the percept,
+    /// computed when asked; a family of fewer than two candidates holds no
+    /// vortex and reads `Superposed` over what it holds.
+    pub fn collapse(family: &[(Sample, Sample)]) -> (Vec<super::CandidateReading>, super::Collapse) {
+        let candidates: Vec<Vec<u8>> = Ground::candidacies(family)
+            .into_iter()
+            .filter_map(|(symbol, reading)| (reading == Candidacy::Candidate).then_some(symbol))
+            .collect();
+        match candidates.len() > 1 {
+            true => super::collapse_of(family, &candidates),
+            false => (Vec::new(), super::Collapse::Superposed),
+        }
     }
 
     /// EVERY SYMBOL OF THE FAMILY WITH ITS CANDIDACY, in the order the
