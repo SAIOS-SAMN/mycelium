@@ -41,7 +41,7 @@ fn read_gram_reads_each_pair_regime() {
     assert_eq!(regime(v(&[(E1, 1)]), v(&[(E1, 1), (E2, 1)])), PairRegime::Finite(4));
     let plane = |d: i64| v(&[(E1, 1)]).add(&e_inf().scale(&q(d, 1)));
     assert_eq!(regime(plane(0), plane(1)), PairRegime::Parabolic, "parallel planes: the blade squares to zero");
-    let sphere = |x: i64| sphere_at(&[q(x, 1), q(0, 1), q(0, 1)], &q(1, 4));
+    let sphere = |x: i64| membrane_at(&[q(x, 1), q(0, 1), q(0, 1)], &q(1, 2)).expect("a positive gauge");
     assert_eq!(regime(sphere(0), sphere(3)), PairRegime::Boost, "disjoint spheres: the blade squares positive");
     assert_eq!(regime(v(&[(E1, 1), (EM, 1)]).add(&v(&[(E1, 1)])), v(&[(EM, 1)])), PairRegime::Boost, "real against imaginary, not orthogonal");
     assert_eq!(regime(v(&[(E1, 1)]), v(&[(E1, 1), (E2, 2)])), PairRegime::Rosette, "a double-angle point off the crystallographic set: no finite order over ℚ");

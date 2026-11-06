@@ -175,8 +175,13 @@ impl Mind {
         // since the last vent, what stood through the last beat and never
         // returned dissipates now — and under the court's gravity, what still
         // rings on a lane its deficit presses (§4.13).
-        let deficit = self.board.court.deficit;
+        // MU-CLIENT §3.1 (#136) — and under the flux the hyphas' acts pressed
+        // on the mind's lanes, landed on each hypha's well.
+        let deficit = self.pressing();
         let beat = matches!(crate::transducer::mind::with_field(|field| field.beat_under(&deficit)), Ok(true));
+        if beat {
+            self.spend_pressing();
+        }
         // FROZEN-IN FLUX: every fibre the field's admissions carried moves
         // with the orbit it is wound on (MU-CLIENT §4.5).
         if let Ok(carried) = crate::transducer::mind::with_field(|field| field.take_carried()) {
@@ -1006,6 +1011,9 @@ impl Mind {
         let mut spoken = 0usize;
         for w in &added {
             spoken += self.pivot_on(w, &mut budget);
+            // MU-CLIENT §5.4 (S3) — and the retirements the word, now held,
+            // makes visible: proposed to the court, never applied here.
+            spoken += self.propose_rewrites(w).len();
         }
         spoken
     }

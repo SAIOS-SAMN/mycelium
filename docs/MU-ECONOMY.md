@@ -31,7 +31,8 @@ section named:
    closure is one point network-wide (§3.4, §5.3).
 6. Between courts the Note settles; between universes μ is the connecting
    reserve and crosses only at the universal core tube (§5.4, §10).
-7. A shared economic law form is proposed, to come as 78.174 (§10.4).
+7. The rulings are recorded in proposal 78.174; a shared economic law
+   form with the peer kernels is to come as its amendment (§10.4).
 
 Only the flat ledger is retired: one sequence of rows, one balance per
 party, one number per lane. "Ledger" names the multi-dimensional ledger of
@@ -711,13 +712,15 @@ universe's reserve:
 - **Every universe keeps its sovereignty.** A universe that stops trading
   keeps its own economy whole, and its μ stays its reserve's holding.
 
-### 10.4 A shared economic law form (proposal 78.174, to come)
+### 10.4 A shared economic law form (proposal 78.174)
 
 The economy at the boundary is to become a law form taken through
 [MU-RELEASE §3a](MU-RELEASE.md#3a-how-a-hypha-standard-becomes-a-kernel-standard),
 as LAW-COORDINATE is: μ's modes, the reserve, and conversion at the
 universal core tube, with joint-read fixtures that the peer kernels
-reconstruct. It will be proposed as 78.174. It is not drafted here.
+reconstruct. [Proposal 78.174](proposals/78.174-economy-as-motions.md)
+records the operator's rulings of 2026-11-05 on this model; the law form
+with the peers is a later amendment of it, not drafted here.
 
 ## 11. Fairness across capacity
 
@@ -836,10 +839,12 @@ for its lessee for one window.
 
 ## 12. Open: what the model leaves to a ruling
 
-1. **Lanes as vectors in the coordinate.** `FORMS-COORDINATE` v3 holds
-   each lane as a vector of exact components keyed by axis, with the
-   advance, merger and fission per component (78.173 §1, §3). How a
-   holding's modes are keyed as those components is not yet stated.
+1. **Lanes as vectors in the coordinate.** *Closed (operator,
+   2026-11-05; proposal 78.174 §1 item 2: a holding is a point whose
+   lanes are `Modes`).* `FORMS-COORDINATE` v3 holds each lane as a vector
+   of exact components keyed by axis, with the advance, merger and fission
+   per component (78.173 §1, §3); a holding's modes are its coordinate's
+   components, never `Mu` scalars.
 2. **Where a role is written.** *Closed (ruled 2026-11-05: a holding is a
    point).* A holding is one point, its coordinate. Estates nest as
    origins: a holder's estate, and a role within it (balance, bond, held
@@ -851,12 +856,14 @@ for its lessee for one window.
    means closed orbits everywhere).* A holding's `K` is LAW-COORDINATE's,
    the whole turns of H (`⌊|L_H|⌋`); a line's receipt index, which this
    item called its `K` (47.1), is `i` in prose.
-4. **A mode's amount and the share of the frame.** Today each mode is read
-   at its closed pair's carried mass (`DeflationRead::modes`), while the
-   per-lane payment is the share of the frame (§1). Which gauge sets a
-   mode's amount is not ruled.
-5. **Room over modes.** Room reads a bond's whole part on each lane; read
-   over modes, that is a projection to one count per lane.
+4. **A mode's amount and the share of the frame.** *Closed (operator,
+   2026-11-05; proposal 78.174 §1 item 9: a mode's amount is its share of
+   the frame, never S mass; a recolour pays G by its share).* Today each
+   mode is read at its closed pair's carried mass (`DeflationRead::modes`);
+   v0.5.0 reads it as the share of the frame (§1).
+5. **Room over modes.** *Open (78.174 §2).* Room reads a bond's whole part
+   on each lane; read over modes, that is a projection to one count per
+   lane.
 6. **POWC's earlier instance.** *Closed (ruled 2026-11-05: POWC is
    widened).* In 74 (CV4) the closer cites the refusing mind's receipt, so
    the two orbits' cones are not disjoint at the well. Lineages that share
@@ -867,8 +874,20 @@ for its lessee for one window.
    equivocation, as F2b and MU-RECURSION 47.4 burn a second mint; claims
    the cones leave unordered are held as a residue; F2a's equal shares are
    retired (§3.4).
-8. **The ask under modes.** A demand is a residue, which has no motion yet,
-   so its ask has no modes; 78.149 (b)'s lane-wise cap of a payment by the
-   ask needs a stated form.
+8. **The ask under modes.** *Open (78.174 §2).* A demand is a residue,
+   which has no motion yet, so its ask has no modes; 78.149 (b)'s lane-wise
+   cap of a payment by the ask needs a stated form.
 9. **The Note's amounts.** MU-XSEPTUM §5 writes μ as `4×u64`, which
-   predates both `Mu` and `Modes`; it is restated with track 1.
+   predates both `Mu` and `Modes`. Under 78.174 §1 item 2 its amounts are
+   `Modes`; the restatement is built with v0.5.0. Its mode-0 receipt stays
+   held for review (MU-XSEPTUM §5.3).
+
+Also ruled by the operator on 2026-11-05 and recorded in proposal 78.174
+§1: pay by level (letters never paid; words POWR plus citation shares;
+conjugate classes POWC; sentences POUW; POWV at every level), a seated
+mind paid to its own key (Concordance v5 6.2a); the compute lease's
+availability yield on escrowed idle capacity, paid from the recycled pool
+(§7.2) and never minted; tile turns read as H modes in degrees on their
+named plane; and reflections carried on a lane of their own, P (parity,
+proposed in 78.178), a mirrored closure's pay held as a claim until P
+opens.
