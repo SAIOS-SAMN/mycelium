@@ -31,10 +31,10 @@ impl MindLanguage {
             clippy::disallowed_methods,
             reason = "rule 4 — canonical key order: the stratum roots and then the chart keys, so two minds holding one atlas write one root"
         )]
-        rows.sort_by(|a, b| a.root.cmp(&b.root).then_with(|| a.inv.key().cmp(&b.inv.key())));
+        rows.sort_by(|a, b| a.root.bytes().cmp(&b.root.bytes()).then_with(|| a.inv.key().cmp(&b.inv.key())));
         let mut buf = Vec::new();
         for r in &rows {
-            crate::transducer::address::put_key_bytes(&mut buf, &r.root);
+            crate::transducer::address::put_key_bytes(&mut buf, &r.root.bytes());
         }
         crate::transducer::address::Address::new(buf)
     }

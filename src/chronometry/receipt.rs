@@ -326,15 +326,41 @@ impl Cite {
 /// WHAT AN ACT NAMES (LD0 as ruled, 78.22, 78.24): coordinates the reader
 /// already holds the named thing under, fixed in size by the algebra and
 /// never a copy of it.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// A citation has no `==`: a fold's root carries a [`Predecessor`], so two
+/// citations are compared by what they cite ([`Cite::restates`]), each in
+/// its own sense (MU-ANTI-FLATTENING 13; ROADMAP track 25 X0). The claim
+/// `cite_has_no_equality`:
+///
+/// ```compile_fail,E0369
+/// use mycelium::chronometry::Cite;
+/// fn same(a: &Cite, b: &Cite) -> bool {
+///     a == b
+/// }
+/// ```
+///
+/// The named comparison, which compiles:
+///
+/// ```
+/// use mycelium::chronometry::{Cite, Stamp};
+/// use mycelium::court::admission::Predecessor;
+/// let at = Stamp { h: 4, vk: [3; 32], k: 9, i: 2 };
+/// let root = Cite::Root { at, hash: Predecessor::of_bytes([5; 32]) };
+/// assert!(root.restates(&root.clone()));
+/// ```
+///
+/// [`Predecessor`]: crate::court::admission::Predecessor
+#[derive(Debug, Clone)]
 pub enum Cite {
     /// A word or a form by its FIBRE — its chart, and for a word with a
     /// rotor its class record; a form's fibre is its chart alone — and the
     /// stamp of the act that admitted it, which locates it exactly.
     Word { chart: Invariant, class: Option<ClassRecord>, at: Stamp },
     /// A fold's root (45.8): the stamp of the archived prefix's head and
-    /// its chain hash.
-    Root { at: Stamp, hash: [u8; 32] },
+    /// its chain hash, a digest in the link sense (MU-ANTI-FLATTENING 13):
+    /// it names the record the fold stands on, compared only by
+    /// [`Predecessor::continues`](crate::court::admission::Predecessor::continues).
+    Root { at: Stamp, hash: crate::court::admission::Predecessor },
     /// 78.37, TP1 — THE DOCKET'S HELD CLASS: a ring the orbit's transport
     /// closed at holonomy ≠ 1, by its class vector inline, and its COVER —
     /// the charts its thoughts stand on, by key, ascending — whose
@@ -429,6 +455,23 @@ pub enum Cite {
 }
 
 impl Cite {
+    /// `self` CITES WHAT `held` CITES. Two roots: one stamp, with a chain
+    /// continuing across the two hashes (link sense,
+    /// [`Predecessor::continues`](crate::court::admission::Predecessor::continues)).
+    /// Any other pair: one canonical writing, the coordinates written out
+    /// (A21). A citation that does not write restates nothing. Two
+    /// citations are compared by this, never by `==`.
+    pub fn restates(&self, held: &Cite) -> bool {
+        match (self, held) {
+            (Cite::Root { at, hash }, Cite::Root { at: was, hash: named }) => at == was && hash.continues(named),
+            (Cite::Root { .. }, _) | (_, Cite::Root { .. }) => false,
+            _ => {
+                let (mut a, mut b) = (Vec::new(), Vec::new());
+                self.put_canonical(&mut a).is_some() && held.put_canonical(&mut b).is_some() && a == b
+            }
+        }
+    }
+
     /// The stamp the citation locates by — a word's or a root's. A docket's
     /// class or demand is located by its coordinates, never by a stamp.
     pub fn at(&self) -> Option<Stamp> {
@@ -493,7 +536,7 @@ impl Cite {
             Cite::Root { at, hash } => {
                 rec.push(1);
                 at.put_canonical(&mut rec);
-                rec.extend_from_slice(hash);
+                rec.extend_from_slice(&hash.bytes());
             }
             Cite::Refusal { chart, kind } => {
                 rec.push(4);
@@ -643,7 +686,7 @@ impl Cite {
                 let at = Stamp::take_canonical(b, p)?;
                 let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 *p += 32;
-                Some(Cite::Root { at, hash })
+                Some(Cite::Root { at, hash: crate::court::admission::Predecessor::of_bytes(hash) })
             }
             4 => {
                 let chart = Invariant::take_canonical(b, p)?;

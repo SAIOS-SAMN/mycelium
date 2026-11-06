@@ -15523,6 +15523,13 @@ are ACT_DOMAIN sub-kinds under `[0x3E][domain 32][0x80 0x00][kind]` (kinds
   coordinate retrieval. A TRAVERSE fee and a COORDINATE RETRIEVAL (one unit
   of information on H per receipt read, at the read price) each draw a claim
   on it; an unstake is refused while any claim drawn on the stake stands.
+  The COORDINATE RETRIEVAL is `ACT_DOMAIN` sub-kind 19, RETRIEVE (ruled
+  2026-11-06, #159): the staker, the point, the cited final point and a
+  nonce under the staker's signature; answered with the receipts at the
+  tick, the fee claimed, and the court's 47.1 section over its head signed
+  over the request, which the retriever verifies (MU-HOSTING §3a.8). A
+  folded tick is refused `Folded` and read through `ACT_RECEIPTS`'s replay
+  arm; pricing that arm is owed.
 - **The connection tax (78.154a).** A declared flow kind on the reserve's
   tier fold (78.119) under the reserved coordinate `CONNECTION_TAX`
   (`b"mycelium flow: connection tax v1"`), on the existing lanes exactly as

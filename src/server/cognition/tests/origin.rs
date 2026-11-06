@@ -48,7 +48,7 @@ fn record_origin_seals_once_never_edited() {
     assert_eq!(k.record_origin(&stranger), Founded::NotFounded);
     let Founded::Originated { at, receipt } = k.record_origin(&origin(9).sign(&domain())) else { panic!("sealed") };
     let head = k.chain.head().expect("the origin on the line");
-    assert_eq!(head.cites, vec![Cite::Origin { domain: d, kind: 1, version: 3, commitment: [9; 32] }]);
+    assert!(super::fixtures::cites_restate(&head.cites, &[Cite::Origin { domain: d, kind: 1, version: 3, commitment: [9; 32] }]), "{:?}", head.cites);
     let held = k.origin_of(&d).expect("held");
     assert_eq!((held.kind, held.version, held.commitment, held.at, held.receipt), (1, 3, [9; 32], at, receipt));
     assert_eq!(k.record_origin(&origin(9).sign(&domain())), Founded::AlreadyOriginated, "once");
@@ -85,6 +85,6 @@ fn origin_act_round_trips_with_reading() {
     let mut b = Vec::new();
     cite.put_canonical(&mut b).expect("written");
     let mut p = 0;
-    assert_eq!(Cite::take_canonical(&b, &mut p), Some(cite), "tag 12, by its coordinates");
+    assert!(Cite::take_canonical(&b, &mut p).is_some_and(|back| back.restates(&cite)), "tag 12, by its coordinates");
     assert_eq!(p, b.len());
 }
