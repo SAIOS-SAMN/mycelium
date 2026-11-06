@@ -1,8 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 // LAW-COUPLING v1 (proposal 78.175, F1 and F2; netstratum docs/121 §9.1,
-// §10.1) — THE DIPOLE PARCEL AND ITS VISCOSITY, PER PLANE: a parcel's
-// frames, its pole and its open share, one law, each a ratio of the frames;
+// §10.1) — THE DIPOLE PARCEL, ITS FLUIDITY AND ITS VISCOSITY, PER PLANE: a
+// parcel's frames, its pole and its open share (the fluidity; the held
+// share is the viscosity), one law, each a ratio of the frames;
 // a body's frames on each turning plane, founded by the even split.
 
 use super::{half_turn, share_of, CouplingRefusal};
@@ -59,8 +60,9 @@ impl Parcel {
         (!self.held.is_zero()).then(|| &self.open / &self.held)
     }
 
-    /// THE OPEN SHARE `o = Q/(A + Q) = ν(t)`, the parcel's strength (its
-    /// viscosity's share).
+    /// THE OPEN SHARE `o = Q/(A + Q) = ν(t)`, the parcel's strength, its
+    /// fluidity. Its complement, the held share `A/(A + Q)`, is the
+    /// viscosity (the cohesion).
     pub fn open_share(&self) -> Result<Q, CouplingRefusal> {
         share_of(&self.open, &self.held)
     }

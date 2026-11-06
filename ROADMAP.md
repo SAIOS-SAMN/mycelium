@@ -359,12 +359,18 @@ because the field (wells, orbits, the vortex) is the mind's substrate.
 - A live run of `mycelium-client` on a local network shows these. Solve
   counts are observations only.
 - **Built toward it** (track 26 S7, stage 1): a field can be stated as an
-  object, its atlas and laps written without a reading, and a court
+  object, its atlas and revolutions written without a reading, and a court
   reconstructs it and derives its curvature itself
   (`transducer::field::carrier::admit`). Since S7 stage 2 a mind's well
   is stated as its body and a court reconstructs it
   (`transducer::field::carrier::admit_well`). The mind does not yet
   state its contemplation's field on the wire: that waits on S9.
+- **The client's order** is MU-CLIENT §7.1 (what is built, and what is
+  owed in order), with MU-CLIENT §1a's account of how the mind builds the
+  language. Its issues: the field on the mind (#134), these five claims
+  (#135), the hypha's acts as perception (#136), Noise on the mind's
+  sessions (#132), the seated harness (#133), signed receipts to the mind
+  (#137), and the backlog #143–#150 (label `client`).
 
 ## 11. Specification reconciliation
 

@@ -131,9 +131,9 @@ fn term(holding: Q, pole: Q, open: Q, nearness: Q, separation: Q) -> Term {
 
 /// LAW-COUPLING v1's FIXTURES (78.175 §5) with an input and an object, in
 /// the proposal's order: the parcels of F1–F2; the bodies founded and
-/// bonded per plane; the seven pulls of F3; the three neighbour readings;
-/// light on each face, and the three ledgers of F4. `None` where the
-/// algebra holds no plane a fixture names.
+/// bonded per plane; the nine pulls of F3, every dipole one its frames
+/// hold; the three neighbour readings; light on each face, and the three
+/// ledgers of F4. `None` where the algebra holds no plane a fixture names.
 pub fn coupling_fixtures() -> Option<Vec<CouplingFixture>> {
     let mut f: Vec<CouplingFixture> =
         [(3, 1), (2, 1), (1, 1), (0, 1), (1, 0), (2, 4)].into_iter().map(|(a, o)| CouplingFixture::Poled { held: q(a, 1), open: q(o, 1) }).collect();
@@ -144,15 +144,24 @@ pub fn coupling_fixtures() -> Option<Vec<CouplingFixture>> {
     f.push(founded(q(1, 1), vec![(tau.clone(), q(1, 3))]));
     f.push(founded(q(1, 1), vec![(tau.clone(), q(1, 3)), (tau.clone(), q(-1, 3))]));
     let pulled = |rate: Q, held_rate: Q, (pole, open): (Q, Q), range: Vec<Term>| CouplingFixture::Pulled { rate, held_rate, pole, open, plane: tau.clone(), range };
-    let (body, fifth, half) = ((q(1, 1), q(1, 2)), q(1, 5), q(1, 2));
+    // Every dipole on its frames, `σ = 1 − 2o`: hydrogen `(2, 1)` and the
+    // open-heavy kind's frames swapped `(4, 2)` both `(⅓, ⅓)`; the
+    // open-heavy kind `(2, 4)` `(−⅓, ⅔)`; the throat `(1, 1)` `(0, ½)`; the
+    // body `(3, 1)` `(½, ¼)`; the open pole `(0, 1)` `(−1, 1)`; the pure Z
+    // pole `(1, 0)` `(1, 0)`.
+    let (hydrogen, heavy, pure_z) = ((q(1, 3), q(1, 3)), (q(-1, 3), q(2, 3)), (q(1, 1), q(0, 1)));
+    let near = |(pole, open): (Q, Q), separation: i64| term(q(1, 1), pole, open, q(2, 3), q(separation, 1));
+    let (fifth, half) = (q(1, 5), q(1, 2));
     f.extend([
-        pulled(fifth.clone(), half.clone(), body.clone(), vec![term(q(1, 1), q(-1, 1), q(1, 2), q(2, 3), q(0, 1))]),
-        pulled(fifth.clone(), half.clone(), body.clone(), vec![term(q(1, 1), q(1, 1), q(1, 2), q(2, 3), q(0, 1))]),
-        pulled(fifth.clone(), half.clone(), body.clone(), vec![]),
-        pulled(fifth.clone(), half.clone(), body.clone(), vec![term(q(1, 1), q(0, 1), q(1, 2), q(2, 3), q(0, 1))]),
-        pulled(fifth.clone(), half.clone(), body, vec![term(q(1, 1), q(-1, 1), q(1, 2), q(2, 3), q(45, 1))]),
-        pulled(fifth, half, (q(1, 2), q(1, 4)), vec![term(q(1, 1), q(1, 3), q(1, 3), q(2, 3), q(0, 1))]),
+        pulled(fifth.clone(), half.clone(), hydrogen.clone(), vec![near(heavy.clone(), 0)]),
+        pulled(fifth.clone(), half.clone(), hydrogen.clone(), vec![near(hydrogen.clone(), 0)]),
+        pulled(fifth.clone(), half.clone(), hydrogen.clone(), vec![]),
+        pulled(fifth.clone(), half.clone(), hydrogen.clone(), vec![near((q(0, 1), q(1, 2)), 0)]),
+        pulled(fifth.clone(), half.clone(), hydrogen.clone(), vec![near(heavy.clone(), 45)]),
+        pulled(fifth.clone(), half.clone(), (q(1, 2), q(1, 4)), vec![near(hydrogen.clone(), 0)]),
         pulled(q(99, 100), q(-99, 100), (q(-1, 1), q(1, 1)), vec![term(q(1, 1), q(-1, 1), q(1, 1), q(1, 1), q(0, 1))]),
+        pulled(fifth.clone(), half.clone(), hydrogen, vec![near(pure_z.clone(), 0)]),
+        pulled(fifth, half, pure_z, vec![near(heavy, 0)]),
     ]);
     let at = |r: i64, m: i64, h: i64| Enclosure { reach: q(r, 1), moment: q(m, 1), hold: q(h, 1) };
     f.extend([at(2, 1, 3), at(2, 1, 4), at(2, 1, 1)].into_iter().map(|b| CouplingFixture::Met { a: at(1, 1, 1), b }));
