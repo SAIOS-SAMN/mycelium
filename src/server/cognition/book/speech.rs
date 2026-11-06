@@ -104,6 +104,7 @@ impl Court {
         use crate::transducer::sentence::{At, RefusalKind};
         let mut spoken = Vec::with_capacity(act.sentences.len());
         let mut grounds = Vec::with_capacity(act.sentences.len());
+        let mut perspectives = Vec::with_capacity(act.sentences.len());
         let mut unparsed: Vec<usize> = Vec::new();
         for (i, tape) in act.sentences.iter().enumerate() {
             let mut p = 0usize;
@@ -111,11 +112,12 @@ impl Court {
                 Some(e) => {
                     spoken.push((e, act.contractions.get(i).cloned().flatten()));
                     grounds.push(act.grounds.get(i).cloned().flatten());
+                    perspectives.push(act.perspectives.get(i).cloned().flatten());
                 }
                 None => unparsed.push(i),
             }
         }
-        let heard = self.hear_speech(act.voice, &act.task, &spoken, &grounds, budget)?;
+        let heard = self.hear_speech_under(act.voice, &act.task, &spoken, &grounds, &perspectives, budget)?;
         let receipt = self.chain.head_hash();
         let mut out = Vec::with_capacity(act.sentences.len());
         let mut next = heard.into_iter();
@@ -192,12 +194,51 @@ impl Court {
         grounds: &[Option<Vec<u8>>],
         budget: &mut crate::physics::Budget,
     ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
+        self.hear_speech_under(voice, task, spoken, grounds, &[], budget)
+    }
+
+    /// [`Court::hear_speech`] with the perspective each sentence was spoken
+    /// under (MU-SENSING §4, §6.2; track 26 S6), in the order sent; a
+    /// missing entry states none. A stated perspective is read on this
+    /// court's copy of the task's family (`cognition::stated_perspective`)
+    /// and held for the whole adjudication of its sentence, so every reader
+    /// of the family inside it (the ground's candidacy, the reconstruction,
+    /// the colour word's witness, the discharge) reads the family through
+    /// it; one the court does not read the section under is refused by
+    /// name. The court never chooses a perspective; the posted family is
+    /// never rewritten. A sentence stating none reads the family as posted.
+    pub fn hear_speech_under(
+        &mut self,
+        voice: [u8; 32],
+        task: &[u8],
+        spoken: &[(Element, Option<crate::transducer::sentence::Contraction>)],
+        grounds: &[Option<Vec<u8>>],
+        perspectives: &[Option<crate::transducer::perspective::Perspective>],
+        budget: &mut crate::physics::Budget,
+    ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
         let mut out = Vec::with_capacity(spoken.len());
         for (i, (s, cited)) in spoken.iter().enumerate() {
             let stated = grounds.get(i).and_then(Option::as_deref);
-            let heard = match self.claim_ground(task, stated) {
-                Ok(g) => crate::transducer::raster::on_ground(g, || self.adjudicate_one(voice, task, s, cited.as_ref(), budget)),
-                Err(why) => Ok(self.refuse_sentence(voice, s, crate::court::verdict::Refusal::of_tape(why.reason(), s))),
+            let under = perspectives.get(i).and_then(Option::as_ref);
+            let read = match (under, self.task_family.get(task)) {
+                (Some(p), Some(family)) => Some(crate::cognition::stated_perspective(family, p).map(|family| (p.clone(), family))),
+                _ => None,
+            };
+            let heard = match read {
+                Some(Err(why)) => Ok(self.refuse_sentence(voice, s, crate::court::verdict::Refusal::of_tape(why.reason(), s))),
+                read => {
+                    self.heard_under = read.and_then(Result::ok).map(|(perspective, family)| crate::cognition::court::task::HeardUnder {
+                        task: task.to_vec(),
+                        perspective,
+                        family,
+                    });
+                    let heard = match self.claim_ground(task, stated) {
+                        Ok(g) => crate::transducer::raster::on_ground(g, || self.adjudicate_one(voice, task, s, cited.as_ref(), budget)),
+                        Err(why) => Ok(self.refuse_sentence(voice, s, crate::court::verdict::Refusal::of_tape(why.reason(), s))),
+                    };
+                    self.heard_under = None;
+                    heard
+                }
             };
             // CV5 — EVERY VERDICT COUNTED WHERE IT IS REACHED, by its kind,
             // for the observer's adjudication reading.
@@ -224,7 +265,7 @@ impl Court {
         task: &[u8],
         stated: Option<&[u8]>,
     ) -> Result<crate::transducer::family::transduce::Ground<u8>, crate::cognition::StatedGroundRefusal> {
-        match self.task_family.get(task) {
+        match self.family_heard(task) {
             Some(family) => crate::cognition::stated_ground(family, stated),
             None => Ok(crate::transducer::family::transduce::Ground::None),
         }
@@ -339,9 +380,8 @@ impl Court {
     pub(crate) fn colour_proof(&self, s: &Element, task: Option<&[u8]>) -> ColourProof {
         let Some(fibre) = s.letters().map(|l| l.fibre()) else { return ColourProof::Unproven };
         let witnesses = |t: &[u8]| {
-            self.task_family
-                .get(t)
-                .and_then(|family| crate::transducer::family::fibre_relation(family))
+            self.family_heard(t)
+                .and_then(crate::transducer::family::fibre_relation)
                 .is_some_and(|seen| seen == fibre)
         };
         if let Some(t) = task.filter(|t| witnesses(t)) {
@@ -494,7 +534,7 @@ impl Court {
         // nothing else.
         let heard_on = match task.is_empty() || task == [0u8; 32] {
             true => None,
-            false => self.task_family.get(task).map(Vec::as_slice),
+            false => self.family_heard(task),
         };
         // MU-CLIENT §5.4 (E1) — a scene this court holds no family for is
         // measured on nothing here, and read by name.

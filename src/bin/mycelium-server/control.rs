@@ -216,7 +216,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, ground: stated, signed, .. }) =
+        let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, ground: stated, perspective, signed, .. }) =
             dialogue::decode_solve(&frame.body)
         else {
             return true;
@@ -239,13 +239,24 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
         // S4c): a task off it is refused by the alphabet's name alone, never
         // for its rank, and a claim on it is a factorisation
         // (the solve's claim kind `SOLVE_KIND_FACTORISATION`).
+        // THE CLAIM'S PERSPECTIVE (MU-SENSING §4, §6.2; track 26 S6): the
+        // court reads its own copy of the task's pairs, train and withheld,
+        // through the perspective the outputs were perceived under, and
+        // reconstructs there (`cognition::stated_perspective`); one it does
+        // not read the section under is refused by name. It never chooses a
+        // perspective, and the posted task is never rewritten.
         let (tid, withheld, open, ground) = {
             let Ok(reg) = context.registry.lock() else { return true };
             let g = reg.section(&cite).map(|section| match section {
-                Ok(t) => mycelium::cognition::stated_ground(&t.train, stated.as_deref()).map_err(|why| why.reason()),
+                Ok(t) => mycelium::cognition::stated_perspective(&t.train, &perspective)
+                    .map_err(|why| why.reason())
+                    .and_then(|train| mycelium::cognition::stated_ground(&train, stated.as_deref()).map_err(|why| why.reason())),
                 Err(_) => Err(mycelium::verdict::REFUSE_BEYOND_ALPHABET),
             });
-            (cite, reg.withheld(&cite), reg.open(&cite), g)
+            // A perspective refused above refuses the solve before the
+            // withheld pairs are read, so none stand here then.
+            let withheld = mycelium::cognition::stated_perspective(&reg.withheld(&cite), &perspective).unwrap_or_default();
+            (cite, withheld, reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
         // court reconstructs the rule on the withheld pairs and prices what it

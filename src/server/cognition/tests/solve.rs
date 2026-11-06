@@ -79,7 +79,7 @@ fn speech_states_its_ground_and_court_reconstructs_under_it() {
     );
     let act = |ground: Option<Vec<u8>>| {
         let tape = sentence.to_bytes().expect("the record writes");
-        let said = Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground };
+        let said = Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground, perspective: None };
         decode_speech(&encode_speech_spoken(&[1; 32], task, 0, &[said]).expect("the speech frames")).expect("the speech reads")
     };
     assert_eq!(act(Some(vec![0])).grounds, vec![Some(vec![0])], "the stated ground rides the act");

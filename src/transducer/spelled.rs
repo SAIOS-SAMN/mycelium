@@ -304,6 +304,14 @@ impl SectionSample {
         &self.perspective
     }
 
+    /// THE PERSPECTIVE THE WORD MACHINERY READS THE SECTION THROUGH (track
+    /// 26 S6): the default perspective of the section's rank, every axis
+    /// space in the sample's own pose. What a solve of outputs and a spoken
+    /// sentence on the section state (MU-SENSING §6.2).
+    pub fn section_perspective() -> Perspective {
+        Perspective::of_sample(ALPHABET_SAMPLE_RANK)
+    }
+
     /// THE EXTENTS ALONG THE PERSPECTIVE'S PLANE, in the plane's order: the
     /// extents every reader of a site of the section reads its coordinates
     /// against.

@@ -1999,9 +1999,22 @@ Each phase is one commit:
      reads its copy of the pair through it and reconstructs there, refusing
      another rank or a non-space role by name; the mind perceives under a
      perspective (`TaskPercept::under`). Claim
-     `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
-     the solve of outputs and speech stating a perspective (they read the
-     section in its default).
+     `claim_states_its_perspective_and_court_reconstructs_under_it`.
+   - **Built, stage 3** (branch `sensing-solve-perspective`, ruled
+     2026-11-06 on #32 (1), a wire change inside v0.4.0's break): the
+     solve of outputs states the perspective its outputs were perceived
+     under after them (signed `mycelium solve v5`), and each sentence of a
+     speech states its own (`carries` bit 3). The court reads its copy of
+     the task's pairs through it (`cognition::stated_perspective`), the
+     withheld pairs for a solve and the bound family for a sentence, held
+     for the whole adjudication and its re-hearing, and refuses another
+     rank or a non-space role by name (`REFUSE_PERSPECTIVE_RANK`,
+     `REFUSE_PERSPECTIVE_ROLE`). The mind states the section's perspective
+     (`SectionSample::section_perspective`). Claim
+     `solve_and_speech_state_their_perspective_and_court_reconstructs_under_it`.
+     Open: the seat's solve call (read by a house's own reader), and a
+     word's install after its hearing, which reads the family as posted
+     as it reads no stated ground.
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where

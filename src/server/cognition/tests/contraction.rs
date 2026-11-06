@@ -154,7 +154,7 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
             &vk,
             &task,
             0,
-            &[Spoken { tape: asserted.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
+            &[Spoken { tape: asserted.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v), perspective: None }],
         )
         .expect("the task frames");
         let reply = hear(&mut court1, &frame);
@@ -194,7 +194,7 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
         &vk,
         &task,
         0,
-        &[Spoken { tape: asserted.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
+        &[Spoken { tape: asserted.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v), perspective: None }],
     )
     .expect("the task frames");
     let reply = hear(&mut court2, &frame);

@@ -1465,6 +1465,9 @@ impl Carrier {
             agreement: agreement.map(<[u8]>::to_vec),
             // MU-SENSING §6.2 — the ground it was said under.
             ground: ground.map(<[u8]>::to_vec),
+            // Track 26 S6 — and the perspective it was spoken under, the
+            // section's.
+            perspective: Some(crate::transducer::family::SectionSample::section_perspective()),
         }];
         let tu = self.point.as_ref().map_or(0, |p| p.h);
         // MU-CLIENT §5.4 (E1) — under the scene it was spoken under, so the

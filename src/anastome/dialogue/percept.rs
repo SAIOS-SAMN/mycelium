@@ -89,11 +89,12 @@ pub fn decode_posted_task(b: &[u8]) -> Option<crate::transducer::family::Task> {
     decode_posted_samples(b).ok()?.section().ok()
 }
 
-/// 78.141 — the signed bytes' domain of a solve. Version 4 (track 26 S4c,
-/// inside v0.4.0's break): the claim kind follows the act's tag
+/// 78.141 — the signed bytes' domain of a solve. Version 5 (track 26 S6,
+/// inside v0.4.0's break): the perspective the outputs were perceived under
+/// follows them. Version 4 (S4c): the claim kind follows the act's tag
 /// (`SOLVE_KIND_OUTPUTS`). Version 3 (S5): the outputs are samples of any
 /// rank. Version 2 (S2) added the ground the claim was spoken under.
-const SIGNED_SOLVE: &[u8] = b"mycelium solve v4";
+const SIGNED_SOLVE: &[u8] = b"mycelium solve v5";
 
 /// The bytes a solve's voice signs: the domain, then the act up to its
 /// signature.
@@ -103,15 +104,21 @@ fn solve_signed_bytes(unsigned: &[u8]) -> Vec<u8> {
     b
 }
 
-/// solve submission (wire v1.2; track 26 S5, S4c): `[ACT_SOLVE][kind 0][voice
-/// 32][task citation 32][n u8][sample·n]`, the claim kind
-/// `SOLVE_KIND_OUTPUTS`, output `i` a sample of any rank
-/// at `[test, i, output]` (`samples::encode_samples`'s writing),
-/// optionally `[RULE][len u32][element]` so the home speaks the rule, then
-/// optionally — track 26 S2 — `[GRND][len u32][symbol]`, the ground the
-/// claim was spoken under, then — 78.141 — `[SIGN][sig 64]`: the voice,
-/// which the court pays, signs the act, and the voice is its key's
-/// verifying half.
+/// solve submission (wire v1.2; track 26 S5, S4c, S6): `[ACT_SOLVE][kind
+/// 0][voice 32][task citation 32][n u8][sample·n][perspective]`, the claim
+/// kind `SOLVE_KIND_OUTPUTS`, output `i` a sample of any rank at `[test, i,
+/// output]` (`samples::encode_samples`'s writing), then — track 26 S6 — the
+/// perspective the outputs were perceived under, written as the claim of
+/// factorisation writes it (`[rank u16][(source u16)(sense u8) ·
+/// rank][role u8 · rank]`), then optionally `[RULE][len u32][element]` so
+/// the home speaks the rule, then optionally — track 26 S2 —
+/// `[GRND][len u32][symbol]`, the ground the claim was spoken under, then —
+/// 78.141 — `[SIGN][sig 64]`: the voice, which the court pays, signs the
+/// act, and the voice is its key's verifying half.
+///
+/// This writer and [`encode_solve_with_rule`] state the default perspective
+/// of the outputs' rank (every axis space, the identity pose; rank 0 where
+/// there is no output).
 pub fn encode_solve(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
@@ -120,31 +127,38 @@ pub fn encode_solve(
     encode_solve_with_rule(key, citation, outputs, None)
 }
 
-/// [`encode_solve_spoken`] stating no ground.
+/// [`encode_solve_spoken`] stating no ground, under the default perspective
+/// of the outputs' rank.
 pub fn encode_solve_with_rule(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
     outputs: &[crate::transducer::sample::Sample],
     rule: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
-    encode_solve_spoken(key, citation, outputs, rule, None)
+    let default = crate::transducer::perspective::Perspective::of_sample(outputs.first().map_or(0, |s| s.rank()));
+    encode_solve_spoken(key, citation, outputs, rule, None, &default)
 }
 
-/// A SOLVE THAT STATES THE GROUND ITS CLAIM WAS SPOKEN UNDER (MU-SENSING
-/// §6): `ground` is one symbol at the source's width, or `None`. `None`
-/// where an output or a count passes its field.
+/// A SOLVE THAT STATES THE GROUND ITS CLAIM WAS SPOKEN UNDER AND THE
+/// PERSPECTIVE ITS OUTPUTS WERE PERCEIVED UNDER (MU-SENSING §4, §6.2):
+/// `ground` is one symbol at the source's width, or `None`; `perspective`
+/// is part of the claim, never of the task, and the court reconstructs
+/// under it. `None` where an output, a count or the perspective passes its
+/// field.
 pub fn encode_solve_spoken(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
     outputs: &[crate::transducer::sample::Sample],
     rule: Option<&[u8]>,
     ground: Option<&[u8]>,
+    perspective: &crate::transducer::perspective::Perspective,
 ) -> Option<Vec<u8>> {
     use ed25519_dalek::Signer;
     let mut out = vec![ACT_SOLVE, SOLVE_KIND_OUTPUTS];
     out.extend_from_slice(&key.verifying_key().to_bytes());
     out.extend_from_slice(citation);
     super::samples::push_tests(&mut out, outputs, Member::Output).ok()?;
+    super::factorisation::put_perspective(&mut out, perspective)?;
     if let Some(r) = rule {
         out.extend_from_slice(b"RULE");
         crate::transducer::address::put_bytes(&mut out, r)?;
@@ -169,6 +183,7 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
     let id: [u8; 32] = body.get(34..66)?.try_into().ok()?;
     let mut p = 66usize;
     let outputs = super::samples::read_tests(body, &mut p, Member::Output).ok()?;
+    let perspective = super::factorisation::take_perspective(body, &mut p)?;
     let rule = if body.get(p..p + 4) == Some(&b"RULE"[..]) {
         p += 4;
         let len = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
@@ -198,7 +213,7 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
         }
         _ => return None,
     };
-    Some(SolveAct { voice, task: id, outputs, rule, ground, signed })
+    Some(SolveAct { voice, task: id, outputs, perspective, rule, ground, signed })
 }
 
 

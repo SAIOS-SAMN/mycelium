@@ -241,7 +241,13 @@ impl Court {
         at: bool,
         budget: &mut crate::physics::Budget,
     ) -> (crate::verdict::ReconstructionOutcome, bool) {
-        let key = reconstruction_key(spoken, task);
+        let mut key = reconstruction_key(spoken, task);
+        // A sentence heard under a stated perspective (track 26 S6) keeps its
+        // cursor apart: its family is the posted one read through it.
+        if let Some(p) = task.and_then(|t| self.perspective_heard(t)) {
+            crate::transducer::address::put_key_bytes(&mut key, b"perspective");
+            let _ = crate::anastome::dialogue::factorisation::put_perspective(&mut key, p);
+        }
         let mut cursor = match self.reconstruction_cursors.remove(&key) {
             Some(c) => c,
             None => crate::verdict::ReconstructionCursor::default(),
@@ -249,7 +255,7 @@ impl Court {
         let before = cursor.progress();
         let out = {
             let court: &Court = self;
-            let family = task.and_then(|t| court.task_family.get(t)).map(Vec::as_slice);
+            let family = task.and_then(|t| court.family_heard(t));
             crate::verdict::reconstruct_resume(spoken, &|a| court.resolve_form_ref(a), family, court, budget, &mut cursor, at)
         };
         let moved = cursor.progress() != before;

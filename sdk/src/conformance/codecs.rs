@@ -98,13 +98,20 @@ fn solve() -> Result<String, String> {
     same("the solve's outputs", Some(act.outputs), outputs.clone())?;
     same("the solve's rule", Some(act.rule), Some(tape.clone()))?;
     same("the solve's stated ground, none stated", Some(act.ground), None)?;
+    use mycelium::transducer::family::transduce::{Sense, SignedPermutation};
+    use mycelium::transducer::perspective::{Perspective, SensorMotion};
+    same("the solve's stated perspective, the default", Some(act.perspective), Perspective::of_sample(3))?;
     same("the solve's signature", Some(act.signed), true)?;
-    // TRACK 26 S2 — a claim stating the ground it was spoken under.
+    // TRACK 26 S2 — a claim stating the ground it was spoken under; S6 —
+    // and the perspective its outputs were perceived under, here turned.
     let ground = vec![7u8];
-    let spoken = d::encode_solve_spoken(&key(), &CITATION, &outputs, Some(&tape), Some(&ground)).ok_or("the spoken solve does not encode")?;
+    let pose = SignedPermutation::new(vec![(1, Sense::Kept), (0, Sense::Reversed), (2, Sense::Kept)]).map_err(|e| format!("{e:?}"))?;
+    let turned = Perspective::of_sample(3).shifted(&SensorMotion::Pose(pose)).map_err(|e| format!("{e:?}"))?;
+    let spoken = d::encode_solve_spoken(&key(), &CITATION, &outputs, Some(&tape), Some(&ground), &turned).ok_or("the spoken solve does not encode")?;
     let act = d::decode_solve(&spoken).ok_or("the spoken solve did not decode")?;
     same("the spoken solve's rule", Some(act.rule), Some(tape))?;
     same("the spoken solve's stated ground", Some(act.ground), Some(ground))?;
+    same("the spoken solve's stated perspective", Some(act.perspective), turned)?;
     same("the spoken solve's signature", Some(act.signed), true)?;
     let paid = d::encode_solve_verdict(d::SOLVE_BOUNTY, &share()?, None, None).ok_or("the verdict does not encode")?;
     same("the paid verdict", d::decode_solve_verdict(&paid), (d::SOLVE_BOUNTY, share()?, None, None))?;
@@ -114,7 +121,7 @@ fn solve() -> Result<String, String> {
     let refusal = d::SolveRefusal { reason: b"form leaves a remainder on the family".to_vec(), kind: 1 };
     let refused = d::encode_solve_verdict(d::SOLVE_NOTHING, &mycelium::economy::Mu::zero(), Some(&refusal), None).ok_or("the refusal does not encode")?;
     same("the refused verdict", d::decode_solve_verdict(&refused), (d::SOLVE_NOTHING, mycelium::economy::Mu::zero(), Some(refusal), None))?;
-    Ok("the signed solve of a rank-3 output, with and without its stated ground, and the three verdicts decode to the values sent, the paid μ exact".to_string())
+    Ok("the signed solve of a rank-3 output, with and without its stated ground, under the default and a turned perspective, and the three verdicts decode to the values sent, the paid μ exact".to_string())
 }
 
 /// TRACK 26 S4c — a claim of factorisation at rank 3 and width 2: the

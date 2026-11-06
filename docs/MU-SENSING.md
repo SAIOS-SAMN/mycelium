@@ -1088,9 +1088,29 @@ an axis as other than space `REFUSE_FACTOR_PERSPECTIVE_ROLE`, since the
 transduction factors every axis as a phase the bodies extend along. The
 mind perceives under a perspective (`TaskPercept::under`) and states the
 percept's own. The perspective is part of the claim, never of the task.
-Claim `claim_states_its_perspective_and_court_reconstructs_under_it`. The
-solve of outputs and speech read the alphabet's section in its default
-perspective and do not yet state one.
+Claim `claim_states_its_perspective_and_court_reconstructs_under_it`.
+
+**A solve of outputs and speech state their perspective** (track 26 S6,
+stage 3; ruled 2026-11-06 on #32 (1)). The solve of outputs carries the
+perspective its outputs were perceived under right after them, written as
+the claim of factorisation writes it, and is signed as `mycelium solve v5`.
+Each sentence of a speech carries the perspective it was spoken under
+(`carries` bit 3, after the ground; `Spoken.perspective`,
+`SpeechAct.perspectives`). The court reads its own copy of the task's
+pairs through the stated perspective (`cognition::stated_perspective`):
+the train pairs and the withheld pairs for a solve, and the bound family
+for a sentence, held for the whole adjudication and for a waiting
+sentence's re-hearing (`Court::family_heard`). One of another rank than
+the section is refused `REFUSE_PERSPECTIVE_RANK`, and one reading an axis
+as other than space `REFUSE_PERSPECTIVE_ROLE`, since the section's plane
+spans every axis it reads. A sentence stating none is heard on the family
+as posted. The court never chooses a perspective, and the posted task is
+never rewritten. The mind states the section's perspective, through which
+the word machinery read the scene (`SectionSample::section_perspective`).
+Claim `solve_and_speech_state_their_perspective_and_court_reconstructs_under_it`.
+Still open: the seat's solve call, which a house reads, and a word's
+install after its hearing, which reads the family as posted as it reads no
+stated ground.
 
 ## 7. Who owns a source's code
 
@@ -1181,6 +1201,7 @@ track 26 S4c).
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
+| The solve of outputs and speech state their perspective: the solve after its outputs, each sentence by `carries` bit 3; the court reads its copy of the task's pairs through it and reconstructs there, refusing another rank or a non-space role by name (§6.2) | **Built** (track 26 S6, stage 3); the seat's solve call and a word's install after its hearing are open | `dialogue::SolveAct.perspective`, `Spoken.perspective`; `cognition::stated_perspective`; `Court::hear_speech_under`, `family_heard` |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
 | **Closed (S6):** the frame fixing ordered and reversed two fixed axes by moments over the painted sites and rewrote the samples (`frame_fixed`) where §4 makes the frame a perspective | **Built** (track 26 S6): the moments name a pose (`raster::frame_fixing`, a `Perspective`), and `frame_fixed` reads the task through it; the samples are never rewritten. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One`. The moments stay on the section's plane, of the rank the letters spell | `src/transducer/raster.rs` |
 | **Closed (S4):** the measured frame was four planar counts (`Frame { h_in, w_in, h_out, w_out }`, renamed `Reperiod` by the names pass) | **Built** (track 26 S4): `element::Reperiod` holds each phase's input and output period at the pair's own rank (`of_extents`, refused for two ranks), and the word's frame fibre is the re-period every phase shares (`shared`), a dilator where it is not 1; an anisotropic re-period shares none, as before. No word, chart or listing address changes. Claim `reperiod_is_read_per_phase_at_any_rank` | `src/transducer/element/residue.rs` |

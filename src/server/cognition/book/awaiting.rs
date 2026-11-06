@@ -69,11 +69,13 @@ impl Court {
     ) {
         let address = s.address();
         // The ground the sentence is being heard under (`hear_speech` opened
-        // it), kept for its re-hearing.
-        let entry = (voice, crate::transducer::address::Address::from(task), s.clone(), crate::transducer::raster::ground());
+        // it) and its stated perspective (track 26 S6), kept for its
+        // re-hearing.
+        let under = self.heard_under.clone().filter(|h| h.task == task);
+        let entry = (voice, crate::transducer::address::Address::from(task), s.clone(), crate::transducer::raster::ground(), under);
         match self.awaiting.get_mut(form.as_bytes()) {
             Some(bucket) => {
-                if bucket.iter().any(|(_, _, held, _)| held.address() == address) {
+                if bucket.iter().any(|(_, _, held, _, _)| held.address() == address) {
                     return;
                 }
                 bucket.push(entry);
@@ -96,7 +98,7 @@ impl Court {
         let Some(waiting) = self.awaiting.remove(form) else {
             return;
         };
-        for (voice, _task, s, _ground) in waiting {
+        for (voice, _task, s, _ground, _under) in waiting {
             let refusal = crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_GLUED_UNRULED, &s);
             let _ = self.refuse_sentence(voice, &s, refusal);
         }
@@ -120,7 +122,7 @@ impl Court {
         // resumed where it stopped. Dropped, the citer was lost for good:
         // the form it waited on is ruled and nothing would wake it.
         let mut unread = Vec::new();
-        for (voice, task, s, ground) in waiting {
+        for (voice, task, s, ground, under) in waiting {
             // Through `adjudicate_one`, not `hear_sentence`. A re-hearing
             // is an adjudication like any other: a refusal on it must be
             // RECORDED in `refusals` with its receipt, or the voice's next
@@ -128,10 +130,13 @@ impl Court {
             // and the refusal exists only in a log line. Dropping the
             // outcome here made the second hearing the one hearing whose
             // verdict nobody kept. Heard under the ground its claim was
-            // first heard under (MU-SENSING §6.2): none is deduced here.
+            // first heard under (MU-SENSING §6.2): none is deduced here; and
+            // under the perspective it stated (track 26 S6), none chosen.
+            let held = std::mem::replace(&mut self.heard_under, under.clone());
             let heard = crate::transducer::raster::on_ground(ground.clone(), || self.adjudicate_one(voice, task.as_bytes(), &s, None, budget));
+            self.heard_under = held;
             if let Err([0, 0, 0, 0]) = heard {
-                unread.push((voice, task, s, ground));
+                unread.push((voice, task, s, ground, under));
             }
         }
         if !unread.is_empty() {

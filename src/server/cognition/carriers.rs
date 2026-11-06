@@ -76,6 +76,7 @@ impl Court {
             court_stalled: _,
             reconstruction_cursors: _,
             rehear_due: _,
+            heard_under: _,
             phase_unread: _,
             confirm_cursor: _,
             class_cursor: _,

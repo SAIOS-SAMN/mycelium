@@ -219,7 +219,10 @@ fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection) -> Resu
 fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection, ground: Option<&[u8]>, outputs: &[crate::rule::SectionSample], tape: Option<&[u8]>) -> Result<String, String> {
     // Track 26 S5: the spoken outputs go out as samples, each at its place.
     let outputs = d::spoken_outputs(outputs).map_err(|e| format!("an output is no sample: {e:?}"))?;
-    let act = d::encode_solve_spoken(key, &envelope.id, &outputs, tape, ground).ok_or("the outputs pass the solve act's fields")?;
+    // Track 26 S6: the claim states the section's perspective, the one its
+    // outputs were read through.
+    let perspective = crate::rule::SectionSample::section_perspective();
+    let act = d::encode_solve_spoken(key, &envelope.id, &outputs, tape, ground, &perspective).ok_or("the outputs pass the solve act's fields")?;
     let mut asked = 0u32;
     loop {
         asked += 1;

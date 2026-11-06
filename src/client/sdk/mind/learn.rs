@@ -140,7 +140,12 @@ impl Mind {
         // sent short: it is not sent (47.1). The spoken outputs go out as
         // samples, each at its place (track 26 S5).
         let spoken = dialogue::spoken_outputs(outputs).ok();
-        let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(key, id, &s, Some(&bytes), stated.as_deref())) else {
+        // TRACK 26 S6 — THE CLAIM STATES THE PERSPECTIVE ITS OUTPUTS WERE
+        // PERCEIVED UNDER (MU-SENSING §4, §6.2): the section's own, through
+        // which the word machinery read the scene; the court reads its copy
+        // of the task through it.
+        let perspective = outputs.first().map_or_else(SectionSample::section_perspective, |o| o.perspective().clone());
+        let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(key, id, &s, Some(&bytes), stated.as_deref(), &perspective)) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "solve does not fit the lengths its frame writes",
