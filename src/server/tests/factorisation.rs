@@ -12,6 +12,7 @@ use crate::server::registry::TaskRegistry;
 use crate::server::tests::fixtures::rank_three_task;
 use crate::transducer::base::Site;
 use crate::transducer::family::transduce::{factorisations, factorisations_need, Enclosure, Factorisation, Motion};
+use crate::transducer::perspective::{Perspective, Role, SensorMotion};
 use crate::transducer::sentence::Link;
 
 fn key() -> ed25519_dalek::SigningKey {
@@ -27,7 +28,13 @@ fn held(task: &PostedTask, pair: usize) -> Vec<Factorisation> {
 
 /// A claim as it arrives off the wire: written, signed and read back.
 fn heard(cite: &[u8; 32], pair: usize, motion: &Motion, residue: &[Link], ground: Option<&[u8]>) -> FactorisationAct {
-    decode_factorisation(&encode_factorisation(&key(), cite, pair, motion, residue, ground).expect("the claim writes")).expect("the claim reads")
+    heard_under(cite, pair, motion, residue, &Perspective::of_sample(3), ground)
+}
+
+/// A claim stating the perspective it was perceived under.
+fn heard_under(cite: &[u8; 32], pair: usize, motion: &Motion, residue: &[Link], perspective: &Perspective, ground: Option<&[u8]>) -> FactorisationAct {
+    let bytes = encode_factorisation(&key(), cite, pair, motion, residue, perspective, ground).expect("the claim writes");
+    decode_factorisation(&bytes).expect("the claim reads")
 }
 
 fn refused(reason: &str) -> FactorVerdict {
@@ -112,4 +119,44 @@ fn factorisation_claim_states_its_ground() {
     assert_eq!(judge_factorisation(book.task(&cite), &on(None)), FactorVerdict::Admitted, "none stated, none read");
     assert_eq!(judge_factorisation(book.task(&cite), &on(Some(&[2]))), refused(REFUSE_GROUND_NO_CANDIDATE), "absent from every input");
     assert_eq!(judge_factorisation(book.task(&cite), &on(Some(&[0, 0]))), refused(REFUSE_GROUND_NOT_ONE_SYMBOL), "two bytes at width 1");
+}
+
+/// A CLAIM STATES ITS PERSPECTIVE AND THE COURT RECONSTRUCTS UNDER IT
+/// (MU-SENSING §4, §6.1; track 26 S6): the mind perceives the posted task
+/// under a turned perspective, and every factorisation it holds, stated with
+/// that perspective, is admitted by the court reading its own copy of the
+/// pair through it; the same motion and residue stated under the default
+/// perspective is not what the court derives there. The task is one task
+/// under both: its citation reads no perspective. A perspective of another
+/// rank, or one reading an axis as other than space, is refused by name.
+#[test]
+fn claim_states_its_perspective_and_court_reconstructs_under_it() {
+    use crate::court::verdict::{REFUSE_FACTOR_PERSPECTIVE_RANK, REFUSE_FACTOR_PERSPECTIVE_ROLE};
+    use crate::transducer::family::transduce::{Sense, SignedPermutation, TaskPercept};
+    let task = rank_three_task();
+    let mut book = TaskRegistry::new();
+    let cite = book.post(task.clone());
+    let pose = SignedPermutation::new(vec![(2, Sense::Reversed), (0, Sense::Kept), (1, Sense::Reversed)]).expect("a signed permutation");
+    let turned = Perspective::of_sample(3).shifted(&SensorMotion::Pose(pose)).expect("a pose of the rank");
+    let need = factorisations_need(3, task.train.len()).expect("a need");
+    let mut budget = crate::physics::Physics::default().stroke_n(need);
+    let percept = TaskPercept::under(&turned, &task.train, &[], &mut budget).expect("perceived under the perspective");
+    assert_eq!(percept.perspective, turned, "the percept holds the perspective it was read under");
+    let mut differs = 0usize;
+    for (pair, p) in percept.train.iter().enumerate() {
+        for f in p.factored.held() {
+            let under = heard_under(&cite, pair, &f.motion, &f.residue, &turned, None);
+            assert_eq!(under.perspective, turned, "the perspective rides the claim");
+            assert_eq!(judge_factorisation(book.task(&cite), &under), FactorVerdict::Admitted, "pair {pair}: {:?}", f.motion);
+            if judge_factorisation(book.task(&cite), &heard(&cite, pair, &f.motion, &f.residue, None)) != FactorVerdict::Admitted {
+                differs += 1;
+            }
+        }
+    }
+    assert!(differs > 0, "a claim read under another perspective is another claim");
+    let f = percept.train[0].factored.held()[0].clone();
+    let flat = Perspective::of_sample(2);
+    assert_eq!(judge_factorisation(book.task(&cite), &heard_under(&cite, 0, &f.motion, &f.residue, &flat, None)), refused(REFUSE_FACTOR_PERSPECTIVE_RANK));
+    let sequenced = turned.shifted(&SensorMotion::Recast { axis: 0, role: Role::Sequence }).expect("an axis read");
+    assert_eq!(judge_factorisation(book.task(&cite), &heard_under(&cite, 0, &f.motion, &f.residue, &sequenced, None)), refused(REFUSE_FACTOR_PERSPECTIVE_ROLE));
 }

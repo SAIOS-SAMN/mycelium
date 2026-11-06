@@ -76,3 +76,96 @@ fn strokes_per_reserve_equals_vertices_of_alphabet_base_cell() {
     assert_eq!(crate::physics::STROKES_PER_RESERVE, vertices);
     assert_eq!(n, crate::transducer::alphabet::LETTER_RANK - 1, "the base is the letters' chart less the orientation character");
 }
+
+// ── TRACK 26 S6: A SHIFT OF PERSPECTIVE IS A SENSOR MOTION; PERSPECTIVES
+// OF ONE SAMPLE ARE A COVER (MU-SENSING §4; MU-CLIENT 24.4) ─────────────────
+
+use crate::transducer::family::transduce::{Sense, SignedPermutation};
+use crate::transducer::perspective::cover::{Agreement, Cocycle, Contact, Cover};
+use crate::transducer::perspective::SensorMotion;
+use crate::transducer::sample::{Place, Sample};
+
+/// A rank-3 sample of extents 2 × 3 × 2 with three symbols, placed.
+fn block() -> Sample {
+    let symbols = vec![1, 1, 2, 2, 3, 3, 1, 2, 2, 2, 3, 1];
+    Sample::new(vec![2, 3, 2], 1, symbols, Place::new(vec![0, 1, 0])).expect("a sample")
+}
+
+/// A shift of perspective moves the sensor and never the data: the frame read
+/// under the shifted perspective is the frame read before, moved by the
+/// sensor's motion; the posted sample's content (its address) is what it
+/// was; shifts compose as the motions do; and the turn from one perspective
+/// to the other is the motion.
+#[test]
+fn perspective_shift_is_a_sensor_motion() {
+    let s = block();
+    let mut before = Vec::new();
+    s.put_content(&mut before);
+    let p = Perspective::of_sample(3);
+    for g in SignedPermutation::all(3) {
+        let q = p.shifted(&SensorMotion::Pose(g.clone())).expect("a pose of the rank");
+        let moved = g.moved(&p.frame(&s).expect("read")).expect("a pose lands on its own periods");
+        assert_eq!(q.frame(&s).expect("read"), moved, "the reading is the sensor's motion of the reading");
+        assert_eq!(p.turn_to(&q), Ok(g.clone()), "the turn between the perspectives is the motion");
+        assert_eq!(q.read(&s).expect("read").place(), s.place(), "the reading keeps the sample's place");
+        for h in SignedPermutation::all(3).step_by(7) {
+            let twice = q.shifted(&SensorMotion::Pose(h.clone())).expect("a pose");
+            let once = p.shifted(&SensorMotion::Pose(g.then(&h).expect("one rank"))).expect("a pose");
+            assert_eq!(twice, once, "shifts compose as the motions do");
+        }
+    }
+    let mut after = Vec::new();
+    s.put_content(&mut after);
+    assert_eq!(before, after, "the sample is never rewritten");
+    let off = SignedPermutation::identity(2);
+    assert!(p.shifted(&SensorMotion::Pose(off)).is_err(), "a motion of another rank is refused by name");
+    let recast = p.shifted(&SensorMotion::Recast { axis: 1, role: Role::Sequence }).expect("an axis read");
+    assert_eq!(recast.roles(), &[Role::Space, Role::Sequence, Role::Space]);
+    assert_eq!(recast.pose(), p.pose(), "a recast keeps the pose");
+    assert!(p.shifted(&SensorMotion::Recast { axis: 3, role: Role::Value }).is_err(), "an axis the perspective does not read");
+}
+
+/// Two perspectives of one sample are compared as a cover: perspectives
+/// that differ by a pose read the same bodies (congruent), the turn between
+/// them the transition; a perspective that reads an axis as a sequence
+/// holds no contact along it, and the residue is exactly those contacts,
+/// held and named; the transitions close around every triple.
+#[test]
+fn two_perspectives_of_one_sample_compared_as_a_cover() {
+    let s = block();
+    let p = Perspective::of_sample(3);
+    let turn = SignedPermutation::new(vec![(2, Sense::Reversed), (0, Sense::Kept), (1, Sense::Reversed)]).expect("a signed permutation");
+    let turned = p.shifted(&SensorMotion::Pose(turn.clone())).expect("a pose");
+    // Read axis 1 of the turned perspective is the sample's axis 0.
+    let sequenced = turned.shifted(&SensorMotion::Recast { axis: 1, role: Role::Sequence }).expect("an axis read");
+    let cover = Cover::of(&s, vec![p.clone(), turned, sequenced]).expect("one rank");
+    let a = cover.overlap(0, 1).expect("an overlap");
+    assert_eq!(a.turn, turn);
+    assert_eq!(a.agreement, Agreement::Congruent, "a pose reads the same bodies");
+    let b = cover.overlap(0, 2).expect("an overlap");
+    let along_zero: Vec<Contact> = cover.contacts(0).expect("read").into_iter().filter(|c| c.axis == 0).collect();
+    assert!(!along_zero.is_empty(), "the fixture holds contacts along axis 0");
+    assert_eq!(b.agreement, Agreement::Residue { first_only: along_zero, second_only: Vec::new() }, "the residue is the contacts along the axis read as a sequence");
+    assert_eq!(cover.cocycle(0, 1, 2), Some(Cocycle::Closes), "the transitions close around the triple");
+    assert_eq!(cover.cocycle(2, 0, 1), Some(Cocycle::Closes));
+    let other = Sample::new(vec![2, 2], 1, vec![1, 1, 1, 1], Place::new(Vec::new())).expect("a sample");
+    assert!(Cover::of(&other, vec![p]).is_err(), "a perspective of another rank is refused by name");
+}
+
+/// The frame fixing is a perspective: the task it returns is the posted
+/// task read through the pose the moments name, and the posted task is not
+/// rewritten.
+#[test]
+fn frame_fixing_is_a_perspective_reading() {
+    crate::transducer::raster::stand_on(0);
+    let train = vec![(vec![vec![4, 4, 0], vec![4, 0, 0], vec![0, 0, 0]], vec![vec![5, 5, 0], vec![5, 0, 0], vec![0, 0, 0]])];
+    let task = crate::transducer::family::task_of_lines(train, Vec::new());
+    let posted = task.clone();
+    let perspective = crate::transducer::raster::frame_fixing(&task);
+    let fixed = crate::transducer::raster::frame_fixed(task);
+    for ((a, b), (fa, fb)) in posted.train.iter().zip(&fixed.train) {
+        assert_eq!(perspective.read(a.sample()).as_ref(), Ok(fa.sample()), "the input read through the perspective");
+        assert_eq!(perspective.read(b.sample()).as_ref(), Ok(fb.sample()), "the output read through the perspective");
+    }
+    assert_ne!(perspective.pose(), &SignedPermutation::identity(2), "the moments name a pose for this scene");
+}

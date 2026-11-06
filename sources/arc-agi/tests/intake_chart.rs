@@ -44,7 +44,7 @@ fn chart_of_0b148d64_pairs_read_on_metabolic_budget() {
             let chain = residue_of(None, b).expect("the family reads a ground");
             let [h, w] = a.extents();
             let [h2, w2] = b.extents();
-            let frame = mycelium::transducer::element::Reperiod::new(h, w, h2, w2);
+            let frame = mycelium::transducer::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()).expect("one rank");
             let word = mycelium::transducer::element::from_residue_framed(&chain, &frame).expect("a canonical chain");
             let chart = invariant_of(&word);
             eprintln!("  0b148d64 pair {pair}: {h}x{w} -> {h2}x{w2}, need {need} spent {spent}, demand {} links, chart {chart:?}", chain.len());
