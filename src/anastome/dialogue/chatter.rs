@@ -28,7 +28,7 @@
 //!   HOLONOMY, what the round trip said → heard carried it to. The holonomy
 //!   is the content: what one mind's language does to the other's thought;
 //!   still only where the hearer echoed.
-//! - HOLD, the same fields as ACK: the hearer's own reading of every loop,
+//! - HOLD, the same fields as ACK: the hearer's own reading of every relation,
 //!   re-derived from what it heard and what it derived, then the exact
 //!   strain per lane.
 //!
@@ -53,7 +53,7 @@ const SIGNED: &[u8] = b"mycelium chatter v6";
 
 /// ONE RING SAID (MU-CLIENT §4.9, 78.31): an expression that returns — its
 /// coordinate in the speaker's form, its holonomy `Ω` (the ring's whole
-/// motion, what a loop said → heard is read against), its hue map, and its
+/// motion, what a relation said → heard is read against), its hue map, and its
 /// TERMS, each word with the transport to the next, from which the hearer
 /// composes the ring again in its own field (`compose`). A single word is a
 /// ring of one term, its transport the identity. Its VANTAGE (MU-CLIENT
@@ -96,8 +96,8 @@ pub struct HeardWord {
 }
 
 /// 78.163 — ONE WORD'S LOOP, ACKNOWLEDGED: the holonomy of said → heard on
-/// the motion (`None`: no loop closed — nothing derived, or no versor said)
-/// and on the hue map (`None`: the said map is no permutation, so the loop
+/// the motion (`None`: no relation closed — nothing derived, or no versor said)
+/// and on the hue map (`None`: the said map is no permutation, so the relation
 /// cannot close on G).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AckWord {
@@ -126,9 +126,9 @@ pub enum Said {
     Say { said: Vec<u8>, words: Vec<Spoken>, evidence: Option<Evidence> },
     /// What the hearer re-derived of something said, word by word.
     Heard { said: Vec<u8>, words: Vec<HeardWord> },
-    /// 78.163 — the speaker's reading of every loop the hearer's thought closed.
+    /// 78.163 — the speaker's reading of every relation the hearer's thought closed.
     Ack { said: Vec<u8>, words: Vec<AckWord> },
-    /// 78.163 — the hearer's own reading of the same loops, and (78.112 H5)
+    /// 78.163 — the hearer's own reading of the same relations, and (78.112 H5)
     /// the exact strain they carried, per lane: how far the hearer's language
     /// moved the thought, priced in its own field.
     Hold { said: Vec<u8>, words: Vec<AckWord>, deviation: [num_rational::BigRational; 4] },

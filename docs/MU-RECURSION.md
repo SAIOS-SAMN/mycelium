@@ -15218,7 +15218,7 @@ Code: `src/server/cognition/convert.rs` (`reserve_of`, `slash`), `src/client/sdk
 
 Domains share no space (78.126 as amended), so nothing crosses between them without a physical connection; a WORMHOLE is that connection. Its mouth pair (`ACT_HANDOFF` kind 7) is offered by one domain's reserve tier and accepted (kind 1) by the other's within `W`: a black-hole mouth in one domain and a white-hole mouth in the other, each placed in its domain's chart by an exact Cl(4,1) versor (`Degenerate` otherwise), a KEEPER (one of the two reserves) and a flat TOLL of μ per traversal; either reserve closes it (kind 8), returning traversals in flight and refunding the traversals' tolls. A *traversal* (kind 9) is a 78.126 offer citing an open mouth joining its two domains (`NoMouth`, `NotTheMouth` otherwise); its toll is escrowed from the sender at the offer, released to the keeper on acceptance and refunded on refusal, expiry or close, a μ transfer with Σ = 0. The open mouths are gauge edges between domains carrying the chart transition `to_frame · from_frame⁻¹`: a cycle whose holonomy is not the identity is RECORDED with its exact holonomy (kind 10), never refused, read and never stored (law 12). Amended by 78.133 (tariffs), 78.134 (every new mouth is a tube) and 78.136 (a progenitor line may build).
 
-Code: `src/anastome/dialogue/handoff.rs`, `src/server/cognition/domain_passage.rs` (`mouth_loops`).
+Code: `src/anastome/dialogue/handoff.rs`, `src/server/cognition/domain_passage.rs` (`mouth_orbits`).
 
 ### 78.129 Bonds and the slash: each tier backed by its domain's reserve
 

@@ -25,7 +25,7 @@ fn route(steps: &[&Mv]) -> Mv {
 }
 
 /// `H(r, s) = T(s)⁻¹ T(r)`.
-fn loop_of(r: &Mv, s: &Mv) -> Mv {
+fn relation_of(r: &Mv, s: &Mv) -> Mv {
     inv(s).geo(r)
 }
 
@@ -116,25 +116,25 @@ fn boundary_is_flat_iff_identity_ray() {
 #[test]
 fn route_conjugates_under_basing_by_tree_transport() {
     let [g1, g2, g3, ..] = steps();
-    let loop_t = route(&[&g1, &g2]);
-    let based = |theta: &Mv| theta.geo(&loop_t).geo(&inv(theta));
-    assert_eq!(based(&one()), loop_t, "at the root θ = 1");
-    assert_ne!(based(&g3), loop_t, "elsewhere the operator moves");
-    assert_eq!(based(&g3).class_invariants(), loop_t.class_invariants(), "and its class does not");
+    let orbit_t = route(&[&g1, &g2]);
+    let based = |theta: &Mv| theta.geo(&orbit_t).geo(&inv(theta));
+    assert_eq!(based(&one()), orbit_t, "at the root θ = 1");
+    assert_ne!(based(&g3), orbit_t, "elsewhere the operator moves");
+    assert_eq!(based(&g3).class_invariants(), orbit_t.class_invariants(), "and its class does not");
 }
 
-/// T1 — TWO ROUTES AGREE IFF THE LOOP THE TWO FORM IS THE IDENTITY RAY: a route and the
+/// T1 — TWO ROUTES AGREE IFF THE RELATION THE TWO FORM IS THE IDENTITY RAY: a route and the
 /// same motion factored through an extra step agree; a different motion
 /// does not.
 #[test]
-fn loop_of_is_trivial_iff_routes_agree() {
+fn relation_of_is_trivial_iff_routes_agree() {
     let [g1, g2, g3, g4, _] = steps();
     let r = route(&[&g1, &g2]);
     let s = route(&[&g1, &g4, &inv(&g4), &g2]);
-    assert_eq!(loop_of(&r, &s), one(), "the loop is trivial");
+    assert_eq!(relation_of(&r, &s), one(), "the relation is trivial");
     assert_eq!(r, s, "so the routes agree");
     let t = route(&[&g1, &g3]);
-    assert_ne!(loop_of(&r, &t), one(), "a loop that turns");
+    assert_ne!(relation_of(&r, &t), one(), "a relation that turns");
     assert_ne!(r, t, "so the routes disagree");
 }
 
@@ -160,16 +160,16 @@ fn square(ab: &Mv, bc: &Mv, ad: &Mv, dc: &Mv, ac: &Mv) -> Square {
     }
 }
 
-/// T2 — DISCRETE NON-ABELIAN STOKES, WITH THE LASSO ORDER: the routes' loop
+/// T2 — DISCRETE NON-ABELIAN STOKES, WITH THE LASSO ORDER: the routes' relation
 /// is the product of the two cells' curvatures, `σ₂`'s carried from its own
 /// corner to the basepoint by its lasso, in the boundary's order — and not
 /// in the other order, since the curvatures do not commute.
 #[test]
-fn loop_of_is_lassoed_product_of_curvatures() {
+fn relation_of_is_lassoed_product_of_curvatures() {
     let [g1, g2, g3, g4, g5] = steps();
     let sq = square(&g1, &g2, &g3, &g4, &g5);
     let f2 = inv(&sq.lasso).geo(&sq.f2_at_c).geo(&sq.lasso);
-    let h = loop_of(&sq.r, &sq.s);
+    let h = relation_of(&sq.r, &sq.s);
     assert_eq!(h, f2.geo(&sq.f1), "H(r, s) = (γ⁻¹ F₂ γ) · F₁, in the boundary's order");
     assert_ne!(h, sq.f1.geo(&f2), "the other order is another element: the cells do not commute");
     assert_ne!(sq.f1, one(), "and the cells are curved");
@@ -179,10 +179,10 @@ fn loop_of_is_lassoed_product_of_curvatures() {
 /// turns — both cells curved, the cells' curvatures inverse, and the two routes
 /// agree. Agreement never proves the enclosed cells flat.
 #[test]
-fn loop_of_is_trivial_over_curved_relator_cells() {
+fn relation_of_is_trivial_over_curved_relator_cells() {
     let [.., g5] = steps();
     let sq = square(&one(), &one(), &one(), &one(), &g5);
-    assert_eq!(loop_of(&sq.r, &sq.s), one(), "the routes agree");
+    assert_eq!(relation_of(&sq.r, &sq.s), one(), "the routes agree");
     assert_ne!(sq.f1, one(), "while σ₁ is curved");
     assert_ne!(sq.f2_at_c, one(), "and σ₂ is curved");
     let f2 = inv(&sq.lasso).geo(&sq.f2_at_c).geo(&sq.lasso);
@@ -192,14 +192,14 @@ fn loop_of_is_trivial_over_curved_relator_cells() {
 /// C1 (a, b) — ONE REFERENCE GIVES EVERY PAIR, AND INDEPENDENCE IS EACH
 /// READING TRIVIAL: `H(r₁, r₂) = H₂⁻¹ H₁` with no pairwise read.
 #[test]
-fn loop_of_gives_every_pair_from_one_reference() {
+fn relation_of_gives_every_pair_from_one_reference() {
     let [g1, g2, g3, g4, g5] = steps();
     let r0 = route(&[&g1, &g2]);
     let (r1, r2) = (route(&[&g3, &g2]), route(&[&g4, &g5]));
-    let (h1, h2) = (loop_of(&r1, &r0), loop_of(&r2, &r0));
-    assert_eq!(loop_of(&r1, &r2), inv(&h2).geo(&h1), "every pair from the star");
+    let (h1, h2) = (relation_of(&r1, &r0), relation_of(&r2, &r0));
+    assert_eq!(relation_of(&r1, &r2), inv(&h2).geo(&h1), "every pair from the star");
     let same = route(&[&g1, &g4, &inv(&g4), &g2]);
-    assert_eq!(loop_of(&same, &r0), one(), "a route agreeing with the reference reads trivial");
+    assert_eq!(relation_of(&same, &r0), one(), "a route agreeing with the reference reads trivial");
     assert_ne!(h1, one(), "and one that does not, does not: the content depends on the route");
 }
 
@@ -294,13 +294,13 @@ fn constructor_orbit_refuses_closure_read_per_generator() {
 /// routes whose transports differ by `−1` read agreeing, though the sign is
 /// there to be read: the held `ℤ₂` is the coset's reading (78.6), not T1's.
 #[test]
-fn loop_of_ignores_sign_between_routes() {
+fn relation_of_ignores_sign_between_routes() {
     let [g1, g2, ..] = steps();
     let turn_180 = Mv::blade(E1 | E2, q(1, 1));
     let r = route(&[&g1, &g2]);
     let s = route(&[&g1, &g2, &turn_180, &turn_180]);
     assert!(s.add(&r).is_zero(), "the transports differ by −1 exactly");
-    assert_eq!(loop_of(&r, &s), one(), "and T1 reads them agreeing");
+    assert_eq!(relation_of(&r, &s), one(), "and T1 reads them agreeing");
 }
 
 /// THE CONJECTURES ARE HELD OPEN IN THE REGISTER, each by the row that would

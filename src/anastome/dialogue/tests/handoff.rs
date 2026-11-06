@@ -67,10 +67,10 @@ fn handoff_round_trips_with_answers() {
     assert_eq!(decode_uplink_reply(&encode_uplink_reply(&refused)), Some(refused));
 }
 
-/// 78.128 — a mouth pair, its close, a traversal and the loops read back
+/// 78.128 — a mouth pair, its close, a traversal and the orbits read back
 /// whole; a traversal is the handoff its offer is.
 #[test]
-fn mouth_round_trips_with_loops() {
+fn mouth_round_trips_with_orbits() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let one = crate::transducer::element::identity_versor();
     let mouth = Mouth {
@@ -132,9 +132,9 @@ fn mouth_round_trips_with_loops() {
         let signed = h.sign(&key);
         assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     }
-    assert_eq!(decode_handoff_request(&encode_loops_read()), Some(HandoffRequest::Loops));
-    let loops = vec![Loop { mouth: mouth.citation(), holonomy: one.clone(), tethered: true }, Loop { mouth: [6u8; 32], holonomy: one, tethered: false }];
-    assert_eq!(decode_loops_reply(&encode_loops_reply(&loops)), Some(loops));
+    assert_eq!(decode_handoff_request(&encode_orbits_read()), Some(HandoffRequest::Orbits));
+    let orbits = vec![MouthOrbit { mouth: mouth.citation(), holonomy: one.clone(), tethered: true }, MouthOrbit { mouth: [6u8; 32], holonomy: one, tethered: false }];
+    assert_eq!(decode_orbits_reply(&encode_orbits_reply(&orbits)), Some(orbits));
     for r in [
         HandoffRefusal::NoMouth,
         HandoffRefusal::Degenerate,

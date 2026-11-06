@@ -16,7 +16,7 @@ pub struct Spoken {
     pub standing: u8,
     pub contraction: Option<Contraction>,
     /// MU-CLIENT §5.5 — AGREED LANGUAGE: the signed HOLD frame of another
-    /// mind that re-derived this sentence and holds one loop with the
+    /// mind that re-derived this sentence and holds one relation with the
     /// speaker on every word (78.161, 78.163). The court verifies the
     /// signature and seals the other mind's attestation (`Attest`).
     pub agreement: Option<Vec<u8>>,

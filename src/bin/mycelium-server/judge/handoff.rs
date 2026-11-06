@@ -15,7 +15,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         Ok(mut held) => held.run(|k, _| match request {
             HandoffRequest::Signed(h) => encode_handoff_reply(&k.handoff(&h)),
             HandoffRequest::Read(id) => encode_read_reply(k.handoff_read(&id)),
-            HandoffRequest::Loops => mycelium::anastome::dialogue::handoff::encode_loops_reply(&k.mouth_loops()),
+            HandoffRequest::Orbits => mycelium::anastome::dialogue::handoff::encode_orbits_reply(&k.mouth_orbits()),
             HandoffRequest::TubeRead(id) => mycelium::anastome::dialogue::handoff::encode_tube_reading(k.tube_of(&id).as_ref()),
         }),
         Err(_) => return,

@@ -445,12 +445,12 @@ use mycelium_sdk::house::uplink::Uplinked as _;
 // house: handoff, traverse, the ledger and map, the challenge window's
 // reads, the fold sent up, the equivocation proof
 use mycelium_sdk::house::decode_handoff_reply as _;
-use mycelium_sdk::house::decode_loops_reply as _;
+use mycelium_sdk::house::decode_orbits_reply as _;
 use mycelium_sdk::house::decode_read_reply as _;
 use mycelium_sdk::house::decode_tube_reading as _;
 use mycelium_sdk::house::encode_handoff as _;
 use mycelium_sdk::house::encode_handoff_read as _;
-use mycelium_sdk::house::encode_loops_read as _;
+use mycelium_sdk::house::encode_orbits_read as _;
 use mycelium_sdk::house::encode_tube_read as _;
 use mycelium_sdk::house::ConvertIn as _;
 use mycelium_sdk::house::ConvertOut as _;
@@ -459,7 +459,7 @@ use mycelium_sdk::house::Handoff as _;
 use mycelium_sdk::house::HandoffOffer as _;
 use mycelium_sdk::house::HandoffRefusal as _;
 use mycelium_sdk::house::HandoffState as _;
-use mycelium_sdk::house::Loop as _;
+use mycelium_sdk::house::MouthOrbit as _;
 use mycelium_sdk::house::Mouth as _;
 use mycelium_sdk::house::SignedHandoff as _;
 use mycelium_sdk::house::Tariff as _;

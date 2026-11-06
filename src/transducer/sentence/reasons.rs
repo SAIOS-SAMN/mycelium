@@ -7,7 +7,7 @@
 //! generators each word vertex factored through, the demands' bodies, the
 //! remainder's chain. A court reconstructs all of it blind against its own copy
 //! of the scene. What no reader did was say it: what the sentence was said
-//! with, what its loops mean, what it could not explain, and what it left
+//! with, what its orbits mean, what it could not explain, and what it left
 //! unsaid.
 //!
 //! [`Reasons::of`] is that reader, the one (law 12): DERIVED from the word a
@@ -32,10 +32,10 @@ pub struct WordReason {
 }
 
 /// ONE LOOP OF THE SENTENCE, ONE MEMBER PATH: whether it returns curved —
-/// its holonomy is not the identity, which is what the loop MEANS — and the
+/// its holonomy is not the identity, which is what the orbit MEANS — and the
 /// axes its curvature occupies.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct LoopReason {
+pub struct OrbitReason {
     pub curved: bool,
     pub axes: Vec<super::Axis>,
 }
@@ -53,7 +53,7 @@ pub struct OpenReason {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Reasons {
     pub words: Vec<WordReason>,
-    pub loops: Vec<LoopReason>,
+    pub orbits: Vec<OrbitReason>,
     pub open: Vec<OpenReason>,
     /// The cells its remainder holds: what the sentence left unsaid.
     pub unsaid: u64,
@@ -89,13 +89,13 @@ impl Reasons {
                 _ => {}
             }
         }
-        let mut loops = Vec::new();
+        let mut orbits = Vec::new();
         for lp in &f.orbits {
             for (_, cv) in super::pivot::drive::class_vectors_on(&f.faces, &f.vertices, &f.axes, lp).scoped() {
-                loops.push(LoopReason { curved: !cv.is_zero(), axes: cv.occupied() });
+                orbits.push(OrbitReason { curved: !cv.is_zero(), axes: cv.occupied() });
             }
         }
-        Some(Reasons { words, loops, open, unsaid: e.receipts().remainder.len() as u64, measure: e.magnitude() })
+        Some(Reasons { words, orbits, open, unsaid: e.receipts().remainder.len() as u64, measure: e.magnitude() })
     }
 
     /// THE REASONS AS A HUMAN READS THEM, one sentence per kind of reason.
@@ -112,8 +112,8 @@ impl Reasons {
         let charts: u64 = self.words.iter().map(|w| w.charts).sum();
         let frames: u64 = self.words.iter().map(|w| w.frames).sum();
         out.push(format!("acting on {charts} chart(s) across {frames} frame(s)"));
-        let curved: Vec<&LoopReason> = self.loops.iter().filter(|l| l.curved).collect();
-        match (self.loops.len(), curved.len()) {
+        let curved: Vec<&OrbitReason> = self.orbits.iter().filter(|l| l.curved).collect();
+        match (self.orbits.len(), curved.len()) {
             (0, _) => out.push("no loop closes: nothing here is meant beyond the motion".to_string()),
             (n, 0) => out.push(format!("{n} loop(s), every one returning flat: the motion is consistent, it carries no curvature")),
             (n, c) => {
@@ -153,8 +153,8 @@ impl Reasons {
             }
             out.push(u8::from(w.adjoined));
         }
-        put_key_count(out, self.loops.len());
-        for l in &self.loops {
+        put_key_count(out, self.orbits.len());
+        for l in &self.orbits {
             out.push(u8::from(l.curved));
             put_key_count(out, l.axes.len());
             out.extend(l.axes.iter().map(|a| a.byte()));
@@ -196,14 +196,14 @@ impl Reasons {
             let (generators, charts, frames) = (u(p)?, u(p)?, u(p)?);
             words.push(WordReason { generators, adjoined: flag(p)?, charts, frames });
         }
-        let mut loops = Vec::new();
+        let mut orbits = Vec::new();
         for _ in 0..take_key_count(b, p)? {
             let curved = flag(p)?;
             let mut axes = Vec::new();
             for _ in 0..take_key_count(b, p)? {
                 axes.push(super::Axis::of(byte(p)?)?);
             }
-            loops.push(LoopReason { curved, axes });
+            orbits.push(OrbitReason { curved, axes });
         }
         let mut open = Vec::new();
         for _ in 0..take_key_count(b, p)? {
@@ -213,13 +213,13 @@ impl Reasons {
         }
         let unsaid = u(p)?;
         let measure = [u(p)?, u(p)?, u(p)?, u(p)?];
-        Some(Reasons { words, loops, open, unsaid, measure })
+        Some(Reasons { words, orbits, open, unsaid, measure })
     }
 }
 
 /// WHAT A MIND'S ADMITTED SENTENCES CARRIED AS REASONS, cumulative: the
 /// sentences, the words, those built on held language and the generators
-/// they cite, the new letters, the loops and the curved ones, the demands
+/// they cite, the new letters, the orbits and the curved ones, the demands
 /// left open, and the cells left unsaid.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ReasonsTally {
@@ -228,7 +228,7 @@ pub struct ReasonsTally {
     pub cited: u64,
     pub generators: u64,
     pub letters: u64,
-    pub loops: u64,
+    pub orbits: u64,
     pub curved: u64,
     pub open: u64,
     pub unsaid: u64,
@@ -242,14 +242,14 @@ impl ReasonsTally {
         self.cited += r.words.iter().filter(|w| w.generators > 0).count() as u64;
         self.generators += r.words.iter().map(|w| w.generators).sum::<u64>();
         self.letters += r.words.iter().filter(|w| w.adjoined).count() as u64;
-        self.loops += r.loops.len() as u64;
-        self.curved += r.loops.iter().filter(|l| l.curved).count() as u64;
+        self.orbits += r.orbits.len() as u64;
+        self.curved += r.orbits.iter().filter(|l| l.curved).count() as u64;
         self.open += r.open.len() as u64;
         self.unsaid += r.unsaid;
     }
 
     /// In the order of [`crate::observe::REASONS`].
     pub fn row(&self) -> [u64; 9] {
-        [self.sentences, self.words, self.cited, self.generators, self.letters, self.loops, self.curved, self.open, self.unsaid]
+        [self.sentences, self.words, self.cited, self.generators, self.letters, self.orbits, self.curved, self.open, self.unsaid]
     }
 }
