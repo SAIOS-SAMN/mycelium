@@ -1667,6 +1667,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | construct | § | where |
 |---|---|---|
 | carriers per counterparty: hypha, perception, conversation, seat | §5.1, §4.2 | `mind/hypha.rs` (`hypha::Carrier`, `Mind::ask_seat`); `mind/perceive.rs` (`take_perceived`); `mind/chatter.rs`; `mind/seating.rs` |
+| the sessions and the chatter inside Noise (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key or a pinned peer answering in plaintext refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | the field the mind's own; long laws off the field | §4.2 | `t/mind.rs` (`MindField`, `MindField::think`, `scratch_here`, `admit`) |
 | the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`) |
 | a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/field/merge.rs` (`Contemplation::closing_ground`); `t/field/line.rs` |

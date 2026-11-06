@@ -15,11 +15,26 @@
 //! directory — each mind files its listening address under its voice's hex
 //! — and at `MYCELIUM_CHATTER_PEERS` (comma-separated), for minds on other
 //! hosts.
+//!
+//! THE CHANNEL (MU-PRECURSORS §3.1). A mind holding a Noise home sends and
+//! asks inside Noise XX (`send_over`, `ask_over`), its static key the home's,
+//! the peer's pinned on first contact under the voice the rendezvous files
+//! its address by (an address `MYCELIUM_CHATTER_PEERS` names is pinned
+//! under itself): the hypha links' rule, a changed key refused by name
+//! (`PeerKeyChanged`) and a pinned peer answering in plaintext refused by
+//! name (`PinnedAnsweredPlain`), neither with a fallback. Its post
+//! (`Post::listen_over`) answers the channel's opening with the handshake,
+//! its caller pinned under no name as at a hypha's door, and reads any
+//! other caller in plaintext, named in the channel's book. A post with no
+//! home refuses the opening in plaintext, so a dialler with a home names
+//! it plaintext and speaks on.
 
 pub use crate::anastome::dialogue::chatter::*;
+use crate::network::channel::{self, Kind, Pace, Side};
+use crate::network::noise::{self, NoiseHome, NoiseRefusal, OPEN};
 use crate::transducer::cga::Mv;
-use std::io;
-use std::net::TcpListener;
+use std::io::{self, Read, Write};
+use std::net::{TcpListener, TcpStream};
 
 /// 78.163 — THE LOOP'S HOLONOMY ON THE MOTION: what the round trip said →
 /// heard carries the said motion `m` to, `derived · m̃` — the hearer's
@@ -108,20 +123,25 @@ impl Post {
         D: Fn(Vec<u8>) + Send + Clone + 'static,
         A: Fn(&[u8]) -> Option<Vec<u8>> + Send + Clone + 'static,
     {
+        Post::listen_over(listen, None, deliver, answer)
+    }
+
+    /// `listen`, the post holding the Noise home `home` (MU-PRECURSORS
+    /// §3.1): a caller that opens with the channel's opening is spoken to
+    /// inside Noise, any other in plaintext, named.
+    pub fn listen_over<D, A>(listen: &str, home: Option<NoiseHome>, deliver: D, answer: A) -> io::Result<Post>
+    where
+        D: Fn(Vec<u8>) + Send + Clone + 'static,
+        A: Fn(&[u8]) -> Option<Vec<u8>> + Send + Clone + 'static,
+    {
         let listener = TcpListener::bind(listen)?;
         let endpoint = listener.local_addr()?.to_string();
         std::thread::Builder::new().name("chatter-post".into()).spawn(move || {
             for conn in listener.incoming() {
-                let Ok(mut s) = conn else { continue };
-                let (deliver, answer) = (deliver.clone(), answer.clone());
+                let Ok(s) = conn else { continue };
+                let (deliver, answer, home) = (deliver.clone(), answer.clone(), home.clone());
                 let _ = std::thread::Builder::new().name("chatter-conn".into()).spawn(move || {
-                    let Ok(frame) = read_frame(&mut s) else { return };
-                    match answer(&frame) {
-                        Some(reply) => {
-                            let _ = write_frame(&mut s, &reply);
-                        }
-                        None => deliver(frame),
-                    }
+                    let _ = serve(s, home.as_ref(), &deliver, &answer);
                 });
             }
         })?;
@@ -130,6 +150,136 @@ impl Post {
 
     pub fn endpoint(&self) -> &str {
         &self.endpoint
+    }
+}
+
+/// A POST'S ANSWER TO THE OPENING where it holds no Noise home: five bytes
+/// that are not the opening (a plaintext frame of one zero byte, which no
+/// reader takes as chatter), so the dialler reads `NotSpoken`, names the
+/// post plaintext and dials it again in plaintext.
+/// FORMAT: chatter post's plaintext refusal of the Noise opening.
+pub const OPENING_REFUSED: [u8; 5] = [1, 0, 0, 0, 0];
+
+/// A CONNECTION WITH ITS FIRST BYTES ALREADY READ: they are read again
+/// before the stream, so a frame the post read to tell the channels apart
+/// reaches its reader whole.
+struct Opened {
+    head: Vec<u8>,
+    at: usize,
+    tcp: TcpStream,
+}
+
+impl Read for Opened {
+    fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
+        match self.head.get(self.at..) {
+            Some(rest) if !rest.is_empty() => {
+                let n = rest.len().min(out.len());
+                out[..n].copy_from_slice(&rest[..n]);
+                self.at += n;
+                Ok(n)
+            }
+            _ => self.tcp.read(out),
+        }
+    }
+}
+
+impl Write for Opened {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.tcp.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.tcp.flush()
+    }
+}
+
+/// ONE FRAME at the post on an open channel: a question `answer` takes is
+/// answered on it, anything else delivered.
+fn converse<S: Read + Write>(s: &mut S, deliver: &impl Fn(Vec<u8>), answer: &impl Fn(&[u8]) -> Option<Vec<u8>>) -> io::Result<()> {
+    let frame = read_frame(s)?;
+    match answer(&frame) {
+        Some(reply) => write_frame(s, &reply),
+        None => {
+            deliver(frame);
+            Ok(())
+        }
+    }
+}
+
+/// ONE CONNECTION AT THE POST, on the channel its caller speaks. The first
+/// byte is read; where it is the opening's first, the next four are read
+/// too, since a plaintext frame's length may begin with the same byte: the
+/// whole opening is answered with the XX handshake where the post holds a
+/// home (the caller pinned under no name, as at a hypha's door) and refused
+/// in plaintext where it holds none (`OPENING_REFUSED`); any other bytes
+/// open a plaintext frame, read whole with them, its caller named.
+fn serve(mut tcp: TcpStream, home: Option<&NoiseHome>, deliver: &impl Fn(Vec<u8>), answer: &impl Fn(&[u8]) -> Option<Vec<u8>>) -> Result<(), NoiseRefusal> {
+    let mut head = vec![0u8; 1];
+    tcp.read_exact(&mut head)?;
+    if head[0] == OPEN[0] {
+        head.resize(OPEN.len(), 0);
+        tcp.read_exact(&mut head[1..])?;
+    }
+    if head == OPEN {
+        let Some(home) = home else {
+            tcp.write_all(&OPENING_REFUSED)?;
+            return Ok(());
+        };
+        let mut sealed = noise::respond(Opened { head, at: 0, tcp }, home, None)?;
+        channel::met(&crate::court::identity::hex32(&sealed.remote_static()), Kind::Noise, Side::Accepted);
+        return Ok(converse(&mut sealed, deliver, answer)?);
+    }
+    let at = match tcp.peer_addr() {
+        Ok(a) => a.ip().to_string(),
+        Err(_) => String::from("an unread address"),
+    };
+    channel::met(&at, Kind::Plain, Side::Accepted);
+    Ok(converse(&mut Opened { head, at: 0, tcp }, deliver, answer)?)
+}
+
+/// The channel to the mind at `endpoint`, named `peer`, with the home where
+/// one is held; a refusal is named once in the log and answered as an i/o
+/// refusal carrying it (never `ConnectionRefused`, which names a mind gone).
+fn dial_mind(endpoint: &str, peer: &str, home: Option<&NoiseHome>) -> io::Result<channel::Channel> {
+    channel::dial_as(endpoint, peer, home, Pace::Blocking).map_err(|why| match why {
+        NoiseRefusal::Io(e) => e,
+        why => {
+            eprintln!("  chatter: {peer} at {endpoint} refused: {why}");
+            io::Error::new(io::ErrorKind::PermissionDenied, why)
+        }
+    })
+}
+
+/// SEND one frame to the mind at `endpoint`, named `peer` (`named`), on its
+/// own connection: inside Noise where this mind holds a home and the post
+/// speaks it, pinned under `peer`.
+pub fn send_over(endpoint: &str, peer: &str, frame: &[u8], home: Option<&NoiseHome>) -> io::Result<()> {
+    let mut ch = dial_mind(endpoint, peer, home)?;
+    write_frame(&mut ch, frame)
+}
+
+/// ASK the mind at `endpoint`, named `peer`, one question and read its
+/// answer, on one connection: inside Noise as `send_over` is.
+pub fn ask_over(endpoint: &str, peer: &str, question: &[u8], home: Option<&NoiseHome>) -> io::Result<Vec<u8>> {
+    let mut ch = dial_mind(endpoint, peer, home)?;
+    write_frame(&mut ch, question)?;
+    read_frame(&mut ch)
+}
+
+/// THE NAME A MIND'S POST IS PINNED UNDER: the voice the rendezvous files
+/// `endpoint` under, or the address itself where none does (a peer
+/// `MYCELIUM_CHATTER_PEERS` names).
+pub fn named(dir: &std::path::Path, endpoint: &str) -> String {
+    let filed = std::fs::read_dir(dir).ok().and_then(|entries| {
+        entries.flatten().find_map(|e| {
+            let name = e.file_name().to_string_lossy().into_owned();
+            let at = std::fs::read_to_string(e.path()).ok()?;
+            (!name.starts_with('.') && at.trim() == endpoint).then_some(name)
+        })
+    });
+    match filed {
+        Some(voice) => voice,
+        None => endpoint.to_string(),
     }
 }
 

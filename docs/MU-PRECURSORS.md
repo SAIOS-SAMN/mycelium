@@ -206,6 +206,14 @@ constructor that refuses instead.
 - A plaintext peer is still spoken to, never pinned, and named in the log
   and the observer (built as `plaintext_peer_named_not_hidden`); the
   opening reads as no plaintext frame (`opening_reads_as_no_plaintext_frame`).
+- The reference mind speaks inside Noise: its sessions and its chatter
+  carry ciphertext on the wire, which the keyed peer reconstructs whole
+  (built as `mind_speaks_inside_noise`, `src/client/sdk/tests/channel.rs`);
+  a mind pinned to one key and met with another, or met in plaintext once
+  pinned, is refused by name and never sent to in plaintext (built as
+  `mind_refuses_a_changed_or_unsealed_peer`); a mind's post tells the
+  opening from a plaintext frame by all five bytes (built as
+  `post_tells_the_opening_from_a_plaintext_frame`).
 
 **Track** 5. **Effort** medium. **Status** Landed, opt-in per peer:
 `src/network/noise.rs` (the channel), `src/network/channel.rs` (the
@@ -214,11 +222,20 @@ and every hypha's ask (`src/bin/mycelium-server/transport.rs`), and the SDK
 session (`Session::with_noise`). A hypha's home holds `noise.key` and
 `noise.pins`; the console asks on the home's key where one stands. The
 quickstart mesh runs Noise between its hyphae and its SDK client; the
-conformance suite and the house stay plaintext and are named. Remaining:
-the reference mind's sessions (`Mind::open`) and the chatter posts stay
-plaintext, and the switch to Noise-only (a door refusing plaintext, a
-dialler refusing `NotSpoken`) is a later release step, a network-contract
-change of its own.
+conformance suite and the house stay plaintext and are named. The
+reference mind (#132) opens inside Noise on its home's key
+(`Mind::open_with_noise`; `mycelium-client` always): its three sessions
+pin each hypha under the address dialled, and its chatter
+(`chatter::send_over`, `ask_over`, `Post::listen_over`) pins each mind
+under the voice the rendezvous files its address by, since a post's port
+is chosen afresh at each opening; an address `MYCELIUM_CHATTER_PEERS`
+names is pinned under itself. A post reads all five bytes of the opening
+before it tells the channels apart, since a plaintext chatter length may
+begin with the opening's first byte, and a post with no home refuses the
+opening in plaintext. `Mind::open` stays plaintext, named. Remaining: the
+switch to Noise-only (a door refusing plaintext, a dialler refusing
+`NotSpoken`) is a later release step, a network-contract change of its
+own.
 
 ### 3.2 ~~Mutation audit~~
 
