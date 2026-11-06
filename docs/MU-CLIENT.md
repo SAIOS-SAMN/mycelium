@@ -1625,7 +1625,7 @@ self-pay, 5.7(d)).
 |---|---|---|---|---|
 | **second-order metacognition** (SICE self-model and introspection skill; ASCE surprise tensor and attractor breakout) | float gauges, an error norm, smoothing constants, an awakening threshold, a stagnation counter | the orbit's own prediction and its exact surprise, a twist kept or a slip demanded (§4.4(3)); the drive's four readings, where a precessing orbit is settled, never a trap (§4.12) | precession per lap in degrees with its winding (S9a); a mind's stated holonomy, precession and monodromy reconstructed by a court (S9c) | twist and slip built; the carrier's readings owed (#134) |
 | **internal parliamentary deliberation** (SICE parliament; ASCE gauge-field Lagrangian) | voice weights renormalised; argmin of summed potentials | deliberation as the mutual shear of orbits, drag and lift; several binding moves held as a vortex; the parliament is the field (§4.12, §4.8) | axiomatic gravity on disjoint turning planes, drag changing rate and not plane (S9b; MU-SENSING §3.7) | built in the taker; on the carrier owed (#134) |
-| **historical ledgering** (SICE mythic memory, scars and inviolable axioms; conduct books) | alignment thresholds, utility set to zero, posture labels | two histories (§4.10(6)): the mind's amended forward, the court's ledger corrected only forward; a cauterized hole's scar, a frozen class (§4.5); a peer remembered by its receipts (§5.3(5)); the axioms are the star (§4.1), never a mind's vow | the winding kept in ℤ beside each phase, so no history is reduced mod 360° | scars and freezing built; amendment held beside (#135), peer records and signed receipts (#137) owed |
+| **historical ledgering** (SICE mythic memory, scars and inviolable axioms; conduct books) | alignment thresholds, utility set to zero, posture labels | two histories (§4.10(6)): the mind's amended forward, the court's ledger corrected only forward; a cauterized hole's scar, a frozen class (§4.5); a peer remembered by its receipts (§5.3(5)); the axioms are the star (§4.1), never a mind's vow | the winding kept in ℤ beside each phase, so no history is reduced mod 360° | scars and freezing built; signed receipts reach the mind (#137); amendment held beside (#135) and peer records (#145) owed |
 | **counterfactual simulation** (SICE counterfactual imagination and regret; ASCE ideation superposition and rollouts) | amplitudes summing to one; a float rollout sandbox; regret minimisation | the vortex: every candidate held whole, writing nothing, collapsed only by a perception on a scene not yet seen, a court or a ruling (§4.8); the predicted hour (§4.4(3)) | each candidate's monodromy read between the atlas's charts, flat, torsion or rupture (MU-SENSING §3.8; S9c) | built (`carry_vortices_round`, `collapse_on`); on the carrier owed |
 | theory of mind and the hearing (SICE fifth pillar) | doctrine labels from float indices | hearing as sound and word, vantage and mutual balance (§5.3); a peer by its receipts | — | hearing built; peer records owed |
 | seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124); seat play owed (#133) |
@@ -1681,6 +1681,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **cohesion as a named reading** (#149): per plane the held share `c_k = A/(A + Q) = ν(1/t)`, the viscosity, beside the open share `ν(t)`, the fluidity; both ½ at the throat, exchanged by the passage; a keyed vector over the planes, never stored and never summed; a well reads it from its inflation on its membrane's frame plane | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`) |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
+| **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
@@ -1714,15 +1715,24 @@ then the backlog. Each item names its issue.
    defect #135 names, a task pulled because the corpus is empty (§4.13).
 3. **The backlog:**
    1. the hypha's acts (Return, RankStep, Reconnect) reaching the mind as
-      perception (§3.1, §1a(7); #136);
+      perception (§3.1, §1a(7); #136), waiting on a ruling of what each
+      act perturbs in the field (§3.1's reading for the row is unwritten;
+      the question stands on the issue);
    2. the algebra held per class in the mind's field (§3.2, §4.2,
       §1a(4); #143);
    3. amendment held beside, the amended constructor separated by
       commutator (§4.10, §1a(9); within #135);
    4. POWC on a held question closed by another mind: an evidence path
       for the conversation's questions, E2's guard, and convergence K3 on
-      its ruling (§5.5, §5.6; #144);
-   5. peer records from receipts (§5.3(5); #145);
+      its ruling (§5.5, §5.6; #144). The path is proposed, unruled, in
+      [proposal 78.177](proposals/78.177-conversation-to-court.md): the
+      asker lists the evidenced question as a demand vertex and the closer
+      probes it (existing acts; `pay_convergence`), with K3's two readings
+      and four points for ruling;
+   5. peer records from receipts (§5.3(5); #145), waiting on a ruling of
+      which signed receipts a peer's are, the class an answer is filed by,
+      and what releases the held receipts (the questions stand on the
+      issue);
    6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): `Retire`
       built (`mind/rewrite.rs`); the other kinds from the mind's own
       readings, and the witness of a court's `Ruling(Retired)` citing a
@@ -1735,7 +1745,7 @@ then the backlog. Each item names its issue.
    which wait on an exact reading in LAW-PASSAGE or LAW-TRAVERSAL, frames
    per turning plane of a held whole, and the thought's traversal through
    open tubes; the seated harness against a live house
-   (#133); signed receipts reaching the mind, for equivocation proofs (#137).
+   (#133).
 
 Moved out of this list: paying the ledger in `Modes` is v0.5.0's
 (MU-ECONOMY §9; ROADMAP 1b); curiosity, the mirror and the curvature
