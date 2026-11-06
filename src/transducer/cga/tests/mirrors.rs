@@ -6,22 +6,23 @@ use crate::transducer::cech::{read_coxeter, GroupClosure, ComponentClass, Refusa
 use crate::transducer::cga::*;
 
 /// A NUCLEUS SITS IN THE GRID BY ITS OFFSET FROM ITS BRACKETING MIRRORS, at
-/// unit weight and first degree (78.59 — never a squared ratio): the sphere
-/// of centre `(1/2, 0, 3/2)`, `ρ² = 1/4`, stands `±1/2` from both mirrors of
-/// its first and third axes and touches them (parabolic), and stands on
-/// `x₂ = 0` (offset 0, the plane through its centre: orthogonal, order two).
-/// With `ρ² = 1` the same mirrors cut it at 60°, a turn of order three.
+/// unit weight and first degree (78.59 — never a squared ratio): the
+/// membrane about `(1/2, 0, 3/2)` at the gauge `ρ = 1/2` stands `±1/2` from
+/// both mirrors of its first and third axes and touches them (parabolic),
+/// and stands on `x₂ = 0` (offset 0, the plane through its centre:
+/// orthogonal, order two). At `ρ = 1` the same mirrors cut it at 60°, a
+/// turn of order three.
 #[test]
 fn mirrors_between_reads_nucleus_offset_and_regime() {
     let centre = [q(1, 2), q(0, 1), q(3, 2)];
-    let read = |r2| {
-        mirrors_between(&sphere_at(&centre, &r2), 3)
+    let read = |rho| {
+        mirrors_between(&membrane_at(&centre, &rho).expect("a positive gauge"), 3)
             .into_iter()
             .map(|m| (m.axis, m.k, m.offset, m.regime))
             .collect::<Vec<_>>()
     };
     assert_eq!(
-        read(q(1, 4)),
+        read(q(1, 2)),
         vec![
             (1, q(0, 1), q(1, 2), PairRegime::Parabolic),
             (1, q(1, 1), q(-1, 2), PairRegime::Parabolic),

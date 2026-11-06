@@ -150,9 +150,10 @@ pub use mycelium::sdk::seat_mind::task::{FN_DECLINE, FN_SOLVE, KIND_TASK};
 
 /// A body carried rigidly by a motion: its state after a transition.
 pub use mycelium::physics::equilibrium::carried_body;
-/// Building a transition: a rational rotor, a translator, a sphere at a
-/// centre; and why a motion's modes did not split.
-pub use mycelium::transducer::cga::{rotator, sphere_at, translator_at, Undecomposed};
+/// Building a transition: a rational rotor, a translator, a body's own
+/// enclosure (the membrane at a centre and a gauge; 78.171 amendment (d));
+/// and why a motion's modes did not split.
+pub use mycelium::transducer::cga::{membrane_at, rotator, translator_at, Undecomposed};
 
 /// FRAMING: a lane-tagged frame, the four lanes, a lane byte read (and
 /// whether its frame carries a point), the point split off a body, the
@@ -181,6 +182,15 @@ pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeRead
 /// a mapped wormhole, signed by the payer; the court's answer (`Crossed`):
 /// the crossing's hash, the gas and the map fee, or the refusal by name.
 pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, CrossRefusal, Crossed, Declaration, Gas, SignedTraverse, Traverse};
+
+/// RETRIEVE (`ACT_DOMAIN` kind 19, 78.154 (4), #159): a coordinate
+/// retrieval of the receipts at a final point's tick, signed by the staker
+/// and priced from its stake ([`Session::retrieve`](crate::session::Session));
+/// the answer carries the court's signed section over its head, which the
+/// retriever checks with [`verify_retrieved`].
+pub use mycelium::anastome::dialogue::retrieve::{
+    decode_retrieve_reply, encode_retrieve, verify_retrieved, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
+};
 
 /// A UNIVERSE'S LEDGER AND MAP (`ACT_DOMAIN` kinds 12–15, 78.154): an entry
 /// chained and sealed, never judged; the ledger read by pages; a map act

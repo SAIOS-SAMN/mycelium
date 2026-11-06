@@ -132,7 +132,7 @@ pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest])
     for d in digests {
         push_invariant(&mut out, &d.inv)?;
         out.extend_from_slice(&d.count.to_le_bytes());
-        crate::transducer::address::put_bytes(&mut out, &d.root)?;
+        crate::transducer::address::put_bytes(&mut out, &d.root.bytes())?;
     }
     Some(out)
 }
@@ -156,7 +156,10 @@ fn take_digests_reply(body: &[u8]) -> Option<(Vec<crate::transducer::sheaf::Stra
         let inv = read_invariant(body, &mut p)?;
         let count = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
         p += 8;
-        let root = crate::transducer::address::take_bytes(body, &mut p)?;
+        // A stratum's root is a locator of 32 bytes; a reply naming one of
+        // another width locates nothing and is refused whole.
+        let root = <[u8; 32]>::try_from(crate::transducer::address::take_bytes(body, &mut p)?.as_slice()).ok()?;
+        let root = crate::court::admission::Locator::of_bytes(root);
         out.push(crate::transducer::sheaf::StratumDigest { inv, count, root });
     }
     Some((out, p))

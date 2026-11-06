@@ -10,7 +10,7 @@ use mycelium::anastome::dialogue::seat::{Arg, Post, Role, Seat, SeatFn, Seats, T
 use mycelium::anastome::dialogue::universe::{Genesis, Geometry, Parent};
 use mycelium::physics::laws::{BodyState, Transition};
 use mycelium::physics::equilibrium::{carried_body, BodyMoments};
-use mycelium::transducer::cga::{rotator, sphere_at, Mv};
+use mycelium::transducer::cga::{membrane_at, rotator, Mv};
 use num_rational::BigRational as Q;
 
 fn q(n: i64) -> Q {
@@ -35,7 +35,7 @@ fn carried() -> Option<Vec<(BodyState, BodyState)>> {
                 mass: q(1),
                 moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]],
             };
-            let nucleus = sphere_at(&body.centre, &q(1));
+            let nucleus = membrane_at(&body.centre, &q(1))?;
             let after = BodyState { nucleus: rotor().sandwich(&nucleus), body: carried_body(&body, &rotor())? };
             Some((BodyState { nucleus, body }, after))
         })

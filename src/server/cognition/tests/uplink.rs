@@ -76,7 +76,8 @@ fn admit_uplink_seals_fold_coordinates_and_restores() {
     let head = k.chain.head().expect("sealed on the line");
     assert_eq!((head.stamp, head.chain_hash.bytes()), (at, receipt), "the answer is the receipt's id");
     assert_eq!(head.kind, ActKind::Uplink);
-    assert_eq!(head.cites, vec![Cite::Uplink { tier: fold.tier, prefix: fold.prefix, rows }]);
+    let cited = Cite::Uplink { tier: fold.tier, prefix: fold.prefix, rows };
+    assert!(matches!(head.cites.as_slice(), [c] if c.restates(&cited)), "{:?}", head.cites);
     let snap = k.snapshot();
     let mut booted = Court::new();
     assert!(booted.restore(&snap), "the line with an uplink restores");
@@ -137,7 +138,7 @@ fn admit_domain_founds_once_by_domain_key() {
     let k = founded();
     let head = k.chain.head().expect("the genesis on the line");
     let (domain, tier) = (domain_key().verifying_key().to_bytes(), tier_key().verifying_key().to_bytes());
-    assert_eq!(head.cites, vec![Cite::Domain { domain, tiers: vec![tier] }]);
+    assert!(super::fixtures::cites_restate(&head.cites, &[Cite::Domain { domain, tiers: vec![tier] }]), "{:?}", head.cites);
     let mut k = k;
     let again = DomainGenesis { domain, tiers: vec![tier] };
     assert_eq!(k.hear_domain(&again.clone().sign(&domain_key())), Founded::AlreadyFounded);
