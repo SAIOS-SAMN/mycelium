@@ -1,6 +1,6 @@
 use super::super::*;
 use super::fixtures::*;
-use crate::transducer::cga::{point_at, sphere_at};
+use crate::transducer::cga::{membrane_at, point_at};
 
 /// 78.64 H4 — THE CONTRACT'S BYTES ARE THE OBJECTS. Every law read back from
 /// its coordinate; a transition the kernel sends and the verdict the court
@@ -23,7 +23,7 @@ fn codec_round_trips_transition_and_verdict() {
         hues: crate::transducer::element::FibreRelation { rows: vec![(1, 2), (2, 3), (10, 3)], records: vec![10] },
         fluxes: vec![
             Flux { flow: Flow::Source, at: point_at(&[q(1), q(2), q(0)]), mass: q(3) },
-            Flux { flow: Flow::Sink, at: sphere_at(&[q(0), q(0), q(0)], &q(1)), mass: Q::new(1.into(), 2.into()) },
+            Flux { flow: Flow::Sink, at: membrane_at(&[q(0), q(0), q(0)], &q(1)).expect("a positive gauge"), mass: Q::new(1.into(), 2.into()) },
         ],
     };
     let mut bytes = Vec::new();

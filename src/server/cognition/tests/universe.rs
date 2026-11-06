@@ -123,7 +123,8 @@ fn state_records_geometry_and_basket_once() {
         assert_eq!(state(&mut k, 4, Stated::Geometry(bad), &reserve(4)), Founded::Malformed);
     }
     assert!(matches!(state(&mut k, 4, Stated::Geometry(space.clone()), &reserve(4)), Founded::Stated { .. }));
-    assert_eq!(k.chain.head().map(|h| h.cites.clone()), Some(vec![Cite::Stated { domain: verifying(&domain(4)), kind: 8, body: Stated::Geometry(space.clone()).hash() }]));
+    let stated = [Cite::Stated { domain: verifying(&domain(4)), kind: 8, body: Stated::Geometry(space.clone()).hash() }];
+    assert!(k.chain.head().is_some_and(|h| super::fixtures::cites_restate(&h.cites, &stated)), "the statement on the line");
     assert_eq!(state(&mut k, 4, Stated::Geometry(torus()), &reserve(4)), Founded::AlreadyStated, "never an edit");
     // The basket gates conversions at the reserve.
     let out = ConvertOut { tier: verifying(&reserve(4)), holder: [7; 32], identity: [8; 32], g: 4, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [1; 32] };

@@ -9,8 +9,8 @@ fn q(n: i64) -> num_rational::BigRational {
 
 /// A residue's versor: the tether between two unit spheres.
 fn versor(a: i64, b: i64) -> crate::transducer::cga::Mv {
-    let sa = crate::transducer::cga::sphere_at(&[q(a), q(0), q(0)], &q(1));
-    let sb = crate::transducer::cga::sphere_at(&[q(b), q(0), q(0)], &q(1));
+    let sa = crate::transducer::cga::membrane_at(&[q(a), q(0), q(0)], &q(1)).expect("a positive gauge");
+    let sb = crate::transducer::cga::membrane_at(&[q(b), q(0), q(0)], &q(1)).expect("a positive gauge");
     crate::transducer::blade::tether_of(&sa, &sb)
 }
 
