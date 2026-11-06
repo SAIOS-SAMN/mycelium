@@ -100,14 +100,14 @@ fn coxeter_product_gives_rosette_pair_infinite_order() {
 /// a turn, two disjoint a boost, two tangent a slip.
 #[test]
 fn coxeter_product_reads_turn_boost_or_slip() {
-    let sphere = |x: i64, r2: (i64, i64)| cga::sphere_at(&[q(x, 1), q(0, 1), q(0, 1)], &q(r2.0, r2.1));
+    let sphere = |x: i64, rho: (i64, i64)| cga::membrane_at(&[q(x, 1), q(0, 1), q(0, 1)], &q(rho.0, rho.1)).expect("a positive gauge");
     let kind = |a: Mv, b: Mv| {
         let p = coxeter_product(&[a, b], &[0, 1], true, &mut stroke()).expect("a product");
         let Some(Ok(ms)) = p.modes else { panic!("modes read") };
         ms.iter().map(|m| m.kind).collect::<Vec<_>>()
     };
     assert_eq!(kind(sphere(0, (1, 1)), sphere(1, (1, 1))), vec![BivectorKind::Elliptic], "intersecting: a turn");
-    assert_eq!(kind(sphere(0, (1, 4)), sphere(3, (1, 4))), vec![BivectorKind::Hyperbolic], "disjoint: a boost");
+    assert_eq!(kind(sphere(0, (1, 2)), sphere(3, (1, 2))), vec![BivectorKind::Hyperbolic], "disjoint: a boost");
     assert_eq!(kind(plane(E1, 0), plane(E1, 1)), vec![BivectorKind::Parabolic], "parallel planes: a slip");
 }
 

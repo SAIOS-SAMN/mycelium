@@ -150,9 +150,10 @@ pub use mycelium::sdk::seat_mind::task::{FN_DECLINE, FN_SOLVE, KIND_TASK};
 
 /// A body carried rigidly by a motion: its state after a transition.
 pub use mycelium::physics::equilibrium::carried_body;
-/// Building a transition: a rational rotor, a translator, a sphere at a
-/// centre; and why a motion's modes did not split.
-pub use mycelium::transducer::cga::{rotator, sphere_at, translator_at, Undecomposed};
+/// Building a transition: a rational rotor, a translator, a body's own
+/// enclosure (the membrane at a centre and a gauge; 78.171 amendment (d));
+/// and why a motion's modes did not split.
+pub use mycelium::transducer::cga::{membrane_at, rotator, translator_at, Undecomposed};
 
 /// FRAMING: a lane-tagged frame, the four lanes, a lane byte read (and
 /// whether its frame carries a point), the point split off a body, the

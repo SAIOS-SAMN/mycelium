@@ -242,18 +242,24 @@ null cone, `X(x)² = 0`.
 Sources: MU-RECURSION A4, 51.2, 71.2(3). Code:
 `src/transducer/cga/embedding.rs::point_at`, `::base_vector`, `::base_at`.
 
-#### 2.7 The dual sphere
+#### 2.7 The membrane and its images
 
 ```text
-S(c, r²) = X(c) − ½ r² e_∞
-on_sphere(p, S)  ⇔  ⟨X(p) S⟩₀ = 0
+M = −e₊ = e_o − ½ e_∞                  (the throat's fixed sphere, unit weight)
+S(c, ρ) = T(c) D(ρ) M D̃(ρ) T̃(c),   read at −⟨S e_∞⟩₀ = 1     (ρ > 0)
 ```
 
-The one producer of a sphere. `r² = 0` recovers the point; `r² ≠ 0` lies
-off the cone.
+The one producer of a sphere (78.171 amendment (d), track 26 S7 stage 3).
+A sphere is a holding's own enclosure: the membrane, or its image under
+the dilation by the gauge `ρ` and the slide to `c`. No squared radius is
+written; a point `p` stands on it where `⟨X(p) S⟩₀ = 0`. A gauge `ρ ≤ 0`
+names no enclosure. A body's nucleus, whose extent is a polar second
+moment with no rational root in general, is still built from `r²` by a
+crate-private producer; that defect waits on a ruling (#134; MU-SENSING
+§8).
 
-Sources: MU-RECURSION A4, 51.2. Code:
-`src/transducer/cga/embedding.rs::sphere_at`, `::on_sphere`.
+Sources: MU-RECURSION A4, 51.2; 78.171 §1a. Code:
+`src/transducer/cga/embedding.rs::membrane`, `::membrane_at`.
 
 #### 2.8 The fascicle and the translator
 

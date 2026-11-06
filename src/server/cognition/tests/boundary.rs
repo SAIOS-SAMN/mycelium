@@ -14,7 +14,7 @@ use crate::physics::equilibrium::{carried_body, BodyMoments};
 use crate::physics::laws::clauses::{register, Choice, SignedClause, Signing};
 use crate::physics::laws::{BodyState, Breach, Law, Transition};
 use crate::server::cognition::Court;
-use crate::transducer::cga::{rotator, sphere_at, Mv};
+use crate::transducer::cga::{membrane_at, rotator, Mv};
 use ed25519_dalek::SigningKey;
 use num_rational::BigRational as Q;
 
@@ -117,7 +117,7 @@ fn lawful() -> Transition {
                 mass: q(1),
                 moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]],
             };
-            let nucleus = sphere_at(&body.centre, &q(1));
+            let nucleus = membrane_at(&body.centre, &q(1)).expect("a positive gauge");
             let after = BodyState { nucleus: turn().sandwich(&nucleus), body: carried_body(&body, &turn()).expect("a rigid carriage") };
             (BodyState { nucleus, body }, after)
         })

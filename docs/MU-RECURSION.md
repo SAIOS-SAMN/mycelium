@@ -8443,7 +8443,7 @@ a letter is the triad `(g_core, ∇B, ΔB)` and reaches the null cone.
 
 Code: `algebra/src/multivector.rs` (`E1`, `E2`, `E3`, `EP`, `EM`,
 `base_axis`); `src/transducer/cga/embedding.rs` (`e_o`, `e_inf`,
-`point_at`, `base_at`, `sphere_at`, `translator_at`, `rotator`,
+`point_at`, `base_at`, `membrane_at`, `translator_at`, `rotator`,
 `rotator_on_blade`); `src/transducer/cga/spin.rs` (`transvection`,
 `transvection_along`, `transvection_commutator`);
 `src/transducer/element/letters.rs` (`BASE_AXES`, `base_action_of`);

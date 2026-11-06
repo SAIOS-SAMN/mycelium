@@ -468,8 +468,10 @@ Concordance amendment.
     `|π − p/q| > q^{−7.103}` for `q ≥ q₀`), so
     `w ≤ ⌈7.103 · log₂ q⌉ + O(1)` bits for `r = p/q`. No grid stands, and
     none is capped.
-  - Flat fit, restated as the meet it already is. The horizon is the dual
-    sphere `S = sphere_at(x_v, (2m)²) = X(x_v) − ½(2m)² e_∞`. Its image
+  - Flat fit, restated as the meet it already is. The horizon is the
+    membrane at the gauge `2m` about `x_v`, `S = membrane_at(x_v, 2m)`,
+    equal at unit weight to `X(x_v) − ½(2m)² e_∞` (no squared radius is
+    written since track 26 S7 stage 3). Its image
     under the shortest period `L` is `S' = T_L S T̃_L` (`translator_at`).
     For dual spheres, `S·S' = ½(ρ² + ρ² − L²)` and `S² = ρ²`, so
     ```text
