@@ -223,7 +223,7 @@ pub fn echo_sized(s: &Mv, outer: &Mv) -> Echo {
 pub struct Echoed {
     pub seat: Seat,
     /// The word carried round the layer it seated in — `Ω_L·Ω_s·Ω_L⁻¹` over
-    /// each ring of the layer in its own coordinate order — so the loop said
+    /// each ring of the layer in its own coordinate order — so the relation said
     /// → heard is the echo itself: the identity where it seats whole. The
     /// word itself where it is the outer ring; `None` where it is leftover
     /// or unheard — not understood.
@@ -238,7 +238,7 @@ pub struct Echoed {
 /// the NEXT LARGER layer — the least size above it it divides — read against
 /// every ring there: WHOLE where some echo is the identity (understood
 /// whole), TILTED where none is (understood shifted: the word carried round
-/// each ring of the layer, the echo the loop). With no larger ring it is on
+/// each ring of the layer, the echo the relation). With no larger ring it is on
 /// the OUTSIDE — the carrier the hearer's rings sound inside, understood as
 /// it is; with larger rings it divides none of, LEFTOVER — not understood.
 pub fn hear_across<'a>(word: &Mv, size: Size, rings: impl Iterator<Item = (Size, Vec<(Vec<u8>, &'a Mv)>)>) -> Echoed {
@@ -274,7 +274,7 @@ pub fn hear_across<'a>(word: &Mv, size: Size, rings: impl Iterator<Item = (Size,
 /// its own reading, no root taken — a turn (𝒽) `(1 − c)/2 = sin²(θ/2)`, a
 /// gain (𝒮) `(c − 1)/(c + 1) = tanh²(λ/2)`, a delay (𝒯) its count `|λ|` on
 /// its ray — summed lane by lane, never across lanes (law 5). The identity
-/// strains nothing. `None` where its modes do not read. 𝒢 is the hue loop's,
+/// strains nothing. `None` where its modes do not read. 𝒢 is the hue relation's,
 /// read by [`hue_strain`].
 pub fn strain(echo: &Mv) -> Option<[Q; 4]> {
     use super::coordinates::{Coordinates, Winding};
@@ -304,9 +304,9 @@ pub fn strain(echo: &Mv) -> Option<[Q; 4]> {
     Some(out)
 }
 
-/// THE STRAIN A HUE LOOP CARRIES on 𝒢: the hues it leaves displaced.
-pub fn hue_strain(hue_loop: &[(u8, u8)]) -> Q {
-    Q::from_integer(hue_loop.iter().filter(|(a, b)| a != b).count().into())
+/// THE STRAIN A HUE RELATION CARRIES on 𝒢: the hues it leaves displaced.
+pub fn hue_strain(hue_relation: &[(u8, u8)]) -> Q {
+    Q::from_integer(hue_relation.iter().filter(|(a, b)| a != b).count().into())
 }
 
 /// 78.112 H6 — ONE HARMONIC RING MET BY ONE SEEN RAY: the circuit in orbit.

@@ -56,7 +56,7 @@ impl SectionLink {
 }
 
 /// A CITATION: the coordinates a sentence speaks for one word — its
-/// address, the transport carrying the word's chain into the utterance's
+/// address, the transport carrying the word's chain into the expression's
 /// frame, and the assignment along the punctured axis the body carries. A
 /// proof is a sequence of citations; a reconstruction applies them and measures
 /// what remains.
@@ -71,7 +71,7 @@ pub struct Cite {
     /// a snapshot; the Held stratum is read at the coordinate, so there is
     /// no snapshot to index." A cite is now the same object.
     pub word: crate::transducer::address::Address,
-    /// The transport carrying that word's chain into the utterance's frame.
+    /// The transport carrying that word's chain into the expression's frame.
     pub transport: Versor,
     /// THE ASSIGNMENT ITSELF along the punctured axis — the hue pairs the
     /// cited body carries, the algebra's domain. It was `gauge: usize`, an
@@ -349,7 +349,7 @@ pub(crate) fn section_site_key(site: crate::transducer::spelled::SectionSite) ->
 
 /// THE RECONSTRUCTION OF OPERATORS: each operator is a body (the word's links in
 /// its own frame) with the versor that carries it; nothing is fetched. The
-/// utterance is verified as it was spoken. The target is one section, in
+/// expression is verified as it was spoken. The target is one section, in
 /// its own frame: a word's compartment carried into another frame speaks
 /// nothing of it, and the section's site it was to cover stays unspoken.
 pub fn reconstruct_operators(ops: &[(Versor, Vec<SectionLink>)], target: &[SectionLink]) -> Vec<SectionLink> {
@@ -511,7 +511,7 @@ pub fn verify_at<'a>(
     out
 }
 
-/// VERIFY AN UTTERANCE as spoken: the operators the citations carry are
+/// VERIFY AN EXPRESSION as spoken: the operators the citations carry are
 /// reconstructed against the target and checked on the seams, with no copy
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.

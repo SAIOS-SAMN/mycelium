@@ -185,7 +185,7 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
         .expect("the tampered face refuses");
     assert_eq!(face_refusal.kind(), crate::transducer::sentence::RefusalKind::FaceDerivation);
     assert!(
-        matches!(&face_refusal.at, crate::transducer::sentence::At::Face(a, _) if **a == coord::VertexAt::Frame),
+        matches!(&face_refusal.at, crate::transducer::sentence::At::Face(a, _) if **a == coord::VertexAt::Enclosure),
         "a star face names the Frame's coordinate and the vertex it reaches: {:?}",
         face_refusal.at
     );

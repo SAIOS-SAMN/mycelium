@@ -199,7 +199,7 @@ fn contact_edge_carries_static_tether_and_pose() {
         panic!("a piece at one frame is a static edge");
     };
     assert_eq!(tether, v, "the tether of the two bodies, whole");
-    let [HeldPose::OneFrame, HeldPose::Read(theta_b)] = &poses else { panic!("the poses as read: {poses:?}") };
+    let [HeldPose::OneSample, HeldPose::Read(theta_b)] = &poses else { panic!("the poses as read: {poses:?}") };
     assert!(theta_b[0].projective_eq(&pose(&b, &b_after)), "the transited end's pose, kept");
 }
 

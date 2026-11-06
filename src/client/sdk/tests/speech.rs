@@ -2,14 +2,14 @@
 // it does not read into one that says less than it asked about, and where
 // it looks to know whether it has spoken a vertex before.
 
-use crate::client::sdk::mind::utter::{read_speech_reply, vertex_stratum};
+use crate::client::sdk::mind::express::{read_speech_reply, vertex_stratum};
 use crate::anastome::dialogue;
 
 /// 50.6 seam 1 — A WITHHELD REMAINDER IS NEVER A WORD: neither body of a
-/// pair remainder stands in the dialect, none is filed as an utterance,
+/// pair remainder stands in the dialect, none is filed as an expression,
 /// and the chain of both never stands; the withheld form itself stands
 /// and is held as an idea. (Before this each body stood and was attested
-/// as a word of its own — the residue utterance the soak of 2026-09-09
+/// as a word of its own — the residue expression the soak of 2026-09-09
 /// read as garbage.)
 #[test]
 fn withhold_form_stands_no_remainder_as_word() {
@@ -30,7 +30,7 @@ fn withhold_form_stands_no_remainder_as_word() {
     let whole = chain_word(&remainder);
     for (name, w) in [("first body", &first), ("second body", &second), ("chain of both", &whole)] {
         assert!(entity.language.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
-        assert!(!entity.already_taught(w), "the {name} is not an utterance");
+        assert!(!entity.already_taught(w), "the {name} is not an expression");
     }
     assert!(entity.dialect_len() >= 1, "the withheld form stands");
     assert!(entity.ideas_len() >= 1, "and is held as an idea");
@@ -38,7 +38,7 @@ fn withhold_form_stands_no_remainder_as_word() {
 
 /// 24.3, law 3: A MIND LOOKS IN ONE STRATUM, not through everything it has
 /// ever said. `already_taught` read the whole of `taught_up` running an
-/// exact `same_vertex` against every word this mind had ever uttered, on
+/// exact `same_vertex` against every word this mind had ever asserted, on
 /// every sentence of every speak — law 3's "no loop over pairs the carrier
 /// does not already name", and its own answer, "the carrier is missing a
 /// key and that key is the first thing to write". On a mesh whose voices
@@ -82,7 +82,7 @@ fn vertex_stratum_is_one_per_vertex_however_spelled() {
 
     // The key is over the ROTOR, not the tape: four 90° turns are the
     // identity projectively, so a word spelled long lands where the word
-    // spelled short does. A key over spelling would let the mind utter one
+    // spelled short does. A key over spelling would let the mind assert one
     // vertex twice under two spellings, which is 1.5's fork exactly.
     let long = conn(
         &Word::from_letters(&[(q, false), (q, false), (q, false), (q, false), (q, false)]),
@@ -120,7 +120,7 @@ fn vertex_stratum_is_one_per_vertex_however_spelled() {
 /// fewer — was read as the hypha having STOOD every sentence it said
 /// nothing about. The mind then stepped its own clock for an act nobody
 /// admitted (45.4) and filed the word in `taught_up`, where 24.3's
-/// "nothing is uttered twice" would keep it from ever being spoken again:
+/// "nothing is asserted twice" would keep it from ever being spoken again:
 /// a word lost to a short frame. Rule 11 and checklist (i), and the value
 /// it invented was the favourable one.
 #[test]
@@ -252,7 +252,7 @@ fn mind_holds_the_named_mint_refusal() {
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("refused"));
     let mut budget = entity.stroke_n(1 << 16);
     let task = [9u8; 32];
-    assert_eq!(entity.speak_prepared((rule_of_form(f), [1, 0, 0, 0], Vec::new()), &Vec::new(), &Vec::new(), &task, &mut budget), None, "nothing uttered");
+    assert_eq!(entity.speak_prepared((rule_of_form(f), [1, 0, 0, 0], Vec::new()), &Vec::new(), &Vec::new(), &task, &mut budget), None, "nothing asserted");
     let held = entity.mint_refused.get(&task).expect("the refusal is held under its task");
     assert_eq!(held.line, "mint refused (integrity): nothing in the form acts [N] demands [creation]");
     assert_eq!(held.withheld, Withheld::NoTrajectory);

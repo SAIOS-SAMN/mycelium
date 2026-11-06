@@ -622,7 +622,7 @@ pub fn boundary_length(support: &[Site]) -> usize {
 /// where no compartment of the body stands there (51.3). At a rank-2 sample
 /// that axis is the sample's place: two for every compartment of a body of
 /// one frame; fewer for a stack.
-pub fn frame_faces(support: &[Site]) -> usize {
+pub fn enclosure_faces(support: &[Site]) -> usize {
     let mut sorted: Vec<Site> = support.to_vec();
     sorted.sort_unstable();
     sorted.dedup();

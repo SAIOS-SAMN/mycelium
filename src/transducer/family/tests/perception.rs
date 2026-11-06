@@ -348,7 +348,7 @@ fn identity_at() -> crate::network::nerve::coord::VertexAt {
 fn root_member(i: u16) -> Vec<u8> {
     match i {
         0 => crate::transducer::family::member_key(
-            &crate::network::nerve::coord::VertexAt::Frame,
+            &crate::network::nerve::coord::VertexAt::Enclosure,
             crate::transducer::stalk::Invariant::default().key().as_bytes(),
         ),
         _ => crate::transducer::family::member_key(
@@ -363,7 +363,7 @@ fn root_member(i: u16) -> Vec<u8> {
 fn member_index(k: &[u8]) -> Option<u16> {
     let (v, chart) = crate::transducer::family::read_member_key(k)?;
     match v {
-        crate::network::nerve::coord::VertexAt::Frame => Some(0),
+        crate::network::nerve::coord::VertexAt::Enclosure => Some(0),
         _ => match crate::transducer::stalk::Invariant::from_key(&chart)?.0.as_slice() {
             [crate::transducer::stalk::ChartAxis::Count(n)] => u16::try_from(*n).ok(),
             _ => None,

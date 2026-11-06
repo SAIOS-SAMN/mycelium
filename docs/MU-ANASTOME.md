@@ -608,10 +608,11 @@ retired.
 Each word has one sense (§5.2). The earlier rulings keep their content
 under the new words: the five-kind algebra (2026-09-01, historical) and
 the flow from perception to syllabus (2026-09-06). The texts moved here as ruled (§4.1,
-§5.2) keep their words and read under this table. Code identifiers keep
-their names until a names-only change (`src/client/sdk/mind/utter.rs`,
-`src/client/sdk/utterance.rs`, `Action::Uttered`); MU-RECURSION 1.9
-retired `Uttered` on carriers and receipts as their rows land.
+§5.2) keep their words and read under this table. The mind's module took
+the new name in a names-only change (`src/client/sdk/mind/express.rs`);
+the carrier and receipt names (`src/client/sdk/utterance.rs`,
+`Action::Uttered`) stay until row L19 lands: MU-RECURSION 1.9 retires
+`Uttered` on carriers and receipts as their rows land.
 
 ### 5.2 The lexicon of the network: one sense per word (ruled 2026-09-26: the language is annotated so that no two senses overlap and each word's place in the network of structures is exact)
 

@@ -31,7 +31,7 @@ impl Form {
     #[must_use]
     pub fn retract_vertices(&mut self, drop: &[coord::VertexAt]) -> bool {
         for v in drop {
-            if matches!(v, coord::VertexAt::Frame) {
+            if matches!(v, coord::VertexAt::Enclosure) {
                 continue;
             }
             for o in self.overlaps_at(v) {

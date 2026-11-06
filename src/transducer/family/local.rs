@@ -82,7 +82,7 @@ impl Local {
 /// the sites' measure to zero, the one deflation reader. Summed over the pairs,
 /// a sum past its carrier refused lane by lane and left where it stood. Beside
 /// the counts, the same closure as μ: each pair's share of its own frame
-/// (`transduce::share_of_frame`, O1 ruled 2026-11-01).
+/// (`transduce::share_of_enclosure`, O1 ruled 2026-11-01).
 pub fn measure_sites(family: &[(SectionSample, SectionSample)], sites: &[Keyed<()>]) -> ([u64; 4], crate::economy::Mu) {
     let mut pay = [0u64; 4];
     let mut mu = crate::economy::Mu::zero();
@@ -95,7 +95,7 @@ pub fn measure_sites(family: &[(SectionSample, SectionSample)], sites: &[Keyed<(
         let Ok(residue) = residue_of(Some(x), y) else { continue };
         let links: Vec<crate::transducer::sentence::SectionLink> = residue.into_iter().filter(|l| at.contains(&site_key(l.site))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
-        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, Some(y.sample())));
+        mu.step(&crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {
             pay = next;
         }

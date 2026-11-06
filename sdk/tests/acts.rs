@@ -126,15 +126,15 @@ fn equivocation_proof_round_trips() {
 }
 
 /// 78.126–78.134 — THE HANDOFF FAMILY ROUND-TRIPS: a signed handoff, its
-/// standing read, the loops and a tube read as the court reads each frame;
+/// standing read, the orbits and a tube read as the court reads each frame;
 /// the court's answers as the SDK reads them.
 #[test]
 fn handoff_acts_round_trip() {
-    use mycelium::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff_reply, encode_loops_reply, encode_read_reply, HandoffRequest};
+    use mycelium::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff_reply, encode_orbits_reply, encode_read_reply, HandoffRequest};
     let signed = house::Handoff::Accept { id: [6; 32] }.sign(&key(8));
     assert_eq!(decode_handoff_request(&house::encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     assert_eq!(decode_handoff_request(&house::encode_handoff_read([6; 32])), Some(HandoffRequest::Read([6; 32])));
-    assert_eq!(decode_handoff_request(&house::encode_loops_read()), Some(HandoffRequest::Loops));
+    assert_eq!(decode_handoff_request(&house::encode_orbits_read()), Some(HandoffRequest::Orbits));
     assert_eq!(decode_handoff_request(&house::encode_tube_read([7; 32])), Some(HandoffRequest::TubeRead([7; 32])));
     let stamp = mycelium::chronometry::Stamp { h: 4, vk: V, k: 2, i: 1 };
     for h in [
@@ -146,7 +146,7 @@ fn handoff_acts_round_trip() {
     let read = Some((house::HandoffState::Accepted, true, false));
     assert_eq!(house::decode_read_reply(&encode_read_reply(read)), Some(read));
     assert_eq!(house::decode_read_reply(&encode_read_reply(None)), Some(None));
-    assert_eq!(house::decode_loops_reply(&encode_loops_reply(&[])), Some(Vec::new()));
+    assert_eq!(house::decode_orbits_reply(&encode_orbits_reply(&[])), Some(Vec::new()));
     let no_tube = mycelium::anastome::dialogue::tube::encode_tube_reading(None);
     assert_eq!(house::decode_tube_reading(&no_tube), Some(None));
 }

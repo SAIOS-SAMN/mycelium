@@ -83,7 +83,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
     let word_class = f.vertices.at(&word).and_then(Vertex::class).expect("the word's class");
     let rebased = f
         .put_vertex(Vertex::rebased_on(
-            coord::VertexAt::Frame,
+            coord::VertexAt::Enclosure,
             word_class.clone(),
             stalk::Invariant::counts(&[3, 5]),
             Box::new(element::carriage(&q1(), &(q0(), q1()))),
@@ -117,7 +117,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
     assert!(matches!(f.vertices.at(&glued), Some(Vertex::Glued { .. })));
     assert!(matches!(
         f.vertices.at(&rebased),
-        Some(Vertex::Rebased { by: coord::VertexAt::Frame, class, .. }) if *class == word_class
+        Some(Vertex::Rebased { by: coord::VertexAt::Enclosure, class, .. }) if *class == word_class
     ));
     assert!(matches!(
         f.vertices.at(&unfolded),
@@ -165,7 +165,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
     assert_eq!(f.cover, back.cover, "the cover round-trips whole");
     match (back.vertices.at(&rebased), f.vertices.at(&rebased)) {
         (Some(Vertex::Rebased { by, class, acts }), Some(Vertex::Rebased { acts: was, .. })) => {
-            assert_eq!(*by, coord::VertexAt::Frame);
+            assert_eq!(*by, coord::VertexAt::Enclosure);
             assert_eq!(*class, word_class, "the class it held before the rebase");
             // THE WHOLE FIBRE ROUND-TRIPS, keyed by chart: the relative and the
             // hue map at each chart `of` acted on, and one member here.

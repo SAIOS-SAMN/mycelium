@@ -2,7 +2,7 @@
 //
 //! 21, 25 — THE COURT'S BOOK: the door a voice's sentence is heard at, the
 //! listing it becomes, the strokes a court runs on its own book between
-//! utterances, and where two organs converge.
+//! expressions, and where two organs converge.
 
 pub mod attest;
 pub mod ingest;
