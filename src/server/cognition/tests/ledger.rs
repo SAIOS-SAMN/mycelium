@@ -130,8 +130,7 @@ fn admit_uplink_nets_child_whole_and_restores_consumption() {
     let Uplinked::Chained { at: r_at, provisional: false, obstructions: 0, open_remainders: 1, .. } = reply else { panic!("{reply:?}") };
     let p_at = FoldAt { stamp: r_at, path: vec![0] };
     assert_eq!(k.ledgers.records.get(&p_at.key()).and_then(|r| r.children), Some(commitment), "P held by its children's commitment");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "the ledger tree restores with the line");
+    let mut booted = Court::new().reconstruct(&k.snapshot()).expect("the ledger tree reconstructs with the line").into_object();
     super::boundary::calibrate(&mut booted);
     let again = fold(&q, 3, vec![(who(1), g(1))], Vec::new(), vec![part(&child, &at, vec![(who(1), g(1))], Vec::new(), 1, 1)]);
     assert_eq!(
@@ -335,7 +334,7 @@ fn admit_uplink_proves_cold_child_by_sealed_coordinates() {
     assert!(k.chain.node(&at.stamp).is_none(), "the carrying receipt is off the hot line");
     let mut booted = Court::new();
     booted.bind_identity([0x5c; 32]);
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let mut booted = booted.reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     super::boundary::calibrate(&mut booted);
     assert!(booted.ledgers.folds.contains(&at.key()), "held by its coordinates across the restart");
     let whole = part(&child, &at, child.rows.clone(), child.declared.clone(), 1, 1);
