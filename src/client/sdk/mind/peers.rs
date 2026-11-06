@@ -39,6 +39,7 @@ pub(crate) enum Answer {
 pub(crate) struct PeerReading {
     pub(crate) class: Address,
     pub(crate) answer: Answer,
+    #[cfg_attr(not(test), expect(dead_code, reason = "the vantages are part of the record (§5.3(5)); their reader is the game kernel's (78.165), not yet on the mind"))]
     pub(crate) vantage: Vec<Mv>,
 }
 
