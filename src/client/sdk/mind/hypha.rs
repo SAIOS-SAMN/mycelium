@@ -107,6 +107,9 @@ pub(crate) struct HyphaLink {
     /// it holds a copy.
     wake: Sender<()>,
     voice: Voice,
+    /// The session's Noise home, where it opted in: the mind's chatter
+    /// speaks on the same key (MU-PRECURSORS §3.1).
+    noise: Option<crate::network::noise::NoiseHome>,
 }
 
 impl HyphaLink {
@@ -128,6 +131,7 @@ impl HyphaLink {
 
     fn open_waking(session: Session, mind: Option<Sender<()>>) -> HyphaLink {
         let voice = session.voice().clone();
+        let noise = session.noise.clone();
         let view = Arc::new(Mutex::new(View::of(&session)));
         let (own, woken) = channel::<()>();
         let wake = match mind {
@@ -150,11 +154,15 @@ impl HyphaLink {
             },
             move |s: &mut Session| publish(&every, s),
         );
-        HyphaLink { carrier, view, woken, wake, voice }
+        HyphaLink { carrier, view, woken, wake, voice, noise }
     }
 
     pub(crate) fn voice(&self) -> &Voice {
         &self.voice
+    }
+
+    pub(crate) fn noise(&self) -> Option<&crate::network::noise::NoiseHome> {
+        self.noise.as_ref()
     }
 
     /// A copy of what wakes the resting field, for another carrier that

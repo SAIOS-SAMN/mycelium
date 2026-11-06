@@ -7,6 +7,7 @@ mod ascertain;
 mod attribution;
 mod axis;
 mod carriers;
+mod channel;
 mod chatter;
 mod cite;
 mod comprehension;
