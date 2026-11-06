@@ -220,7 +220,13 @@ impl Contemplation {
                 // CS2 — the cells this pivot reads against, from the idea's
                 // memo where the form stands, read afresh where it moved.
                 let mut memo = b.cells_read.clone();
+                let read_before = memo.as_ref().map(|(at, _)| at.clone());
                 let cells = super::well::cells_for_pivot(&mut memo, &form, budget);
+                // CB1 — the cells' cross-chamber brackets, counted once per
+                // fresh reading of the form's cells, never per pivot on a memo.
+                if memo.as_ref().map(|(at, _)| at) != read_before.as_ref() {
+                    self.pivots.add_brackets(&cells.brackets);
+                }
                 if let Some(b) = self.wells.get_mut(bk) {
                     b.cells_read = memo;
                 }

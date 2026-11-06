@@ -993,7 +993,8 @@ Across a multitude of knowledge comprehension runs four ways, each a reading
 of the plexus (78.31): across CLASSES — each class's algebra its own, so
 comprehension of one is never folded into another's span; across CHAMBERS —
 the cross-chamber bracket, where two chambers' generators fail to commute
-(CB1, Specified); across GRADES — an enclosure, a sporophore, wrapping chambers
+(CB1, Built as a reading: `cech::cross_brackets`, each bracket held by a
+chamber or an enclosure, or lost; nothing is minted for a lost one); across GRADES — an enclosure, a sporophore, wrapping chambers
 whose bracket no one chamber can hold (EN1, NB1); across MINDS — another
 mind's re-derivation from its own constructors, the second vantage every
 admission needs (§5.3, §5.4), and its echo, which is what one mind's
@@ -1726,7 +1727,10 @@ then the backlog. Each item names its issue.
    6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146);
    7. seat play from the mind's own orbits, the seat's percepts lifted into
       the field, and its act as a physics `Action` (§6; #147);
-   8. the cross-chamber bracket (CB1; §4.9; #148).
+   8. the cross-chamber bracket (CB1; §4.9; #148): the reading built
+      (`t/cech/bracket.rs`, read with the pivot's cells and counted on the
+      pivot tally); what comprehension constructs from a lost bracket
+      waits on a ruling (the question stands on the issue).
 4. **Also owed on the client:** of #149 (§1, §4.9; 78.176), the claims
    that a whole too cohesive sticks at the throat and one too fluid tears,
    which wait on an exact reading in LAW-PASSAGE or LAW-TRAVERSAL, frames
