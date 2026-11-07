@@ -135,7 +135,9 @@ pub fn encode_solve_with_rule(
     outputs: &[crate::transducer::sample::Sample],
     rule: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
-    let default = crate::transducer::perspective::Perspective::of_sample(outputs.first().map_or(0, |s| s.rank()));
+    // The outputs are of the family's one rank; the fold reads it from all.
+    let rank = outputs.iter().map(crate::transducer::sample::Sample::rank).fold(0, usize::max);
+    let default = crate::transducer::perspective::Perspective::of_sample(rank);
     encode_solve_spoken(key, citation, outputs, rule, None, &default)
 }
 
