@@ -10,7 +10,7 @@ pub mod bridge;
 mod carriage;
 mod chord;
 mod comprehend;
-pub(crate) use comprehend::pivot_cells;
+pub(crate) use comprehend::{chambers_of, pivot_cells};
 pub mod contact;
 pub mod correspondence;
 pub mod cover;

@@ -188,9 +188,62 @@ impl Contemplation {
 
     /// MU-CLIENT §4.12, §7.1 — WHETHER A DEMAND STANDS ON THE PLAN, this
     /// orbit's or an open question: an undischarged orbit, an open cell's
-    /// escape, a relation that never returns — strain the mind holds unbound.
+    /// escape, a relation that never returns, a bracket no cell holds —
+    /// strain the mind holds unbound.
     pub(crate) fn holds_demand(&self) -> bool {
-        self.docket_open.scoped().chain(self.docket.scoped()).any(|(_, c)| matches!(c, Cite::Demand { .. }))
+        self.docket_open
+            .scoped()
+            .chain(self.docket.scoped())
+            .any(|(_, c)| matches!(c, Cite::Demand { .. } | Cite::Bracket { .. }))
+    }
+
+    /// CB1, 78.26(2) (ruled on #148, 2026-11-06) — EVERY LOST BRACKET OF ONE
+    /// FORM'S CELLS ONTO THE DOCKET, a demand: the two chambers by their
+    /// bodies' coordinates and the bracket, exact, on `cover` (the charts the
+    /// thought stands on), once by its own coordinates. No enclosure is
+    /// formed for it (NB1): the bracket waits for a witness, and the reading
+    /// keeps it as content beside this entry (`CrossBrackets`).
+    pub(crate) fn docket_brackets(
+        &mut self,
+        brackets: &crate::transducer::cech::CrossBrackets,
+        chambers: &[(&[Vec<u8>], &crate::transducer::cech::ChamberAlgebra)],
+        cover: &Keyed<()>,
+    ) {
+        let charts: Vec<Vec<u8>> = cover.scoped().map(|(k, _)| k).collect();
+        for b in brackets.brackets.iter().filter(|b| b.held == crate::transducer::cech::Bracketed::Lost) {
+            let Some(named) = b.named(chambers) else { continue };
+            self.docket_put(Cite::Bracket {
+                chambers: Box::new(named),
+                bracket: Box::new(b.bracket.clone()),
+                cover: Some(charts.clone()),
+            });
+        }
+    }
+
+    /// CB1 (ruled on #148) — THE LOST BRACKETS A WITNESS NOW ANSWERS: each
+    /// bracket on the plan that a cell of `chambers` holds — one wrapping both
+    /// its chambers, which NB1 minted at a witness (`cech::answering_cell`) —
+    /// is answered by name (R1). Answers each answering cell's place in
+    /// `chambers`, in the entries' key order.
+    pub(crate) fn answer_brackets(
+        &mut self,
+        chambers: &[(&[Vec<u8>], &crate::transducer::cech::ChamberAlgebra)],
+    ) -> Vec<usize> {
+        // Once per entry, open or pending, by its coordinates.
+        let mut answered: Keyed<usize> = Keyed::new();
+        for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
+            if let Cite::Bracket { chambers: named, bracket, .. } = c {
+                if let Some(at) = crate::transducer::cech::answering_cell(named, bracket, chambers) {
+                    answered.insert(&k, at);
+                }
+            }
+        }
+        let mut cells = Vec::with_capacity(answered.len());
+        for (k, &at) in answered.scoped() {
+            self.docket_answer(&k);
+            cells.push(at);
+        }
+        cells
     }
 
     /// MU-CLIENT §7.1 — WHETHER `chart` (a chart's key) IS ON THE COVER of

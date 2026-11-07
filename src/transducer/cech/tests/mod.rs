@@ -5,7 +5,7 @@ pub mod fixtures;
 
 mod ascend;
 mod bianchi;
-mod bracket;
+pub(crate) mod bracket;
 mod classify;
 mod connecting;
 mod cover;
