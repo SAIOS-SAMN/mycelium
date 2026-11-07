@@ -1,7 +1,7 @@
 // 26, E2 — the market settles: novelty pays on use and not on existence,
 // and every settlement is a vector of four lanes.
 
-use super::{at, Counts};
+use super::{at, founding, Counts};
 use crate::economy::*;
 use crate::transducer::element::{from_canonical, Element};
 use crate::transducer::germinate::germinate;
@@ -48,12 +48,12 @@ fn settle_consilience_settles_with_torse_as_vectors() {
     let bond = [1; 4];
     t.enroll([1; 32], bond, at(0, [0; 32]));
     let anchor: Anchor = at(9, [1; 32]);
-    t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 5, 0], anchor);
+    t.settle_consilience(&[[1; 32], [2; 32]], &founding([0, 0, 5, 0]), anchor);
     let half = Mu::counts([0, 0, 5, 0]).part(2).expect("halves");
     assert_eq!(t.balance_mu(&[1; 32]), half);
     assert_eq!(t.balance_mu(&[2; 32]), half);
     assert_eq!(t.minted(), [0, 0, 5, 0], "the two halves are the award, nothing unminted");
-    t.settle_torse([1; 32], [0, 0, 40, 0], anchor);
+    t.settle_torse([1; 32], founding([0, 0, 40, 0]), anchor);
     assert_eq!(
         t.balance_mu(&[1; 32]),
         half.add(&Mu::counts([0, 0, 40, 0])),
@@ -70,13 +70,13 @@ fn mint_claim_pays_when_bond_is_empty() {
     let mut t = Treasury::new();
     let addr = [7u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32], [2; 32]], [4, 0, 2, 0], at(1, [9; 32]));
-    assert_eq!(t.bond_total(), &[0; 4]);
+    assert_eq!(t.bond_total(), [0; 4]);
     let held = t.release_award(&addr).expect("claim");
-    t.mint_claim(&held.voices, held.mu, held.anchor);
+    t.mint_claim(&held.voices, founding(held.mu), held.anchor);
     assert_eq!(t.balance_mu(&[1; 32]), [2, 0, 1, 0]);
     assert_eq!(t.balance_mu(&[2; 32]), [2, 0, 1, 0]);
     assert_eq!(t.supply().expect("supply adds up"), [4, 0, 2, 0]);
-    assert_eq!(t.bond_total(), &[0; 4], "mint does not touch the stake bond");
+    assert_eq!(t.bond_total(), [0; 4], "mint does not touch the stake bond");
 }
 
 /// S9.3 — THE READING, PER LANE, AND THE AMOUNT INSIDE IT. Each lane is
@@ -117,7 +117,8 @@ fn release_rewrite_pays_every_named_voice() {
     t.escrow_award(&super::word(addr), vec![[1; 32]], [8, 0, 4, 0], at(1, [1; 32]));
     t.escrow_award(&super::word(addr), vec![[2; 32]], [8, 0, 4, 0], at(1, [1; 32]));
     let released = at(5, [5; 32]);
-    let share = t.release_rewrite(&addr, released).expect("two parties stood it");
+    let absorbed = founding([8, 0, 4, 0]);
+    let share = t.release_rewrite(&addr, &absorbed, released).expect("two parties stood it");
     assert_eq!(share, [4, 0, 2, 0], "one quantity, split per lane, lanes never meeting");
     let share = share.n();
     assert_eq!(t.balance_mu(&[1; 32]), share, "the voice that stood it");
@@ -127,7 +128,7 @@ fn release_rewrite_pays_every_named_voice() {
         mints.iter().all(|e| (e.at, e.receipt, e.arm) == (released.0, released.1, Some(Arm::Powr))),
         "each mint stands at the act that released it and pays POWR (78.33, EC1)"
     );
-    assert!(t.release_rewrite(&addr, released).is_none(), "the escrow is spent once");
+    assert!(t.release_rewrite(&addr, &absorbed, released).is_none(), "the escrow is spent once");
 }
 
 /// A mint with no payee is a mint to nobody: an escrow naming no voice
@@ -137,7 +138,7 @@ fn release_rewrite_refuses_escrow_without_voice() {
     let mut t = Treasury::new();
     let addr = [4u8; 32];
     t.escrow_award(&super::word(addr), Vec::new(), [8, 0, 0, 0], at(1, [1; 32]));
-    assert!(t.release_rewrite(&addr, at(5, [5; 32])).is_none(), "no party, no release");
+    assert!(t.release_rewrite(&addr, &founding([8, 0, 0, 0]), at(5, [5; 32])).is_none(), "no party, no release");
     assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
 }
 
@@ -151,7 +152,7 @@ fn settle_consilience_split_never_invents_units() {
     let anchor: Anchor = at(1, [1; 32]);
     let voices = [[1; 32], [2; 32], [3; 32], [4; 32]];
     let quarter = Mu::counts([0, 0, 1, 0]).part(4).expect("quarters");
-    t.settle_consilience(&voices, [0, 0, 1, 0], anchor);
+    t.settle_consilience(&voices, &founding([0, 0, 1, 0]), anchor);
     for v in &voices {
         assert_eq!(t.balance_mu(v), quarter, "a quarter each");
     }
@@ -216,15 +217,15 @@ fn release_discharged_pays_lesser_of_escrow_and_discharge() {
     let addr = [5u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32]], [9, 4, 0, 2], at(1, [1; 32]));
     let closed = at(4, [4; 32]);
-    let paid = t.release_discharged(&addr, [5, 6, 0, 0], closed).expect("the claim stood");
+    let paid = t.release_discharged(&addr, &founding([5, 6, 0, 0]), closed).expect("the claim stood");
     assert_eq!(paid, [5, 4, 0, 0], "lane-wise the lesser of the escrow and the discharge");
     assert_eq!(t.balance_mu(&[1; 32]), [5, 4, 0, 0], "the voice the escrow names is paid it");
     assert_eq!(t.minted(), [5, 4, 0, 0], "and nothing above the discharge was minted");
     assert!(t.escrow_of(&addr).is_none(), "the claim is released");
-    assert!(t.release_discharged(&addr, [5, 6, 0, 0], closed).is_none(), "and spent once");
+    assert!(t.release_discharged(&addr, &founding([5, 6, 0, 0]), closed).is_none(), "and spent once");
     // A zero discharge releases the claim and mints nothing.
     t.escrow_award(&super::word([6u8; 32]), vec![[2; 32]], [3, 3, 0, 3], at(1, [1; 32]));
-    assert_eq!(t.release_discharged(&[6u8; 32], [0; 4], closed).n(), Some([0; 4]), "a closer that discharged nothing pays nothing");
+    assert_eq!(t.release_discharged(&[6u8; 32], &founding([0; 4]), closed).n(), Some([0; 4]), "a closer that discharged nothing pays nothing");
     assert_eq!(t.balance_mu(&[2; 32]), [0; 4]);
     assert_eq!(t.minted(), [5, 4, 0, 0], "and issues nothing");
 }

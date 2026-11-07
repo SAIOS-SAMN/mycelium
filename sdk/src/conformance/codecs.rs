@@ -433,7 +433,9 @@ fn entries() -> Result<String, String> {
     let upto = Place { k: 3, i: 4 };
     let want = d::EntriesRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
     same("the entries request", d::decode_entries_request(&d::encode_entries_request(&voice(), &CITATION, None, upto, 7)), want)?;
-    let entry = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
+    // A row carries modes (v0.5.0): the share at each lane's founding mode.
+    let modes = mycelium::economy::Modes::founding(&share()?);
+    let entry = Entry { kind: Kind::Transfer, who: voice(), modes, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
     let bytes = d::encode_entries_reply(12, std::slice::from_ref(&entry), mycelium::network::wire::BODY_BUDGET).ok_or("the entries do not encode")?;
     same("the entries", d::decode_entries_reply(&bytes), (12, vec![entry]))?;
     Ok("the span asked and a page of one entry decode".to_string())

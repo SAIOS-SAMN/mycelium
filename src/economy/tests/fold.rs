@@ -30,7 +30,7 @@ fn fold_replaces_prefix_with_epoch_rows_and_conserves() {
     assert_eq!(folded, Folded { replaced: 6, rows: 2, net: Mu::counts([13, 10, 12, 10]) });
     let epochs: Vec<&Entry> = t.entries().iter().filter(|e| e.kind == Kind::Epoch).collect();
     assert_eq!(
-        epochs.iter().map(|e| (e.who, e.mu.clone())).collect::<Vec<_>>().n(),
+        epochs.iter().map(|e| (e.who, e.modes.reading())).collect::<Vec<_>>().n(),
         vec![([1; 32], [7, 10, 10, 10]), ([2; 32], [6, 0, 2, 0])],
         "identity 1: genesis less the transfer out, its stake netting nothing; identity 2: mint plus the transfer in less the burn"
     );
@@ -52,7 +52,7 @@ fn fold_replaces_prefix_with_epoch_rows_and_conserves() {
     let mut broken = Treasury::new();
     broken.genesis([1; 32], [10, 0, 0, 0], a(1));
     // A credit with no row: the carriers pass what the journal issued.
-    broken.credit([1; 32], &Mu::counts([1, 0, 0, 0]));
+    broken.credit([1; 32], &super::founding([1, 0, 0, 0]));
     assert_eq!(broken.fold(place(1), a(2)), Err(REFUSE_FOLD_INEXACT));
     assert_eq!(broken.entries().len(), 1, "a ledger that does not conserve writes nothing");
 }

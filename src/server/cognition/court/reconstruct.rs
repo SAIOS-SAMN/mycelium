@@ -110,17 +110,19 @@ impl Court {
             // 78.149 (b): what the claim is paid is the word's measured
             // discharge, read before the word moves; with no word in hand
             // nothing is measured and nothing is minted.
+            // The mint carries the closure's modes (#169).
             let discharge = match spoken.as_ref() {
-                Some(w) => self.discharge_of(address, w),
-                None => crate::economy::Mu::zero(),
+                Some(w) => self.discharge_read(address, w).1,
+                None => crate::economy::Modes::new(),
             };
             if let Some(w) = spoken {
                 if w.is_rewrite() {
                     // Every voice the escrow names is paid; an escrow with
                     // no party is not released and the ruling does not land.
-                    // EC1: POWR stands at the Ruling act sealed above.
+                    // EC1: POWR stands at the Ruling act sealed above. The
+                    // mint carries the modes of the family it absorbs.
                     let ruled = self.anchor();
-                    if self.treasury.release_rewrite(address, ruled).is_none() {
+                    if self.treasury.release_rewrite(address, &discharge, ruled).is_none() {
                         return false;
                     }
                     self.retire_rewrite_inputs(&w, budget);
@@ -136,7 +138,7 @@ impl Court {
             let ruled = self.anchor();
             // POWV: this court's reconstruction ruled it.
             let organs = [self.identity];
-            let _ = self.release_verified(address, discharge, &organs, ruled);
+            let _ = self.release_verified(address, &discharge, &organs, ruled);
             self.unlist(address, false);
             self.mark_persist();
             true

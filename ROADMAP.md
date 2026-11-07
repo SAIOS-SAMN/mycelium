@@ -80,6 +80,11 @@ implementation each item replaces. A wire and persisted-layout change,
 adopted by a recut (track 6). Items:
 - **`Modes` replaces `Mu`.** Every amount of μ is `economy::modes::Modes`,
   on the wire and in the snapshot; `economy::Mu` is retired (§1, §9).
+  Ruled 2026-11-06 (#169): the founding mode, mints carrying the modes
+  their proofs cite, bonds holding their staked modes, readings never
+  holdings, and per-lane draws in proportion to a lane's modes. Built in
+  stacked drafts: the treasury's carriers (`modes-treasury`), then the
+  wallet, lease, quote, deferral, TPoint and the Note.
 - **Holdings as coordinates.** A key's holding is
   `origin / h : S:G:T:H : K` with lanes as vectors of exact components
   (§2.2), which needs the coordinate's v3 (proposal 78.173).

@@ -354,7 +354,7 @@ fn settle_solve_pays_from_recycled_pool_before_mint() {
     assert_eq!(k.treasury.minted(), minted_before, "a transfer, never a mint");
     let closer = [70; 32];
     let anchor = k.anchor();
-    assert_eq!(k.treasury.settle_solve(closer, [5, 1, 1, 0], anchor), [5, 1, 1, 0], "the closer paid whole");
+    assert_eq!(k.treasury.settle_solve(closer, crate::economy::tests::founding([5, 1, 1, 0]), anchor), [5, 1, 1, 0], "the closer paid whole");
     assert_eq!(k.treasury.balance_mu(&closer), [5, 1, 1, 0]);
     assert_eq!(k.treasury.recycled(), [0, 0, 1, 0], "the pool paid first");
     let minted = k.treasury.minted().draw(&minted_before).expect("mint only rises");

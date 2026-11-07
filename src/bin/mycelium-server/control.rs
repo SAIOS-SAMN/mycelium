@@ -342,7 +342,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                     let verdict = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_solve_on_stroke(rule, &withheld)) {
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
                             // The court names a task by its citation (wire v1.2).
-                            let paid = k.pay_solve(&cite, svoice, rule, pay, first);
+                            let paid = k.pay_solve(&cite, svoice, rule, pay, &modes, first);
                             let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_AGAIN };
                             (code, paid, None, Some((k.height(), modes)))
                         }

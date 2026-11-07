@@ -11,7 +11,7 @@ use crate::chronometry::Place;
 use crate::network::nerve::Keyed;
 
 /// What a fold did: the rows it replaced, the epoch rows it wrote, and
-/// the net those rows carry, per lane.
+/// the net those rows carry, read per lane.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Folded {
     pub replaced: usize,
@@ -20,11 +20,12 @@ pub struct Folded {
 }
 
 /// The nets a fold writes: one (identity, net) per identity with a
-/// nonzero net, in identity order, and the nets' total.
+/// nonzero net, in identity order, and the nets' total — each the modes
+/// the identity's rows moved, net, mode by mode (§6.1).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Nets {
-    pub rows: Vec<([u8; 32], Mu)>,
-    pub total: Mu,
+    pub rows: Vec<([u8; 32], super::Modes)>,
+    pub total: super::Modes,
 }
 
 /// THE NET PER IDENTITY over `rows`, read off the rows themselves (§6
@@ -49,10 +50,12 @@ pub enum Inexact {
     Malformed,
 }
 
-/// [`nets_of`], with the reason it refused. The nets are exact over ℚ.
+/// [`nets_of`], with the reason it refused. The nets are exact over ℚ and
+/// read mode by mode: what each identity was credited of a mode less what
+/// left it of that mode.
 pub fn nets_read(rows: &[Entry]) -> Result<Nets, Inexact> {
-    use crate::core::q::Q;
-    let mut net: Keyed<[Q; 4]> = Keyed::new();
+    use super::Modes;
+    let mut net: Keyed<(Modes, Modes)> = Keyed::new();
     let mut half: Option<(usize, &Entry)> = None;
     for (row, e) in rows.iter().enumerate() {
         let credit = match e.kind {
@@ -65,7 +68,7 @@ pub fn nets_read(rows: &[Entry]) -> Result<Nets, Inexact> {
                     false
                 }
                 Some((first, debit)) => {
-                    if (debit.at, debit.receipt, &debit.mu) != (e.at, e.receipt, &e.mu) {
+                    if (debit.at, debit.receipt, &debit.modes) != (e.at, e.receipt, &e.modes) {
                         return Err(Inexact::UnpairedHalf { row: first, kind: debit.kind, at: debit.stands_at() });
                     }
                     true
@@ -74,36 +77,32 @@ pub fn nets_read(rows: &[Entry]) -> Result<Nets, Inexact> {
         };
         // A party with no net yet nets nothing: the reading of absence on
         // a keyed carrier (0.11c).
-        let mut n = match net.get(&e.who) {
+        let (mut gained, mut lost) = match net.get(&e.who) {
             Some(n) => n.clone(),
             None => Default::default(),
         };
-        for (t, m) in n.iter_mut().zip(e.mu.lanes()) {
-            match credit {
-                true => *t += m,
-                false => *t -= m,
-            }
+        match credit {
+            true => gained.add(&e.modes),
+            false => lost.add(&e.modes),
         }
-        net.insert(e.who, n);
+        net.insert(e.who, (gained, lost));
     }
     if let Some((row, debit)) = half {
         return Err(Inexact::UnpairedHalf { row, kind: debit.kind, at: debit.stands_at() });
     }
     let mut out = Vec::new();
-    let mut total = Mu::zero();
+    let mut total = Modes::new();
     // The net this function just accumulated, one entry per party to the
     // fold: every party is paid or the fold is inexact and refuses whole.
-    for (who, n) in net.scoped() {
+    for (who, (gained, lost)) in net.scoped() {
         let who = <[u8; 32]>::try_from(who.as_slice()).map_err(|_| Inexact::Malformed)?;
-        let mu = Mu::of(n.clone()).map_err(|r| match r {
-            super::MuRefusal::Negative { lane } => Inexact::BelowZero { who, lane },
-            _ => Inexact::Malformed,
-        })?;
-        if mu.is_zero() {
+        let mut n = gained.clone();
+        n.take(lost).map_err(|short| Inexact::BelowZero { who, lane: usize::from(short.mode.lane()) })?;
+        if n.is_empty() {
             continue;
         }
-        total.step(&mu);
-        out.push((who, mu));
+        total.add(&n);
+        out.push((who, n));
     }
     Ok(Nets { rows: out, total })
 }
@@ -174,7 +173,7 @@ impl Treasury {
         let epochs: Vec<Entry> = nets
             .rows
             .iter()
-            .map(|(who, mu)| Entry { kind: Kind::Epoch, who: *who, mu: mu.clone(), at: anchor.0, receipt: anchor.1, arm: None })
+            .map(|(who, m)| Treasury::row(Kind::Epoch, *who, m.clone(), anchor, None))
             .collect();
         let before = std::mem::take(&mut self.entries);
         let (issued, burned) = (self.issued.clone(), self.burned.clone());
@@ -189,6 +188,6 @@ impl Treasury {
             self.burned = burned;
             return Err(inexact);
         }
-        Ok(Folded { replaced, rows: nets.rows.len(), net: nets.total })
+        Ok(Folded { replaced, rows: nets.rows.len(), net: nets.total.reading() })
     }
 }

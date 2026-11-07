@@ -212,7 +212,9 @@ impl Court {
         if share.iter().all(|&m| m == 0) {
             return;
         }
-        let vol = share;
+        // OWED (#169): a simplex fill's own motion is not read as modes here,
+        // so its volume is minted at each lane's founding mode.
+        let vol = crate::economy::Modes::founding(&crate::economy::Mu::counts(share));
         let own_vk = self.identity;
         for (a, _) in held.scoped() {
             // EC1: each drawn escrow is a Settled act of this court citing
@@ -223,7 +225,7 @@ impl Court {
             self.append_step(crate::chronometry::ActKind::Settled, &a, own_vk);
             let anchor = self.anchor();
             for v in &parties {
-                let _ = self.treasury.draw_escrow(&a, *v, vol, anchor);
+                let _ = self.treasury.draw_escrow(&a, *v, &vol, anchor);
             }
         }
     }
@@ -254,8 +256,10 @@ impl Court {
         let own_vk = self.identity;
         self.append_step(crate::chronometry::ActKind::Settled, rewrite, own_vk);
         let anchor = self.anchor();
+        // OWED (#169): a torsion cycle's motion is not read as modes here, so
+        // the tension it measured is minted at each lane's founding mode.
         for (who, mag) in parties {
-            let _ = self.treasury.settle_torse(who, mag, anchor);
+            let _ = self.treasury.settle_torse(who, crate::economy::Modes::founding(&crate::economy::Mu::counts(mag)), anchor);
         }
     }
 
@@ -352,7 +356,10 @@ impl Court {
             _ => self.refills.unsited += 1,
         }
         let anchor = self.anchor();
-        self.treasury.mint_claim(&[r.stamp.vk], mu, anchor);
+        // OWED (#169): the refill's twist is a letter rotor, not read as
+        // modes here, so the pressure it answered is minted at each lane's
+        // founding mode.
+        self.treasury.mint_claim(&[r.stamp.vk], crate::economy::Modes::founding(&crate::economy::Mu::from(mu)), anchor);
         self.refills.applied += 1;
     }
 

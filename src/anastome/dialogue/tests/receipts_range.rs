@@ -84,7 +84,7 @@ fn receipts_page_fills_budget_less_header() {
 fn entries_reply_counts_reply_header() {
     use crate::economy::{Entry, Kind};
     let b = crate::network::wire::frame_budget();
-    let row = Entry { kind: Kind::Mint, who: [1; 32], mu: [1, 0, 0, 0].into(), at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 }, receipt: [0; 32], arm: None };
+    let row = Entry { kind: Kind::Mint, who: [1; 32], modes: crate::economy::tests::founding([1, 0, 0, 0]), at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 }, receipt: [0; 32], arm: None };
     let fit = (b - ENTRIES_REPLY_HEADER) / row.tape_len();
     let rows = vec![row; fit + 1];
     let page = encode_entries_reply(0, &rows, b).expect("the page counts");

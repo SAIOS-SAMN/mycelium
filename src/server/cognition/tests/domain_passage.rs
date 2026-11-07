@@ -284,7 +284,7 @@ fn handoff_feed_keeps_throat_bank_with_draw() {
     assert_eq!(k.treasury.balance_mu(&offerer).n()[0],3, "refused: the bank back to its face");
     let kept_by_far = Mouth { keeper, tube: Some(Tube { mass: (5, 2), ..tube() }), ..mouth(4, 5, one(), one(), [0; 4]) };
     let id = open(&mut k, kept_by_far, 4, 5);
-    assert_eq!(k.treasury.held_of(&throat_key(&id, &offerer)).map(|h| h.mu.clone().n()[0]), Some(3));
+    assert_eq!(k.treasury.held_of(&throat_key(&id, &offerer)).map(|h| h.modes.reading().n()[0]), Some(3));
     let before = k.tube_of(&id).expect("a tube").from_level;
     k.treasury.genesis(keeper, [4, 0, 0, 0], anchor);
     let act = |k: &mut Court, h: Handoff, by: &SigningKey| k.handoff(&h.sign(by));

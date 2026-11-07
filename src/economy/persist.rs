@@ -8,17 +8,17 @@
 use super::*;
 
 impl Entry {
-    /// One row's tape: `[tag u8][arm u8][who 32][μ⃗][stamp 56][receipt 32]`
+    /// One row's tape: `[tag u8][arm u8][who 32][modes][stamp 56][receipt 32]`
     /// — the one layout the ledger, the snapshot and the wire (`ACT_ENTRIES`)
-    /// share, its μ⃗ the exact rational lanes of [`Mu::put`]. The stamp is
-    /// the act the row stands at (78.24); the arm the proof of work it pays
-    /// (78.33).
+    /// share, its modes in the codec of `Modes::put` (v0.5.0: never four
+    /// lanes). The stamp is the act the row stands at (78.24); the arm the
+    /// proof of work it pays (78.33).
     ///
-    /// The fewest bytes a row can take: every lane zero, `0/1`, is eleven
-    /// bytes (a sign, an empty numerator, a one-limb denominator). A count
-    /// of rows a tape cannot hold at this length reserves nothing.
-    /// FORMAT: a row tape's fewest bytes, 166.
-    pub const MIN_TAPE: usize = 1 + 1 + 32 + 4 * 11 + crate::chronometry::Stamp::LEN + 32;
+    /// The fewest bytes a row can take: no mode at all is the four bytes of
+    /// the mode count. A count of rows a tape cannot hold at this length
+    /// reserves nothing.
+    /// FORMAT: a row tape's fewest bytes, 126.
+    pub const MIN_TAPE: usize = 1 + 1 + 32 + 4 + crate::chronometry::Stamp::LEN + 32;
 
     /// This row's tape length.
     #[cfg(test)]
@@ -48,7 +48,7 @@ impl Entry {
         out.push(tag);
         out.push(Arm::byte(self.arm));
         out.extend_from_slice(&self.who);
-        self.mu.put(out);
+        out.extend_from_slice(&self.modes.to_bytes());
         self.at.put_canonical(out);
         out.extend_from_slice(&self.receipt);
     }
@@ -79,11 +79,11 @@ impl Entry {
         *pos += 1;
         let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
-        let mu = Mu::take_from(b, pos)?;
+        let modes = super::Modes::take_from(b, pos)?;
         let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
         let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
-        Some(Entry { kind, who, mu, at, receipt, arm })
+        Some(Entry { kind, who, modes, at, receipt, arm })
     }
 }
 
@@ -161,7 +161,8 @@ impl Treasury {
     }
 
     /// THE TREASURY'S OWN TRIES (78.27, LD3): the stakes and the balances,
-    /// each a trie keyed by the identity's `vk` with its μ⃗ as the one leaf.
+    /// each a trie keyed by the identity's `vk` with its modes as the one
+    /// leaf.
     /// Its journal rows are not here — each is a leaf of the ledger node it
     /// stands at (T2, the court's snapshot) — and its escrowed awards are
     /// not here — each is a leaf of its word's node (T1). The bond total is
@@ -178,16 +179,16 @@ impl Treasury {
     pub fn put_tries(&self, out: &mut Vec<u8>) {
         for (name, carrier) in [(STAKES_TRIE, &self.stakes), (BALANCES_TRIE, &self.balances)] {
             let mut nodes: crate::network::nerve::Keyed<crate::trie_tape::Leaves> = crate::network::nerve::Keyed::new();
-            crate::trie_tape::persist(carrier, |who, mu| {
-                nodes.insert(who, vec![(LEAF_MU, mu.to_bytes())]);
+            crate::trie_tape::persist(carrier, |who, m| {
+                nodes.insert(who, vec![(LEAF_MU, m.to_bytes())]);
             });
             crate::trie_tape::put_trie(out, name, &nodes);
         }
         // E3 — THE HELD CARRIER, keyed by what each hold is against: its
-        // μ⃗, its payer, and the act it was set aside at.
+        // modes, its payer, and the act it was set aside at.
         let mut nodes: crate::network::nerve::Keyed<crate::trie_tape::Leaves> = crate::network::nerve::Keyed::new();
         crate::trie_tape::persist(&self.held, |key, h| {
-            let mu = h.mu.to_bytes();
+            let mu = h.modes.to_bytes();
             let mut anchor = Vec::new();
             h.anchor.0.put_canonical(&mut anchor);
             anchor.extend_from_slice(&h.anchor.1);
@@ -200,13 +201,13 @@ impl Treasury {
     /// each keyed by a `vk` of 32 bytes carrying one μ⃗, and the held
     /// carrier, or refused whole.
     pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk, Holds)> {
-        let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<Mu>> {
+        let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<super::Modes>> {
             let nodes = crate::trie_tape::take_trie(b, pos, name, &[LEAF_MU])?;
             let mut out = crate::network::nerve::Keyed::new();
             for (who, leaves) in nodes.scoped() {
                 let who: [u8; 32] = who.as_slice().try_into().ok()?;
-                let mu = Mu::from_bytes(crate::trie_tape::leaf(leaves, LEAF_MU)?).ok()?;
-                out.insert(who, mu);
+                let m = super::Modes::from_bytes(crate::trie_tape::leaf(leaves, LEAF_MU)?)?;
+                out.insert(who, m);
             }
             Some(out)
         };
@@ -215,13 +216,13 @@ impl Treasury {
         let nodes = crate::trie_tape::take_trie(b, pos, HELD_TRIE, &[LEAF_MU, LEAF_PAYER, LEAF_ANCHOR])?;
         let mut held = crate::network::nerve::Keyed::new();
         for (key, leaves) in nodes.scoped() {
-            let mu = Mu::from_bytes(crate::trie_tape::leaf(leaves, LEAF_MU)?).ok()?;
+            let modes = super::Modes::from_bytes(crate::trie_tape::leaf(leaves, LEAF_MU)?)?;
             let payer: [u8; 32] = crate::trie_tape::leaf(leaves, LEAF_PAYER)?.try_into().ok()?;
             let a = crate::trie_tape::leaf(leaves, LEAF_ANCHOR)?;
             let mut p = 0usize;
             let at = crate::chronometry::Stamp::take_canonical(a, &mut p)?;
             let receipt: [u8; 32] = a.get(p..)?.try_into().ok()?;
-            held.insert(key, super::pay::SetAside { payer, mu, anchor: (at, receipt) });
+            held.insert(key, super::pay::SetAside { payer, modes, anchor: (at, receipt) });
         }
         Some((stakes, balances, held))
     }
@@ -238,7 +239,7 @@ impl Treasury {
     ) -> Treasury {
         let mut t = Treasury {
             entries,
-            bond_total: Mu::zero(),
+            bond_total: super::Modes::new(),
             stakes,
             escrowed: crate::network::nerve::Keyed::new(),
             balances,
@@ -248,8 +249,8 @@ impl Treasury {
             paid_out: Vec::new(),
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
-            issued: Mu::zero(),
-            burned: Mu::zero(),
+            issued: super::Modes::new(),
+            burned: super::Modes::new(),
         };
         t.refresh_bond();
         t.refold_supply();
@@ -257,9 +258,9 @@ impl Treasury {
     }
 }
 
-/// A carrier keyed by an identity's `vk`, one μ⃗ per identity: the stakes,
-/// the balances.
-pub type ByVk = crate::network::nerve::Keyed<Mu>;
+/// A carrier keyed by an identity's `vk`, one holding of modes per
+/// identity: the stakes, the balances.
+pub type ByVk = crate::network::nerve::Keyed<super::Modes>;
 
 /// The stakes trie's name.
 pub const STAKES_TRIE: &str = "stakes";
@@ -269,8 +270,8 @@ pub const BALANCES_TRIE: &str = "balances";
 pub const HELD_TRIE: &str = "held";
 /// The held carrier, keyed by what each hold is against.
 pub type Holds = crate::network::nerve::Keyed<super::pay::SetAside>;
-/// The one leaf of a stake or balance node: its μ⃗, four exact lanes
-/// ([`Mu::put`]); a hold's μ⃗ likewise.
+/// The one leaf of a stake or balance node: its modes (`Modes::put`); a
+/// hold's modes likewise.
 pub const LEAF_MU: u8 = 1;
 /// A hold's payer, the `vk` it was set aside from.
 /// FORMAT: leaf position of a hold's payer within its node.

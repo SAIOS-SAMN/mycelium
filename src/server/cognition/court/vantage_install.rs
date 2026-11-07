@@ -80,27 +80,32 @@ impl Court {
         let installed = self.anchor();
         if let Some(w) = held {
             if w.is_rewrite() {
-                if self.treasury.release_rewrite(address, installed).is_none() {
+                // POWR carries the modes of the family the reduction absorbs.
+                let (_, absorbed) = self.discharge_read(address, &w);
+                if self.treasury.release_rewrite(address, &absorbed, installed).is_none() {
                     return;
                 }
                 self.retire_rewrite_inputs(&w, budget);
             } else {
-                let measured = self.verified_install_deflation(address, &w);
-                // POWV: the base the install releases — the escrow capped at
-                // the measured deflation — pays this court and the witness
+                // The install's mint carries its closure's modes (#169).
+                let (measured, closure) = self.discharge_read(address, &w);
+                // POWV: the base the install releases — the closure's modes
+                // capped at the escrow — pays this court and the witness
                 // whose re-derivation installed it each a verification share
                 // first; the cited forms, taught words and voices divide the
                 // rest.
                 let pay = match self.treasury.escrow_of(address).map(|e| e.mu.clone()) {
                     Some(held) if !measured.is_zero() => {
-                        let base = held.capped(&measured);
+                        let base = closure.capped(&held);
                         let organs = [self.identity, witness];
                         let taken = self.pay_verification(&base, &organs, installed);
-                        base.shortfall(&taken)
+                        let mut rest = base;
+                        let _ = rest.take(&taken);
+                        rest
                     }
-                    _ => measured,
+                    _ => closure,
                 };
-                if pay.is_zero() {
+                if pay.is_empty() {
                     // Closes nothing: installed, and mints none.
                     let _ = self.treasury.revoke_award(address, crate::economy::escrow::Revocation::Drop);
                 } else {
@@ -143,7 +148,7 @@ impl Court {
                         self.acts.pay(kind, taken);
                     }
                     for (_, share) in &word_shares_paid {
-                        self.acts.pay("word sections", share.clone());
+                        self.acts.pay("word sections", share.reading());
                     }
                     self.grow_grants_by_paid();
                 }
@@ -181,12 +186,13 @@ impl Court {
         drawn: Option<[u8; 32]>,
         witness: [u8; 32],
         budget: &mut crate::physics::Budget,
-    ) -> Vec<([u8; 32], crate::economy::Mu)> {
+    ) -> Vec<([u8; 32], crate::economy::Modes)> {
         let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address)).cloned();
         let mut shares = Vec::new();
         for word in crate::cognition::book::speech::words_of_sentence(w, budget) {
             let at = word.address();
-            let discharge = self.cited_deflation(address, &word, &crate::transducer::alphabet::Word::identity());
+            let measured = self.cited_deflation(address, &word, &crate::transducer::alphabet::Word::identity());
+            let discharge = self.cited_modes(address, &word, &measured);
             let who = match self.basis.get(at.as_bytes()).is_some() {
                 true => self.discoverer_of(at.as_bytes()),
                 false => {
@@ -206,11 +212,25 @@ impl Court {
                     drawn
                 }
             };
-            if let Some(who) = who.filter(|_| !discharge.is_zero()) {
+            if let Some(who) = who.filter(|_| !discharge.is_empty()) {
                 shares.push((who, discharge));
             }
         }
         shares
+    }
+
+    /// THE CITED WORD'S CLOSURE MODES, as its share carries them (#169: a
+    /// citation share carries the cited word's closure modes): the modes its
+    /// reconstruction moves on the CITER's family, each lane capped at the
+    /// share `measured`; where its motions read none, the share at each
+    /// lane's founding mode.
+    pub(crate) fn cited_modes(&self, citer: &[u8], cited: &Element, measured: &crate::economy::Mu) -> crate::economy::Modes {
+        let task = self.speech_task.get(citer).or_else(|| self.listing_task.get(citer));
+        let modes = match (cited.is_sentence(), task.and_then(|t| self.task_family.get(t.as_bytes()))) {
+            (true, Some(f)) => self.measured_discharge_read(cited, f).1,
+            _ => crate::economy::Modes::new(),
+        };
+        crate::economy::Modes::cited_or_founding(&modes, measured).capped(measured)
     }
 
     /// MU-CLIENT §5.4 (A), D3 — THE HELD SENTENCES DECOMPOSED FORWARD: every
@@ -265,8 +285,8 @@ impl Court {
     /// ONE SHARE PER CITED VERDICT, not per citation: a form cited by two
     /// vertices closes what it closes once. Keyed by the cited address,
     /// so the second citation of one address is not a second share.
-    fn cited_shares(&self, address: &[u8], w: &Element, pay: &crate::economy::Mu) -> Vec<([u8; 32], crate::economy::Mu)> {
-        if pay.is_zero() {
+    fn cited_shares(&self, address: &[u8], w: &Element, pay: &crate::economy::Modes) -> Vec<([u8; 32], crate::economy::Modes)> {
+        if pay.is_empty() {
             return Vec::new();
         }
         // WHO IS CITED IS READ OFF THE ENVELOPE (54.5 Road (d), B3). This
@@ -278,7 +298,7 @@ impl Court {
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut out = Vec::new();
         let take = |k: &mut crate::network::nerve::Keyed<()>,
-                    out: &mut Vec<([u8; 32], crate::economy::Mu)>,
+                    out: &mut Vec<([u8; 32], crate::economy::Modes)>,
                     form_address: &crate::transducer::address::Address,
                     placement: &crate::transducer::alphabet::Word| {
             if k.contains(form_address.as_bytes()) {
@@ -300,7 +320,7 @@ impl Court {
             if share.is_zero() {
                 return;
             }
-            out.push((who, share));
+            out.push((who, self.cited_modes(address, &held, &share)));
         };
         // A nerve edge names the placement it cited at: the rotational half
         // of the transition it is embedded under.
@@ -319,8 +339,8 @@ impl Court {
     }
 
     /// What a cited form closes on the CITER's bound family. The citer's
-    /// task names the family (`verified_install_deflation` reads the same
-    /// binding for the citer itself), and the cited form is reconstructed over
+    /// task names the family (`discharge_read` reads the same binding for
+    /// the citer itself), and the cited form is reconstructed over
     /// it: a generator that closes nothing there is used for nothing
     /// there, whatever it closes elsewhere. As μ, each pair's share of its
     /// frame (78.170 O1, ruled 2026-11-01).

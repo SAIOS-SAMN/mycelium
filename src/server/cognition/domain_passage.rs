@@ -330,7 +330,7 @@ impl Court {
         th.feeders
             .iter()
             .filter_map(|f| {
-                let s = self.treasury.held_of(&throat_key(mouth, f))?.mu.lane(0).clone();
+                let s = self.treasury.held_of(&throat_key(mouth, f))?.modes.lane_amount(crate::economy::modes::S);
                 s.is_integer().then(|| u64::try_from(s.to_integer()).ok()).flatten().map(|n| (*f, n))
             })
             .collect()
@@ -581,7 +581,7 @@ impl Court {
             let _ = self.treasury.release_held(&key, m.keeper, anchor);
             return;
         };
-        let charge = self.treasury.held_of(&key).map(|h| h.mu.clone());
+        let charge = self.treasury.held_of(&key).map(|h| h.modes.reading());
         let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash.bytes())));
         match (charge.and_then(|c| tariff.parts(&m.keeper, &c)), traverse) {
             (Some(parts), Some((at, receipt))) => {

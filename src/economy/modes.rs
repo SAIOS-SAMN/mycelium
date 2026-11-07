@@ -27,9 +27,26 @@ pub const T: u8 = 2;
 /// FORMAT: lane byte on the mode's wire and key, H's place in S, G, T, H order.
 pub const H: u8 = 3;
 
+/// THE FOUNDING MARK on a mode's lane byte: `FOUNDING | lane` names the
+/// founding mode of that lane, on the wire and in the key.
+/// FORMAT: the high bit of the lane byte, above every lane's place.
+pub const FOUNDING: u8 = 0x80;
+
+/// The base lanes, in place order.
+const LANES: [u8; 4] = [S, G, T, H];
+
+mod draw;
+pub use draw::LaneShort;
+
 /// ONE EXACT MODE, on the lane its kind names.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Mode {
+    /// THE FOUNDING MODE OF A LANE (#169, ruled 2026-11-06): the lane's
+    /// identity motion, stated explicitly as the mode and never left
+    /// empty. A genesis allocation is held at it, and so is a mint whose
+    /// proof cites no motion (a subsidy, a door's mint with no closure).
+    /// Its amount is its share of the frame.
+    Founding { lane: u8 },
     /// S — a boost or dilation: its generator's canonical ray, its rational
     /// point `c` and its side (the sign of λ against the ray).
     Boost { ray: Mv, c: Q, forward: bool },
@@ -48,6 +65,7 @@ impl Mode {
     /// The lane the mode stands on.
     pub fn lane(&self) -> u8 {
         match self {
+            Mode::Founding { lane } => *lane,
             Mode::Boost { .. } => S,
             Mode::Hue(_) => G,
             Mode::Flux { .. } => T,
@@ -59,12 +77,16 @@ impl Mode {
     /// is, each length-delimited by its own codec. `None` where a ray has no
     /// canonical writing.
     pub fn key(&self) -> Option<Vec<u8>> {
+        if let Mode::Founding { lane } = self {
+            return LANES.contains(lane).then(|| vec![FOUNDING | lane]);
+        }
         let mut k = vec![self.lane()];
         let ray = |k: &mut Vec<u8>, r: &Mv| -> Option<()> {
             r.canonical()?.put_canonical(k);
             Some(())
         };
         match self {
+            Mode::Founding { .. } => {}
             Mode::Boost { ray: r, c, forward } => {
                 ray(&mut k, r)?;
                 crate::transducer::alphabet::put_q(&mut k, c);
@@ -94,8 +116,13 @@ impl Mode {
     /// The mode written on the wire: the lane, then the mode's own fields
     /// (rays whole, by `Mv::to_bytes`).
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        if let Mode::Founding { lane } = self {
+            out.push(FOUNDING | LANES.contains(lane).then_some(*lane)?);
+            return Some(());
+        }
         out.push(self.lane());
         match self {
+            Mode::Founding { .. } => {}
             Mode::Boost { ray, c, forward } => {
                 ray.to_bytes(out);
                 crate::transducer::alphabet::put_q(out, c);
@@ -154,6 +181,7 @@ impl Mode {
                 Mode::Flux { ray, forward: side(p)? }
             }
             H => Mode::Turn { ray: Mv::from_bytes(b, p)? },
+            marked if marked & FOUNDING == FOUNDING && LANES.contains(&(marked ^ FOUNDING)) => Mode::Founding { lane: marked ^ FOUNDING },
             _ => return None,
         })
     }
@@ -334,6 +362,10 @@ impl Modes {
     /// lane's modes with the modes' exact amounts — a turn as its t/ℓ of 360°.
     pub fn print(&self) -> String {
         let name = |m: &Mode, a: &Q| match m {
+            Mode::Founding { lane } => match ["S", "G", "T", "H"].get(usize::from(*lane)) {
+                Some(l) => format!("{l} founding ×{a}"),
+                None => format!("lane {lane} founding ×{a}"),
+            },
             Mode::Boost { c, forward, .. } => format!("S boost c={c} {} ×{a}", if *forward { "+" } else { "−" }),
             Mode::Hue(GaugeMode::Cycle(h)) => format!("G cycle {h:?} ×{a}"),
             Mode::Hue(GaugeMode::Move(x, y)) => format!("G move {x}→{y} ×{a}"),

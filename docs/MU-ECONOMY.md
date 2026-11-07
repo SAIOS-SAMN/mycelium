@@ -101,6 +101,37 @@ canonical codec. `economy::Mu`, four scalars with one per lane, is the
 projection this paragraph forbids. It is built today and retired in
 v0.5.0 (§9).
 
+**Holdings that no motion made, and draws by lane (ruled 2026-11-06,
+#169).**
+- **The founding mode.** Each lane has a founding mode: the lane's
+  identity motion, stated explicitly as the mode and never left empty
+  (`Mode::Founding`). A genesis allocation is held at it, with its amount
+  as its share of the frame. A mint whose proof cites no motion (a
+  subsidy, a door's mint with no closure) is minted at it too, never with
+  empty modes.
+- **A mint carries the modes of the motion its proof cites:** a solve's
+  closure modes; a word's use or citation share, the cited word's closure
+  modes; POWR and a rewrite, the modes of the family the reduction
+  absorbs; POWC, the converging orbits' class; a consilience release
+  (POWV), the re-traversed closure's; a torse or a recall, its own
+  motion's.
+- **A bond holds the modes it was staked from,** carried unchanged into
+  the bond.
+- **Reserves, deficits, rooms and prices are readings,** never holdings.
+  They are read off holdings and motions when needed, carry no modes of
+  their own, and are never stored.
+- **A per-lane amount is drawn from the modes on its lane** in
+  proportion to their amounts, exactly in ℚ (`Modes::draw`). No choice is
+  hidden in the payer and nothing is rounded. A lane is never paid from
+  another lane's modes; where the lane holds too little, the draw is
+  refused by name (`LaneShort`). The modes drawn travel with the
+  transfer: tuition, gas, tolls, conversion, a stake's top-up, a partial
+  slash, a lease's hold.
+
+The treasury holds every balance, bond, held value and journal row as
+`Modes` (`economy::Treasury`, v0.5.0); its per-lane answers are readings of
+those modes.
+
 **μ is the metabolic cost of traversal** (ruled 2026-11-04; MU-SENSING
 §3.7). It is the advance of each lane by the motion that carried the work.
 μ never measures what a perception means: holonomy and residue are
@@ -638,7 +669,7 @@ lane. It is the implementation v0.5.0 replaces, part by part:
 |---|---|---|
 | `economy::Mu`: four exact non-negative rationals, one per lane, for every amount. Exact add, a draw refused naming the first short lane (`MuRefusal::Short`), shortfall, cap, `split_at`, `part`, `lane_moves`, `Mu::counts` for `n/1`. Codec `Mu::put`/`Mu::take` (a sign byte, then numerator and denominator limbs; a negative lane or one not in lowest terms refused), used by the entries, the snapshot and every wire field carrying μ (`WIRE_VERSION` `0x0200`) | `src/economy/mu.rs` | Retired: every amount is `Modes`, and the wire and snapshot carry the `Modes` codec |
 | `economy::modes::Modes`: the modes of a closure (`DeflationRead::modes`), carried behind a paid solve verdict (`encode_solve_verdict`) | `src/economy/modes.rs`, `src/transducer/family/deflation.rs`, `src/anastome/dialogue/percept.rs` | The carrier of every holding's lanes (§1, §2.2) |
-| `Treasury`: the journal `entries`, keyed `balances`, `stakes`, `escrowed` and `held`, the folded `issued` and `burned`, and `bond_total`; `balance_mu`, `account`, `bond_of`, `stake_of` | `src/economy/treasury.rs` | Holdings as coordinates on the signers' lines; balances read over the cones, never stored (§2, §6) |
+| `Treasury`: the journal `entries`, keyed `balances`, `stakes`, `escrowed` and `held`, the folded `issued` and `burned`, and `bond_total`; `balance_mu`, `account`, `bond_of`, `stake_of` | `src/economy/treasury.rs` | Holdings as coordinates on the signers' lines; balances read over the cones, never stored (§2, §6). The v0.5.0 draft holds every carrier and row as `Modes` (§1, #169) |
 | `Entry { kind, who, mu, at, receipt, arm }`, its `Anchor` (a stamp and its chain hash), and `Kind`'s eleven entry kinds: `Genesis`, `Mint`, `Stake`, `Unstake`, `Transfer`, `Escrow`, `Release`, `Revoke`, `Slash`, `Burn`, `Epoch`; persisted by `Entry::write` and `Entry::read` | `src/economy/treasury.rs`, `src/economy/persist.rs` | Events with cited causes (§2.4); what an entry kind names becomes what the event cites |
 | `Arm`: POUW, POWC, POWR, POWV as bytes 1–4 on a payment | `src/economy/treasury.rs` | The proof is the relation the event's causes show (§0) |
 | `Treasury::supply`, `issued`, `minted` and `audit` (both equations of §6 over ℚ, checked before a snapshot persists) | `src/economy/treasury.rs` | Readings at a height over the cones; two readers converse or collide (§6) |

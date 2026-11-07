@@ -18,8 +18,9 @@ pub mod verify;
 
 pub use fold::{nets_of, nets_read, Folded, Inexact, Nets};
 pub use forfeit::{forfeit, Forfeit};
-pub use verify::verification_share;
+pub use verify::{verification_modes, verification_share};
 pub use lanes::*;
+pub use modes::{LaneShort, Mode, Modes};
 pub use mu::{Mu, MuRefusal};
 pub use pay::{SetAside, Unpaid, RECYCLED};
 pub use treasury::*;

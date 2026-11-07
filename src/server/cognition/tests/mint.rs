@@ -48,7 +48,7 @@ assert!(
     !home.treasury().minted().is_zero(),
     "release mints the priced vector"
 );
-assert_eq!(home.treasury().bond_total(), &bond, "mint does not debit the stake bond");
+assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bond");
 }
 
 /// A stood sentence that closes no listing returns its escrow and mints nothing.

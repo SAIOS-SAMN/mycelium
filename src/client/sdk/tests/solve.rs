@@ -142,10 +142,11 @@ fn seated_mind_solve_paid_to_its_own_key() {
     assert!(act.signed, "signed by that key");
     // The court pays the key that signs (78.141).
     let mut k = crate::cognition::Court::new();
-    let crate::cognition::SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &family) else { panic!("the rule closes its pair") };
-    let paid = k.pay_solve(&act.task, act.voice, &rule, pay.clone(), true);
-    assert_eq!(paid, pay, "the first closure is paid its discharge");
-    assert_eq!(k.treasury.balance_mu(&own), pay, "paid to the seated mind's own key");
+    let crate::cognition::SolveVerdict::Solved { pay, modes } = k.judge_solve(&rule, &family) else { panic!("the rule closes its pair") };
+    let minted = crate::economy::Modes::cited_or_founding(&modes, &pay).reading();
+    let paid = k.pay_solve(&act.task, act.voice, &rule, pay.clone(), &modes, true);
+    assert_eq!(paid, minted, "the first closure is paid its closure's modes");
+    assert_eq!(k.treasury.balance_mu(&own), minted, "paid to the seated mind's own key");
     assert!(k.treasury.balance_mu(&house).is_zero(), "the house is paid nothing for the seat's solve");
 }
 

@@ -198,7 +198,7 @@ fn handoff_traverse_charges_lanes_and_refuses_short() {
     fund(&mut k, traveller, [0, 0, 0, 96]);
     for (s, h, nonce, charge) in [(7, 0, 2, halves(21, 0)), (0, 3, 3, halves(0, 15)), (7, 3, 4, halves(21, 15))] {
         let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(s, h, nonce)) else { panic!("crossing") };
-        assert_eq!(k.treasury.held_of(&toll_key(&id)).map(|h| h.mu.clone()), Some(charge), "mass on S, information on H");
+        assert_eq!(k.treasury.held_of(&toll_key(&id)).map(|h| h.modes.reading()), Some(charge), "mass on S, information on H");
     }
     assert_eq!(k.treasury.balance_mu(&traveller), [79, 9, 9, 70], "G and T never charged");
     let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(7, 3, 5)) else { panic!() };

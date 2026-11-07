@@ -319,14 +319,16 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
 fn pay_solve_mints_first_closure_only() {
     let mut k = Court::new();
     let rule = rule_over(&carried());
-    let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &carried()) else { panic!("solved") };
+    let SolveVerdict::Solved { pay, modes } = k.judge_solve(&rule, &carried()) else { panic!("solved") };
     let (task, voice) = ([5u8; 32], [9u8; 32]);
-    let first = k.pay_solve(&task, voice, &rule, pay.clone(), true);
-    assert_eq!(first, pay, "the first closure is paid its discharge");
-    assert_eq!(k.treasury.balance_mu(&voice), pay, "minted to the solver");
-    let again = k.pay_solve(&task, voice, &rule, pay.clone(), false);
+    // The mint carries the closure's modes (#169), read per lane.
+    let minted = crate::economy::Modes::cited_or_founding(&modes, &pay);
+    let first = k.pay_solve(&task, voice, &rule, pay.clone(), &modes, true);
+    assert_eq!(first, minted.reading(), "the first closure is paid its closure's modes");
+    assert_eq!(k.treasury.balance_modes(&voice), minted, "minted to the solver, mode by mode");
+    let again = k.pay_solve(&task, voice, &rule, pay.clone(), &modes, false);
     assert_eq!(again, [0; 4], "a closure again pays nothing");
-    assert_eq!(k.treasury.balance_mu(&voice), pay, "and the balance stands");
+    assert_eq!(k.treasury.balance_modes(&voice), minted, "and the balance stands");
 }
 
 /// 78.153c — A NO-WORK VERDICT IS COUNTED, under "no work": a rule reconstructed
@@ -365,7 +367,7 @@ fn pay_solve_acts_on_nothing_at_zero_discharge() {
     let mut k = Court::new();
     let rule = rule_over(&carried());
     let (task, voice) = ([5u8; 32], [9u8; 32]);
-    let paid = k.pay_solve(&task, voice, &rule, crate::economy::Mu::zero(), true);
+    let paid = k.pay_solve(&task, voice, &rule, crate::economy::Mu::zero(), &crate::economy::Modes::new(), true);
     assert_eq!(paid, [0; 4], "nothing paid");
     assert_eq!(k.treasury.balance_mu(&voice), [0; 4], "nothing minted");
     assert!(k.take_offers().is_empty(), "nothing docketed or offered");

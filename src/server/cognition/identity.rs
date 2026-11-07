@@ -253,4 +253,39 @@ impl Court {
         let family = task.and_then(|t| self.task_family.get(t.as_bytes()));
         self.discharge_on(address, word, family.map(Vec::as_slice))
     }
+
+    /// THE MODES A WORD'S CLOSURE MOVED on the family it is bound to (#169:
+    /// a mint carries the modes of the motion its proof cites): a sentence's
+    /// modes as its reconstruction on the family reads them
+    /// (`measured_discharge_read`); a rewrite's, the modes of the family it
+    /// absorbs (each word it retires, read on its own family). No modes
+    /// where the word is bound to no family or its motions read none.
+    pub(crate) fn closure_modes_of(&self, address: &[u8], word: &Element) -> crate::economy::Modes {
+        if word.is_rewrite() {
+            let mut absorbed = crate::economy::Modes::new();
+            if let Some(r) = crate::transducer::rewrite::Rewrite::from_element(word) {
+                for addr in &r.before {
+                    if let Some(w) = self.basis.get(addr) {
+                        absorbed.add(&self.closure_modes_of(addr.as_bytes(), w));
+                    }
+                }
+            }
+            return absorbed;
+        }
+        let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address));
+        match (word.is_sentence(), task.and_then(|t| self.task_family.get(t.as_bytes()))) {
+            (true, Some(f)) => self.measured_discharge_read(word, f).1,
+            _ => crate::economy::Modes::new(),
+        }
+    }
+
+    /// THE DISCHARGE AND THE MODES ITS MINT CARRIES: the measured discharge
+    /// ([`Court::discharge_of`]), and the closure's modes, or, where its
+    /// motions read none, the discharge at each lane's founding mode
+    /// (`Modes::cited_or_founding`).
+    pub(crate) fn discharge_read(&self, address: &[u8], word: &Element) -> (Mu, crate::economy::Modes) {
+        let mu = self.discharge_of(address, word);
+        let modes = crate::economy::Modes::cited_or_founding(&self.closure_modes_of(address, word), &mu);
+        (mu, modes)
+    }
 }

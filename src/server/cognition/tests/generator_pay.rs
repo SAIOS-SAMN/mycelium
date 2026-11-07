@@ -66,7 +66,7 @@ fn perceive_speech_pays_no_generator_for_waiting_citer() {
 
     let mut k = Court::new();
     let anchor = k.anchor_pub();
-    k.treasury.mint_claim(&[speaker], [8, 8, 8, 8], anchor);
+    k.treasury.mint_claim(&[speaker], crate::economy::tests::founding([8, 8, 8, 8]), anchor);
     let before = k.treasury.balance_mu(&teacher);
 
     // The generator was never ruled here.

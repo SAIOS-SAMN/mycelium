@@ -3,6 +3,7 @@
 
 mod fold;
 mod forfeit;
+mod holdings;
 mod ledger;
 mod modes;
 mod mu;
@@ -66,6 +67,13 @@ impl<A: Counts, B: Counts, C: Counts> Counts for (A, B, C) {
     fn n(self) -> Self::Out {
         (self.0.n(), self.1.n(), self.2.n())
     }
+}
+
+/// A MEASURED AMOUNT AT EACH LANE'S FOUNDING MODE: the modes a claim's
+/// fixture mints where the claim is about the treasury's arithmetic and no
+/// motion is read (#169: a mint whose proof cites no motion).
+pub(crate) fn founding(m: impl Into<crate::economy::Mu>) -> crate::economy::Modes {
+    crate::economy::Modes::founding(&m.into())
 }
 
 /// A word's address, as an award is filed under it.

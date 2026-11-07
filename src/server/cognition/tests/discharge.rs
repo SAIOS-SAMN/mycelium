@@ -105,7 +105,7 @@ fn pay_solve_pays_discharge_capped_by_escrow() {
 
     // Not the task's first closure: the solver is not paid, so every row
     // minted is a released claim.
-    let _ = k.pay_solve(&task, [9; 32], &rule, pay.clone(), false);
+    let _ = k.pay_solve(&task, [9; 32], &rule, pay.clone(), &crate::economy::Modes::new(), false);
     assert_eq!(k.treasury().balance_mu(&rich), pay, "an escrow above the discharge pays the discharge");
     assert_eq!(k.treasury().balance_mu(&poor), held_below, "an escrow below it caps it");
     let minted = k.treasury().minted();

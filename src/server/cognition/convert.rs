@@ -495,7 +495,7 @@ impl Court {
     /// escrowed in its name (zero where none is posted).
     pub fn bond_of(&self, tier: &[u8; 32]) -> crate::economy::Mu {
         match self.treasury.held_of(&bond_key(tier)) {
-            Some(h) => h.mu.clone(),
+            Some(h) => h.modes.reading(),
             None => crate::economy::Mu::zero(),
         }
     }
@@ -534,7 +534,7 @@ impl Court {
         let key = bond_key(&b.tier);
         let held = self.treasury.held_of(&key).cloned();
         let kept = match held.as_ref().filter(|h| h.payer == b.reserve) {
-            Some(h) => h.mu.clone(),
+            Some(h) => h.modes.reading(),
             None => crate::economy::Mu::zero(),
         };
         let after = match &b.mu {
@@ -584,24 +584,22 @@ impl Court {
     /// exposure on a default, so a default pays half), and the rest is
     /// RETIRED from supply (POWR). Drawn from whoever posted the bond;
     /// nothing where the tier stands unbonded (`economy::forfeit`).
+    ///
+    /// The bounty and the retired part are drawn from the bond's own modes
+    /// in proportion on each lane (#169), and what is kept stays held as it
+    /// was posted.
     pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], exposure: &crate::economy::Mu, defect: &crate::economy::Mu, anchor: crate::economy::Anchor) -> crate::economy::Mu {
         use crate::economy::Mu;
         let key = bond_key(tier);
         let Some(held) = self.treasury.held_of(&key).cloned() else { return Mu::zero() };
-        let crate::economy::Forfeit { cut, bounty, retired, kept } = crate::economy::forfeit(&held.mu, exposure, defect);
+        let crate::economy::Forfeit { cut, bounty, retired, .. } = crate::economy::forfeit(&held.modes.reading(), exposure, defect);
         if cut.is_zero() {
             return cut;
         }
-        if self.treasury.refund_held(&key, anchor).is_err() {
-            return Mu::zero();
-        }
         if !bounty.is_zero() {
-            let _ = self.treasury.pay(held.payer, challenger, bounty, anchor);
+            let _ = self.treasury.draw_held(&key, challenger, bounty, anchor);
         }
-        let _ = self.treasury.burn(held.payer, retired, anchor);
-        if !kept.is_zero() {
-            let _ = self.treasury.hold(held.payer, &key, kept, anchor);
-        }
+        let _ = self.treasury.burn_held(&key, &retired, anchor);
         self.mark_persist();
         cut
     }

@@ -24,6 +24,7 @@
 //! each reconstructed the same closure. The share is a rational part of the
 //! mint, never floored: the closer takes exactly `M − n · v`.
 
+use super::modes::Modes;
 use super::Mu;
 use crate::core::q::Q;
 use num_bigint::BigInt;
@@ -37,19 +38,39 @@ use num_bigint::BigInt;
 /// `M_l · y_l / (y_l + R) ≤ M_l`, at most half the lane unless the lane's
 /// entropic excess carries the strain past the reserve.
 pub fn verification_share(mint: &Mu, strain: &[u64; 4], capacity: u64, organs: usize) -> Mu {
-    let r = BigInt::from(capacity);
-    let lanes: [Q; 4] = std::array::from_fn(|l| {
-        let y = BigInt::from(strain[l]);
-        let whole = &y + &r;
-        if num_traits::Zero::is_zero(&whole) {
-            return Q::default();
-        }
-        mint.lane(l) * Q::new(y, whole)
-    });
+    let Some(f) = factors(strain, capacity, organs) else { return Mu::zero() };
     // Every factor is non-negative, so the lanes are.
-    let Ok(v) = Mu::of(lanes) else { return Mu::zero() };
-    match v.part(organs) {
-        Some(each) => each,
-        None => Mu::zero(),
+    match Mu::of(std::array::from_fn(|l| mint.lane(l) * &f[l])) {
+        Ok(v) => v,
+        Err(_) => Mu::zero(),
     }
+}
+
+/// THE VERIFICATION SHARE EACH ORGAN TAKES OF A MINT'S MODES: the lane's
+/// factor `y_l / ((y_l + R) · n)` scales each mode on lane `l` (MU-ECONOMY
+/// §5.1, "under modes the same factor scales each mode on lane `l`").
+/// Nothing where no organ verified.
+pub fn verification_modes(mint: &Modes, strain: &[u64; 4], capacity: u64, organs: usize) -> Modes {
+    match factors(strain, capacity, organs) {
+        Some(f) => mint.scaled_lanes(&f),
+        None => Modes::new(),
+    }
+}
+
+/// Each lane's factor `y_l / ((y_l + R) · n)`, zero where `y_l + R` is
+/// zero; `None` for no organs.
+fn factors(strain: &[u64; 4], capacity: u64, organs: usize) -> Option<[Q; 4]> {
+    if organs == 0 {
+        return None;
+    }
+    let r = BigInt::from(capacity);
+    let n = BigInt::from(organs);
+    Some(std::array::from_fn(|l| {
+        let y = BigInt::from(strain[l]);
+        let whole = (&y + &r) * &n;
+        match num_traits::Zero::is_zero(&whole) {
+            true => Q::default(),
+            false => Q::new(y, whole),
+        }
+    }))
 }

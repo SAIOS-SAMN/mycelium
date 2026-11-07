@@ -30,7 +30,10 @@ fn fold_witness_round_trips_with_rows() {
     let p = FoldProposal {
         after,
         root,
-        epochs: vec![([1; 32], [1, 2, 3, 4].into()), ([2; 32], crate::economy::Mu::counts([0, 0, 7, 0]).part(3).expect("three parts"))],
+        epochs: vec![
+            ([1; 32], crate::economy::tests::founding([1, 2, 3, 4])),
+            ([2; 32], crate::economy::tests::founding(crate::economy::Mu::counts([0, 0, 7, 0]).part(3).expect("three parts"))),
+        ],
         section: section.clone(),
     };
     let body = encode_fold(&p).expect("frames");
@@ -72,7 +75,7 @@ fn fold_witness_round_trips_with_rows() {
         .map(|i| Entry {
             kind: Kind::Mint,
             who: [i; 32],
-            mu: crate::economy::Mu::counts([u64::from(i), 0, 0, 0]).part(usize::from(i) + 1).expect("a part"),
+            modes: crate::economy::tests::founding(crate::economy::Mu::counts([u64::from(i), 0, 0, 0]).part(usize::from(i) + 1).expect("a part")),
             at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 },
             receipt: [0; 32],
             arm: [None, Some(crate::economy::Arm::Pouw), Some(crate::economy::Arm::Powr)][i as usize],
@@ -100,7 +103,7 @@ fn entries_act_round_trips() {
     let entry = Entry {
         kind: Kind::Mint,
         who: [5; 32],
-        mu: [2, 0, 0, 0].into(),
+        modes: crate::economy::tests::founding([2, 0, 0, 0]),
         at: crate::chronometry::Stamp { h: 4, vk: [4; 32], k: 4, i: 1 },
         receipt: [6; 32],
         arm: None,

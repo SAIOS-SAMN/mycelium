@@ -5,6 +5,7 @@
 //! prices anything — the metabolism governs the rate, never the price.
 
 use super::*;
+use super::modes::Modes;
 
 impl Treasury {
     /// A germ install admits iff the germ measures something on some lane;
@@ -32,38 +33,40 @@ impl Treasury {
             return Mu::zero();
         }
         // paid ≤ held on every lane: it is the ask divided at the balance
-        // just read, and it is debited against that same balance below.
+        // just read, and it is drawn from that same balance below, from its
+        // modes in proportion on each lane (#169).
         let (paid, _) = self.balance_mu(&demander).split_at(&mag.into());
         if paid.is_zero() {
             return paid;
         }
-        // The rows are written for μ⃗ that MOVED, after the debit — which
+        // The rows are written for modes that MOVED, after the debit — which
         // cannot be short, by `paid ≤ held`.
-        let drawn = self.debit(demander, &paid);
-        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
-        self.credit(discoverer, &paid);
+        let Ok(drawn) = self.debit(demander, &paid) else {
+            debug_assert!(false, "paid ≤ held, debited against it");
+            return Mu::zero();
+        };
         // POWC (78.33): a cited generator paid by the use that cited it.
-        let arm = Some(Arm::Powc);
-        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
-        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
+        self.transfer_drawn(demander, discoverer, drawn, anchor, Some(Arm::Powc));
         paid
     }
 
     /// MU-CLIENT §5.6 (E2) — POWC MINTED: a demand closed at another
     /// perspective — another mind's citation discharging what a speaker
     /// could not — pays the closer the citation's measured discharge, a mint
-    /// carrying the POWC arm (78.33). The caller measures it and refuses
-    /// self-pay; nothing here prices it.
-    pub fn settle_convergence(&mut self, closer: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        self.mint_to(closer, mu, anchor, Some(Arm::Powc))
+    /// carrying the POWC arm (78.33) and the modes of the converging
+    /// orbits' class (#169). The caller measures it and refuses self-pay;
+    /// nothing here prices it.
+    pub fn settle_convergence(&mut self, closer: [u8; 32], modes: Modes, anchor: Anchor) -> Mu {
+        self.mint_to(closer, modes, anchor, Some(Arm::Powc))
     }
 
     /// A SUBSIDY from the pool (system-initiated yields with no payer: the
     /// redundancy probe, bootstrap awards). Bounded by the pool, like all pay.
     /// No proof of work (78.33 as ruled): a subsidy is a policy ratio
-    /// (MU-ECONOMY §8), and its row carries no arm.
+    /// (MU-ECONOMY §8), and its row carries no arm. Its proof cites no
+    /// motion, so it is minted at the founding mode (#169).
     pub fn settle_subsidy(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        self.mint_to(party, mu, anchor, None)
+        self.mint_founding(party, &mu.into(), anchor, None)
     }
 
     /// Yield of an optimisation, read on the carriers as a lane vector.
@@ -105,12 +108,15 @@ impl Treasury {
     /// a mint with no party is a mint to nobody, and the escrow stands
     /// rather than being spent into the void. The mint stands at `at`, the
     /// act that released it (EC1), never at the escrow's.
-    pub fn release_rewrite(&mut self, address: &[u8], at: Anchor) -> Option<Mu> {
+    ///
+    /// The mint carries the reduction's modes (#169): `absorbed`, the modes
+    /// of the family the reduction absorbs, capped lane-wise by the claim.
+    pub fn release_rewrite(&mut self, address: &[u8], absorbed: &Modes, at: Anchor) -> Option<Mu> {
         let row = self.escrowed.get(address)?;
         if row.voices.is_empty() {
             return None;
         }
-        let (voices, mu) = (row.voices.clone(), row.mu.clone());
+        let (voices, mu) = (row.voices.clone(), absorbed.capped(&row.mu));
         self.escrowed.remove(address);
         // THE SPLIT CANNOT EXCEED WHAT IT RELEASES. This read
         // `(mu[l] / n).max(1)`, so a lane holding less than one unit per
@@ -125,27 +131,30 @@ impl Treasury {
         // unminted. (Over counts it was `⌊mu / n⌋` and the remainder was
         // never issued.)
         let share = mu.part(voices.len())?;
-        if share.is_zero() {
+        let read = share.reading();
+        if share.is_empty() {
             // Nothing divides. The escrow is already removed and the row is
             // spent; minting zero is not a payment and is not written.
-            return Some(share);
+            return Some(read);
         }
         // POWR (78.33): the compression yield, standing at the act that
         // released it.
         for v in &voices {
             self.mint_to(*v, share.clone(), at, Some(Arm::Powr));
         }
-        Some(share)
+        Some(read)
     }
 
-    pub fn settle_solve(&mut self, voice: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        self.mint_to(voice, mu, anchor, Some(Arm::Pouw))
+    /// POUW — a solve's closure, minted with the modes its closure moved.
+    pub fn settle_solve(&mut self, voice: [u8; 32], modes: Modes, anchor: Anchor) -> Mu {
+        self.mint_to(voice, modes, anchor, Some(Arm::Pouw))
     }
 
     /// POWV — a verifying court's share of a release (`economy::verify`),
-    /// minted to the court at the act that released the claim.
-    pub fn settle_verification(&mut self, organ: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        self.mint_to(organ, mu, anchor, Some(Arm::Powv))
+    /// minted to the court at the act that released the claim, with the
+    /// re-traversed closure's modes.
+    pub fn settle_verification(&mut self, organ: [u8; 32], modes: Modes, anchor: Anchor) -> Mu {
+        self.mint_to(organ, modes, anchor, Some(Arm::Powv))
     }
 
     /// 26 AS RULED 2026-09-10 — THE USE OF A CITED GENERATOR IS A SHARE
@@ -175,11 +184,17 @@ impl Treasury {
     /// close beyond its words', never the arithmetic left after the shares —
     /// capped by what is left, and what is left above it never issued (E1).
     /// `None` for a word, whose voices take what is left.
+    ///
+    /// UNDER MODES (#169): `pay` is the modes the citer's closure moved, and
+    /// each share is the cited word's closure modes. A share is paid its own
+    /// modes, each lane scaled to what is left of the citer's mint where the
+    /// rest cannot cover it, and the same amount leaves the citer's modes in
+    /// proportion on each lane.
     pub fn settle_recursive(
         &mut self,
         escrow: &[u8],
-        shares: &[([u8; 32], Mu)],
-        pay: &Mu,
+        shares: &[([u8; 32], Modes)],
+        pay: &Modes,
         premium: Option<Mu>,
         anchor: Anchor,
     ) -> Mu {
@@ -192,32 +207,34 @@ impl Treasury {
         // words achieved (`pay`) and nothing else, bounded by what was escrowed.
         let mut left = pay.capped(&mu);
         for (discoverer, share) in shares {
-            let (paid, rest) = left.split_at(share);
-            if paid.is_zero() {
+            let paid = share.capped(&left.reading());
+            if paid.is_empty() {
                 continue;
             }
+            let (_, rest) = left.split_at(&paid.reading());
             left = rest;
             self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
         }
         let taken = match premium {
-            Some(p) => p.capped(&left),
+            Some(p) => left.capped(&p),
             None => left,
         };
-        self.mint_claim(&voices, taken.clone(), anchor);
-        taken
+        let read = taken.reading();
+        self.mint_claim(&voices, taken, anchor);
+        read
     }
 
-    /// PoWc — split the consilience award (the germ's μ⃗ PRICED at the moment's
-    /// surface) across the attesting voices, per lane. The share is the exact
-    /// quotient `mu[l] / n` over ℚ: the voices' shares sum to the award.
-    pub fn settle_consilience(&mut self, voices: &[[u8; 32]], mu: impl Into<Mu>, anchor: Anchor) {
+    /// PoWc — split the consilience award across the attesting voices, mode
+    /// by mode. The share is the exact quotient `a/n` of each mode over ℚ:
+    /// the voices' shares sum to the award.
+    pub fn settle_consilience(&mut self, voices: &[[u8; 32]], modes: &Modes, anchor: Anchor) {
         if voices.len() < 2 {
             return;
         }
-        let Some(share) = mu.into().part(voices.len()) else {
+        let Some(share) = modes.part(voices.len()) else {
             return;
         };
-        if share.is_zero() {
+        if share.is_empty() {
             return;
         }
         for v in voices {
@@ -225,8 +242,9 @@ impl Treasury {
         }
     }
 
-    pub fn settle_torse(&mut self, discoverer: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        self.mint_to(discoverer, mu, anchor, Some(Arm::Pouw))
+    /// A TORSE, minted with its own motion's modes (#169).
+    pub fn settle_torse(&mut self, discoverer: [u8; 32], modes: Modes, anchor: Anchor) -> Mu {
+        self.mint_to(discoverer, modes, anchor, Some(Arm::Pouw))
     }
 
     /// A reading (decomposition) charges the READER what the reading
@@ -283,9 +301,12 @@ impl Treasury {
         if paid.is_zero() {
             return (paid, short);
         }
-        let drawn = self.debit(voice, &paid);
-        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+        // Drawn from the balance's modes in proportion on each lane (#169).
+        let Ok(drawn) = self.debit(voice, &paid) else {
+            debug_assert!(false, "paid ≤ held, debited against it");
+            return (Mu::zero(), short);
+        };
+        self.write(Treasury::row(Kind::Burn, voice, drawn, anchor, None));
         (paid, short)
     }
 

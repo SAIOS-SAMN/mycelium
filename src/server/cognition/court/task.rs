@@ -203,7 +203,11 @@ impl Court {
     /// discharged on the withheld pairs (`pay`), on the task's FIRST closure
     /// only: a repeat is verified and pays nothing — no floor, the decay is
     /// the discharge itself. Answers what the solver was paid, per lane.
-    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: crate::economy::Mu, first: bool) -> crate::economy::Mu {
+    ///
+    /// Every mint here carries `modes`, the modes the closing form moved
+    /// (#169): the solve's, the claims' released on it and the lease's.
+    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: crate::economy::Mu, modes: &crate::economy::Modes, first: bool) -> crate::economy::Mu {
+        let modes = crate::economy::Modes::cited_or_founding(modes, &pay);
         // NO WORK, NO ACT: the check stands before every release, mint,
         // docket and offer (see `SolveVerdict::NoWork`).
         if pay.is_zero() {
@@ -228,7 +232,7 @@ impl Court {
             // escrow held; nothing above the discharge is minted.
             // POWV: this court's reconstruction on the withheld pairs verified it.
             let organs = [self.identity];
-            let _ = self.release_verified(addr.as_bytes(), pay.clone(), &organs, settled);
+            let _ = self.release_verified(addr.as_bytes(), &modes, &organs, settled);
         }
         // MU-ECONOMY §5.2 — a verified solve of a leased job pays its lease:
         // the solve's measured discharge, out of the payer's hold.
@@ -242,7 +246,7 @@ impl Court {
         }
         self.append_step(crate::chronometry::ActKind::Settled, task, voice);
         let settled = self.anchor();
-        let paid = self.treasury.settle_solve(voice, pay, settled);
+        let paid = self.treasury.settle_solve(voice, modes, settled);
         self.acts.paid.step(&paid);
         self.grow_grants_by_paid();
         paid

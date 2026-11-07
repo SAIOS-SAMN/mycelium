@@ -194,7 +194,10 @@ impl Court {
         if mu.is_zero() {
             return;
         }
-        let paid = self.treasury.settle_convergence(closer, mu, anchor);
+        // POWC carries the converging orbits' class (#169): the cited word's
+        // closure modes on the listing's family, where the two lineages met.
+        let modes = self.cited_modes(at, &word, &mu);
+        let paid = self.treasury.settle_convergence(closer, modes, anchor);
         self.acts.pay("demands closed by another mind", paid);
         self.grow_grants_by_paid();
     }
