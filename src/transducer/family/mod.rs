@@ -25,6 +25,7 @@ mod fibre_relation;
 mod frame;
 pub mod torsion_quotient;
 pub mod flux;
+pub mod footprint;
 pub mod hyperfluid;
 pub mod incidence;
 pub mod finish;

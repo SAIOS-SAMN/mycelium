@@ -54,6 +54,77 @@ fn derive_pi_keeps_every_term_reconstructing_withheld() {
     }
 }
 
+fn line(row: &str) -> crate::transducer::spelled::SectionSample {
+    crate::transducer::spelled::SectionSample::from(vec![row.bytes().map(|b| b - b'0').collect::<Vec<u8>>()])
+}
+
+/// The word: a body of 1 recoloured 3 in place, read off one pair. Its
+/// footprint is the body's own painted sites, which selection terms over the
+/// input scene can carry. (A motion's footprint also reaches the ground
+/// sites it lands on, which no term over the input's painted sites carries,
+/// so a motion binds ⊤.)
+fn recoloured_word() -> crate::transducer::sentence::Form {
+    crate::transducer::family::cipher_form(&line("1100200"), &line("3300200"))
+}
+
+/// #158 — π* IS BOUND FROM THE WORD'S OWN FOOTPRINTS: on a family and a
+/// withheld pair whose change the word's speech covers, the A9 judgement
+/// binds exactly what `derive_pi` binds over the word's footprints there
+/// (each deduced by speaking the word), and no pair is left unbound.
+#[test]
+fn bind_pi_binds_common_set_over_deduced_footprints() {
+    use crate::transducer::family::footprint::{footprint_of, Footprint};
+    use crate::transducer::family::NoCrystal;
+    let form = recoloured_word();
+    let train = vec![(line("1100200"), line("3300200"))];
+    let withheld = vec![(line("0110020"), line("0330020"))];
+    let bound = crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || {
+        let b = crate::court::verdict::bind_pi(&form, &train, &withheld, &NoCrystal, &mut stroke()).expect("bound");
+        let evidence = |fam: &[(crate::transducer::spelled::SectionSample, crate::transducer::spelled::SectionSample)]| -> Vec<crate::transducer::anchor::Evidence> {
+            fam.iter()
+                .enumerate()
+                .map(|(i, (x, _))| match footprint_of(&form, x, Some(i), &NoCrystal, &mut stroke()) {
+                    Footprint::Read(fp) => (fp, crate::transducer::raster::painted_sites(x)),
+                    other => panic!("the word speaks pair {i}: {other:?}"),
+                })
+                .collect()
+        };
+        let direct = derive_pi(&evidence(&train), &evidence(&withheld), &mut stroke()).expect("read");
+        (b, direct)
+    });
+    let (b, direct) = bound;
+    assert!(b.unbound.is_empty(), "the word covers the withheld change: {:?}", b.unbound);
+    assert_eq!(b.terms, direct, "the judgement binds derive_pi's common set over the deduced footprints");
+    assert!(!b.terms.is_empty(), "a superposition is bound: {:?}", b.terms);
+}
+
+/// #158 — A WORD WHOSE FOOTPRINT MISSES A WITHHELD PAIR'S CHANGE IS NOT
+/// BOUND ON THAT PAIR: the pair that paints a site the word leaves alone is
+/// named unbound with that site, and it judges nothing: the family's common
+/// set stands, yet no withheld pair binds it, so the word stays ⊤. The same
+/// family with a withheld pair the word covers binds terms.
+#[test]
+fn word_missing_a_withheld_change_is_not_bound_on_that_pair() {
+    use crate::transducer::family::NoCrystal;
+    let form = recoloured_word();
+    let train = vec![(line("11002000"), line("33002000"))];
+    let covered = (line("01102000"), line("03302000"));
+    let missed = (line("11002000"), line("33002007"));
+    let ground = || crate::transducer::family::transduce::Ground::One(0);
+    let bind = |withheld: &[(crate::transducer::spelled::SectionSample, crate::transducer::spelled::SectionSample)]| {
+        crate::transducer::raster::on_ground(ground(), || crate::court::verdict::bind_pi(&form, &train, withheld, &NoCrystal, &mut stroke()))
+            .expect("bound")
+    };
+    let only = bind(std::slice::from_ref(&missed));
+    assert_eq!(only.unbound.len(), 1, "{:?}", only.unbound);
+    assert_eq!(only.unbound[0].pair, 0, "the pair whose change the word misses");
+    assert_eq!(only.unbound[0].missed.iter().map(|s| s.coordinates()).collect::<Vec<_>>(), vec![[0, 7]], "the site it misses");
+    assert!(only.terms.is_empty(), "no withheld pair binds the word: it stays ⊤");
+    let held = bind(std::slice::from_ref(&covered));
+    assert!(held.unbound.is_empty(), "the covered pair binds the word");
+    assert!(!held.terms.is_empty(), "and the common set is bound on it: {:?}", held.terms);
+}
+
 /// ONE EVIDENCE OR NONE BINDS NOTHING BEYOND ITS OWN SET, AND A SPENT TOKEN
 /// REFUSES THE WHOLE DERIVATION, never a part of it.
 #[test]

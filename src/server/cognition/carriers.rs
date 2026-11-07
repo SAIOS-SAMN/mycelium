@@ -104,6 +104,7 @@ impl Court {
             listing_task,
             task_listings,
             task_family,
+            task_withheld,
             speech_task,
             refusals,
             settlements,
@@ -321,6 +322,7 @@ impl Court {
         c.count("listing_task", listing_task.len());
         c.count("task_listings", lists(task_listings));
         c.count("task_family", lists(task_family));
+        c.count("task_withheld", lists(task_withheld));
         c.count("speech_task", speech_task.len());
         c.count("refusals", refusals.len());
         c.count("deflations", deflations.len());

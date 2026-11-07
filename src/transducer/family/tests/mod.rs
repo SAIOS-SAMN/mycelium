@@ -19,6 +19,7 @@ mod elements;
 mod extraction;
 mod torsion_quotient;
 mod flux;
+mod footprint;
 mod ground;
 mod hyperfluid;
 mod incongruence;
