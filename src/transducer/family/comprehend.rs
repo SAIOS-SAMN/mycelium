@@ -78,7 +78,12 @@ pub(crate) fn pivot_cells(form: &Form, budget: &mut crate::physics::Budget) -> c
             }
         }
     }
-    crate::transducer::sentence::PivotCells { algebras, by_chord }
+    // 78.26(2), CB1 — the cells read together: where two cells meeting at a
+    // body carry generators that fail to commute, their bracket, held or lost.
+    let chambers: Vec<(&[Vec<u8>], &ChamberAlgebra)> =
+        form.cells.scoped().zip(&algebras).map(|((_, cell), a)| (cell.bodies.as_slice(), a)).collect();
+    let brackets = crate::transducer::cech::cross_brackets(&chambers, budget);
+    crate::transducer::sentence::PivotCells { algebras, by_chord, brackets }
 }
 
 /// EVERY CERTIFIED CELL OF `form`, READ AS ITS ORBIT ALGEBRA, under the
