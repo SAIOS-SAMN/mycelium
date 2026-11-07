@@ -69,7 +69,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
 | Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
-| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
+| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Ruled 2026-11-06 (78.180 ruling 6), to build: no letter written by hand past `n = 3` (section samples, letters adjoined only by the presentation's growth); the ray a translation versor of the sample's rank |
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
 | Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
@@ -2010,17 +2010,24 @@ Each phase is one commit:
      `perspective_shift_is_a_sensor_motion`,
      `two_perspectives_of_one_sample_compared_as_a_cover`,
      `frame_fixing_is_a_perspective_reading`. No wire or address change.
-     Open: a mind asking for a perspective as a demand; collapsing a
-     ground's vortex by a relation.
+     Ruled 2026-11-06 (78.180 ruling 6), to build: a mind asks for a
+     perspective as a demand, a typed vertex naming the sample and the
+     overlap where the cocycle fails for a missing chart; a ground's vortex
+     collapses as the nesting's does, by Stands or Painted on holding for
+     one kept candidate alone on every pair, never by Closes (claims
+     `ground_vortex_collapses_where_bodies_stand_on_one_candidate`,
+     `ground_vortex_collapses_where_residue_paints_one_candidate`,
+     `closing_rule_never_collapses_the_ground`).
    - **Built, stage 2** (branch `sensing-s6-claim`, a wire change inside
      v0.4.0's break): a claim of factorisation states the perspective it
      was perceived under (signed `mycelium factorisation v2`); the court
      reads its copy of the pair through it and reconstructs there, refusing
      another rank or a non-space role by name; the mind perceives under a
      perspective (`TaskPercept::under`). Claim
-     `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
-     the solve of outputs and speech stating a perspective (they read the
-     section in its default).
+     `claim_states_its_perspective_and_court_reconstructs_under_it`.
+     Ruled 2026-11-06 (78.180 ruling 6), to build: the solve of outputs and
+     speech state their perspective, and a court reconstructs under it
+     (today they read the section in its default).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
