@@ -452,6 +452,18 @@ pub enum Cite {
     /// TUniversal point the act was read at. The alignment reading is
     /// derived from these events (`clauses::read_alignment`).
     Signing { kernel: [u8; 32], reserve: Option<[u8; 32]>, verdict: Box<crate::physics::laws::clauses::Verdict> },
+    /// CB1, 78.26(2) (ruled on #148, 2026-11-06) — THE DOCKET'S LOST
+    /// BRACKET, a demand: the typed vertex naming the two chambers, each by
+    /// its bodies' coordinates (KB1), and their bracket `A∘B − B∘A`, exact,
+    /// which no cell of the sentence holds; and its cover, as a demand's. No
+    /// enclosure is formed for it (NB1: a cell is minted only at a witness);
+    /// a witness certifying a cell that wraps both chambers and holds the
+    /// bracket is its answer. Volatile on the plan, as every docket entry.
+    Bracket {
+        chambers: Box<[Vec<Vec<u8>>; 2]>,
+        bracket: Box<crate::transducer::cga::LinearFunction>,
+        cover: Option<Vec<Vec<u8>>>,
+    },
 }
 
 impl Cite {
@@ -479,6 +491,7 @@ impl Cite {
             Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
             Cite::Class { .. }
             | Cite::Demand { .. }
+            | Cite::Bracket { .. }
             | Cite::Refusal { .. }
             | Cite::Uplink { .. }
             | Cite::Chained { .. }
@@ -497,7 +510,7 @@ impl Cite {
     /// A docket entry's cover, where it is one and its cover read.
     pub fn cover(&self) -> Option<&[Vec<u8>]> {
         match self {
-            Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
+            Cite::Class { cover, .. } | Cite::Demand { cover, .. } | Cite::Bracket { cover, .. } => cover.as_deref(),
             Cite::Word { .. }
             | Cite::Root { .. }
             | Cite::Refusal { .. }
@@ -645,18 +658,18 @@ impl Cite {
                     | Cite::Origin { .. }
                     | Cite::Stated { .. }
                     | Cite::Window { .. }
-                    | Cite::Signing { .. } => {}
+                    | Cite::Signing { .. }
+                    | Cite::Bracket { .. } => {}
                 }
-                match cover {
-                    None => rec.push(0),
-                    Some(charts) => {
-                        rec.push(1);
-                        crate::transducer::address::put_u32_count(&mut rec, charts.len())?;
-                        for c in charts {
-                            crate::transducer::address::put_bytes(&mut rec, c)?;
-                        }
-                    }
+                put_cover(&mut rec, cover)?;
+            }
+            Cite::Bracket { chambers, bracket, cover } => {
+                rec.push(17);
+                for bodies in chambers.iter() {
+                    put_key_list(&mut rec, bodies)?;
                 }
+                bracket.put_canonical(&mut rec);
+                put_cover(&mut rec, cover)?;
             }
         }
         out.append(&mut rec);
@@ -800,35 +813,68 @@ impl Cite {
                     }
                     _ => None,
                 };
-                let cover = match *b.get(*p)? {
-                    0 => {
-                        *p += 1;
-                        None
-                    }
-                    1 => {
-                        *p += 1;
-                        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
-                        *p += 4;
-                        // Each chart is at least its length; a count the body
-                        // cannot hold refuses before anything is reserved.
-                        if n > b.len().checked_sub(*p)? / 4 {
-                            return None;
-                        }
-                        let mut charts = Vec::with_capacity(n);
-                        for _ in 0..n {
-                            charts.push(crate::transducer::address::take_bytes(b, p)?);
-                        }
-                        Some(charts)
-                    }
-                    _ => return None,
-                };
+                let cover = take_cover(b, p)?;
                 Some(match rotor {
                     Some(rotor) => Cite::Class { class, rotor, cover },
                     None => Cite::Demand { class, residue, cover },
                 })
             }
+            17 => {
+                let chambers = Box::new([take_key_list(b, p)?, take_key_list(b, p)?]);
+                let bracket = Box::new(crate::transducer::cga::LinearFunction::take_canonical(b, p)?);
+                let cover = take_cover(b, p)?;
+                Some(Cite::Bracket { chambers, bracket, cover })
+            }
             _ => None,
         }
+    }
+}
+
+/// Keys written out in turn, their count first, each by its length.
+fn put_key_list(rec: &mut Vec<u8>, keys: &[Vec<u8>]) -> Option<()> {
+    crate::transducer::address::put_u32_count(rec, keys.len())?;
+    for k in keys {
+        crate::transducer::address::put_bytes(rec, k)?;
+    }
+    Some(())
+}
+
+/// The inverse of [`put_key_list`].
+fn take_key_list(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
+    let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+    *p += 4;
+    // Each key is at least its length; a count the body cannot hold refuses
+    // before anything is reserved.
+    if n > b.len().checked_sub(*p)? / 4 {
+        return None;
+    }
+    let mut keys = Vec::with_capacity(n);
+    for _ in 0..n {
+        keys.push(crate::transducer::address::take_bytes(b, p)?);
+    }
+    Some(keys)
+}
+
+/// A docket entry's cover: absent (its enclosure owed), or its charts' keys.
+fn put_cover(rec: &mut Vec<u8>, cover: &Option<Vec<Vec<u8>>>) -> Option<()> {
+    match cover {
+        None => rec.push(0),
+        Some(charts) => {
+            rec.push(1);
+            put_key_list(rec, charts)?;
+        }
+    }
+    Some(())
+}
+
+/// The inverse of [`put_cover`].
+fn take_cover(b: &[u8], p: &mut usize) -> Option<Option<Vec<Vec<u8>>>> {
+    let flag = *b.get(*p)?;
+    *p += 1;
+    match flag {
+        0 => Some(None),
+        1 => Some(Some(take_key_list(b, p)?)),
+        _ => None,
     }
 }
 
