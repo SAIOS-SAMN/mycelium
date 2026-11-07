@@ -23,6 +23,9 @@ pub struct PivotCells {
     /// The cells each orbit's circuit crosses, by the orbit's chord overlap
     /// (AT1).
     pub by_chord: Keyed<Vec<usize>, coord::Overlap>,
+    /// 78.26(2), CB1 — the cross-chamber brackets between the cells, each
+    /// held by a chamber or an enclosure or lost, and the pairs unread.
+    pub brackets: crate::transducer::cech::CrossBrackets,
 }
 
 /// CS2 — THE PIVOT'S OUTCOMES BY CONTENT, counted per orbit per crossing
@@ -36,10 +39,26 @@ pub struct PivotTally {
     pub starved: u64,
     pub unread_fibre: u64,
     pub unread_algebra: u64,
+    /// CB1 — the cross-chamber brackets of the cells read afresh: held by a
+    /// chamber or an enclosure, lost, and the chamber pairs unread.
+    pub brackets_held: u64,
+    pub brackets_lost: u64,
+    pub brackets_unread: u64,
 }
 
 impl PivotTally {
+    /// CB1 — the brackets of one form's cells, read afresh, counted once.
+    pub fn add_brackets(&mut self, b: &crate::transducer::cech::CrossBrackets) {
+        let (held, lost) = b.held_lost();
+        self.brackets_held += held as u64;
+        self.brackets_lost += lost as u64;
+        self.brackets_unread += b.unread.len() as u64;
+    }
+
     pub fn add(&mut self, o: &PivotTally) {
+        self.brackets_held += o.brackets_held;
+        self.brackets_lost += o.brackets_lost;
+        self.brackets_unread += o.brackets_unread;
         self.reached += o.reached;
         self.derivable += o.derivable;
         self.demanded += o.demanded;
@@ -52,8 +71,17 @@ impl PivotTally {
     /// The contemplation's line segment.
     pub fn line(&self) -> String {
         format!(
-            "pivots reached {} derivable {} demanded {} adjoin {} starved {} unread fibre {} algebra {}",
-            self.reached, self.derivable, self.demanded, self.adjoin, self.starved, self.unread_fibre, self.unread_algebra
+            "pivots reached {} derivable {} demanded {} adjoin {} starved {} unread fibre {} algebra {} | brackets held {} lost {} unread {}",
+            self.reached,
+            self.derivable,
+            self.demanded,
+            self.adjoin,
+            self.starved,
+            self.unread_fibre,
+            self.unread_algebra,
+            self.brackets_held,
+            self.brackets_lost,
+            self.brackets_unread
         )
     }
 }

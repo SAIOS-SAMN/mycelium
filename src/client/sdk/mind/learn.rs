@@ -122,7 +122,7 @@ impl Mind {
         let Some(key) = self.hypha.voice().signer().cloned() else {
             return Err(io::Error::new(io::ErrorKind::PermissionDenied, "a voice seated without its key signs no solve"));
         };
-        self.submit_solve_signed(&key, id, outputs, rule, ground)
+        self.submit_solve_signed(&key, id, id, outputs, rule, ground)
     }
 
     /// [`Mind::submit_solve_rule`] SIGNED BY `key`: the court pays the key
@@ -130,7 +130,12 @@ impl Mind {
     /// acts), so the key named here is the payee. A seated mind files the
     /// solve of a task its house set before it this way, by the key it sat
     /// by, its own (`Mind::file_seat_solve`).
-    pub(crate) fn submit_solve_signed(&mut self, key: &ed25519_dalek::SigningKey, id: &[u8; 32], outputs: &[SectionSample], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
+    ///
+    /// `scene` is the thought whose return the solve leaves at
+    /// (`hold_for_return`): the task's own scene for a solve of the mind's
+    /// own work, the empty scene (the mind's next return of any orbit) for a
+    /// seat's act.
+    pub(crate) fn submit_solve_signed(&mut self, key: &ed25519_dalek::SigningKey, id: &[u8; 32], scene: &[u8], outputs: &[SectionSample], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
         let stated = crate::transducer::raster::stated(ground);
         // A rule whose record does not write is not sent as no rule (STD1 3c).
         let bytes = rule.to_bytes().ok_or_else(|| {
@@ -157,8 +162,8 @@ impl Mind {
         if let Some(g) = &stated {
             crate::transducer::address::put_key_bytes(&mut at, g);
         }
-        // R2 — held for the return of a thought of the task's scene.
-        self.hold_for_return(&at, &id, move |entity| entity.post_solve(id, act, rule, outputs, ground));
+        // R2 — held for the return of a thought of `scene`.
+        self.hold_for_return(&at, scene, move |entity| entity.post_solve(id, act, rule, outputs, ground));
         Ok(())
     }
 

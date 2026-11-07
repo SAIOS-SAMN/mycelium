@@ -30,6 +30,7 @@ mod remainders;
 mod rewrite;
 mod rule;
 mod rule_language;
+mod seat_lift;
 mod seat_mind;
 mod signed_receipts;
 mod solve;

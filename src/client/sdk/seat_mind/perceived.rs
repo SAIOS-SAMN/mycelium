@@ -26,6 +26,12 @@ pub struct Perceived {
     pub orbits: usize,
     /// The distinct periods the returning series hold.
     pub periods: Vec<u64>,
+    /// #147 — series lifted into the field (`Lifted::of`), versor series
+    /// lifted as motions whose steps the algebra carries, and series the
+    /// lift refused (`LiftRefusal`), each read at this percept.
+    pub lifted: usize,
+    pub motions: usize,
+    pub unlifted: usize,
     /// A call whose outcome this percept's records were read against: its
     /// function, and whether the house applied it.
     pub learned: Option<(u16, bool)>,
@@ -90,8 +96,8 @@ impl std::fmt::Display for Perceived {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "beat {} records {} counsel {} | series {} fixed {} orbits {} periods {:?}",
-            self.beat, self.records, self.counsel, self.series, self.fixed, self.orbits, self.periods
+            "beat {} records {} counsel {} | series {} fixed {} orbits {} periods {:?} | lifted {} motions {} unlifted {}",
+            self.beat, self.records, self.counsel, self.series, self.fixed, self.orbits, self.periods, self.lifted, self.motions, self.unlifted
         )?;
         if let Some((fn_id, applied)) = self.learned {
             write!(f, " | learned fn {fn_id} (applied {applied})")?;
