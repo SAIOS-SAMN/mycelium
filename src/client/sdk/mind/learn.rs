@@ -144,7 +144,7 @@ impl Mind {
         // PERCEIVED UNDER (MU-SENSING §4, §6.2): the section's own, through
         // which the word machinery read the scene; the court reads its copy
         // of the task through it.
-        let perspective = outputs.first().map_or_else(SectionSample::section_perspective, |o| o.perspective().clone());
+        let perspective = SectionSample::section_perspective();
         let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(key, id, &s, Some(&bytes), stated.as_deref(), &perspective)) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
