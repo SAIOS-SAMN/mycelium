@@ -19,7 +19,7 @@
 //!
 //! [`reconstruct_fixture`] is this SDK's own reconstruction of each fixture
 //! the forms clauses carry, through `forms::passage`,
-//! `forms::coordinate` and `forms::coupling`; a kernel on another stack reconstructs with its own
+//! `forms::coordinate`, `forms::coupling` and `forms::turning`; a kernel on another stack reconstructs with its own
 //! code. [`sign_concordance`] signs a served register with it.
 //!
 //! ```no_run
@@ -45,6 +45,9 @@ pub use mycelium::physics::laws::clauses::{ConcordanceClause, ConcordanceClauseI
 /// The LAW-COUPLING fixture's input and object (78.175 §5), and one body of
 /// a range as a fixture states it.
 pub use mycelium::physics::laws::clauses::{CouplingFixture, CouplingObject, Term};
+/// The fixture 11b input of LAW-COORDINATE's composition of turnings
+/// (78.173 §5), each reaching a value of `Cl(p, q)`.
+pub use mycelium::physics::laws::clauses::TurningFixture;
 /// The signing act, a clause's choice, the assent admitted and each refusal
 /// by name.
 pub use mycelium::physics::laws::clauses::{Admitted, Assent, Choice, SignedClause, Signing, SigningRefusal};
@@ -95,7 +98,21 @@ pub fn reconstruct_fixture(fixture: &Fixture) -> Option<Object> {
             }
         }
         Fixture::Coupling(f) => Object::Coupling(reconstruct_coupling(f)?),
+        Fixture::Turning(f) => Object::Multivector(reconstruct_turning(f)?),
     })
+}
+
+/// THE KERNEL'S RECONSTRUCTION OF ONE FIXTURE 11b (78.173 §5), through
+/// `forms::turning`: a rate's motion, a motion's generator, two motions
+/// composed and two rates composed. `None` where the law refuses the input.
+fn reconstruct_turning(f: &TurningFixture) -> Option<forms::algebra::Clifford> {
+    use forms::turning as t;
+    match f {
+        TurningFixture::Motion { rate } => t::motion(rate).ok(),
+        TurningFixture::Generator { motion } => t::generator(motion).ok(),
+        TurningFixture::Composed { first, then } => t::compose(first, then).ok(),
+        TurningFixture::Rates { first, then } => t::compose_rates(first, then).ok(),
+    }
 }
 
 /// THE KERNEL'S RECONSTRUCTION OF ONE LAW-COUPLING FIXTURE (78.175 §5),
