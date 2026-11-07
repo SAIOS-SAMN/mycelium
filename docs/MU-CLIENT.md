@@ -1453,6 +1453,31 @@ retires nothing of its own on the proposal; the court decides on its own
 reduction. The mind proposing the other kinds from its own readings, beyond
 the `Torse` and `Condense` its contemplation mints, is owed (§7.1).
 
+**The other kinds, by the readings that carry them** (ruled 2026-11-06,
+#146, under the operator's delegation;
+[78.180](proposals/78.180-delegated-rulings-2026-11-06.md) ruling 5):
+- **`Refine { chart, axis }`** carries the mind's
+  `PivotBy::OpenAxis { face, seed }`. It refines a chart within a
+  dimension that already stands, and it is checked by peel.
+- **`AxisOpen { class, degree }`** is germination's Extend: a new
+  dimension of perception. A mind proposes it where a Novel sensory
+  verdict leaves a persistent residue that no existing axis absorbs. Its
+  `class` is the orbit's holonomy rotor. It is adjudicated by the
+  Extend → claim → adjudicate → federate loop.
+- **`Translation { a, b, gauge }`** carries the mind's
+  `PivotBy::Placement { face, translator }`, with `a` and `b` the two
+  charts of the chord's overlap. Minds propose it and courts reconstruct
+  it. The court keeps minting a connection where it reconstructs one
+  itself.
+- **`Reanchor { gamma }`** is proposed only where the re-gauge moves an
+  anchor coordinate on S while leaving the class invariant (a
+  conjugation), which is the S work MU-ECONOMY prices (§3). `gamma` holds
+  one word per vertex (3.6). A re-gauge that moves nothing is not
+  proposed.
+- **The Hue pivot stays a pivot**, never a Rewrite. A gauge cycle on G is
+  recognition by a group action, and its pay is already the recolour's G
+  share.
+
 ### 5.5 Hardening: dialect into language
 
 The one motion of the objective (§1, item 6; §1a steps 5–7): the
@@ -1766,9 +1791,13 @@ then the backlog. Each item names its issue.
       and what releases the held receipts (the questions stand on the
       issue);
    6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): `Retire`
-      built (`mind/rewrite.rs`); the other kinds from the mind's own
-      readings, and the witness of a court's `Ruling(Retired)` citing a
-      mind's proposal on a running network, owed;
+      built (`mind/rewrite.rs`). The other kinds are ruled (2026-11-06;
+      78.180 ruling 5): `Refine` from `PivotBy::OpenAxis`, `AxisOpen` from
+      a Novel verdict's persistent residue through germination's Extend,
+      `Translation` from `PivotBy::Placement`, `Reanchor` only where a
+      conjugation moves an anchor coordinate on S, and the Hue pivot no
+      Rewrite (§5.4). Owed: their build, and the witness of a court's
+      `Ruling(Retired)` citing a mind's proposal on a running network;
    7. seat play from the mind's own orbits (§6; #147): the seat's series
       lifted into the field and the call a relay carrying its certificate
       on the mind are built; the escaping-orbit play, and so a call that
