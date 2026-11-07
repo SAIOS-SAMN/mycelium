@@ -78,8 +78,9 @@ pub fn sections_of(sample: &Sample) -> Result<Vec<Section>, SectionRefusal> {
 fn coordinates(rest: &[usize], extents: &[usize]) -> Vec<Vec<(usize, usize)>> {
     let mut out: Vec<Vec<(usize, usize)>> = vec![Vec::new()];
     for &k in rest {
-        let e = extents.get(k).copied().unwrap_or(0);
-        out = out.into_iter().flat_map(|prefix| (0..e).map(move |c| [prefix.as_slice(), &[(k, c)]].concat())).collect();
+        // An axis the extents do not read has no coordinate: no section.
+        let Some(&e) = extents.get(k) else { return Vec::new() };
+        out =out.into_iter().flat_map(|prefix| (0..e).map(move |c| [prefix.as_slice(), &[(k, c)]].concat())).collect();
     }
     out
 }
