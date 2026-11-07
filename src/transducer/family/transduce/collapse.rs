@@ -32,6 +32,10 @@
 use super::{factorisations, Factored};
 use crate::transducer::sample::Sample;
 
+/// A pair's residue as the changes it makes, each symbol before and after;
+/// `None` where the pair holds no residue to read.
+type Changes = Option<Vec<(Vec<u8>, Vec<u8>)>>;
+
 /// A RELATION THAT HOLDS A GROUND CANDIDATE (points 1 and 2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum GroundReading {
@@ -64,7 +68,7 @@ pub enum Collapse {
 /// relation, and its candidates stay superposed.
 pub fn collapse_of(family: &[(Sample, Sample)], candidates: &[Vec<u8>]) -> (Vec<CandidateReading>, Collapse) {
     let stands: Vec<Vec<Vec<u8>>> = family.iter().map(|(x, _)| standing_grounds(x)).collect();
-    let residues: Vec<Option<Vec<(Vec<u8>, Vec<u8>)>>> = family.iter().map(|(x, y)| residue_changes(x, y)).collect();
+    let residues: Vec<Changes> = family.iter().map(|(x, y)| residue_changes(x, y)).collect();
     let read: Vec<CandidateReading> = candidates
         .iter()
         .map(|g| {
@@ -72,7 +76,7 @@ pub fn collapse_of(family: &[(Sample, Sample)], candidates: &[Vec<u8>]) -> (Vec<
             if !family.is_empty() && stands.iter().all(|on| on.contains(g)) {
                 readings.push(GroundReading::Stands);
             }
-            let painted = |changes: &Option<Vec<(Vec<u8>, Vec<u8>)>>| {
+            let painted = |changes: &Changes| {
                 changes.as_ref().is_some_and(|c| c.iter().all(|(before, after)| before == g || after == g))
             };
             if !family.is_empty() && residues.iter().all(painted) {
@@ -113,7 +117,7 @@ fn standing_grounds(x: &Sample) -> Vec<Vec<u8>> {
 /// link's symbol before and after, over every factorisation held (none
 /// chosen among them). `None` where the pair's factorisations do not read
 /// or hold no motion: such a pair holds no residue to read.
-fn residue_changes(x: &Sample, y: &Sample) -> Option<Vec<(Vec<u8>, Vec<u8>)>> {
+fn residue_changes(x: &Sample, y: &Sample) -> Changes {
     // One stroke per signed permutation of the phases: each motion's own
     // reading draws a stroke of its own inside `factorisations`.
     let need = super::factorisations_need(x.rank(), 1)?;
