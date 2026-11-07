@@ -374,8 +374,7 @@ for e in &listing.entries {
     seen.push(e.chart.clone());
 }
 let bytes = k.snapshot();
-let mut k2 = Court::new();
-assert!(k2.restore(&bytes), "the field persists beside DEF1");
+let k2 = Court::new().reconstruct(&bytes).expect("the field persists beside DEF1").into_object();
 assert!(k2.cavity_book.get(&target).is_some(), "a restart keeps the cavity");
 assert!(
     k2.field_cold.get(&target).is_some_and(|f| !f.entries.is_empty()),

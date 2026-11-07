@@ -281,17 +281,22 @@ fn read_through(perspective: &Perspective, g: &SectionSample) -> SectionSample {
 }
 
 /// 78.56 — WHETHER THE TASK CARRIES NO POLAR VECTOR: its momentum (the
-/// mass-weighted displacement from input to output, `Σ_out X − s·Σ_in X`
-/// in centred coordinates across each pair's envelope dilation, summed
-/// over the train pairs, every painted site a unit of mass) is exactly
-/// zero. `false` where it is not, and where any pair's dilation is
-/// irrational (its momentum unread: the orientation is held physical, so
-/// the frame is never un-fixed by a guess). Read by [`frame_fixed`] alone.
+/// mass-weighted displacement from input to output, `Σ_out Xᵢ − (p′ᵢ/pᵢ)·Σ_in
+/// Xᵢ` on each axis in centred coordinates across that phase's re-period,
+/// summed over the train pairs, every painted site a unit of mass) is
+/// exactly zero. `false` where it is not, and where a pair's two members
+/// are of different rank or a period is empty (its momentum unread: the
+/// orientation is held physical, so the frame is never un-fixed by a
+/// guess). Read by [`frame_fixed`] alone. Since track 26 S4 each phase
+/// re-periods by its own ratio; the envelopes' dilation, which squared the
+/// extents (law 11), is retired.
 pub fn momentum_vanishes(train: &Family) -> bool {
     use num_rational::Ratio;
     let mut total: [Ratio<i128>; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|_| Ratio::from_integer(0));
     for (a, b) in train {
-        let Some((p, q)) = super::family::envelope_dilation(a.sample(), b.sample()) else { return false };
+        let Some(r) = super::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()) else { return false };
+        let ratios: Option<Vec<(i128, i128)>> = r.periods().iter().map(|&(p_in, p_out)| Some((i128::try_from(p_out).ok()?, i128::try_from(p_in).ok().filter(|&q| q != 0)?))).collect();
+        let Some(ratios) = ratios.filter(|rs| rs.len() == ALPHABET_SAMPLE_RANK) else { return false };
         // A scene's first moment, per axis, each painted site a unit of mass.
         let moment = |g: &SectionSample| -> [i128; ALPHABET_SAMPLE_RANK] {
             let e = g.extents();
@@ -305,8 +310,8 @@ pub fn momentum_vanishes(train: &Family) -> bool {
             m
         };
         let (m_in, m_out) = (moment(a), moment(b));
-        for (axis, t) in total.iter_mut().enumerate() {
-            *t += Ratio::from_integer(m_out[axis]) - Ratio::new(m_in[axis] * i128::from(p), i128::from(q));
+        for ((axis, t), &(p, q)) in total.iter_mut().enumerate().zip(&ratios) {
+            *t += Ratio::from_integer(m_out[axis]) - Ratio::new(m_in[axis] * p, q);
         }
     }
     total.iter().all(|t| *t == Ratio::from_integer(0))

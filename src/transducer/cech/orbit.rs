@@ -95,6 +95,11 @@ pub struct Field {
     awaiting: Keyed<Vec<Vec<u8>>>,
     /// The same, for the tubes' reservoir records, by each tube's ray.
     awaiting_tubes: Keyed<Vec<Vec<u8>>>,
+    /// MU-CLIENT §3.2, §4.2 (#143) — THE HOLONOMIC SHELL: the algebra the
+    /// mind's rings generate, held per class. It grows only in a mind's
+    /// field (`pairing::mark_flux`). A court never perceives, and it holds
+    /// its algebra per chart (`lie_basis`), so a court's field holds none.
+    pub classes: super::class_algebra::ClassAlgebras,
 }
 
 impl Field {

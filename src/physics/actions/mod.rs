@@ -99,6 +99,10 @@ pub enum Action {
     /// holds and forwards, signed, judging nothing in-game. Its byte 0x53
     /// stands in the court's range by the wire agreed with the kernels, and
     /// is asked on the wire by its kind (`Kind::Relay`), never sealed.
+    /// A seat's in-game call is the kernel's physics and stays a relay
+    /// (#147, ruled 2026-11-06): the A20 certificate of the move it names
+    /// is held on the mind and rides the claiming form's tape; the one seat
+    /// act a court adjudicates is the seated solve (`Solve`).
     Seat,
     // Exchanges.
     Adopt,
