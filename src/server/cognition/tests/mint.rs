@@ -173,13 +173,20 @@ k.rule_all_provisionals();
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
-// μ IS A SHARE OF THE FRAME (78.170 O1): every frame is 2×4, so S, G and
-// 𝒯 (the flux over the carried mass) are each over 8 sites, and H, the
-// shell count, stands as it is.
+// THE MINT CARRIES THE CLOSURE'S MODES (#169, ruled 2026-11-06): what the
+// form's motions moved on the family it closed, each mode at its share of
+// the frame (78.174 §1 item 9), never the per-lane measure read beside
+// them, each lane capped by the claim escrowed at that measure (78.149
+// (b)); where its motions read no mode, the measure at the founding mode.
+let measured = crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes");
+let family_of = k.task_family.get(task.as_bytes()).cloned().expect("bound");
+let (_, modes) = k.measured_discharge_read(&spoken, &family_of);
+let carried = crate::economy::Modes::cited_or_founding(&modes, &measured).capped(&measured);
+assert!(!carried.is_empty(), "the closure moved modes the claim pays");
 assert_eq!(
     k.treasury().minted(),
-    crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes"),
-    "mint is what the form measured over its family — the coboundary and the ground it covered — not a bound listing's magnitude"
+    carried.reading(),
+    "mint is the modes the form's closure moved over its family — not a bound listing's magnitude"
 );
 }
 

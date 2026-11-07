@@ -40,7 +40,7 @@ fn genesis_allocation_sits_at_the_founding_mode() {
     assert_eq!(held.amount_of(&Mode::Founding { lane: G }), None, "a lane at zero holds no mode");
     assert_eq!(held.amount_of(&Mode::Founding { lane: T }), Some(&q(3, 1)));
     assert_eq!(held.amount_of(&Mode::Founding { lane: H }), Some(&q(1, 1)));
-    let row = t.entries().last().expect("a genesis row");
+    let row = t.entries().iter().next_back().expect("a genesis row");
     assert_eq!(row.modes, held, "the row carries the founding modes it allocated");
     assert!(t.audit().is_ok());
 }
@@ -107,7 +107,7 @@ fn bond_holds_the_modes_it_was_staked_from() {
     assert_eq!(added, [2, 0, 1, 0]);
     let bond = t.bond_modes(&party).expect("enrolled").clone();
     assert_eq!(bond, Modes::founding(&Mu::counts([2, 0, 1, 0])), "the bond holds the founding modes the balance held");
-    assert_eq!(t.entries().last().map(|e| &e.modes), Some(&bond), "the stake row carries them");
+    assert_eq!(t.entries().iter().next_back().map(|e| &e.modes), Some(&bond), "the stake row carries them");
     let back = t.unstake(party, [1, 0, 0, 0], at(2, [2; 32]));
     assert_eq!(back, [1, 0, 0, 0]);
     assert_eq!(t.balance_modes(&party), Modes::founding(&Mu::counts([3, 0, 1, 0])));
