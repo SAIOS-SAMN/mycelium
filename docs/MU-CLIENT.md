@@ -186,7 +186,10 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    the winding kept (MU-SENSING §3.7; 78.171). Each pair factors as
    motion ∘ residue, every factorisation held (MU-SENSING §3.9). Here: §3,
    §4.9 *perceive*. MU-ANASTOME §5.2 (the retina; the perception layer).
-   **Built:** `transduce::TaskPercept`, `Mind::perceive_envelope`,
+   The sample is built as a manifold, a product of circles and interval
+   charts, and the task as a family of manifolds (78.179 §1, §3).
+   **Built:** `transduce::TaskPercept`, `Mind::perceive_envelope` (to be
+   renamed `perceive_task`, #165),
    `Factorisation::of`; the carrier's lift and atlas (`Lifted::of`,
    `Atlas`; #131). **Owed:** the contemplation standing on the carrier,
    from the well's body on (track 26 S7 stage 2 to S9; #134).
@@ -424,7 +427,7 @@ perception in its own right, each moving at its own period:
 | shell | what it reads | functions |
 |---|---|---|
 | **harmonic core** — the rings | the rings of what was given, composed (`compose`, `sentences_of`), each closed or open by its modes; each ring's SIZE its return; the rings NESTED, never traversed — a ring sounds inside another where its period divides it, and its ECHO `E = Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is whole, a turn, a gain, a spiral or a delay (78.112) | `compose::{compose, sentences_of, teaches, next_rung}`, `theorem::Theorem::{of, check}`, `rung::{speak, hear}`, `hearing::{echo, nest, hear}` |
-| **luminal envelope** — the rays | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
+| **luminal rays** — on the null cone of the space the core is embedded in (MU-RECURSION 64; 78.179 §5) | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
 | **holonomic** — the circuits' algebra | each ring's curvature generates an algebra (`cech::flow_generators`), closed under the commutator with what the mind holds for that CLASS (`cech::lie_close`, `cech::quotient`); what lies outside the held span is read per axis — what the mind newly understands; a ring's winding against its period, one return one age (78.68, 78.43) | `cech::{flow_generators, lie_close, quotient, quotient::grow}` |
 
 PERCEPTION IS WHERE THE SHELLS ALIGN: a ring that resonates across them —
@@ -1447,6 +1450,31 @@ retires nothing of its own on the proposal; the court decides on its own
 reduction. The mind proposing the other kinds from its own readings, beyond
 the `Torse` and `Condense` its contemplation mints, is owed (§7.1).
 
+**The other kinds, by the readings that carry them** (ruled 2026-11-06,
+#146, under the operator's delegation;
+[78.180](proposals/78.180-delegated-rulings-2026-11-06.md) ruling 5):
+- **`Refine { chart, axis }`** carries the mind's
+  `PivotBy::OpenAxis { face, seed }`. It refines a chart within a
+  dimension that already stands, and it is checked by peel.
+- **`AxisOpen { class, degree }`** is germination's Extend: a new
+  dimension of perception. A mind proposes it where a Novel sensory
+  verdict leaves a persistent residue that no existing axis absorbs. Its
+  `class` is the orbit's holonomy rotor. It is adjudicated by the
+  Extend → claim → adjudicate → federate loop.
+- **`Translation { a, b, gauge }`** carries the mind's
+  `PivotBy::Placement { face, translator }`, with `a` and `b` the two
+  charts of the chord's overlap. Minds propose it and courts reconstruct
+  it. The court keeps minting a connection where it reconstructs one
+  itself.
+- **`Reanchor { gamma }`** is proposed only where the re-gauge moves an
+  anchor coordinate on S while leaving the class invariant (a
+  conjugation), which is the S work MU-ECONOMY prices (§3). `gamma` holds
+  one word per vertex (3.6). A re-gauge that moves nothing is not
+  proposed.
+- **The Hue pivot stays a pivot**, never a Rewrite. A gauge cycle on G is
+  recognition by a group action, and its pay is already the recolour's G
+  share.
+
 ### 5.5 Hardening: dialect into language
 
 The one motion of the objective (§1, item 6; §1a steps 5–7): the
@@ -1751,9 +1779,13 @@ then the backlog. Each item names its issue.
       and what releases the held receipts (the questions stand on the
       issue);
    6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): `Retire`
-      built (`mind/rewrite.rs`); the other kinds from the mind's own
-      readings, and the witness of a court's `Ruling(Retired)` citing a
-      mind's proposal on a running network, owed;
+      built (`mind/rewrite.rs`). The other kinds are ruled (2026-11-06;
+      78.180 ruling 5): `Refine` from `PivotBy::OpenAxis`, `AxisOpen` from
+      a Novel verdict's persistent residue through germination's Extend,
+      `Translation` from `PivotBy::Placement`, `Reanchor` only where a
+      conjugation moves an anchor coordinate on S, and the Hue pivot no
+      Rewrite (§5.4). Owed: their build, and the witness of a court's
+      `Ruling(Retired)` citing a mind's proposal on a running network;
    7. seat play from the mind's own orbits (§6; #147): the seat's series
       lifted into the field and the call a relay carrying its certificate
       on the mind are built; the escaping-orbit play, and so a call that
