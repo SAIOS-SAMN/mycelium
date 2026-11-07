@@ -2108,12 +2108,14 @@ Each phase is one commit:
         conformance probes and the oracle's fixtures; `on_sphere` and
         `at_three::sphere` retired; the SDK's `house::sphere_at` is
         `house::membrane_at`. Claim `sphere_built_without_squared_radius`.
-        **Stopped:** a body's nucleus (`blade::Blade::nucleus`), whose
-        extent is a polar second moment with no rational root in general,
-        still built from `r²` by the crate-private `cga::sphere_at`, waiting
-        on a ruling of the reading that replaces it (#134); and turnings on
-        planes that share a unit, waiting on netstratum's composition law
-        (78.173 fixture 11b; the Cayley form on generators).
+        A body's nucleus is its exact second moment, a reading (ruled on
+        #134, 2026-11-06), written as the dual-sphere form
+        `c + ½(c² − r²)e_∞ + e_o` from `r²` alone (`blade::nucleus_form`);
+        `cga::sphere_at` is retired (branch `field-nucleus-moment`; claim
+        `nucleus_is_the_second_moment_read_never_a_sphere`; the values are
+        unchanged, so no recut). **Stopped:** turnings on planes that share
+        a unit, waiting on netstratum's composition law (78.173 fixture
+        11b; the Cayley form on generators).
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.

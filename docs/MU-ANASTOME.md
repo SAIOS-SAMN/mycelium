@@ -915,9 +915,11 @@ The mind lifts these into its field (MU-SENSING §3.7–§3.9):
   never returning exactly.
 
 Code: `src/transducer/field/` (`well.rs`, `carrier/`) and
-`src/transducer/cech/orbit.rs` (`Field`). **Owed:** seat percepts lifted
-into the field, with the seat's functions as thoughts whose orbits escape
-(MU-CLIENT §6, *Specified*; issue #133).
+`src/transducer/cech/orbit.rs` (`Field`). A seat's series is lifted as a
+sample of rank one along its series index, as any source is, and a versor
+series as motions (`src/client/sdk/seat_mind/lift.rs`; #147, MU-CLIENT
+§6). **Owed:** the seat's functions as thoughts whose orbits escape
+(MU-CLIENT §6, *Specified*; #134 S9a).
 
 ### 9.3 The mind thinks in orbital masses that collide and converge
 
@@ -1067,7 +1069,7 @@ the clauses that govern what crosses (MU-HOSTING §5a.4).
 
 | Owed | Where it is specified | Issue |
 |---|---|---|
-| Seat percepts lifted into the field | MU-CLIENT §6; §9.2 | #133 |
+| The seat's functions as escaping orbits worked by the drive (its series are lifted into the field, #147) | MU-CLIENT §6; §9.2 | #134 |
 | The seated-mind harness: `mycelium-client --seat` end to end against a live house | MU-HOSTING §2.1; §9.1 | #133 |
 | A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |
 | Translation between kernels' sensoria at the conjugate class | §1.3; §9.8 | none yet |

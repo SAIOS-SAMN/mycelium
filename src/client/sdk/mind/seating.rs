@@ -599,13 +599,20 @@ impl Mind {
         if encodes && seat.standing.as_ref().is_some_and(|(f, a, applied)| *applied && *f == choice.fn_id && *a == encoded) {
             return;
         }
-        let (at, key, fn_id, args) = (seat.at, key.clone(), choice.fn_id, choice.args);
+        let (at, key, fn_id, args, certificate) = (seat.at, key.clone(), choice.fn_id, choice.args, choice.certificate);
         met(&mut seat.met.calls);
         let posted = args.clone();
+        // #147 — the call is posted as a relay, its certificate held beside
+        // its reference on the mind (A20.2), never on the seat wire.
         self.ask_seat(move |s| s.call(at, &key, fn_id, posted), move |entity, called: io::Result<(Result<u64, Refusal>, [u8; 32])>| {
             if let Ok((Ok(_), reference)) = called {
                 entity.with_body_seat(at, |seat| seat.standing = encodes.then_some((fn_id, encoded, false)));
-                entity.with_seat_mind(at, |m| m.called(fn_id, args, reference));
+                entity.with_seat_mind(at, |m| {
+                    m.called(fn_id, args, reference);
+                    if let Some(c) = certificate {
+                        m.certify(reference, *c);
+                    }
+                });
             }
         });
     }
