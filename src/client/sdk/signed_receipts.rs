@@ -67,6 +67,11 @@ impl SignedReceipts {
         self.heads.get(signer)
     }
 
+    /// The signers a section is held for, by key.
+    pub fn signers(&self) -> Vec<[u8; 32]> {
+        self.heads.scoped().map(|(_, s)| s.receipt.stamp.vk).collect()
+    }
+
     /// HOLD ONE SIGNED RECEIPT, read by the court's own checks. A section
     /// that fails one is refused by name and changes nothing held.
     pub fn hold(&mut self, section: ReceiptSection) -> Holding {

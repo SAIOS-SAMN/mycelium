@@ -16,6 +16,9 @@
 //!   reads `360° − θ`: the reflection, then one whole turning on the axis's
 //!   own plane, which is the identity as a motion and carries the winding
 //!   the transduction writes (the far seam is `360°`, `K = 1`, never `0°`).
+//!   The two stand as their own generators in the word, never folded: the
+//!   flip counts `{e₊ᵢ: 1}` on P, and the turning carries `K = 1` (confirmed
+//!   on #134, 2026-11-07; 78.171 §8).
 //! - **A transposition `(i j)`** is the quarter turning on `e₊ᵢe₊ⱼ`, then
 //!   the flip of `e₊ᵢ`.
 //! - **A re-period** of output axis `j` is `RePeriod` from the period the

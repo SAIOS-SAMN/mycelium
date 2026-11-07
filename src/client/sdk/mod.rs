@@ -11,6 +11,7 @@ pub mod comprehension;
 pub mod concluded;
 pub mod genome;
 mod house;
+pub mod hypha_acts;
 mod retrieval;
 pub mod mind;
 pub mod quote;

@@ -342,6 +342,54 @@ impl Court {
         }
     }
 
+    /// #159 — THE ANCESTRY OF EACH RECEIPT TO `head`: for each of `of`, the
+    /// receipts on one path from it up to `head`, in order from it, `head`
+    /// left out (the section carries it); an empty path for `head` itself.
+    /// The walk goes down from `head` through each node's predecessor and
+    /// parents, never below the least height asked, one read per node
+    /// visited, and keeps for each node reached the node it was reached
+    /// from. `None` where the stroke is spent, or a receipt is not reached
+    /// from `head` on what this ledger holds hot.
+    pub fn ancestry(&self, head: &crate::chronometry::Stamp, of: &[KStepReceipt], reads: &mut crate::physics::Budget) -> Option<Vec<Vec<KStepReceipt>>> {
+        use crate::chronometry::Stamp;
+        let mut floor = head.h;
+        for r in of {
+            if r.stamp.h < floor {
+                floor = r.stamp.h;
+            }
+        }
+        let mut came: crate::network::nerve::Keyed<Stamp> = crate::network::nerve::Keyed::new();
+        came.insert(head.key(), *head);
+        let mut frontier = vec![*head];
+        while let Some(at) = frontier.pop() {
+            if !reads.spend() {
+                return None;
+            }
+            let Some(r) = self.chain.node(&at) else { continue };
+            for p in r.prev.iter().chain(&r.parents) {
+                if p.at.h < floor || came.contains(&p.at.key()) {
+                    continue;
+                }
+                came.insert(p.at.key(), at);
+                frontier.push(p.at);
+            }
+        }
+        of.iter()
+            .map(|r| {
+                let mut path = Vec::new();
+                if r.stamp == *head {
+                    return Some(path);
+                }
+                let mut child = *came.get(&r.stamp.key())?;
+                while child != *head {
+                    path.push(self.chain.node(&child)?);
+                    child = *came.get(&child.key())?;
+                }
+                Some(path)
+            })
+            .collect()
+    }
+
     /// 78.154a — A FOLD'S CONNECTION TAX, read before it seals: the flow
     /// declared under `CONNECTION_TAX` on the reserve's own fold — a sink on
     /// every lane it moves, the reserve holding it — and none on a carried

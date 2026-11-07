@@ -1,30 +1,41 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 // MU-SENSING §2; ROADMAP track 26 S1 — the rank-2 raster at intake: its
-// painted sites, the frame's momentum and the envelopes' dilation it reads,
-// and the bridge to the sample. Moved from the former `arc` module's tests;
-// the corpus's own claims are the decoder's (`sources/arc-agi/tests`).
+// painted sites, the frame's momentum and the re-period of each phase it
+// reads, and the bridge to the sample. Moved from the former `arc` module's
+// tests; the corpus's own claims are the decoder's (`sources/arc-agi/tests`).
 
-use crate::transducer::family::{carried_site, envelope_dilation};
+use crate::transducer::element::Reperiod;
+use crate::transducer::family::carried_site;
 use crate::transducer::raster::*;
 use crate::transducer::spelled::{pairs_of, PaintedSite, SectionSample, SectionSite};
 
-/// 78.56 — THE ENVELOPES' DILATION: two rasters of one extent correspond
-/// site for site; 3×3 onto 9×9 is s = 3, carrying each site's centre to
-/// the centre of its 3×3 block, never to a corner; an extent whose
-/// envelope ratio is no rational square corresponds nowhere (78.45); and
-/// a point that lands between sites carries nothing.
+/// 78.56; MU-SENSING §3.1 (track 26 S4) — THE RE-PERIOD OF EACH PHASE
+/// carries a site: two rasters of one extent correspond site for site; 3×3
+/// onto 9×9 re-periods each phase by 3, carrying each site's centre to the
+/// centre of its 3×3 block, never to a corner; an anisotropic change
+/// re-periods each phase by its own ratio (1×1 onto 1×3: the one site onto
+/// the centre of three), where the envelopes' dilation read the irrational
+/// `√(5/2)` and carried nothing; and a point that lands between sites
+/// carries nothing. Two ranks have no re-period (`Reperiod::of_extents`).
 #[test]
-fn envelope_dilation_carries_sites_between_extents() {
+fn reperiod_carries_sites_between_extents_phase_by_phase() {
     let raster = |h: usize, w: usize| SectionSample::from(vec![vec![1; w]; h]);
-    let dilation = |a: SectionSample, b: SectionSample| envelope_dilation(a.sample(), b.sample());
-    assert_eq!(dilation(raster(3, 4), raster(3, 4)), Some((1, 1)));
-    assert_eq!(dilation(raster(3, 3), raster(9, 9)), Some((3, 1)));
+    let reperiod = |a: &SectionSample, b: &SectionSample| Reperiod::of_extents(a.sample().extents(), b.sample().extents());
+    let (same, other) = (raster(3, 4), raster(3, 4));
+    let r = reperiod(&same, &other).expect("one rank");
+    assert_eq!(carried_site(&same, &other, &r, SectionSite::on_plane([2, 3])), Some(SectionSite::on_plane([2, 3])), "one extent, site for site");
+    let (small, large) = (raster(3, 3), raster(9, 9));
+    let r = reperiod(&small, &large).expect("one rank");
     let site = SectionSite::on_plane;
-    assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), site([1, 1])), Some(site([4, 4])), "centre to centre");
-    assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), site([0, 0])), Some(site([1, 1])), "a site to its block's centre");
-    assert_eq!(dilation(raster(1, 1), raster(1, 2)), None, "√(5/2) is no rational");
-    assert_eq!(carried_site(&raster(2, 2), &raster(4, 4), (2, 1), site([0, 0])), None, "between sites");
+    assert_eq!(carried_site(&small, &large, &r, site([1, 1])), Some(site([4, 4])), "centre to centre");
+    assert_eq!(carried_site(&small, &large, &r, site([0, 0])), Some(site([1, 1])), "a site to its block's centre");
+    let (dot, line) = (raster(1, 1), raster(1, 3));
+    let r = reperiod(&dot, &line).expect("one rank");
+    assert_eq!(carried_site(&dot, &line, &r, site([0, 0])), Some(site([0, 1])), "each phase by its own ratio");
+    let (two, four) = (raster(2, 2), raster(4, 4));
+    let r = reperiod(&two, &four).expect("one rank");
+    assert_eq!(carried_site(&two, &four, &r, site([0, 0])), None, "between sites");
 }
 
 /// 78.56 — THE MOMENTUM: a change of symbol in place carries none; a drift
@@ -36,6 +47,20 @@ fn momentum_vanishes_only_without_drift() {
     let drift = pairs_of(vec![(vec![vec![1, 1, 0]], vec![vec![0, 1, 1]])]);
     assert!(momentum_vanishes(&still));
     assert!(!momentum_vanishes(&drift));
+}
+
+/// MU-SENSING §3.1 (track 26 S4) — THE MOMENTUM IS READ PHASE BY PHASE
+/// across an anisotropic re-period: one site spread over the three of a
+/// 1×3 carries none (each axis weighed by its own `p′ᵢ/pᵢ`, where the
+/// envelopes' dilation read `√(5/2)` and left the momentum unread), and a
+/// site moved to the far end of a 1×4 carries some. The fixtures stand on 0.
+#[test]
+fn momentum_read_per_phase_across_anisotropic_reperiod() {
+    stand_on(0);
+    let spread = pairs_of(vec![(vec![vec![1]], vec![vec![1, 1, 1]])]);
+    let moved = pairs_of(vec![(vec![vec![1, 0]], vec![vec![0, 0, 1, 1]])]);
+    assert!(momentum_vanishes(&spread));
+    assert!(!momentum_vanishes(&moved));
 }
 
 /// A raster's painted sites omit the ground the scope reads (here the

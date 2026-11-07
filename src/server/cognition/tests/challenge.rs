@@ -164,8 +164,7 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
     assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: None });
     close_through(&mut k, at.stamp.h).expect("the window closes, sealed");
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "the windows restore");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("the windows reconstruct").into_object();
     assert_eq!(booted.finality(&at), Finality::Final { upheld: true }, "and read the same");
 }
 
@@ -468,8 +467,7 @@ fn orbit_prunes_final_child_and_parent_reads_final() {
     assert!(k.ledgers.finals.contains(&a_at.key()), "to a stub its unfinished parent names");
     assert_eq!(k.finality(&a_at), Finality::Final { upheld: false });
     assert_eq!(k.reconstructions.len(), 1, "P's stream stands within its window");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let mut booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false }, "the stub read final across the restart");
     // P's window closes: final through its pruned child.
     close_through(&mut booted, p_at.stamp.h).expect("P's window closes");
@@ -537,8 +535,7 @@ fn line_head_round_trips_with_setting_fold() {
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
     assert_eq!(k.line_head(&verifying(&a)), (f.prefix, Some(at.clone())));
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.line_head(&verifying(&a)), (f.prefix, Some(at)), "re-derived from the records");
 }
 
@@ -647,8 +644,7 @@ fn window_close_reconstructs_from_sealed_citation() {
     let mut k = founded();
     let at = sealed(&mut k, a_fold(), &a);
     let r = close_through(&mut k, at.stamp.h).expect("sealed");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert!(booted.chain.node(&r.stamp).is_some_and(|n| super::fixtures::cites_restate(&n.cites, &r.cites)), "the close on the line");
     assert_eq!(booted.window_close(at.stamp.h), k.window_close(at.stamp.h));
     assert_eq!(booted.finality(&at), Finality::Final { upheld: false });

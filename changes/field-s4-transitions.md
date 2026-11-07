@@ -24,5 +24,8 @@
   speak, as it refused it.
 - **Claims:** `every_signed_permutation_lifts_whole_as_a_motion_of_the_field`,
   `reversal_is_the_reflection_in_its_own_unit_alone`,
+  `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s` (the
+  reading confirmed 2026-11-07: the flip and the `360°` turning each its
+  own generator, the winding the measured `p − s`),
   `pair_lifted_as_transitions_between_its_bodies_charts`.
 - **Owed:** the nesting as a fibration of levels (stage 4's second half).
