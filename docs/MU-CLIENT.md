@@ -94,7 +94,7 @@ Each phrase names a construct:
 | possibilities of possibilities | the vortex: several factorisations or candidate forms held superposed with no weight, until a perception collapses it (§4.8; MU-SENSING §3.8) | built (`Factored::Vortex`, `collapse_on`) |
 | smoothed, congruent processes | geodesics on the field's curvature (§0), then congruence (two senses agree), then coherence (one node's cover closes), then the courts' consilience (MU-ANASTOME §5.2; 24.4) | congruence and coherence built; geodesics on the carrier owed (S9a; #134) |
 | a language bound to no modality | expressions are mathematics, never audio (Concordance 1.6; MU-SENSING §3.10 item 4); a sense reads any source at any rank (MU-SENSING §0–§3); senses emerge by variation, selection by admission and inheritance (MU-SENSING §4.1) | any source at any rank built (track 26 S0–S5, S4b–S4d); emergent senses owed (S10) |
-| new sensoria from the game kernels | a seat's percepts lifted into the field (§6); a sense opened by a ruled act, as a lane is (MU-ECONOMY §1) | owed (§6; #133) |
+| new sensoria from the game kernels | a seat's percepts lifted into the field (§6); a sense opened by a ruled act, as a lane is (MU-ECONOMY §1) | seat series lifted into the field built (§6; #147); a sense opened by a ruled act owed |
 | intelligibility across sensoria | two minds' words meet at the conjugate class; the conjugating element is the translation between their perspectives (23.9; MU-ANASTOME §1.3) | the class vector built; the mind's algebra per class built (§3.2, `cech::class_algebra`; #143) |
 
 **Thought is not linear** (the operator's correction, 2026-11-06). The mind
@@ -1629,11 +1629,16 @@ it chooses a call from what its calls were seen to do, quantity by quantity
 with no sum across quantities (the house's counsel; a read function that
 DOMINATES on every favoured quantity; else a counselled function not yet
 read, `Why::Untried`), or with no counsel its own dominant read call,
-REACH (`SeatMind::reach`), or none, and passes in silence. Owed (§7.1):
-the seat's functions taken as escaping orbits, so a seat is played by the
-drive rather than by `seat_mind`'s choice (waits on #134 S9a), and with
-it the certified move a call names; and the seated harness end to end
-against a live house (#133).
+REACH (`SeatMind::reach`), or none, and passes in silence. A seat's
+court solve leaves at the mind's next return, as its call does, never at
+the return of a thought of the task's scene, which need never return
+(#133). **The seated harness** (#133): `scripts/quickstart` stage 8
+seats `mycelium-client --seat` in the SDK house `sdk/examples/seats.rs`,
+through sit, percept, call and outcome, to the court's judged reading of
+the solve under the mind's own key. Owed (§7.1): the seat's functions
+taken as escaping orbits, so a seat is played by the drive rather than by
+`seat_mind`'s choice (waits on #134 S9a), and with it the certified move
+a call names; and the seated harness against xylarium's house (#133).
 
 ---
 
@@ -1670,7 +1675,7 @@ self-pay, 5.7(d)).
 | **historical ledgering** (SICE mythic memory, scars and inviolable axioms; conduct books) | alignment thresholds, utility set to zero, posture labels | two histories (§4.10(6)): the mind's amended forward, the court's ledger corrected only forward; a cauterized hole's scar, a frozen class (§4.5); a peer remembered by its receipts (§5.3(5)); the axioms are the star (§4.1), never a mind's vow | the winding kept in ℤ beside each phase, so no history is reduced mod 360° | scars and freezing built; signed receipts reach the mind (#137); amendment held beside (#135) and peer records (#145) owed |
 | **counterfactual simulation** (SICE counterfactual imagination and regret; ASCE ideation superposition and rollouts) | amplitudes summing to one; a float rollout sandbox; regret minimisation | the vortex: every candidate held whole, writing nothing, collapsed only by a perception on a scene not yet seen, a court or a ruling (§4.8); the predicted hour (§4.4(3)) | each candidate's monodromy read between the atlas's charts, flat, torsion or rupture (MU-SENSING §3.8; S9c) | built (`carry_vortices_round`, `collapse_on`); on the carrier owed |
 | theory of mind and the hearing (SICE fifth pillar) | doctrine labels from float indices | hearing as sound and word, vantage and mutual balance (§5.3); a peer by its receipts | — | hearing built; peer records owed |
-| seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124); seat series lifted into the field built (#147); seat play from orbits owed (#134 S9a) |
+| seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124), the seated harness built (#133); seat series lifted into the field built (#147); seat play from orbits owed (#134 S9a) |
 
 **The barren-realms tests.** A test proves a mechanism; none is ported as a
 criterion (§7.2). Each is read for the capability it asserts:
@@ -1679,7 +1684,7 @@ criterion (§7.2). Each is read for the capability it asserts:
 |---|---|---|
 | `test_ideation_space_and_mental_rollouts` | several strategies held at once and projected ahead | the vortex: `several_factorisations_held_as_a_vortex`; the predicted hour: `hold_perceived_joins_predicted_next_hour`. Amplitudes and payoffs refused |
 | `test_theory_of_mind_doctrine_classification` | a counterparty modelled from its conduct | owed: peer records (§5.3(5)); a doctrine label refused |
-| `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | owed: seat play from the mind's orbits (§6; #133) |
+| `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | owed: seat play from the mind's orbits (§6; #147) |
 | `test_gauge_field_lagrangian_barrier_potential` | deliberation that is not a vote | owed: `axiomatic_gravity_shears_the_orthogonal_class` (S9b); the argmin refused |
 | `test_attractor_singularity_and_breakout` | a repetition read and left | `flat_region_binds_no_orbit_refused_unbound` (a path no attractor binds is refused), `closed_geodesic_with_zero_precession_is_resonant` (a repetition in a curved field reads as a lawful resonant orbit); owed: `mind_idles_with_no_escaping_orbit` (#135) |
 | `test_cognitive_surprise_tensor` | surprise measured against prediction | exact and twofold: `hold_perceived_keeps_out_of_turn_hour_as_twist`, `hold_perceived_holds_off_orbit_slip_on_thought`. The norm refused |
@@ -1691,8 +1696,8 @@ criterion (§7.2). Each is read for the capability it asserts:
 | `test_theory_of_mind_and_the_hearing` | another mind heard and read | `hear_across_seats_word_in_hearer_rings`, `hear_across_leaves_word_dividing_no_layer`; owed: peer records |
 | `test_persistence_save_and_restore` | as `test_asce_state_persistence_round_trip` | as above |
 | `test_terminal_renderer` | an operator view | the observer (§7.2), never cognition |
-| `test_seated_mind_taking_seat_and_playing_turns` | a seated mind plays | `seat_mind` choice built; owed: #133 |
-| `test_seats_module_sovereign_integration` | a seat registered with the house | the seat surface (78.145) built; owed: #133 |
+| `test_seated_mind_taking_seat_and_playing_turns` | a seated mind plays | `seat_mind` choice built; the seated harness, quickstart stage 8 (#133); play from orbits owed: #147 |
+| `test_seats_module_sovereign_integration` | a seat registered with the house | the seat surface (78.145) built; a house listing and answering a seat, `sdk/examples/seats.rs` (#133) |
 
 The first seven are ASCE's suite (test_advanced_sovereign_cognition.py in
 barren-realms; its specification reports 23 passing, and the suite defines
@@ -1718,7 +1723,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **the task as an offer**: read to its charts, extracted only where it couples, lapsing otherwise; a task asked only under tension; the corpus met at the field's focus | §3.1, §4.13 | `mind/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `mind/learn.rs` (`pull_task`); `mind/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`) |
 | **the pivot cross**: ascend, descend, condense, drain, puncture, seal; the throat's two faces; the board; the breath on every plane | §4.3, §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs`; `t/field/question.rs`; `t/cga/commutator.rs` (`breath`, `breathe`) |
 | **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_envelope`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
-| **seated solves signed by the mind**: filed under its own key, then the house's call (#124); the seat's call chosen from what calls did | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`) |
+| **seated solves signed by the mind**: filed under its own key, leaving at the mind's next return, then the house's call (#124); the seat's call chosen from what calls did; the seated harness against a live house (#133) | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`); `sdk/examples/seats.rs`; `scripts/quickstart` stage 8 |
 | **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
 | **cohesion as a named reading** (#149): per plane the held share `c_k = A/(A + Q) = ν(1/t)`, the viscosity, beside the open share `ν(t)`, the fluidity; both ½ at the throat, exchanged by the passage; a keyed vector over the planes, never stored and never summed; a well reads it from its inflation on its membrane's frame plane | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`) |
 | **the algebra held per class** (#143): each circuit's curvature the mind takes in heard in its class, the holonomy rotor's conjugacy invariants written out; the class's algebra closed with only what lies outside its span, that part read per axis by its coset; two minds file one word in two frames under one class, each on its own planes, the conjugating element carrying one basis into the other's span; a court's field holds none | §3.2, §4.2, §4.11 | `t/cech/class_algebra.rs` (`ClassAlgebras::hear`, `class_of`, `HeardInClass`); `t/cech/orbit.rs` (`Field.classes`); `t/family/pairing.rs` (`mark_flux`); claims `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`, `two_minds_align_on_the_class_each_reading_it_on_its_own_planes` |
@@ -1800,8 +1805,7 @@ then the backlog. Each item names its issue.
    that a whole too cohesive sticks at the throat and one too fluid tears,
    which wait on an exact reading in LAW-PASSAGE or LAW-TRAVERSAL, frames
    per turning plane of a held whole, and the thought's traversal through
-   open tubes; the seated harness against a live house
-   (#133).
+   open tubes.
 
 Moved out of this list: paying the ledger in `Modes` is v0.5.0's
 (MU-ECONOMY §9; ROADMAP 1b); curiosity, the mirror and the curvature
