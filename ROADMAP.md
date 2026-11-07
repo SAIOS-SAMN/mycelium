@@ -2054,8 +2054,12 @@ Each phase is one commit:
      and the membrane on the pole basis (`Membrane`, `stand`). LAW-FIELD
      v1's six fixtures stand as claims
      (`src/transducer/field/carrier/tests/law_field.rs`). Turnings on two
-     planes that share one unit are refused `NotExact` naming both (open
-     in 78.171 §8).
+     planes that share one unit compose by fixture 11b's law
+     (`carrier::Rotor`, 78.173 §5) where both motions are rational, and
+     any other angle is refused `NotExact` with `IrrationalMotion`: the
+     route approved 2026-11-06, with no `ℚ(ζ_ℓ)` product and neither
+     degree convention changed (the factor of two is open in 78.173
+     §8.3); claims in `src/transducer/field/carrier/tests/rotor.rs`.
    - **Stages** (each about 1 500 changed lines or less, each leaving the
      tree green; planned 2026-11-06):
      1. Built: the lift and the field's carrier (S4a, S7), and the field
@@ -2113,12 +2117,32 @@ Each phase is one commit:
         `c + ½(c² − r²)e_∞ + e_o` from `r²` alone (`blade::nucleus_form`);
         `cga::sphere_at` is retired (branch `field-nucleus-moment`; claim
         `nucleus_is_the_second_moment_read_never_a_sphere`; the values are
-        unchanged, so no recut). **Stopped:** turnings on planes that share
-        a unit, waiting on netstratum's composition law (78.173 fixture
-        11b; the Cayley form on generators).
+        unchanged, so no recut). Turnings on planes that share a unit
+        compose by netstratum's composition law (78.173 fixture 11b,
+        `carrier::Rotor`) where both motions are rational, a whole number
+        of quarter turns; any other angle is refused `IrrationalMotion`,
+        and a wound pair `Uncommuted` (78.173 §8.3).
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.
+        **Built in part** (branch `field-s4-transitions`, stacked on
+        `field-s8-motions`): on the lift's convention agreed 2026-11-06
+        (78.171 §8; netstratum docs/117 §11.6), the phase measured from
+        the shared lift unit `e₊₍ₙ₊₁₎`, every signed permutation and its
+        re-period lifts whole as a motion of the field
+        (`carrier::motion_of`: a reversal the flip of `e₊ᵢ` and one whole
+        turning on its plane, the winding the transduction's `p − s`
+        writes; a transposition `(i j)` the 90° turning on `e₊ᵢe₊ⱼ` then
+        the flip of `e₊ᵢ`), and a pair is lifted as transitions between
+        its bodies' charts (`carrier::transitions_of`, `PairTransition`; a
+        body carried split or merged keeps its refusal). `carry_point`
+        reads the phase origin so. No degree, chart or address moves, so
+        no recut. Claims
+        `every_signed_permutation_lifts_whole_as_a_motion_of_the_field`,
+        `reversal_is_the_reflection_in_its_own_unit_alone`,
+        `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s`,
+        `pair_lifted_as_transitions_between_its_bodies_charts`.
+        **Owed:** the nesting as a fibration of levels.
      5. S8, the field's motions as one group: the turning, the reflection
         and the pole swap (`forms::passage::Poles::swap`) and the
         inversion in the membrane, the boost on a frame plane, the

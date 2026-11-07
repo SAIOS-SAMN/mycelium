@@ -22,6 +22,7 @@
 
 use super::coupling::{put_coupling_fixture, put_coupling_object, take_coupling_fixture, take_coupling_object};
 use super::register::{ConcordanceClause, ConcordanceClauseId, Fixture, Object, Standing};
+use super::turning::{put_turning_fixture, take_turning_fixture};
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 use crate::transducer::alphabet::{put_q, take_q};
 use algebra::Clifford;
@@ -268,7 +269,9 @@ fn take_depth(b: &[u8], p: &mut usize) -> Option<u32> {
 /// passed twice and once, the commutator, the square); they are retired
 /// with `FORMS-PASSAGE` v3 and read as none. The pole swap's crossing is
 /// tag 8 and the riding state's pass tag 9; LAW-COUPLING's fixtures are
-/// tag 12, each its operation's byte then its values (`super::coupling`).
+/// tag 12, each its operation's byte then its values (`super::coupling`);
+/// LAW-COORDINATE fixture 11b's (`FORMS-TURNING`) are tag 13, each its
+/// operation's byte then its values of `Cl(p, q)` (`super::turning`).
 pub fn put_fixture(out: &mut Vec<u8>, f: &Fixture) {
     match f {
         Fixture::Crossed { positive, negative, frame, flux } => {
@@ -310,6 +313,10 @@ pub fn put_fixture(out: &mut Vec<u8>, f: &Fixture) {
             out.push(12);
             put_coupling_fixture(out, c);
         }
+        Fixture::Turning(t) => {
+            out.push(13);
+            put_turning_fixture(out, t);
+        }
     }
 }
 
@@ -326,6 +333,7 @@ pub fn take_fixture(b: &[u8], p: &mut usize) -> Option<Fixture> {
         8 => Fixture::Crossed { positive: take_clifford(b, p)?, negative: take_clifford(b, p)?, frame: take_clifford(b, p)?, flux: take_q(b, p)? },
         9 => Fixture::Ridden { positive: take_clifford(b, p)?, negative: take_clifford(b, p)?, state: take_clifford(b, p)? },
         12 => Fixture::Coupling(take_coupling_fixture(b, p)?),
+        13 => Fixture::Turning(take_turning_fixture(b, p)?),
         _ => return None,
     })
 }
