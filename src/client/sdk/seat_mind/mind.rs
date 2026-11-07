@@ -4,6 +4,7 @@ use super::series::{Locator, Return, Series};
 use super::{Experience, SeatFunction};
 use crate::anastome::dialogue::seat::{Arg, Outcome, Percept, Record};
 use crate::network::nerve::Keyed;
+use crate::transducer::sentence::{Form, PivotCertificate};
 use num_rational::BigRational as Q;
 
 /// A CALL MADE AND NOT YET READ: what the quantities stood at when it was
@@ -44,6 +45,12 @@ pub struct SeatMind {
     /// counselled — never a blind probe (a house's `handle`
     /// closes every throat a line holds, `forge` spends ~1e21 J).
     pub(crate) own: Keyed<Experience>,
+    /// #147 (ruled 2026-11-06) — THE A20 CERTIFICATE OF THE MOVE A CALL
+    /// NAMES, by the call's reference. The call itself stays a relay
+    /// (78.145); the certificate stays here until the move is claimed and
+    /// rides the claiming form's tape (`claim`, A20.2). A refused or
+    /// abandoned call moved nothing, and its certificate is let go.
+    pub(crate) certified: Keyed<PivotCertificate>,
 }
 
 impl SeatMind {
@@ -66,6 +73,33 @@ impl SeatMind {
             pending: None,
             repertoire: Vec::new(),
             own: Keyed::new(),
+            certified: Keyed::new(),
+        }
+    }
+
+    /// #147 — THE CALL `reference` NAMES A CERTIFIED MOVE: its certificate
+    /// held beside the reference until the move is claimed.
+    pub fn certify(&mut self, reference: [u8; 32], certificate: PivotCertificate) {
+        self.certified.insert(reference, certificate);
+    }
+
+    /// The certificate held beside a call's reference.
+    pub fn certificate(&self, reference: &[u8; 32]) -> Option<&PivotCertificate> {
+        self.certified.get(reference)
+    }
+
+    /// #147, A20.2 — THE MOVE CLAIMED: the certificate held beside the
+    /// call's reference written into the certificates section of the
+    /// claiming form's tape, under the certificate's own key, so a court
+    /// reconstructs the move with the form. The seat wire carries no
+    /// certificate. False where none is held.
+    pub fn claim(&mut self, reference: &[u8; 32], form: &mut Form) -> bool {
+        match self.certified.remove(reference) {
+            Some(c) => {
+                form.certificates.insert(c.key(), c);
+                true
+            }
+            None => false,
         }
     }
 
@@ -191,6 +225,15 @@ impl SeatMind {
                 }
                 None => {}
             }
+            // #147 — the series lifted into the field, read and never held.
+            match super::lift::lift(s) {
+                Ok(super::lift::SeriesLift::Field(_)) => reading.lifted += 1,
+                Ok(super::lift::SeriesLift::Motions(m)) => match m.steps() {
+                    Ok(_) => reading.motions += 1,
+                    Err(_) => reading.unlifted += 1,
+                },
+                Err(_) => reading.unlifted += 1,
+            }
         }
         reading.periods.sort_unstable();
         reading
@@ -205,6 +248,9 @@ impl SeatMind {
         let pending = self.pending.as_mut().filter(|p| p.reference == o.call)?;
         pending.applied = Some(o.applied);
         let (fn_id, args) = (pending.fn_id, pending.args.clone());
+        if !o.applied {
+            self.certified.remove(&o.call);
+        }
         let count = |e: &mut Experience| match o.applied {
             true => e.applied += 1,
             false => match e.refused.iter_mut().find(|(r, _)| *r == o.reason) {
@@ -291,6 +337,7 @@ impl SeatMind {
             None => match self.beat.checked_sub(pending.made_at) {
                 Some(distance) if pending.made_at.checked_add(1).is_some_and(|whole| whole < self.beat) => {
                     reading.abandoned = Some((pending.fn_id, distance));
+                    self.certified.remove(&pending.reference);
                 }
                 _ => self.pending = Some(pending),
             },
