@@ -534,7 +534,12 @@ impl Court {
         // nothing else.
         let heard_on = match task.is_empty() || task == [0u8; 32] {
             true => None,
-            false => self.family_heard(task),
+            // The family as the sentence is heard (`Court::family_heard`),
+            // read field by field so the acts' counter stays writable.
+            false => match &self.heard_under {
+                Some(h) if h.task == task => Some(h.family.as_slice()),
+                _ => self.task_family.get(task).map(Vec::as_slice),
+            },
         };
         // MU-CLIENT §5.4 (E1) — a scene this court holds no family for is
         // measured on nothing here, and read by name.
