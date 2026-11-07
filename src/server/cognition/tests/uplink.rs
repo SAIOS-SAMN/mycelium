@@ -79,8 +79,7 @@ fn admit_uplink_seals_fold_coordinates_and_restores() {
     let cited = Cite::Uplink { tier: fold.tier, prefix: fold.prefix, rows };
     assert!(matches!(head.cites.as_slice(), [c] if c.restates(&cited)), "{:?}", head.cites);
     let snap = k.snapshot();
-    let mut booted = Court::new();
-    assert!(booted.restore(&snap), "the line with an uplink restores");
+    let mut booted = Court::new().reconstruct(&snap).expect("the line with an uplink reconstructs").into_object();
     assert_eq!(booted.chain.head().map(|h| h.chain_hash.bytes()), Some(receipt), "the same head");
     // 78.120 — and the domain restores with it: its tier's next fold admitted.
     let next = TierFold { prefix: [8u8; 32], ..trade(&key) };
