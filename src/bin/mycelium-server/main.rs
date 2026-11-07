@@ -29,6 +29,7 @@ mod ledger;
 mod nerve;
 mod offer;
 mod persist;
+mod proofs;
 mod published;
 mod syllabus;
 mod transport;
@@ -77,7 +78,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--minds" || args[i] == "--init" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--proofs" || args[i] == "--minds" || args[i] == "--init" {
             i += 1;
             continue;
         }
@@ -421,6 +422,10 @@ fn main() {
         // 78.94 — the hypha's whole line by action, archive included.
         if args.iter().any(|a| a == "--ledger") {
             ledger::run(&home, flag(&args, "--at"));
+        }
+        // MU-ECONOMY §0, §3.4, §5.3 — the proofs of work over the mesh.
+        if args.iter().any(|a| a == "--proofs") {
+            proofs::run(&home, flag(&args, "--at"));
         }
         // 78.93 B1 — one party's wallet at the hypha.
         if let Some(asked) = flag(&args, "--wallet") {
