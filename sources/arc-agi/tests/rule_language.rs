@@ -86,7 +86,7 @@ fn sentence_fills_enclosure_around_inner_body() {
 /// green seeds, each along its row, over the red.
 #[test]
 fn sentence_extends_lines_to_border() {
-    let line = |dr: i8, dc: i8| Step::Create(Create::Extend { ray: (dr, dc), paint: Paint::Own, stop: Stop::Border });
+    let line = |dr: i8, dc: i8| Step::Create(Create::Extend { ray: mycelium::client::sdk::rule::Ray::new(vec![dr, dc]), paint: Paint::Own, stop: Stop::Border });
     solves(
         "178fcbfb",
         &[
