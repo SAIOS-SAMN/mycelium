@@ -663,7 +663,7 @@ fn slide_ray_is_a_translation_versor_of_the_sample_rank() {
         let mut bytes = Vec::new();
         put_clauses(&mut bytes, &clauses);
         let back = take_clauses(&bytes, &mut 0).expect("read back");
-        let Some(Clause { act: Act::Slide { ray: read, .. }, .. }) = back.first() else { panic!("a slide") };
+        let [Clause { act: Act::Slide { ray: read, .. }, .. }] = back.as_slice() else { panic!("one slide") };
         assert_eq!(read, &ray, "the ray reads back at its own rank");
     }
 }
