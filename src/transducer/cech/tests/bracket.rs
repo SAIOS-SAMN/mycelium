@@ -10,13 +10,13 @@ fn q(n: i64, d: i64) -> BigRational {
     BigRational::new(n.into(), d.into())
 }
 
-fn stroke() -> crate::physics::Budget {
+pub(crate) fn stroke() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
 }
 
 /// A chamber's orbit algebra over the circuits whose holonomies are given,
 /// each its own ring.
-fn chamber(holonomies: &[Mv]) -> ChamberAlgebra {
+pub(crate) fn chamber(holonomies: &[Mv]) -> ChamberAlgebra {
     use crate::network::nerve::coord::{ChartAt, Overlap, VertexAt};
     let circuits: Vec<ChamberCircuit> = holonomies
         .iter()
@@ -30,12 +30,12 @@ fn chamber(holonomies: &[Mv]) -> ChamberAlgebra {
 }
 
 /// The 90° turn on the plane (1,2), and on the plane (2,3), at one width.
-fn turns() -> (Mv, Mv) {
+pub(crate) fn turns() -> (Mv, Mv) {
     let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
     (cga::rotator(&q(1, 1), &q(1, 1)).widened(across.n()), across)
 }
 
-fn bodies(names: &[u8]) -> Vec<Vec<u8>> {
+pub(crate) fn bodies(names: &[u8]) -> Vec<Vec<u8>> {
     names.iter().map(|n| vec![*n]).collect()
 }
 

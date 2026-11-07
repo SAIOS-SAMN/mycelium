@@ -14,6 +14,12 @@
 //! and are not read; a chamber and its own face are one enclosing the other,
 //! not two chambers. This is the reading before any fix: no enclosure is
 //! minted here, and nothing is decided (78.26(2)).
+//!
+//! Ruled on #148 (2026-11-06): a LOST bracket is a demand, listed on the
+//! mind's docket naming the two chambers and the bracket
+//! (`Contemplation::docket_brackets`). No enclosure is formed without a
+//! witness (NB1); the cell a witness certifies is the demand's answer
+//! (`answering_cell`, `Contemplation::answer_brackets`).
 
 use super::orbit_algebra::{algebra_contains, ChamberAlgebra};
 use crate::network::nerve::Keyed;
@@ -64,6 +70,34 @@ impl CrossBrackets {
         let lost = self.brackets.iter().filter(|b| b.held == Bracketed::Lost).count();
         (self.brackets.len() - lost, lost)
     }
+}
+
+impl CrossBracket {
+    /// CB1 (ruled on #148, 2026-11-06) — THE TWO CHAMBERS BY THEIR BODIES'
+    /// COORDINATES (KB1), as a demand names them: `chambers` is the reading
+    /// the bracket was read over. `None` where a place is not in it.
+    pub fn named(&self, chambers: &[(&[Vec<u8>], &ChamberAlgebra)]) -> Option<[Vec<Vec<u8>>; 2]> {
+        let (a, b) = self.chambers;
+        Some([chambers.get(a)?.0.to_vec(), chambers.get(b)?.0.to_vec()])
+    }
+}
+
+/// CB1 (ruled on #148, 2026-11-06) — THE CELL THAT ANSWERS A LOST BRACKET:
+/// the first of `chambers` whose bodies wrap both named chambers' bodies and
+/// whose algebra holds `bracket`, by its place. Every chamber a form carries
+/// is a cell NB1 minted at a witness (78.10(a)), so the cell found is the
+/// witness's certification, and nothing here forms one: where no cell wraps
+/// both, the closure of the two chambers' actions is never taken as an
+/// enclosure, and the demand stands (`None`).
+pub fn answering_cell(
+    named: &[Vec<Vec<u8>>; 2],
+    bracket: &LinearFunction,
+    chambers: &[(&[Vec<u8>], &ChamberAlgebra)],
+) -> Option<usize> {
+    let [x, y] = named;
+    chambers
+        .iter()
+        .position(|(bodies, a)| wraps(bodies, x) && wraps(bodies, y) && algebra_contains(a, bracket) == Some(true))
 }
 
 /// Whether every body of `inner` is a body of `outer`.
