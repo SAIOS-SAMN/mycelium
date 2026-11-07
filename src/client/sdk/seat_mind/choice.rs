@@ -203,13 +203,17 @@ impl std::fmt::Display for Why {
 }
 
 /// A CALL CHOSEN: the function, its arguments, whether it is the house's
-/// first counsel, and why.
+/// first counsel, and why; and (#147) the A20 certificate of the move the
+/// call names, where it names a certified move. The seat mind's own choice
+/// certifies none: a certified move comes from the drive's escaping-orbit
+/// play (owed, #134 S9a).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Choice {
     pub fn_id: u16,
     pub args: Vec<Arg>,
     pub followed: bool,
     pub why: Why,
+    pub certificate: Option<Box<crate::transducer::sentence::PivotCertificate>>,
 }
 
 /// WHAT THE MIND DOES AT A BEAT.
@@ -279,7 +283,7 @@ impl SeatMind {
             [] => None,
         };
         let follow = |why: Why| match counsel {
-            Some(c) => Decision::Call(Choice { fn_id: c.fn_id, args: c.args.clone(), followed: true, why }),
+            Some(c) => Decision::Call(Choice { fn_id: c.fn_id, args: c.args.clone(), followed: true, why, certificate: None }),
             None => Decision::NothingToCall,
         };
         // The read functions this mind can call: an effect read, arguments held.
@@ -320,6 +324,7 @@ impl SeatMind {
                 args,
                 followed: counsel.is_some_and(|c| c.fn_id == *id),
                 why: Why::Dominates { over, along: named },
+                certificate: None,
             });
         }
         let none_forward = along.iter().all(|(_, _, rates)| rates.iter().all(|x| !x.is_positive()));
@@ -334,6 +339,7 @@ impl SeatMind {
                     args: c.args.clone(),
                     followed: counsel.is_some_and(|first| first.fn_id == c.fn_id),
                     why: Why::Untried { against: along.iter().map(|(id, _, _)| *id).collect() },
+                    certificate: None,
                 });
             }
         }

@@ -6,6 +6,8 @@
 
 mod layout;
 pub mod read;
+mod refusal;
 pub mod write;
 
 pub use layout::*;
+pub use refusal::RestoreRefusal;

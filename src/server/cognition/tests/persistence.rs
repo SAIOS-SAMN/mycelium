@@ -28,8 +28,7 @@ let balance = k.treasury().balance_mu(&[2; 32]);
 let snap = k.snapshot();
 
 // A fresh hypha boots from the snapshot.
-let mut booted = Court::new();
-assert!(booted.restore(&snap), "clean restore");
+let mut booted = Court::new().reconstruct(&snap).expect("a clean reconstruction").into_object();
 assert_eq!(booted.basis_len(), 2, "both generators came back");
 assert!(
     !booted.treasury().balance_mu(&[2; 32]).is_zero() || !balance.is_zero(),
@@ -63,8 +62,7 @@ let stood = crate::chronometry::Stamp::new(3, [7; 32], crate::chronometry::Place
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v, ck.clone(), Some(stood));
 let snap = k.snapshot();
 assert!(snap.windows(8).any(|w| w == b"cocycles"), "the tape carries the cocycles trie by its name");
-let mut booted = Court::new();
-assert!(booted.restore(&snap), "clean restore");
+let booted = Court::new().reconstruct(&snap).expect("a clean reconstruction").into_object();
 let rows: Vec<(Vec<u8>, crate::cognition::CocycleRow)> = booted.cocycle_at.scoped().map(|(key, row)| (key, row.clone())).collect();
 let [(key, row)] = rows.as_slice() else { panic!("one row written, {} read", rows.len()) };
 assert_eq!(row.class_key, ck, "the class survives the ledger as its coordinates");
@@ -86,8 +84,7 @@ let before = k.dockets();
 assert_eq!(before.len(), 1);
 assert!(before[0].deflation.iter().any(|&x| x > 0), "deflation was measured at install");
 let snap = k.snapshot();
-let mut booted = Court::new();
-assert!(booted.restore(&snap), "clean restore");
+let booted = Court::new().reconstruct(&snap).expect("a clean reconstruction").into_object();
 let after = booted.dockets();
 assert_eq!(after.len(), 1, "the provisional survived");
 assert_eq!(after[0].deflation, before[0].deflation, "deflation survived; the court will not slash Δ⃗ = 0");
@@ -108,8 +105,7 @@ let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as 
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let snap = k.snapshot();
 assert_eq!(&snap[..4], MAGIC, "one magic names the layout");
-let mut whole = Court::new();
-assert!(whole.restore(&snap), "the tape as written restores");
+assert!(Court::new().reconstruct(&snap).is_ok(), "the tape as written reconstructs");
 
 // Every trie opens with its own name; a tape ending before it is refused.
 let tries = [
@@ -126,24 +122,28 @@ for name in tries {
     let Some(at) = snap.windows(name.len()).position(|w| w == name.as_bytes()) else {
         panic!("the tape carries the {name} trie by its name")
     };
-    let mut booted = Court::new();
-    assert!(!booted.restore(&snap[..at]), "a tape ending at the {name} trie is refused");
-    assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+    // A refusal returns no court, so nothing is partly restored.
+    assert!(
+        matches!(Court::new().reconstruct(&snap[..at]), Err(crate::cognition::RestoreRefusal::Unread { .. })),
+        "a tape ending at the {name} trie is refused"
+    );
 }
 
 // THE POSITIONAL TAPE IS REFUSED BY NAME (78.25, §10).
 let mut older = snap.clone();
 older[..4].copy_from_slice(PRE_TRIE_MAGIC);
-let mut booted = Court::new();
-assert!(!booted.restore(&older), "MYC7 is refused");
-assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+assert!(
+    matches!(Court::new().reconstruct(&older), Err(crate::cognition::RestoreRefusal::Retired { magic: "MYC7", .. })),
+    "MYC7 is refused by name"
+);
 
 // THE TRIES WHOSE μ WAS FOUR u64 COUNTS ARE REFUSED BY NAME (v0.3.0).
 let mut counted = snap.clone();
 counted[..4].copy_from_slice(crate::cognition::persistence::PRE_RATIONAL_MAGIC);
-let mut booted = Court::new();
-assert!(!booted.restore(&counted), "MYT2 is refused");
-assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+assert!(
+    matches!(Court::new().reconstruct(&counted), Err(crate::cognition::RestoreRefusal::Retired { magic: "MYT2", .. })),
+    "MYT2 is refused by name"
+);
 }
 
 /// THE LINE WHOSE BOND CITATIONS CARRIED μ AS COUNTS IS REFUSED BY NAME:
@@ -215,7 +215,7 @@ let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
 speak_pair(&mut k, &a, &b, [1; 32]);
 let snap = k.snapshot();
-assert!(Court::new().restore(&snap), "the tape as written restores");
+assert!(Court::new().reconstruct(&snap).is_ok(), "the tape as written reconstructs");
 
 // The first trie's frame: the magic, its name (`court`, a u64 length and
 // five bytes), then the byte length of its body. Byte 17 opens that length.
@@ -223,12 +223,11 @@ let declared = u64::from_le_bytes(snap[17..25].try_into().expect("the frame is t
 for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
     let mut bent = snap.clone();
     bent[17..25].copy_from_slice(&wrong.to_le_bytes());
-    let mut booted = Court::new();
+    // A refusal returns no court, so nothing is partly restored.
     assert!(
-        !booted.restore(&bent),
-        "a body declaring {wrong} where it holds {declared} is refused"
+        matches!(Court::new().reconstruct(&bent), Err(crate::cognition::RestoreRefusal::Unread { trie: "court", .. })),
+        "a body declaring {wrong} where it holds {declared} is refused in the court trie"
     );
-    assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
 }
 
@@ -297,8 +296,7 @@ k.dialect_chain.push((b"unstamped".to_vec(), g, None));
 let origin = crate::chronometry::Stamp::new(0, k.chain().signer(), crate::chronometry::Place::GENESIS);
 assert!(k.treasury().entries().iter().any(|e| e.at == origin && e.receipt == [0; 32]), "the boot's rows stand at the origin");
 let snap = k.snapshot();
-let mut back = Court::new();
-assert!(back.restore(&snap), "clean restore");
+let back = Court::new().reconstruct(&snap).expect("a clean reconstruction").into_object();
 assert_eq!(back.treasury().entries(), k.treasury().entries(), "every row back, at its stamp, in its order");
 assert!(back.treasury().audit().is_ok(), "and the ledger conserves");
 let [settled] = back.settlements_cold.as_slice() else { panic!("the settlement came back") };
@@ -333,8 +331,7 @@ for addr in &docketed {
 }
 let order: Vec<Vec<u8>> = k.court_federation.iter().map(|(a, _)| a.as_bytes().to_vec()).collect();
 assert_eq!(order.len(), 2, "both words ruled into the federation");
-let mut back = Court::new();
-assert!(back.restore(&k.snapshot()), "clean restore");
+let back = Court::new().reconstruct(&k.snapshot()).expect("a clean reconstruction").into_object();
 let again: Vec<Vec<u8>> = back.court_federation.iter().map(|(a, _)| a.as_bytes().to_vec()).collect();
 assert_eq!(again, order, "the order re-derived from the ruling stamps");
 }
@@ -365,8 +362,7 @@ let orphan = crate::transducer::address::Address::from_bytes(vec![9u8; 4096]);
 k.field_cold.insert(&orphan, ListingCoherence { entries: vec![entry], nonflat: 1 });
 let snap = k.snapshot();
 assert_eq!(snap.len(), bare.len(), "a field on a word no row holds writes nothing");
-let mut booted = Court::new();
-assert!(booted.restore(&snap), "clean restore");
+let booted = Court::new().reconstruct(&snap).expect("a clean reconstruction").into_object();
 assert!(booted.field_cold.get(&orphan).is_none(), "and restores as nothing");
 let got = booted.field.get(listed.as_bytes()).expect("the listing's field survived on its row");
 let [e] = got.entries.as_slice() else { panic!("one entry: {got:?}") };
@@ -395,10 +391,38 @@ assert_eq!(k.chain().node(&at).map(|r| r.kind), Some(crate::chronometry::ActKind
 let bare = from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 1), (0, 2, 1)])).unwrap());
 k.basis_insert(bare.clone(), [7; 32]);
 assert_eq!(k.unstamped(), [1, 0, 0, 0, 0], "held on the basis with no act: the reading names it by row");
-let mut booted = Court::new();
-assert!(booted.restore(&k.snapshot()), "clean restore");
+let booted = Court::new().reconstruct(&k.snapshot()).expect("a clean reconstruction").into_object();
 assert!(booted.word_at(adopted.address().as_bytes()).is_some(), "the admitted word comes back");
 assert_eq!(booted.admitted_at(adopted.address().as_bytes()), Some(at), "at the stamp that admitted it");
 assert!(booted.word_at(bare.address().as_bytes()).is_none(), "the word no act admitted was refused");
 assert_eq!(booted.unstamped(), [0; 5]);
+}
+
+/// MU-ANTI-FLATTENING 14, ROADMAP track 25 X0 (ruled on #28) — A RESTORE
+/// RECONSTRUCTS THE COURT AND CHECKS IT AGAINST ITS RECEIPTS: the snapshot
+/// as written reconstructs a court whose line verifies on its root and
+/// whose head is the one written; the same snapshot with one byte of a
+/// receipt's chain hash changed is refused in the ledger trie, since that
+/// receipt no longer re-derives the hash it claims. No court is returned
+/// on the refusal, and none is replayed.
+#[test]
+fn restore_reconstructs_and_checks_receipts() {
+let mut k = Court::new();
+speak_pair(&mut k, &[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)], [1; 32]);
+let snap = k.snapshot();
+let head = k.chain().head().expect("the court's line has a head");
+let back = Court::new().reconstruct(&snap).expect("the snapshot as written reconstructs").into_object();
+assert!(back.chain().verify_chain_integrity(), "the reconstructed line verifies on its root");
+assert!(
+    back.chain().head().is_some_and(|h| super::fixtures::one_receipt(&h, &head)),
+    "and stands at the head written"
+);
+let hash = head.chain_hash.bytes();
+let at = snap.windows(32).position(|w| w == hash).expect("the head's chain hash rides the snapshot");
+let mut bent = snap.clone();
+bent[at] ^= 1;
+assert!(
+    matches!(Court::new().reconstruct(&bent), Err(RestoreRefusal::Unread { trie: "ledger", .. })),
+    "a receipt claiming a hash its coordinates do not give is refused in the ledger trie"
+);
 }
