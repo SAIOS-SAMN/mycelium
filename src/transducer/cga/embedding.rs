@@ -106,9 +106,10 @@ pub fn membrane() -> Mv {
 /// field's motions acting on the throat, never from a squared radius with
 /// `e∞`, and it is never a reference surface anything is measured against.
 /// `None` where `rho ≤ 0`, an enclosure with no extent, or where the image
-/// carries no weight. The Euclidean producer is no surface of the crate:
+/// carries no weight. The Euclidean producer is retired (a body's nucleus is
+/// the reading `blade::Blade::nucleus`, never a sphere):
 ///
-/// ```compile_fail,E0603
+/// ```compile_fail,E0425
 /// let _ = mycelium::transducer::cga::sphere_at(&[], &num_rational::BigRational::from_integer(1.into()));
 /// ```
 pub fn membrane_at(c: &[BigRational], rho: &BigRational) -> Option<Mv> {
@@ -119,17 +120,6 @@ pub fn membrane_at(c: &[BigRational], rho: &BigRational) -> Option<Mv> {
     let image = translator_at(c).sandwich(&dilated);
     let weight = -image.geo(&e_inf()).scalar_part();
     (!weight.is_zero()).then(|| image.scale(&(one() / weight)))
-}
-
-/// THE DEFECT LEFT OPEN (MU-SENSING §8; ROADMAP track 26 S7 stage 3): the
-/// dual sphere `X(c) − ½ r² e_∞` built from a squared extent. Its one
-/// caller is a body's nucleus (`blade::Blade`), whose extent is its polar
-/// second moment, an exact `r²` whose root is in general no rational gauge,
-/// so [`membrane_at`] cannot carry it. What reading replaces the nucleus is
-/// a ruling owed on #134; until then it is crate-private and nothing else
-/// builds a sphere from a squared radius.
-pub(crate) fn sphere_at(c: &[BigRational], r2: &BigRational) -> Mv {
-    point_at(c).sub(&e_inf().scale(&(half() * r2)))
 }
 
 /// The base point back out of a conformal point or sphere at `n`: the scale

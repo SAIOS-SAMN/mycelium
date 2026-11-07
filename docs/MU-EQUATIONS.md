@@ -58,7 +58,7 @@ exact rational, and the computation refuses otherwise.
 
 Sources: MU-RECURSION, "The laws this document is written under", laws 1
 and 4; MU-RECURSION 78.45. Code: `src/transducer/alphabet/rotor.rs::rational_sqrt`,
-`src/transducer/family/fibre_relation.rs::exact_root`.
+`src/transducer/sentence/form/clause.rs::exact_root`.
 
 #### 1.2 The algebra Cl(p, q) over ℚ, and its conformal case Cl(n+1, 1)
 
@@ -253,10 +253,13 @@ The one producer of a sphere (78.171 amendment (d), track 26 S7 stage 3).
 A sphere is a holding's own enclosure: the membrane, or its image under
 the dilation by the gauge `ρ` and the slide to `c`. No squared radius is
 written; a point `p` stands on it where `⟨X(p) S⟩₀ = 0`. A gauge `ρ ≤ 0`
-names no enclosure. A body's nucleus, whose extent is a polar second
-moment with no rational root in general, is still built from `r²` by a
-crate-private producer; that defect waits on a ruling (#134; MU-SENSING
-§8).
+names no enclosure.
+
+A body's nucleus is no sphere (ruled on #134, 2026-11-06): it is the
+body's exact second moment `r²`, a reading of its mass held beside the
+membrane. Where the algebra needs it as a vector, it is the dual-sphere
+form `s = c + ½(c² − r²) e_∞ + e_o`, `s² = r²`, written from `r²` alone,
+no root taken (`src/transducer/blade/body.rs::nucleus_form`).
 
 Sources: MU-RECURSION A4, 51.2; 78.171 §1a. Code:
 `src/transducer/cga/embedding.rs::membrane`, `::membrane_at`.
@@ -879,41 +882,35 @@ an integer.
 
 Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::centred`.
 
-#### 4.2 The envelope and the dilation between envelopes
-
-**Refused defect.** The envelope below squares the extents
-(`r² = Σ eᵢ²/4`, an exact square root), which law 11 refuses; MU-SENSING
-§8 lists it as built and refused, and the re-period of each phase
-replaces it (MU-SENSING §3.1; track 26 S4). The formula records the code
-that still holds it.
+#### 4.2 The re-period of each phase between two samples
 
 ```text
-r² = Σᵢ eᵢ² / 4                    (circumscribed sphere of a sample of extents eᵢ)
-s  = r_to / r_from = p/q           exact only where r²_to / r²_from is a rational square
+ρᵢ = p′ᵢ / pᵢ                      (axis i: the output's period over the input's)
 
-carried site:  X_to = X_from · p/q,   x_to = (X_to + (e_to − 1)) / 2   (an integer site, or none)
+carried site:  X_to,i = X_from,i · p′ᵢ/pᵢ,   x_to,i = (X_to,i + (p′ᵢ − 1)) / 2   (an integer site, or none)
 ```
 
-A change of extent is the dilation about the centres carrying one envelope
-onto the other. The code reduces `Σ e_to² / Σ e_from²` by its gcd and takes
-exact integer roots of numerator and denominator; it answers nothing where
-either is not a square.
+A change of extent re-periods each phase by its own ratio, about the
+centres; no scale is read off a sphere (MU-SENSING §3.1). A site whose
+carried point falls between sites or outside the output carries nothing,
+and two samples of different rank have no re-period. This replaces the
+envelopes' dilation (`r² = Σ eᵢ²/4`, `s = r_to/r_from`), which squared the
+extents against law 11 and was removed in track 26 S4.
 
-Sources: MU-RECURSION 78.56, 78.45. Code:
-`src/transducer/family/fibre_relation.rs::envelope_dilation`,
-`::carried_site`. The squared extents are a defect against law 11
-(MU-SENSING §8), kept unchanged until the re-period of each phase
-replaces them (ROADMAP track 26, S4).
+Sources: MU-RECURSION 78.56; MU-SENSING §3.1. Code:
+`src/transducer/element/residue.rs::Reperiod::of_extents`;
+`src/transducer/family/fibre_relation.rs::carried_site`.
 
 #### 4.3 Momentum vanishing
 
 ```text
-Σ_train ( Σ_out X − s · Σ_in X ) = 0      per axis, each painted site a unit of mass
+Σ_train ( Σ_out Xᵢ − (p′ᵢ/pᵢ) · Σ_in Xᵢ ) = 0      per axis i, each painted site a unit of mass
 ```
 
 A task carries no polar vector when this mass-weighted displacement is
-exactly zero. Where any pair's dilation is irrational the momentum is not
-read and the orientation is held physical.
+exactly zero on every axis. Where a pair's two members are of different
+rank, or an input period is empty, the momentum is not read and the
+orientation is held physical.
 
 Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::momentum_vanishes`.
 

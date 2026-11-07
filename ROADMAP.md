@@ -1878,6 +1878,13 @@ Each phase is one commit:
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
+   - **Built** (branch `sensing-dilation`): the envelopes' dilation, which
+     squared the extents (law 11), is removed; the fibre map's carried
+     site and the frame's momentum read the re-period of each phase
+     (`element::Reperiod`, `p′ᵢ/pᵢ` axis by axis). Claims
+     `reperiod_carries_sites_between_extents_phase_by_phase`,
+     `momentum_read_per_phase_across_anisotropic_reperiod`. Open: the
+     magnitude's planar chains (`family::magnitude`, MU-SENSING §8).
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
@@ -2098,15 +2105,16 @@ Each phase is one commit:
         conformance probes and the oracle's fixtures; `on_sphere` and
         `at_three::sphere` retired; the SDK's `house::sphere_at` is
         `house::membrane_at`. Claim `sphere_built_without_squared_radius`.
-        **Stopped:** a body's nucleus (`blade::Blade::nucleus`), whose
-        extent is a polar second moment with no rational root in general,
-        still built from `r²` by the crate-private `cga::sphere_at`, waiting
-        on a ruling of the reading that replaces it (#134). Turnings on
-        planes that share a unit compose by netstratum's composition law
-        (78.173 fixture 11b, `carrier::Rotor`) where both motions are
-        rational, a whole number of quarter turns; any other angle is
-        refused `IrrationalMotion`, and a wound pair `Uncommuted` (78.173
-        §8.3).
+        A body's nucleus is its exact second moment, a reading (ruled on
+        #134, 2026-11-06), written as the dual-sphere form
+        `c + ½(c² − r²)e_∞ + e_o` from `r²` alone (`blade::nucleus_form`);
+        `cga::sphere_at` is retired (branch `field-nucleus-moment`; claim
+        `nucleus_is_the_second_moment_read_never_a_sphere`; the values are
+        unchanged, so no recut). Turnings on planes that share a unit
+        compose by netstratum's composition law (78.173 fixture 11b,
+        `carrier::Rotor`) where both motions are rational, a whole number
+        of quarter turns; any other angle is refused `IrrationalMotion`,
+        and a wound pair `Uncommuted` (78.173 §8.3).
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.
