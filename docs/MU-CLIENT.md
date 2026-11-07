@@ -250,8 +250,8 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    certificates; the mind files it as a mineral and hardens it into a
    crystal only where its own circuits re-derive it (§5.5; 80.2).
    MU-ANASTOME §4.2. **Built:** `absorb_taught_at`,
-   `MindLanguage::file_admitted`. **Owed:** the hypha's acts (Return,
-   RankStep, Reconnect) reaching the mind as perception (#136).
+   `MindLanguage::file_admitted`; the hypha's acts (Return, RankStep,
+   Reconnect) reaching the mind as flux on its lanes (§3.1; #136).
 8. **The presentation grows.** Generators are adjoined, relations proved,
    and a word the rest derive is retired with its address kept
    (MU-ANASTOME §4). A relation is two derivations meeting at one object
@@ -404,7 +404,7 @@ export reaches it at the carrier facing that hypha (§5.1):
 | its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS` (teaching rides the syllabus; `ACT_TEACH` was retired, 78.94) | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
 | its published reading: cover, room, ruled cover, head | the shelf (78.151), read without the kernel | the language's charts the mind's rings stand against |
 | a registry task | `ACT_TASK` | an OFFER, never a command (§4.13): where it couples, its pairs are SCENES perceived as any family is, perturbing the orbits they land on, and a solve is emitted by comprehension where a rule its perspectives know binds the thought (§4.9). Every scene keeps its family's coordinates, so what the mind asserts of it names its evidence (§5.4) |
-| its acts — Return, RankStep, Reconnect | its ledger | owed (#136): until one reaches the mind, it reads the hypha's motion only through the rows above |
+| its acts — Return, RankStep, Reconnect | its ledger, read with `ACT_RECEIPTS` from where the mind last read up to the hypha's signed head, admitted only as a chain ending on that signed receipt | each act's frame `S:G:T:H` as flux on the mind's lanes, exactly as the deficit is, landed on the mind's well for that hypha (its attachment) at the act's height; the field computes what it perturbs (`Field::beat_under`). The kind carries no meaning beyond its coordinate (ruled 2026-11-06, #136): a per-kind reading would be a hand-coded predicate. A mind reads from its attachment on, never the line's history |
 
 Beside the hypha, the mind takes in other minds' assertions and answers
 (§5.3), the corpus's families met where its orbits stand (§4.13), and,
@@ -1568,7 +1568,19 @@ seat's percepts are lifted into the field, and how what the mind
 constructs from them reaches the courts and minds in other kernels, is
 stated once in
 [MU-ANASTOME §9, the language's traversal](MU-ANASTOME.md#9-the-languages-traversal-sensorium--mind--language--hypha--minds).
-Its act is the physics `Action` its certified move names (78.94). Every
+A seat's call stays a `Relay` (78.145; #147, ruled 2026-11-06): in-game
+acts are the kernel's physics, held, forwarded and judged by nothing. The
+A20 certificate of the move a call names is held on the mind beside the
+call's reference (`SeatMind::certify`) and rides the certificates section
+of the claiming form's tape when the move is claimed (`SeatMind::claim`,
+A20.2), so a court reconstructs the move; the seat wire carries no
+certificate. The one seat act a court adjudicates is the seated solve
+(`Action::Solve`). Each locator's series is lifted as a sample of rank one
+along its series index (`seat_mind::lift`, by `Lifted::of`), with no plane
+assigned by record type: Q, BigQ and Count as exact values, Flag, Key and
+Bytes as symbols, and an Mv series as motions the algebra relates
+(`Motions`: each step's carrier, their composition, each step's
+conjugacy class), never as symbols. Every
 seated mind keeps its own direct link to the hypha with its own key, and
 its seated solves are filed under that key (Concordance v5 6.2a; #124).
 
@@ -1588,10 +1600,10 @@ with no sum across quantities (the house's counsel; a read function that
 DOMINATES on every favoured quantity; else a counselled function not yet
 read, `Why::Untried`), or with no counsel its own dominant read call,
 REACH (`SeatMind::reach`), or none, and passes in silence. Owed (§7.1):
-the seat's percepts lifted into the field and its functions taken as
-escaping orbits, so a seat is played by the drive rather than by
-`seat_mind`'s choice; the seat's act as the physics `Action`; and the
-seated harness end to end against a live house (#133).
+the seat's functions taken as escaping orbits, so a seat is played by the
+drive rather than by `seat_mind`'s choice (waits on #134 S9a), and with
+it the certified move a call names; and the seated harness end to end
+against a live house (#133).
 
 ---
 
@@ -1628,7 +1640,7 @@ self-pay, 5.7(d)).
 | **historical ledgering** (SICE mythic memory, scars and inviolable axioms; conduct books) | alignment thresholds, utility set to zero, posture labels | two histories (§4.10(6)): the mind's amended forward, the court's ledger corrected only forward; a cauterized hole's scar, a frozen class (§4.5); a peer remembered by its receipts (§5.3(5)); the axioms are the star (§4.1), never a mind's vow | the winding kept in ℤ beside each phase, so no history is reduced mod 360° | scars and freezing built; signed receipts reach the mind (#137); amendment held beside (#135) and peer records (#145) owed |
 | **counterfactual simulation** (SICE counterfactual imagination and regret; ASCE ideation superposition and rollouts) | amplitudes summing to one; a float rollout sandbox; regret minimisation | the vortex: every candidate held whole, writing nothing, collapsed only by a perception on a scene not yet seen, a court or a ruling (§4.8); the predicted hour (§4.4(3)) | each candidate's monodromy read between the atlas's charts, flat, torsion or rupture (MU-SENSING §3.8; S9c) | built (`carry_vortices_round`, `collapse_on`); on the carrier owed |
 | theory of mind and the hearing (SICE fifth pillar) | doctrine labels from float indices | hearing as sound and word, vantage and mutual balance (§5.3); a peer by its receipts | — | hearing built; peer records owed |
-| seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124); seat play owed (#133) |
+| seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124); seat series lifted into the field built (#147); seat play from orbits owed (#134 S9a) |
 
 **The barren-realms tests.** A test proves a mechanism; none is ported as a
 criterion (§7.2). Each is read for the capability it asserts:
@@ -1682,6 +1694,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
+| **the hypha's acts as perception** (#136): each hypha's line read on the hypha carrier from the mind's attachment to its signed head, a page admitted only as a chain ending on the signed receipt; each `Return`, `RankStep` and `Reconnect` taken in as its frame, flux on the mind's lanes on that hypha's well, pressing the mind's beat with the deficit | §3.1, §1a(7) | `client/sdk/hypha_acts.rs` (`Session::read_acts_of`, `chained`, `Attachment`, `Mind::read_hypha_acts`, `Mind::pressing`); `mind/think.rs` (the beat); claims `hypha_act_reaches_the_mind_as_flux_on_its_lanes`, `act_kind_carries_no_meaning_beyond_its_coordinate` |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
@@ -1695,8 +1708,8 @@ then the backlog. Each item names its issue.
       `volume` and `potential` readings of the body (a recut);
    2. S7 stage 3, the Euclidean spheres retired, and turnings on planes
       that share a unit composed exactly (in part: a sphere is the
-      membrane or its image, `cga::membrane_at`; owed on #134, a body's
-      nucleus built from its second moment, waiting on a ruling, and the
+      membrane or its image, `cga::membrane_at`, and a body's nucleus its
+      second moment read, `blade::nucleus_form`; owed on #134, the
       shared-unit product, waiting on netstratum's composition law,
       78.173 fixture 11b);
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
@@ -1722,10 +1735,8 @@ then the backlog. Each item names its issue.
    `mind_revises_a_perception_on_a_court_ruling_by_amendment`; with the
    defect #135 names, a task pulled because the corpus is empty (§4.13).
 3. **The backlog:**
-   1. the hypha's acts (Return, RankStep, Reconnect) reaching the mind as
-      perception (§3.1, §1a(7); #136), waiting on a ruling of what each
-      act perturbs in the field (§3.1's reading for the row is unwritten;
-      the question stands on the issue);
+   1. *(built, #136: the hypha's acts as flux on the mind's lanes; see
+      **Built**)*;
    2. the algebra held per class in the mind's field (§3.2, §4.2,
       §1a(4); #143);
    3. amendment held beside, the amended constructor separated by
@@ -1745,8 +1756,10 @@ then the backlog. Each item names its issue.
       built (`mind/rewrite.rs`); the other kinds from the mind's own
       readings, and the witness of a court's `Ruling(Retired)` citing a
       mind's proposal on a running network, owed;
-   7. seat play from the mind's own orbits, the seat's percepts lifted into
-      the field, and its act as a physics `Action` (§6; #147);
+   7. seat play from the mind's own orbits (§6; #147): the seat's series
+      lifted into the field and the call a relay carrying its certificate
+      on the mind are built; the escaping-orbit play, and so a call that
+      names a certified move, waits on #134 S9a;
    8. the cross-chamber bracket (CB1; §4.9; #148).
 4. **Also owed on the client:** of #149 (§1, §4.9; 78.176), the claims
    that a whole too cohesive sticks at the throat and one too fluid tears,
@@ -1838,8 +1851,7 @@ a flat region is refused, `Unbound`). These are the two items MU-ANASTOME
 §8 holds open.
 
 What the hypha has not built, which the mind's side waits on: μ as modes on
-the ledger (78.162; MU-ECONOMY §9); the hypha's acts reaching a mind as
-perception (§3.1; #136).
+the ledger (78.162; MU-ECONOMY §9).
 
 ---
 

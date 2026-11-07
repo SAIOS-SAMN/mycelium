@@ -74,15 +74,19 @@ impl Blade {
         cga::base_at(&self.spatial, self.n())
     }
 
-    /// The squared extent `r² = S·S` — always `> 0`, so the body is invertible.
+    /// THE BODY'S SECOND MOMENT `r²`, the polar second moment per unit mass,
+    /// exact in ℚ and always `> 0`, so the body is invertible. A reading of
+    /// its mass, held beside the membrane, never a radius: no root is taken
+    /// (ruled on #134, 2026-11-06).
     pub fn radius2(&self) -> BigRational {
         self.spatial.norm2()
     }
 
-    /// THE BODY'S NUCLEUS: its conformal sphere, centre and extent in ONE
-    /// vector (64.1).
+    /// THE BODY'S NUCLEUS: its centre and second moment in ONE vector (64.1),
+    /// the dual-sphere form of the reading, never a sphere built (ruled on
+    /// #134, 2026-11-06, from 78.171 amendment (d)).
     ///
-    /// `s = P − ½r²e_∞ + e_o` with `s² = +r²`, so the nucleus is SPACELIKE
+    /// `s = c + ½(c² − r²)e_∞ + e_o` with `s² = +r²`, so the nucleus is SPACELIKE
     /// — the dual-sphere chart, which is the one where contact is
     /// reachable. On the `v² = −1` hyperboloid `μ = sinh²(d/2) ≥ 0` and
     /// tangency cannot be reached at all (59.2).
@@ -94,16 +98,16 @@ impl Blade {
     /// DEFINED (64.2).
     ///
     /// ONE PRODUCER (law 12). Every reader of a nucleus comes here rather
-    /// than assembling `cga::sphere` from a centroid at its own call site.
+    /// than assembling the form from a centroid at its own call site.
     pub fn nucleus(&self) -> Option<crate::transducer::cga::Mv> {
-        Some(crate::transducer::cga::sphere_at(&self.centroid()?, &self.radius2()))
+        Some(nucleus_form(&self.centroid()?, &self.radius2()))
     }
 
     /// The nucleus in the sensor's VERTEX coordinates — where a transition
     /// between bodies acts (`carry::vertex_centroid`) — so a frame and the
     /// motion carrying it stand in one chart (78.51(3)).
     pub fn vertex_nucleus(&self) -> Option<crate::transducer::cga::Mv> {
-        Some(crate::transducer::cga::sphere_at(&super::carry::vertex_centroid(self)?, &self.radius2()))
+        Some(nucleus_form(&super::carry::vertex_centroid(self)?, &self.radius2()))
     }
 
     /// 78.74 — THE BODY AS A PIVOT: its centroid as a conformal point in the
@@ -212,6 +216,17 @@ pub struct InvariantSignature {
     pub tr_i: BigRational,
     pub det_i: BigRational,
     pub hue_profile: Vec<BigRational>,
+}
+
+/// THE NUCLEUS FORM OF A BODY'S READING (ruled on #134, 2026-11-06): its
+/// centre `c` and its exact second moment `r²` written as the one vector
+/// `c + ½(c² − r²)·e_∞ + e_o` (on the pole basis, `n_∞` and `n_origin`,
+/// 78.171 §1a). It needs `r²` only: no root, no gauge and no sphere built.
+/// `c²` is read from the algebra, `⟨c c⟩₀`, as the point's embedding does.
+pub(crate) fn nucleus_form(c: &[BigRational], r2: &BigRational) -> crate::transducer::cga::Mv {
+    let v = cga::base_vector(c);
+    let lift = (v.norm2() - r2) * BigRational::new(1.into(), 2.into());
+    v.add(&cga::e_inf().scale(&lift)).add(&cga::e_o())
 }
 
 /// THE MOMENTS' AXIS PAIRS, in the inertia's own order: each axis's
@@ -385,7 +400,7 @@ pub fn lift(comp: &[Compartment]) -> Blade {
         .into_iter()
         .fold(q(0), |s, i| s + diag(i));
     let r2 = polar / &n_q;
-    let spatial = cga::sphere_at(&centroid, &r2);
+    let spatial = nucleus_form(&centroid, &r2);
 
     // Gauge: the hue multiset as sorted (hue, count) relations — Vec, not a map.
     let mut gauge: Vec<(u8, BigRational)> = Vec::new();

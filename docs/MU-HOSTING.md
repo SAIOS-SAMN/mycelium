@@ -341,16 +341,22 @@ a kernel (`Session::retrieve`).
 - **Request:** `[ACT_DOMAIN][domain 32][0x80 0x00][19][staker 32][point]
   [cited final point][nonce 32][sig 64]`, the staker's signature over
   `"mycelium retrieve v1" ‖ domain ‖ staker ‖ point ‖ cited ‖ nonce`.
-- **Reply:** `[1][fee μ⃗][count u32][receipt …][section]`. The receipts
-  are in the `ACT_RECEIPTS` page codec, each carrying its stamp. The
+- **Reply:** `[1][fee μ⃗][count u32]([receipt][path count u32][path
+  receipt …]) …[section]`. The receipts are in the `ACT_RECEIPTS` page
+  codec, each carrying its stamp, and each with its ancestry to the signed
+  head: the receipts on one path from it up to the head, written out whole,
+  each naming the one below it among its predecessor and parents (ruled
+  2026-11-06; height alone would admit a receipt off the chain). The
   section is the court's own 47.1 position over its head at the answer,
   signed over `"mycelium retrieved v1" ‖` the request's signed bytes. A
   refusal is `[0][code]`: unsigned, unknown domain, not final, origins (two
   origins, or the point above the cited one), folded, short, overflow.
 - **The retriever's check** (`retrieve::verify_retrieved`): the section
   verifies under the court's key, is one claim with its head receipt, and
-  signs over this request; every receipt re-derives, stands at the point's
-  tick and at or below the signed head's height. A served answer that does
+  signs over this request; every receipt re-derives and stands at the
+  point's tick, and its path leads to the head: each step re-derives and
+  names the one below it, and the head names the last. A receipt of the
+  right height off the head's chain is refused `OffChain`. A served answer that does
   not stand is the court's signed claim, presentable as its own.
 - **What stays in process.** PINPOINT, UNPACK and UNROLL are served only
   through this priced retrieval; a free read invites flooding. A tick this
@@ -935,7 +941,7 @@ holds back:
 | The peers' folded lines (`Court::shed_folded_lines`, on a `Fold`) | Shed on an unsigned fold | Shed when a signature reaches the fold |
 | The domain registries (`Court::reconstruct_founding`) | Held already by B0 | The same gate |
 | The equivocation burn (`Admitted::Equivocation` in `Court::admit_receipt`) | A bond burned against an unsigned receipt held at the place | Burns only against a reached receipt (47.4 asks two verified signatures) |
-| Restore (`Court::restore`: the alias derivation, `rebuild_attestors`) | Every peer node in the ledger | Only reached nodes. The marks are derived first (`Court::hold_unreached_at_restore`): a peer receipt is reached where the court's own hot line cites its signer's line at or above its place |
+| Restore (`Court::reconstruct`: the alias derivation, `rebuild_attestors`) | Every peer node in the ledger | Only reached nodes. The marks are derived first (`Court::hold_unreached_at_restore`): a peer receipt is reached where the court's own hot line cites its signer's line at or above its place |
 
 The receipt is stored, not held outside the chain. The catch-up reads
 the stored line: the next receipt of a page links to it, the signed frame
@@ -1157,6 +1163,7 @@ proposed with the boundary reading (B4).
 | Admission taking only a reconstructed object (`Reconstructed<T>`): `admission::admit`, `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`, `Court::admit_backfill`, `ReceiptChain::admit_unreached`; a fold root as `Reconstructed<RootProof>` (`Reconstructed::root`), taken by `ReceiptChain::adopt_root` and `Court::reach_by_root` (#88) | **Built** | `src/court/admission/reconstructed.rs`; track 25, X0 |
 | The vertex's admissions (`Court::admit_uplink`, `admit_chained`, `admit_domain`) and `ReceiptChain::admit` taking `Reconstructed<T>`: a tier's fold and a domain's genesis are reconstructed by re-writing their signed bytes from their own coordinates and verifying the signature over them (`Reconstructed::fold`, `Reconstructed::domain`); `Court::hear_uplink` and `Court::hear_domain` reconstruct the act as heard and refuse `Unsigned` | **Built** | `src/court/admission/reconstructed.rs`, `src/server/cognition/cite.rs`; track 25, X0 |
 | A motion stated as turns, read by the Conformal law: one turn per phase of the frame, composed by addition with each phase's winding kept beside its phase (`Turn::plus`, `Turn::winding`; LAW-FIELD amendment (c)), each place carried phase by phase and a disagreement held as the residue `t_claim − t_rec` per phase (`TurnBreach::NotCarried`). No turn is converted to a rotor: only multiples of a quarter turn have exact rotors over ℚ (Niven), and every turn is checked as a turn. A turn whose index on its phase's period is no whole site leaves the frame's periods and is refused `LeavesPeriods`; a count of turns other than the frame's rank is refused `Rank` (`PlaceRank` for a place). In process and through the SDK; the wire is unchanged, and the motion as turns rides the crossing record (X1). Claims `conformal_accepts_turn_valued_motion`, `turn_motion_composes_by_addition`, `composed_turns_keep_their_winding`, `verify_turns_refuses_turn_leaving_frame_periods`, `verify_turns_names_residue_of_uncarried_place` | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)) | `src/physics/laws/turns.rs` (`verify_turns`, `TurnMotion`, `TurnTransition`, `TurnBreach`); `src/transducer/family/transduce/turn.rs` |
+| A restore as a reconstruction: `Court::reconstruct(self, &[u8]) -> Result<Reconstructed<Court>, RestoreRefusal>` reads a snapshot against the line and eras the court holds, under `Reconstructed::court`'s laws (each receipt re-derives, the line verifies on its root, each row continues its receipt), and refuses by name; the in-place `restore -> bool` is removed | **Built** (ruled on #28, 2026-11-06) | `src/court/admission/reconstructed.rs`, `src/server/cognition/persistence/read.rs`; track 25, X0 |
 | The crossing's content (bodies, motion, holonomy) reconstructed at the vertex, not only its signature | **Specified** | Track 25, X2 |
 | The crossing record (place, content, holonomy, clauses) in the SDK and on the wire | **Specified** | Track 25, X1 (with B3) |
 | An inter-kernel traversal (two LAW-PASSAGE v3 passages composed at the vertex, one per throat, reconstructed as a LAW-COORDINATE v4 re-origin read twice; refused `NotThroughCore` outside the core) | **Proposed**: [proposal 78.176](proposals/78.176-law-traversal.md). Each kernel declares its polarity as data; the antipolar case keeps `z_k + q_k` per plane. Which kernel's core is the antipolar face of any given tube is not confirmed | ROADMAP track 24 B3 |
