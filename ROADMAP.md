@@ -69,7 +69,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
 | Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
-| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
+| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Ruled 2026-11-06 (78.180 ruling 6), to build: no letter written by hand past `n = 3` (section samples, letters adjoined only by the presentation's growth); the ray a translation versor of the sample's rank |
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
 | Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
@@ -1523,8 +1523,8 @@ with its section *Drift guards*.
 A connection between a universe and the hypha is transduced. It carries
 the exact object and the motion, never a digest in place of them. Each
 crossing carries its place (TUniversal coordinates and past cone), its
-content (each body by its boundary, the motion as a versor or as turns in
-ℚ/ℤ), its holonomy and its clauses. The hypha reconstructs the object
+content (each body by its boundary, the motion as a versor or as turns,
+each phase with its winding kept), its holonomy and its clauses. The hypha reconstructs the object
 and admits it only on reaching the same exact object. A disagreement is
 held as a residue (the composed motion, the differing boundary, the
 differing holonomy), never as unequal bytes. A digest keeps exactly
@@ -1611,10 +1611,18 @@ Each phase lands on its own branch, one item per commit:
      clause 12. `Turn` has private fields and one constructor,
      `Turn::of(r, h)`, proved by the `compile_fail` claim
      `turn_has_one_constructor`.
-   - Not registered: the guard of clause 14, which has no guarding type
-     and no claim in the tree. `Court::restore` returns `bool`, not a
-     `Reconstructed<State>`, and
-     `restore_reconstructs_and_checks_receipts` is not written.
+   - **Built**, fourth stage (ruled on [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28),
+     2026-11-06, option (a)): the guard of clause 14. A restore is
+     `Court::reconstruct(self, &[u8]) -> Result<Reconstructed<Court>,
+     RestoreRefusal>`, a constructor in place of the in-place
+     `restore -> bool`, which is removed. `Reconstructed::court` reads
+     the snapshot under its laws: each receipt re-derives, the line
+     verifies on its root, a held line holds the stamp the snapshot
+     names, each row continues its receipt, each word re-derives its
+     citation. `self` is the court holding its line and eras from disk,
+     the evidence the snapshot is read against. Every call site and the
+     server boot are migrated, with no legacy path. Claim
+     `restore_reconstructs_and_checks_receipts`, in the drift register.
    - **Built**, third stage ([#28](https://github.com/SAIOS-SAMN/mycelium/issues/28)):
      `Cite::Root`'s hash is a `Predecessor`, so `Cite` has no
      `PartialEq`; two citations are compared by `Cite::restates` (two
@@ -1625,13 +1633,15 @@ Each phase lands on its own branch, one item per commit:
      whole. Claims `cite_has_no_equality`,
      `stratum_digest_has_no_equality` (`compile_fail`, in the drift
      register), `digests_reply_refuses_root_of_another_width`.
-   - Open, each asked on [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28):
-     the clause 14 guard type and claim (which object a restore's
-     `Reconstructed<State>` carries); the report of changed document
-     sentences that put a typed term beside an admission verb, which
-     needs a base commit the gate does not hold. The issue's
-     mutation-audit entry is not built: the mutation audit is retired
-     (*Test assurance* item 9, ruled 2026-11-04).
+   - **Retired** (ruled on #28, 2026-11-06): the report of changed
+     document sentences that put a typed term beside an admission verb.
+     A report that never refuses and that no reader acts on is theatre,
+     the reason the mutation audit was retired (*Test assurance* item 9);
+     the gate's heading and link checks guard document sentences.
+   - The issue's mutation-audit entry is covered by the `compile_fail`
+     claims `reconstructed_is_built_only_by_the_laws` and
+     `vertex_admits_only_a_reconstructed_fold` (ruled on #28), as the
+     drift register notes.
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,
    clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
    values (Concordance 1.4). It rides B3's change to the fold, which
@@ -1679,7 +1689,9 @@ Each phase lands on its own branch, one item per commit:
 6. **X5, the transduction in place of the common grid.** Two frames
    relate by the motion between them; each keeps its own resolution;
    each body is held by its boundary; incidences are read between boundary arcs; a site
-   lifts as turns in ℚ/ℤ. The transduction is **Built** (the v0.3.0
+   lifts as turns of its frame's own periods, the angle `360°·s/e` on a
+   named plane, and a composed motion keeps its winding beside its phase
+   (LAW-FIELD amendment (c)). The transduction is **Built** (the v0.3.0
    transduction work, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25),
    closed): `src/transducer/family/refine.rs` was removed with
    `CommonRefinement`. X5's guard remains to land, so that no common refinement
@@ -1871,6 +1883,13 @@ Each phase is one commit:
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
+   - **Built** (branch `sensing-dilation`): the envelopes' dilation, which
+     squared the extents (law 11), is removed; the fibre map's carried
+     site and the frame's momentum read the re-period of each phase
+     (`element::Reperiod`, `p′ᵢ/pᵢ` axis by axis). Claims
+     `reperiod_carries_sites_between_extents_phase_by_phase`,
+     `momentum_read_per_phase_across_anisotropic_reperiod`. Open: the
+     magnitude's planar chains (`family::magnitude`, MU-SENSING §8).
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
@@ -1996,17 +2015,24 @@ Each phase is one commit:
      `perspective_shift_is_a_sensor_motion`,
      `two_perspectives_of_one_sample_compared_as_a_cover`,
      `frame_fixing_is_a_perspective_reading`. No wire or address change.
-     Open: a mind asking for a perspective as a demand; collapsing a
-     ground's vortex by a relation.
+     Ruled 2026-11-06 (78.180 ruling 6), to build: a mind asks for a
+     perspective as a demand, a typed vertex naming the sample and the
+     overlap where the cocycle fails for a missing chart; a ground's vortex
+     collapses as the nesting's does, by Stands or Painted on holding for
+     one kept candidate alone on every pair, never by Closes (claims
+     `ground_vortex_collapses_where_bodies_stand_on_one_candidate`,
+     `ground_vortex_collapses_where_residue_paints_one_candidate`,
+     `closing_rule_never_collapses_the_ground`).
    - **Built, stage 2** (branch `sensing-s6-claim`, a wire change inside
      v0.4.0's break): a claim of factorisation states the perspective it
      was perceived under (signed `mycelium factorisation v2`); the court
      reads its copy of the pair through it and reconstructs there, refusing
      another rank or a non-space role by name; the mind perceives under a
      perspective (`TaskPercept::under`). Claim
-     `claim_states_its_perspective_and_court_reconstructs_under_it`. Open:
-     the solve of outputs and speech stating a perspective (they read the
-     section in its default).
+     `claim_states_its_perspective_and_court_reconstructs_under_it`.
+     Ruled 2026-11-06 (78.180 ruling 6), to build: the solve of outputs and
+     speech state their perspective, and a court reconstructs under it
+     (today they read the section in its default).
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
@@ -2033,8 +2059,12 @@ Each phase is one commit:
      and the membrane on the pole basis (`Membrane`, `stand`). LAW-FIELD
      v1's six fixtures stand as claims
      (`src/transducer/field/carrier/tests/law_field.rs`). Turnings on two
-     planes that share one unit are refused `NotExact` naming both (open
-     in 78.171 §8).
+     planes that share one unit compose by fixture 11b's law
+     (`carrier::Rotor`, 78.173 §5) where both motions are rational, and
+     any other angle is refused `NotExact` with `IrrationalMotion`: the
+     route approved 2026-11-06, with no `ℚ(ζ_ℓ)` product and neither
+     degree convention changed (the factor of two is open in 78.173
+     §8.3); claims in `src/transducer/field/carrier/tests/rotor.rs`.
    - **Stages** (each about 1 500 changed lines or less, each leaving the
      tree green; planned 2026-11-06):
      1. Built: the lift and the field's carrier (S4a, S7), and the field
@@ -2087,12 +2117,16 @@ Each phase is one commit:
         conformance probes and the oracle's fixtures; `on_sphere` and
         `at_three::sphere` retired; the SDK's `house::sphere_at` is
         `house::membrane_at`. Claim `sphere_built_without_squared_radius`.
-        **Stopped:** a body's nucleus (`blade::Blade::nucleus`), whose
-        extent is a polar second moment with no rational root in general,
-        still built from `r²` by the crate-private `cga::sphere_at`, waiting
-        on a ruling of the reading that replaces it (#134); and turnings on
-        planes that share a unit, waiting on netstratum's composition law
-        (78.173 fixture 11b; the Cayley form on generators).
+        A body's nucleus is its exact second moment, a reading (ruled on
+        #134, 2026-11-06), written as the dual-sphere form
+        `c + ½(c² − r²)e_∞ + e_o` from `r²` alone (`blade::nucleus_form`);
+        `cga::sphere_at` is retired (branch `field-nucleus-moment`; claim
+        `nucleus_is_the_second_moment_read_never_a_sphere`; the values are
+        unchanged, so no recut). Turnings on planes that share a unit
+        compose by netstratum's composition law (78.173 fixture 11b,
+        `carrier::Rotor`) where both motions are rational, a whole number
+        of quarter turns; any other angle is refused `IrrationalMotion`,
+        and a wound pair `Uncommuted` (78.173 §8.3).
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.

@@ -159,8 +159,7 @@ fn construct_torse_at_keeps_remainder_through_restart() {
     ).expect("the identity's class")), Box::new(crate::transducer::alphabet::Rotor::identity()), 1), &words).is_none());
     assert_eq!(k.remainders().0.unpriced, 1, "unpriced by name");
     let snap = k.snapshot();
-    let mut booted = Court::new();
-    assert!(booted.restore(&snap), "clean restore");
+    let booted = Court::new().reconstruct(&snap).expect("a clean reconstruction").into_object();
     assert_eq!(booted.remainder_at(&key), Some(&rw), "the index is rebuilt from the record");
     let word = booted.named_word(rw.as_bytes()).expect("the rewrite stands");
     let back: Vec<_> = word.remainders().collect();

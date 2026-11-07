@@ -320,8 +320,7 @@ fn ledger_chains_refuses_forks_and_reads_dilation() {
     let page = k.ledger_page(&domain(4), 10);
     assert_eq!(page.entries.iter().map(|e| e.entry.u).collect::<Vec<_>>(), vec![13, 19]);
     assert!(!page.more);
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.dilations(&domain(4)), k.dilations(&domain(4)), "the chain across a restart");
     assert_eq!(booted.atlas.head(&domain(4)).map(|e| e.entry.u), Some(19));
 }

@@ -88,8 +88,7 @@ fn admit_line_aliases_peer_stamp_to_one_word() {
     assert_eq!(c.admitted_at(addr.as_bytes()), Some(c_stamp), "and c's own stamp still holds it");
     c.append_step(ActKind::Attest, [0xAA; 40], [3; 32]);
     assert_eq!(c.pending_parents(), 0, "c's next step cites a's line");
-    let mut restored = Court::new();
-    assert!(restored.restore(&c.snapshot()), "clean restore");
+    let restored = Court::new().reconstruct(&c.snapshot()).expect("a clean reconstruction").into_object();
     assert_eq!(restored.word_admitted_at(&a_stamp), Some(&addr), "the alias is re-derived at restore");
 
     assert!(a.apply_verdict(addr.as_bytes(), RULING_UPHELD), "a upholds it");
