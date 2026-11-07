@@ -218,8 +218,7 @@ fn settle_windows_releases_toll_parts_together() {
     fund(&mut k, verifying(&reserve(5)), [11, 0, 0, 15]);
     let Handed::Sealed { id, at: traversed, .. } = traverse(&mut k, m, passage(7, 3, 1)) else { panic!() };
     let Handed::Sealed { at: accepted, .. } = k.handoff(&Handoff::Accept { id }.sign(&reserve(4))) else { panic!() };
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.toll_held_for(&verifying(&line())), halves(7, 5), "the toll held across a restart");
     let mut k = booted;
     assert!(k.window_close(accepted.h).is_err(), "no keeper has carried the acceptance yet");

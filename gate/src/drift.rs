@@ -16,10 +16,16 @@
 //! - [`Proof::CompileFail`]: a doc comment naming the claim in backticks,
 //!   followed in the same comment by a fence opened ```` ```compile_fail ````.
 //!
+//! Admitting a claim in place of its reconstruction, the entry a mutation
+//! audit once carried, is covered by the `compile_fail` claims
+//! `reconstructed_is_built_only_by_the_laws` and
+//! `vertex_admits_only_a_reconstructed_fold`; no separate test stands for
+//! it (ruled on #28, 2026-11-06; the mutation audit itself is retired).
+//!
 //! The report of changed document sentences that put a typed term beside an
-//! admission verb is not built: reading which documents changed needs a
-//! base commit a test does not have, so it is listed open (ROADMAP track
-//! 25, X0).
+//! admission verb is retired (ruled on #28, 2026-11-06): a report that
+//! never refuses and that no reader acts on is theatre, and the gate's
+//! heading and link checks guard document sentences.
 
 use std::path::{Path, PathBuf};
 
@@ -103,6 +109,13 @@ pub const REGISTER: &[Guard] = &[
         guard: "Reconstructed",
         claim: "vertex_admits_only_a_reconstructed_fold",
         proof: Proof::CompileFail,
+    },
+    Guard {
+        regression: "a restore that replays or rebuilds a court in place rather than reconstructing it and checking it against its receipts (MU-ANTI-FLATTENING 14)",
+        ruling: "ruled on #28, 2026-11-06, option (a); ROADMAP track 25 X0",
+        guard: "Reconstructed",
+        claim: "restore_reconstructs_and_checks_receipts",
+        proof: Proof::Test,
     },
     Guard {
         regression: "a site past the sensor read as a grid index rather than lifted into turns of its frame's periods (MU-ANTI-FLATTENING 12)",

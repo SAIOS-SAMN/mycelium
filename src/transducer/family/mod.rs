@@ -63,7 +63,6 @@ pub use finish::extraction_spend;
 pub use carriage::{carriage, carriage_with_core, BodyTransport};
 pub use crystal::{Crystal, NoCrystal};
 pub use fibre_relation::{fibre_map, fibre_relation};
-pub(crate) use fibre_relation::envelope_dilation;
 #[cfg(test)]
 pub(crate) use fibre_relation::carried_site;
 pub use frame::{family_ratio, frame_vertex};

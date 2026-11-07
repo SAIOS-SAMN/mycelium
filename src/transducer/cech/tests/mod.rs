@@ -6,6 +6,7 @@ pub mod fixtures;
 mod ascend;
 mod bianchi;
 pub(crate) mod bracket;
+mod class_algebra;
 mod classify;
 mod connecting;
 mod cover;

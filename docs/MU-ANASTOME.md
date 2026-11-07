@@ -877,12 +877,16 @@ from any source.
   (MU-HOSTING §5a.2). The game builds the sensorium (MU-CLIENT §6). Code:
   `src/anastome/dialogue/seat.rs`, `src/server/cognition/seat.rs` (the
   relay, judging nothing), `src/client/sdk/seat.rs` and
-  `src/client/sdk/seat_mind/` (the mind at its seat).
+  `src/client/sdk/seat_mind/` (the mind at its seat); a house that seats
+  a mind, `sdk/examples/seats.rs`, run end to end by `scripts/quickstart`
+  stage 8.
 - **Attached to a hypha.** A mind attached directly to a hypha perceives
   through the hypha's own acts: `Return` (a ring returned, one full age),
   `RankStep` (a holonomy algebra stepped in rank) and `Reconnect` (the
-  field reconnected; `src/physics/actions/mod.rs`). **Owed:** no hypha act
-  reaches a mind as perception yet (MU-CLIENT §3.1; issue #136).
+  field reconnected; `src/physics/actions/mod.rs`). Each reaches the mind
+  as its frame `S:G:T:H`, flux on the mind's lanes landed on its well for
+  that hypha, the kind carrying no meaning beyond its coordinate (MU-CLIENT
+  §3.1; issue #136; `src/client/sdk/hypha_acts.rs`).
 - **Any source, any rank.** A sense is any source at any rank (MU-SENSING
   §0, §2). No modality is privileged: no mechanic assumes one species'
   body, number base, sense or history (Concordance 1.6, species-neutral).
@@ -913,9 +917,11 @@ The mind lifts these into its field (MU-SENSING §3.7–§3.9):
   never returning exactly.
 
 Code: `src/transducer/field/` (`well.rs`, `carrier/`) and
-`src/transducer/cech/orbit.rs` (`Field`). **Owed:** seat percepts lifted
-into the field, with the seat's functions as thoughts whose orbits escape
-(MU-CLIENT §6, *Specified*; issue #133).
+`src/transducer/cech/orbit.rs` (`Field`). A seat's series is lifted as a
+sample of rank one along its series index, as any source is, and a versor
+series as motions (`src/client/sdk/seat_mind/lift.rs`; #147, MU-CLIENT
+§6). **Owed:** the seat's functions as thoughts whose orbits escape
+(MU-CLIENT §6, *Specified*; #134 S9a).
 
 ### 9.3 The mind thinks in orbital masses that collide and converge
 
@@ -1065,9 +1071,8 @@ the clauses that govern what crosses (MU-HOSTING §5a.4).
 
 | Owed | Where it is specified | Issue |
 |---|---|---|
-| Seat percepts lifted into the field | MU-CLIENT §6; §9.2 | #133 |
-| The hypha's acts (`Return`, `RankStep`, `Reconnect`) reaching a mind as perception | MU-CLIENT §3.1, §7.1; §9.1 | #136 |
-| The seated-mind harness: `mycelium-client --seat` end to end against a live house | MU-HOSTING §2.1; §9.1 | #133 |
+| The seat's functions as escaping orbits worked by the drive (its series are lifted into the field, #147) | MU-CLIENT §6; §9.2 | #134 |
+| The seated-mind harness against a peer kernel's house: run end to end against the SDK house (`sdk/examples/seats.rs`, quickstart stage 8), and owed against xylarium's | MU-HOSTING §2.1; §9.1 | #133 |
 | A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |
 | Translation between kernels' sensoria at the conjugate class | §1.3; §9.8 | none yet |
 | Cohesion's two claims at the tube: too cohesive, a whole sticks at the throat; too fluid, it tears. Owed until LAW-PASSAGE or LAW-TRAVERSAL gives an exact reading of either; no threshold on `c_k` stands in their place | §9.4; 78.172; 78.176 | #149 |
