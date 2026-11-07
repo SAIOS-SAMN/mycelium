@@ -21,6 +21,11 @@ pub enum Residue {
     Apart { held: Key, arriving: Key },
     /// An angle whose field `ℚ(ζ_ℓ)` passes the machine word: the angle.
     PastWord { degrees: crate::core::Q },
+    /// A plane a motion carries onto no plane the carrier names (a turning
+    /// by other than a quarter turn on a plane sharing a unit, a boost on a
+    /// plane holding one of its units): the plane carried (ROADMAP track 26
+    /// S8).
+    Unnamed { plane: Key },
 }
 
 /// WHY THE FIELD'S CARRIER REFUSES (LAW-FIELD v1 §4, and the carrier's own

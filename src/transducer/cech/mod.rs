@@ -15,6 +15,7 @@
 
 pub mod board;
 pub mod bracket;
+pub mod class_algebra;
 pub mod coboundary;
 pub mod coefficient;
 pub mod complex;
