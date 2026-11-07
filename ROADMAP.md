@@ -2054,8 +2054,12 @@ Each phase is one commit:
      and the membrane on the pole basis (`Membrane`, `stand`). LAW-FIELD
      v1's six fixtures stand as claims
      (`src/transducer/field/carrier/tests/law_field.rs`). Turnings on two
-     planes that share one unit are refused `NotExact` naming both (open
-     in 78.171 §8).
+     planes that share one unit compose by fixture 11b's law
+     (`carrier::Rotor`, 78.173 §5) where both motions are rational, and
+     any other angle is refused `NotExact` with `IrrationalMotion`: the
+     route approved 2026-11-06, with no `ℚ(ζ_ℓ)` product and neither
+     degree convention changed (the factor of two is open in 78.173
+     §8.3); claims in `src/transducer/field/carrier/tests/rotor.rs`.
    - **Stages** (each about 1 500 changed lines or less, each leaving the
      tree green; planned 2026-11-06):
      1. Built: the lift and the field's carrier (S4a, S7), and the field
@@ -2113,9 +2117,11 @@ Each phase is one commit:
         `c + ½(c² − r²)e_∞ + e_o` from `r²` alone (`blade::nucleus_form`);
         `cga::sphere_at` is retired (branch `field-nucleus-moment`; claim
         `nucleus_is_the_second_moment_read_never_a_sphere`; the values are
-        unchanged, so no recut). **Stopped:** turnings on planes that share
-        a unit, waiting on netstratum's composition law (78.173 fixture
-        11b; the Cayley form on generators).
+        unchanged, so no recut). Turnings on planes that share a unit
+        compose by netstratum's composition law (78.173 fixture 11b,
+        `carrier::Rotor`) where both motions are rational, a whole number
+        of quarter turns; any other angle is refused `IrrationalMotion`,
+        and a wound pair `Uncommuted` (78.173 §8.3).
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.
