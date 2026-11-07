@@ -16,6 +16,7 @@
 
 use super::coupling::{coupling_fixtures, reached, CouplingFixture, CouplingObject};
 use super::fixtures::{coordinate_fixtures, passage_fixtures};
+use super::turning::{turning_fixtures, TurningFixture};
 use algebra::Clifford;
 use forms::coordinate::{Bodies, Bounds, Coordinate, CoordinateRefusal, Interval, Key, Lane, Sector, Sides};
 use forms::passage::Poles;
@@ -25,11 +26,14 @@ use forms::Q;
 /// register's order: each a law form of the innermost shell with joint-read
 /// fixtures (LAW-PASSAGE v3 as `FORMS-PASSAGE`, the form's version 4;
 /// LAW-COORDINATE v4 as `FORMS-COORDINATE`, the form's version 4;
-/// LAW-COUPLING v1 as `FORMS-COUPLING`, the form's version 1).
+/// LAW-COUPLING v1 as `FORMS-COUPLING`, the form's version 1;
+/// LAW-COORDINATE fixture 11b, the composition of turnings, as
+/// `FORMS-TURNING`, the form's version 1).
 pub const CLAUSES: &[(&str, u16)] = &[
     (forms::passage::LAW_ID, forms::passage::LAW_VERSION),
     (forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
     (forms::coupling::LAW_ID, forms::coupling::LAW_VERSION),
+    (forms::turning::LAW_ID, forms::turning::LAW_VERSION),
 ];
 
 /// A CONCORDANCE CLAUSE'S NAME: its law form's id and version. With the fixtures it is
@@ -104,6 +108,10 @@ pub enum Fixture {
     /// LAW-COUPLING fixtures (78.175 §5): one operation of
     /// `forms::coupling` on its exact inputs.
     Coupling(CouplingFixture),
+    /// LAW-COORDINATE fixture 11b (78.173 §5): one operation of
+    /// `forms::turning` on exact values of `Cl(p, q)`, reaching a
+    /// `Multivector`.
+    Turning(TurningFixture),
 }
 
 /// THE EXACT OBJECT A FIXTURE REACHES.
@@ -150,6 +158,7 @@ impl PartialEq for Fixture {
                 held == h && at == a && lane == l && key == k && interval == i
             }
             (Fixture::Coupling(a), Fixture::Coupling(b)) => a == b,
+            (Fixture::Turning(a), Fixture::Turning(b)) => a == b,
             _ => false,
         }
     }
@@ -237,6 +246,7 @@ pub fn reconstruct(fixture: &Fixture) -> Option<Object> {
             })
         }
         Fixture::Coupling(f) => reached(f).map(Object::Coupling),
+        Fixture::Turning(f) => super::turning::reached(f).map(Object::Multivector),
     }
 }
 
@@ -259,9 +269,13 @@ fn registered(id: ConcordanceClauseId, standing: Standing, fixtures: Option<Vec<
 /// is drafted: a clause whose fixtures no other kernel has read is never
 /// made unvetoable (coordinator's decision, 2026-11-05). `FORMS-COUPLING`
 /// stands at kernel standing likewise, until 78.175's fixtures are
-/// joint-read agreed (operators' ruling, 2026-11-06).
+/// joint-read agreed (operators' ruling, 2026-11-06). `FORMS-TURNING`
+/// stands at kernel standing likewise, until 78.173 fixture 11b is
+/// joint-read agreed (coordinator's decision, 2026-11-06): each kernel
+/// signs it by reconstruction or vetoes it.
 pub fn register() -> Result<Vec<Registered>, RegisterRefusal> {
     let coupling = coupling_fixtures().map(|f| f.into_iter().map(Fixture::Coupling).collect());
+    let turning = turning_fixtures().map(|f| f.into_iter().map(Fixture::Turning).collect());
     Ok(vec![
         registered(ConcordanceClauseId::of(forms::passage::LAW_ID, forms::passage::LAW_VERSION), Standing::Network, passage_fixtures())?,
         registered(
@@ -270,5 +284,6 @@ pub fn register() -> Result<Vec<Registered>, RegisterRefusal> {
             coordinate_fixtures(),
         )?,
         registered(ConcordanceClauseId::of(forms::coupling::LAW_ID, forms::coupling::LAW_VERSION), Standing::Kernel, coupling)?,
+        registered(ConcordanceClauseId::of(forms::turning::LAW_ID, forms::turning::LAW_VERSION), Standing::Kernel, turning)?,
     ])
 }
