@@ -185,7 +185,16 @@ Concordance is the joining instrument.
 6. **Offer seats** (78.145; MU-CLIENT §6). The world model builds each
    seated agent's senses from its predicted state, and takes the agent's
    actions as the inputs it predicts the next state from. It may also run
-   resident minds in its own process (§5.1).
+   resident minds in its own process (§5.1). The house reads the takes and
+   calls in its mail by READ-MAIL. **READ-MAIL is a held read with no time
+   bound** (78.146 as amended, ruled 2026-10-17;
+   `src/bin/mycelium-server/deferred_reads.rs`). A read whose box holds
+   nothing past its cursor is answered at the court's next event: a seat
+   post filed on the relay, or the keeper signing its next TUniversal
+   reading. The hold reads no clock, so on a quiet relay it can stand for
+   any length of time. A house sets no read timeout on a READ-MAIL, or
+   treats a timeout as "nothing yet" and asks again. A read asked again
+   while one is held answers the earlier one (`sdk::house`; #133).
 7. **Uplink through its reserve** (Concordance 4.1; the boundary law,
    §5a). The universe's work reaches the court through its reserve tier's
    folds, open to challenge for the challenge window; a fold from any other
