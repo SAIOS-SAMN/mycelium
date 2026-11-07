@@ -9,6 +9,7 @@
   (`SampleManifold::nested`, `AxisManifold::Fibred { base, fibre }`). A
   fully periodic sample is a torus (`SampleManifold::torus`).
 - Claims: `periodic_sample_reads_as_a_torus`,
-  `aperiodic_phase_reads_as_an_interval`, `nested_axis_reads_as_a_fibration`.
+  `aperiodic_phase_reads_as_an_interval`, `partial_period_reads_as_an_interval`,
+  `nested_axis_reads_as_a_fibration`.
 - A reading, computed when asked and never stored; no wire, task or
   address change.

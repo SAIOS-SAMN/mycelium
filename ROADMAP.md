@@ -1886,6 +1886,7 @@ Each phase is one commit:
      `PhaseManifold::{Circle, Interval}`, `AxisManifold::Fibred`). Claims
      `periodic_sample_reads_as_a_torus`,
      `aperiodic_phase_reads_as_an_interval`,
+     `partial_period_reads_as_an_interval`,
      `nested_axis_reads_as_a_fibration`. A reading, never stored; no wire
      or address change.
    - **Built** (branch `sensing-dilation`): the envelopes' dilation, which
