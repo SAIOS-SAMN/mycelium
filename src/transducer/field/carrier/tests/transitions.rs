@@ -91,6 +91,33 @@ fn reversal_is_the_reflection_in_its_own_unit_alone() {
     assert_eq!(flipped.phases[1], at.phases[1], "axis 2 fixed");
 }
 
+/// A REVERSAL LIFTS AS THE FLIP AND ONE WHOLE TURNING, MATCHING `p − s`
+/// (confirmed by the coordinator on #134, 2026-11-07). The reversal of a
+/// rank-1 axis of period 4 lifts as a word of two generators, each standing
+/// on its own: the flip of `e₊₁`, which counts `{e₊₁: 1}` on P, then the
+/// whole turning `360°` on the axis's plane `e₊₁e₊₂`, which carries `K = 1`
+/// and is never folded into the flip. Carried, every boundary `s` reads the
+/// transduction's `p − s` with its winding: `s = 0` reads `360°`, `K = 1`,
+/// and `s = 4` reads `0°`, `K = 0`.
+#[test]
+fn reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s() {
+    let f = frame(2);
+    let p = plane(&f, 1, 2);
+    let from = Enclosure::new(vec![4]).expect("an enclosure");
+    let reversal = SignedPermutation::new(vec![(0, Sense::Reversed)]).expect("the reversal");
+    let motion = motion_of(&f, &from, &Transduced { permutation: reversal, onto: from.clone() }).expect("lifted");
+    let flip = Generator::Flip(Unit { square: Square::Positive, plane: 1 });
+    let w = Motion::of(vec![turning(&p, 360, 1)]).expect("a motion");
+    assert_eq!(w.turnings()[0].winding(), BigInt::from(1), "the whole turning carries K = 1");
+    assert_eq!(motion.word(), [flip, Generator::Turn(w)], "the flip and the whole turning, each its own generator");
+    for s in 0..=4i64 {
+        let carried = motion.carry_point(&Point { phases: vec![turning(&p, 90 * s, 1)] }).expect("carried");
+        let expected = turning(&p, 90 * (4 - s), 1);
+        assert_eq!(carried.phases[0], expected, "boundary {s} reads p − s");
+        assert_eq!(carried.phases[0].winding(), expected.winding(), "its winding with it");
+    }
+}
+
 /// A PAIR IS LIFTED AS TRANSITIONS BETWEEN ITS BODIES' CHARTS. A rank-2
 /// sample and its transpose: under the factorisation by the transposition,
 /// every body is carried whole, each transition runs from its input body's

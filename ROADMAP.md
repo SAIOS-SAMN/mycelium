@@ -2106,6 +2106,7 @@ Each phase is one commit:
         no recut. Claims
         `every_signed_permutation_lifts_whole_as_a_motion_of_the_field`,
         `reversal_is_the_reflection_in_its_own_unit_alone`,
+        `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s`,
         `pair_lifted_as_transitions_between_its_bodies_charts`.
         **Owed:** the nesting as a fibration of levels.
      5. S8, the field's motions as one group: the turning, the reflection
