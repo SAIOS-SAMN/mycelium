@@ -5,6 +5,7 @@ pub mod fixtures;
 
 mod ascend;
 mod bianchi;
+mod class_algebra;
 mod classify;
 mod connecting;
 mod cover;

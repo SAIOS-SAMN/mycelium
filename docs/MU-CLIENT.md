@@ -95,7 +95,7 @@ Each phrase names a construct:
 | smoothed, congruent processes | geodesics on the field's curvature (§0), then congruence (two senses agree), then coherence (one node's cover closes), then the courts' consilience (MU-ANASTOME §5.2; 24.4) | congruence and coherence built; geodesics on the carrier owed (S9a; #134) |
 | a language bound to no modality | expressions are mathematics, never audio (Concordance 1.6; MU-SENSING §3.10 item 4); a sense reads any source at any rank (MU-SENSING §0–§3); senses emerge by variation, selection by admission and inheritance (MU-SENSING §4.1) | any source at any rank built (track 26 S0–S5, S4b–S4d); emergent senses owed (S10) |
 | new sensoria from the game kernels | a seat's percepts lifted into the field (§6); a sense opened by a ruled act, as a lane is (MU-ECONOMY §1) | owed (§6; #133) |
-| intelligibility across sensoria | two minds' words meet at the conjugate class; the conjugating element is the translation between their perspectives (23.9; MU-ANASTOME §1.3) | the class vector built; the mind's algebra per class owed (§7.1) |
+| intelligibility across sensoria | two minds' words meet at the conjugate class; the conjugating element is the translation between their perspectives (23.9; MU-ANASTOME §1.3) | the class vector built; the mind's algebra per class built (§3.2, `cech::class_algebra`; #143) |
 
 **Thought is not linear** (the operator's correction, 2026-11-06). The mind
 holds all its ideations at once: superposed in the vortex, on every
@@ -223,9 +223,10 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    planes commute; on planes sharing an axis their order is content.
    Superposition at this grade is held with no weight and separated by
    commutator (§4.8). MU-ANASTOME §1.3, §3. **Built:** `ClassVector`
-   (`sentence/class.rs`); the court's `Presentation::conjugate_of`.
-   **Owed:** the algebra held per class in the mind's field (§7.1); the
-   word's grade-4 volume `b₁∧b₂` (MU-ANASTOME §1.2).
+   (`sentence/class.rs`); the court's `Presentation::conjugate_of`; the
+   algebra held per class in the mind's field (`cech::class_algebra`,
+   `Field.classes`; #143). **Owed:** the word's grade-4 volume `b₁∧b₂`
+   (MU-ANASTOME §1.2).
 5. **Assert sentences as expressions.** A sentence composes words along a
    geodesic, `Ω(s) = g_{k→1} W_k ⋯ g_{1→2} W₁`, its meaning beyond its words
    its curvature. The faculties decide what is said (§4.9); the mind
@@ -425,7 +426,7 @@ perception in its own right, each moving at its own period:
 |---|---|---|
 | **harmonic core** — the rings | the rings of what was given, composed (`compose`, `sentences_of`), each closed or open by its modes; each ring's SIZE its return; the rings NESTED, never traversed — a ring sounds inside another where its period divides it, and its ECHO `E = Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is whole, a turn, a gain, a spiral or a delay (78.112) | `compose::{compose, sentences_of, teaches, next_rung}`, `theorem::Theorem::{of, check}`, `rung::{speak, hear}`, `hearing::{echo, nest, hear}` |
 | **luminal envelope** — the rays | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
-| **holonomic** — the circuits' algebra | each ring's curvature generates an algebra (`cech::flow_generators`), closed under the commutator with what the mind holds for that CLASS (`cech::lie_close`, `cech::quotient`); what lies outside the held span is read per axis — what the mind newly understands; a ring's winding against its period, one return one age (78.68, 78.43) | `cech::{flow_generators, lie_close, quotient, quotient::grow}` |
+| **holonomic** — the circuits' algebra | each ring's curvature generates an algebra (`cech::flow_generators`), closed under the commutator with what the mind holds for that CLASS (`cech::lie_close`, `cech::quotient`); what lies outside the held span is read per axis — what the mind newly understands; a ring's winding against its period, one return one age (78.68, 78.43) | `cech::{flow_generators, lie_close, quotient, quotient::grow}`; the algebra per class in the mind's field, `cech::class_algebra` (`ClassAlgebras::hear`, `Field.classes`, grown at the mind's door `pairing::mark_flux`; #143) |
 
 PERCEPTION IS WHERE THE SHELLS ALIGN: a ring that resonates across them —
 its period dividing another's, its rays dragging it, its curvature closing in
@@ -1069,8 +1070,12 @@ As volume enters, the hypha grows per chart the holonomy algebra its ruled
 words' circuits generate (`lie_basis`, `RankStep`), wraps chambers whose
 bracket none can hold in an enclosure (EN1), and refines the cover, never
 the base (14.8, 15.5): volume entering is new chambers, enclosures and
-generators, never a stretched space. The mind does the same on its own
-complex, per class (owed, §7.1).
+generators, never a stretched space. The mind does the same in its own
+field, per class: each circuit's curvature it takes in is heard in its
+class, keyed by the holonomy rotor's conjugacy invariants, and the class's
+algebra closes only with what lies outside its span (`cech::class_algebra`;
+#143). Enclosures and the cover's refinement on the mind's own complex
+stay owed.
 
 ### 4.12 The drive: escaping orbits, deliberation, rest
 
@@ -1691,6 +1696,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **seated solves signed by the mind**: filed under its own key, then the house's call (#124); the seat's call chosen from what calls did | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`) |
 | **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
 | **cohesion as a named reading** (#149): per plane the held share `c_k = A/(A + Q) = ν(1/t)`, the viscosity, beside the open share `ν(t)`, the fluidity; both ½ at the throat, exchanged by the passage; a keyed vector over the planes, never stored and never summed; a well reads it from its inflation on its membrane's frame plane | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`) |
+| **the algebra held per class** (#143): each circuit's curvature the mind takes in heard in its class, the holonomy rotor's conjugacy invariants written out; the class's algebra closed with only what lies outside its span, that part read per axis by its coset; two minds file one word in two frames under one class, each on its own planes, the conjugating element carrying one basis into the other's span; a court's field holds none | §3.2, §4.2, §4.11 | `t/cech/class_algebra.rs` (`ClassAlgebras::hear`, `class_of`, `HeardInClass`); `t/cech/orbit.rs` (`Field.classes`); `t/family/pairing.rs` (`mark_flux`); claims `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`, `two_minds_align_on_the_class_each_reading_it_on_its_own_planes` |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
@@ -1735,8 +1741,10 @@ then the backlog. Each item names its issue.
 3. **The backlog:**
    1. *(built, #136: the hypha's acts as flux on the mind's lanes; see
       **Built**)*;
-   2. the algebra held per class in the mind's field (§3.2, §4.2,
-      §1a(4); #143);
+   2. **Built:** the algebra held per class in the mind's field (§3.2,
+      §4.2, §1a(4); #143; `cech::class_algebra`, claims
+      `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`,
+      `two_minds_align_on_the_class_each_reading_it_on_its_own_planes`);
    3. amendment held beside, the amended constructor separated by
       commutator (§4.10, §1a(9); within #135);
    4. POWC on a held question closed by another mind: an evidence path
