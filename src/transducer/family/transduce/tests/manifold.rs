@@ -31,8 +31,21 @@ fn aperiodic_phase_reads_as_an_interval() {
     let m = SampleManifold::of(&s);
     assert_eq!(m.axes, vec![AxisManifold::One(PhaseManifold::Circle { period: 1 }), AxisManifold::One(PhaseManifold::Interval { extent: 4 })]);
     assert_eq!(m.torus(), None, "a phase with boundary: no torus");
-    let off = sample(&["01010"]);
-    assert_eq!(SampleManifold::of(&off).axes[1], AxisManifold::One(PhaseManifold::Interval { extent: 5 }), "period 2 does not divide 5: the seam does not glue");
+}
+
+/// CONFIRMED 2026-11-06 ON #32 — A PARTIAL PERIOD IS NO CIRCLE: content that
+/// repeats with a period not dividing the extent reads as an interval,
+/// since taken round the extent the far seam does not glue to the near one;
+/// the extent alone never makes a circle. `01010` repeats with period 2 on
+/// 5 sites, and `0120120` with period 3 on 7: both intervals. The same
+/// content on 4 and 6 sites closes.
+#[test]
+fn partial_period_reads_as_an_interval() {
+    let axis = |row: &str| SampleManifold::of(&sample(&[row])).axes[1];
+    assert_eq!(axis("01010"), AxisManifold::One(PhaseManifold::Interval { extent: 5 }), "period 2 does not divide 5");
+    assert_eq!(axis("0120120"), AxisManifold::One(PhaseManifold::Interval { extent: 7 }), "period 3 does not divide 7");
+    assert_eq!(axis("0101"), AxisManifold::One(PhaseManifold::Circle { period: 2 }), "period 2 divides 4: the seam glues");
+    assert_eq!(axis("012012"), AxisManifold::One(PhaseManifold::Circle { period: 3 }), "period 3 divides 6");
 }
 
 /// An axis taken apart is a fibration: blocks of `0011` repeated three

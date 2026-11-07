@@ -1878,14 +1878,17 @@ Each phase is one commit:
      The fixed axis constants above are retired in S4b: a perspective
      assigns the roles (`transducer::perspective`), and `BASE_AXES` is
      derived from the alphabet's slots.
-   - **Built, letters past `n = 3`** (branch `sensing-section-letters`,
-     ruled 2026-11-06 on #32 (4)): never written by hand. A sample past
-     the alphabet's section is read through its section samples, one per
-     plane and coordinate of the rest (`transducer::sections::sections_of`);
-     a new letter enters only by the presentation's growth. No hand-coded
-     letter for a higher rank was found to remove. Claim
-     `letters_past_the_section_are_never_written_by_hand`. Open: the mind's
-     word path spelling each section of a rank-3 task.
+   - **Built, the sample as a manifold** (branch `sensing-sample-manifold`,
+     ruled 2026-11-06 on #32): the envelope read as a product of phase
+     circles (each period the circumference) and intervals with boundary,
+     or a fibration where an axis is taken apart; a fully periodic sample
+     reads as a torus `Tⁿ` (`transduce::SampleManifold`,
+     `PhaseManifold::{Circle, Interval}`, `AxisManifold::Fibred`). Claims
+     `periodic_sample_reads_as_a_torus`,
+     `aperiodic_phase_reads_as_an_interval`,
+     `partial_period_reads_as_an_interval`,
+     `nested_axis_reads_as_a_fibration`. A reading, never stored; no wire
+     or address change.
    - **Built** (branch `sensing-dilation`): the envelopes' dilation, which
      squared the extents (law 11), is removed; the fibre map's carried
      site and the frame's momentum read the re-period of each phase
