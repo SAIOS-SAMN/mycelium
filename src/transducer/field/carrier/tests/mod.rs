@@ -8,5 +8,6 @@ mod fixtures;
 mod law_field;
 mod lift;
 mod motions;
+mod rotor;
 mod statement;
 mod transitions;
