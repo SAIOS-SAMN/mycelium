@@ -281,7 +281,7 @@ impl Mind {
                     }
                     return;
                 };
-                let mag = super::family::family_magnitude(&task.train);
+                let mag = super::family::family_magnitude(&task.train).lanes();
                 if short(self, &mag) {
                     self.board.feed_waits = true;
                     return;

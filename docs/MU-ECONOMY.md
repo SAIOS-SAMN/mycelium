@@ -902,7 +902,11 @@ for its lessee for one window.
    2026-11-05; proposal 78.174 §1 item 9: a mode's amount is its share of
    the frame, never S mass; a recolour pays G by its share).* Today each
    mode is read at its closed pair's carried mass (`DeflationRead::modes`);
-   v0.5.0 reads it as the share of the frame (§1).
+   v0.5.0 reads it as the share of the frame (§1). The genesis bond is
+   read the same way at v0.5.0: since track 26 S4 it holds lane counts
+   read at the samples' own rank (`family::magnitude`; ruled 2026-11-06 on
+   #32), and its move to the share of the frame goes with the `Mu` →
+   `Modes` stages, not before.
 5. **Room over modes.** *Closed (coordinator, 2026-11-06, under the
    operator's delegation; #169; 78.180 ruling 3).* Room is a reading, never
    a holding: it is read per lane and per mode over the bond's modes it

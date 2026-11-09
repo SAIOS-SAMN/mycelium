@@ -728,9 +728,10 @@ impl Court {
     /// measured from the registered tasks and re-staked,
     /// `mycelium-server.rs` `set_genesis_cover`). It is a starting corpus,
     /// not a measurement of the live one, and it is a bond a voice may work
-    /// within before any corpus arrives. It is measured by `family_cover`,
-    /// so it is the lane-wise SUM over these pairs (12.6) and covers each of
-    /// them; an envelope over them would not.
+    /// within before any corpus arrives. It is measured by `section_cover`
+    /// at the samples' own rank (track 26 S4), so it is the lane-wise SUM
+    /// over these pairs (12.6) and covers each of them; an envelope over
+    /// them would not.
     pub(crate) fn measured_test_cover() -> Option<[u64; 4]> {
         use crate::transducer::spelled::SectionSample;
         type Lines = Vec<Vec<u8>>;
@@ -748,7 +749,7 @@ impl Court {
         // The starting corpus read at intake, each pair as samples.
         let family: Vec<(SectionSample, SectionSample)> =
             lines.iter().map(|(x, y)| Some((SectionSample::of_lines(x).ok()?, SectionSample::of_lines(y).ok()?))).collect::<Option<_>>()?;
-        crate::transducer::family::magnitude::family_cover(&family)
+        crate::transducer::family::magnitude::section_cover(&family)?.bond()
     }
 
     /// The genesis covering bond, if measured.
