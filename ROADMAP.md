@@ -2152,7 +2152,16 @@ Each phase is one commit:
         `reversal_is_the_reflection_in_its_own_unit_alone`,
         `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s`,
         `pair_lifted_as_transitions_between_its_bodies_charts`.
-        **Owed:** the nesting as a fibration of levels.
+        The nesting as a fibration of levels (branch `field-s4-fibration`):
+        an axis the family's nesting takes apart (`Taken::Apart`, the
+        reading ruled on #32 and built in #176) is a level
+        (`carrier::Level`), its base the coarse phase on the axis's own
+        plane, one point per block, and over each base point the fibre
+        the block's own field, lifted with its own atlas, the separator
+        left out; a sample lifts as its whole lift and its levels
+        (`carrier::Fibred::of`); an axis kept whole or held superposed is
+        no level. Claims `axis_taken_apart_lifts_as_a_fibration_of_levels`,
+        `axis_kept_whole_is_no_level`. Stage 4 is then built.
      5. S8, the field's motions as one group: the turning, the reflection
         and the pole swap (`forms::passage::Poles::swap`) and the
         inversion in the membrane, the boost on a frame plane, the
