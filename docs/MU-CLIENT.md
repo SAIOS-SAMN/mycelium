@@ -1775,7 +1775,8 @@ then the backlog. Each item names its issue.
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
       nesting as a fibration (in part: every signed permutation and its
       re-period lifted whole on the lift's convention of 78.171 §8,
-      `carrier::motion_of`, `transitions_of`; owed, the fibration);
+      `carrier::motion_of`, `transitions_of`; and the nesting as a
+      fibration of levels, `carrier::Fibred`, `Level`);
    4. S8, the field's motions as one exact group (built on the carrier,
       `carrier::FieldMotion`; turnings sharing a unit at other than a
       quarter turn are rational rates with no rational degree, refused
