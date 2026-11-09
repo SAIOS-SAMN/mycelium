@@ -109,6 +109,7 @@ impl Mind {
             field: Default::default(),
             remembered: crate::network::nerve::Keyed::new(),
             questions: crate::network::nerve::Keyed::new(),
+            closed_answers: crate::network::nerve::Keyed::new(),
             scenes: Default::default(),
         }
     }
