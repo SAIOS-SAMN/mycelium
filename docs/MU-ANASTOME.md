@@ -757,7 +757,7 @@ act carried one.
 | `0x07` | `ACT_HANDOFF` | Transition | universe crossing | A tier's handoff offer (MU-HOSTING) |
 | `0x08` | `ACT_EVIDENCE` | Transition | court-to-court exchange | A court pulls a selection fibre's birth evidence |
 | `0x09` | `Refine` (no constant) | **Retired** (2026-10-11) | — | An optimization is a Retire rewrite a mind asserts (MU-CLIENT §5.4) |
-| `0x0B` | `ACT_TASK` | Observation | read | The signed work envelope |
+| `0x0B` | `ACT_TASK` | Observation | read | The task, signed work served as a family of manifolds: each pair two manifolds and the map the rule reconstructs, the test inputs without their outputs (78.179 §3; carrier `dialogue::TaskEnvelope`, to be renamed `TaskFamily`, #165) |
 | `0x0C` | `ACT_SOLVE` | Transition | assertion | Kind 0, a solve: claims a closure, and its verdict pays; kind 1, a claim of factorisation: an adjudicated perception, never paid (MU-SENSING §3.9) |
 | `0x0D` | `ACT_SYLLABUS` | Transition | assertion | A voice's signed pull of the ratified stream; its presentation request asks a residue of the court's presentation (78.160 P1) |
 | `0x0E` | `ACT_ADOPT` | Exchange | court-to-court exchange | An upheld word propagated to every server (MU-CLIENT §5.4: a word the court lacks) |
