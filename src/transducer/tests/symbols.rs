@@ -266,13 +266,13 @@ fn symbol_seen_only_in_a_test_input_is_in_the_family_set() {
     assert_eq!(inner, (Ok(pairs), Ok(whole)));
 }
 
-/// TRACK 26 S4d, stage 2 (the leftover of PR #84) — A POSTED TEST INPUT OF
-/// ANOTHER SYMBOL WIDTH IS REFUSED BY NAME: the family's Σ walks the train
-/// pairs, then the test inputs; an input of two bytes per symbol beside
-/// pairs of one is another source, and Σ is refused `Width` at the input's
-/// place in the walk, never read as an empty set.
+/// TRACK 26 S4d, stage 2 — A POSTED TEST INPUT OF ANOTHER SYMBOL WIDTH IS
+/// REFUSED: the family's Σ walks the train pairs, then the test inputs; an
+/// input of two bytes per symbol beside pairs of one is another source, and Σ
+/// is refused `Width` at the input's place in the walk, never read as an empty
+/// set.
 #[test]
-fn test_input_of_another_width_refuses_the_family_set_by_name() {
+fn symbol_set_refuses_differing_test_width() {
     use crate::transducer::symbols::on_test_inputs;
     let train: Pairs = vec![(framed(&[1, 2]), framed(&[1, 0]))];
     let wide = Sample::new(vec![1, 2], 2, vec![1, 0, 7, 0], Place::new(Vec::new())).expect("a sample of width 2");

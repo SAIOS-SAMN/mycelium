@@ -107,7 +107,7 @@ fn header(extents: &[u16], width: u16) -> Vec<u8> {
 /// sample's name before any byte is read or allocated; a count the tape
 /// does not carry is short.
 #[test]
-fn symbol_bytes_overflow_is_refused_by_name() {
+fn symbol_bytes_refuses_overflow() {
     let max = u16::MAX;
     let sites = |extents: &[u16]| extents.iter().try_fold(1usize, |n, &e| n.checked_mul(usize::from(e)));
     // The axis at which the sites pass the machine word.

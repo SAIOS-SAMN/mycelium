@@ -1,0 +1,16 @@
+### Align system topology and purge test naming drift (MU-STANDARDS §1, §2.8, §3.1, §3.3)
+- **Topology alignment:**
+  - Extracted unit tests from `src/transducer/manifold.rs` into `src/transducer/tests/manifold.rs` and registered `mod manifold;` in `src/transducer/tests/mod.rs`, completing organ-test topology correspondence for transducer.
+- **Purge commit comments and retrospectives (MU-STANDARDS §2.8):**
+  - Removed retrospective commit/PR commentary from `src/transducer/tests/symbols.rs`, `src/transducer/sentence/form/tests/complex.rs`, `src/transducer/sentence/tests/address.rs`, `src/transducer/sentence/tests/stratum.rs`, `tests/word_lifecycle.rs`, and `src/transducer/field/contemplation.rs`.
+- **Align test names and remove `_by_name` drift (MU-STANDARDS §3.1):**
+  - Renamed tests drifting into narrative or `_by_name` suffix:
+    - `test_input_of_another_width_refuses_the_family_set_by_name` -> `symbol_set_refuses_differing_test_width`;
+    - `inverses_that_do_not_exist_are_refused_by_name` -> `turning_inverse_refuses_nonexistent`;
+    - `symbol_bytes_overflow_is_refused_by_name` -> `symbol_bytes_refuses_overflow`;
+    - `rank_beyond_the_alphabet_is_refused_by_name` -> `perspective_refuses_rank_beyond_alphabet`;
+    - `lane_set_refuses_by_name` -> `lane_set_refuses_invalid_lane`;
+    - `draw_past_holding_refuses_by_name` -> `draw_refuses_past_holding`;
+    - `retrieve_claims_read_price_and_refuses_by_name` -> `retrieve_claims_reads_price_and_refuses_unpaid`;
+    - `conformance_kernel_missing_founding_fails_by_name` -> `conformance_kernel_fails_on_missing_founding`.
+  - Updated all citations across `docs/MU-SENSING.md`, `ROADMAP.md`, `CHANGELOG.md`, and `changes/`.

@@ -73,7 +73,7 @@ fn mu_counts_equal_rationals() {
 /// A DRAW PAST A HOLDING IS REFUSED naming the first lane short; nothing is
 /// saturated, and a draw within it is exact.
 #[test]
-fn draw_past_holding_refuses_by_name() {
+fn draw_refuses_past_holding() {
     let held = mu([(3, 1), (1, 2), (0, 1), (5, 3)]);
     let asked = mu([(1, 1), (2, 3), (0, 1), (5, 3)]);
     assert_eq!(held.draw(&asked), Err(MuRefusal::Short { lane: 1 }));

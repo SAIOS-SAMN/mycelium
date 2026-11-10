@@ -158,12 +158,11 @@ fn closed_forms_on_one_plane_agree_with_the_general_law() {
     }
 }
 
-/// THE REFUSALS BY NAME: `R = −1` has no generator; a hyperbolic rate of
-/// `1` names no motion (`1 − B` is a zero divisor); an odd value is not a
-/// motion, nor an even value that is not a unit; a rate with a scalar part
-/// is not a generator.
+/// THE REFUSALS: `R = −1` has no generator; a hyperbolic rate of `1` names no
+/// motion (`1 − B` is a zero divisor); an odd value is not a motion, nor an
+/// even value that is not a unit; a rate with a scalar part is not a generator.
 #[test]
-fn inverses_that_do_not_exist_are_refused_by_name() {
+fn turning_inverse_refuses_nonexistent() {
     assert_eq!(generator(&word(q(-1, 1), &[])).map(|_| ()), Err(TurningRefusal::NoGenerator));
     assert_eq!(motion(&word(q(1, 1), &[P1, N1])).map(|_| ()), Err(TurningRefusal::NoMotion));
     assert_eq!(composed(Regime::Elliptic, &q(1, 1), &q(1, 1)), Err(TurningRefusal::NoGenerator), "1 then 1 is R = −1");
