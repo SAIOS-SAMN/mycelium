@@ -923,7 +923,8 @@ as `peers`, copy the corpus manifests (step 4), and start without
 
 - **Readings.** `mycelium-server --home DIR --console --reading <name>`
   prints a typed reading: `acts`, `court`, `economy`, `judged`,
-  `dispatched`, `clock`, `memory`, `replication`, `agreements` and others.
+  `dispatched`, `boundary` (refusals at a universe's core tube), `clock`,
+  `memory`, `replication`, `agreements` and others.
   `--at HOST:PORT` reads another hypha.
 - **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP. `--check`
   reports whether a home boots on a given build before that build is

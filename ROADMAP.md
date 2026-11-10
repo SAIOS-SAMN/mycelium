@@ -1491,9 +1491,12 @@ adjudicated reading (B2). Each phase is one commit:
      `key_own_act_unbound_by_the_tube`,
      `kernel_clause_veto_bounds_only_its_clause`,
      `signed_reserve_lawful_crossing_admitted`.
-   - Open: the boundary reading under `ACT_OBSERVE`; a tube between two
-     universes bounded by both sides' clauses (a mouth's far-end
-     acceptance is not read).
+   - **Built**: the boundary reading under `ACT_OBSERVE` (MU-HOSTING
+     §5a.7): each refusal at the tube by domain, act and name, the last
+     whole, its height and count (`tube_refusals_read_by_domain_act_and_name`,
+     `boundary_reading_reads_back_each_name`).
+   - Open: a tube between two universes bounded by both sides' clauses (a
+     mouth's far-end acceptance is not read).
    - **Built** (#118): the per-crossing alignment read costs the reserve's
      signing events, never the ledger. The ledger keeps where each signing
      event stands (`kernel‖stamp‖n`, coordinates only,

@@ -174,10 +174,10 @@ impl Court {
         let reserve = match self.reserve_signed(&m.domain, &bytes, &s.sig) {
             Ok(r) => r,
             Err(true) => {
-                return Granted::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                return Granted::Boundary(self.at_tube(crate::court::admission::Boundary::NotThroughCore {
                     act: crate::court::admission::UniverseAct::Manifest,
                     domain: m.domain,
-                })
+                }))
             }
             Err(false) => return refuse(GrantRefusal::Unsigned),
         };
