@@ -774,14 +774,14 @@ cargo build --release            # mycelium-server, mycelium-client, mycelium-so
 ```
 
 A change is checked by the two commands of
-[AGENTS › Definition of done](AGENTS.md#definition-of-done): clippy over
+[AGENTS › Checks](AGENTS.md#checks): clippy over
 the workspace with warnings denied, and the workspace tests, the gate
 (`gate/`) among them.
 
 **Corpus.** The ARC-AGI-2 dataset from the ARC Prize Foundation is read
 only by its decoder, the workspace crate `sources/arc-agi`, from the
 corpus directory that
-[AGENTS › Definition of done](AGENTS.md#definition-of-done) names. The
+[AGENTS › Checks](AGENTS.md#checks) names. The
 core library reads no corpus. A hypha, a client's feed and the soak read
 **posted tasks** (`<name>.task`, `dialogue::encode_posted_task`), which
 the decoder writes:
@@ -1111,7 +1111,7 @@ Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
 workflow and the standards;
-[AGENTS › Definition of done](AGENTS.md#definition-of-done) is the check
+[AGENTS › Checks](AGENTS.md#checks) is the check
 before a pull request. [ROADMAP.md](ROADMAP.md) lays out
 the development tracks in order, each with its specification and where it
 lands in the code. In brief: the tracks begin with settlement (the

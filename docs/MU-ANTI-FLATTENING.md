@@ -137,7 +137,7 @@ in persistence and transport as in cognition.
 ## How the law is enforced
 
 - **By lint, in the gate** (the two commands of
-  [AGENTS › Definition of done](../AGENTS.md#definition-of-done); see
+  [AGENTS › Checks](../AGENTS.md#checks); see
   [MU-STANDARDS.md](MU-STANDARDS.md) §4):
   - `clippy.toml` denies `HashMap`, `BTreeMap`, `HashSet` and `BTreeSet`
     crate-wide (clauses 1–3), and `blake3::hash` and `blake3::Hasher::new`

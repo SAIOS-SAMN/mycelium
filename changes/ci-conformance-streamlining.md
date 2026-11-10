@@ -1,5 +1,4 @@
-### CI Conformance Workflow Streamlining
-- Renamed the GitHub Actions workflow from ambiguous `definition of done` to `Conformance Verification`, ensuring clear, professional status reporting and email notifications.
+### CI builds once, caches the corpus, and cancels only superseded pull request runs
 - The required status check job remains `clippy and tests` matching repository branch protection.
 - Streamlined compilation: compiles workspace and test binaries once with `--no-run`, letting Clippy and Test execution build directly on top of the shared artifacts without duplicate compilation.
 - Caching:

@@ -176,7 +176,7 @@ leaves by relocation to a cold carrier, never by deletion (`MU-ECONOMY.md`
 ## 7. The gate and the `Keyed` carrier
 
 The gate is held by the two commands of
-[AGENTS › Definition of done](../AGENTS.md#definition-of-done):
+[AGENTS › Checks](../AGENTS.md#checks):
 
 1. the source checks, the tests of the workspace crate `gate/`, over
    `src/`, `algebra/src/`, `forms/src/`, `sdk/src/` and `gate/`: the
