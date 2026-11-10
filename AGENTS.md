@@ -107,26 +107,6 @@ suite and a house against it, then runs `scripts/observer` over its mesh
 and `scripts/timeline` over the client's journal; either failing fails
 the run. It then serves until stopped.
 
-**The cognitive POW++ network.** `scripts/network DIR BASE_PORT MINDS`
-extends the quickstart into the network the documents specify (MU-CLIENT
-§1, §5, §6; MU-ECONOMY §0): three hyphae bonded from a genesis allocation;
-MINDS sovereign minds (`mycelium-client`), each on its own key, inside
-Noise on every session and chattering at one rendezvous; a kernel's house
-founding a domain, with a mind seated in it where a seats house is built
-(`MYCELIUM_SEAT_TARGET`); and the SDK client as the worker whose solves are
-paid, asked of two courts under one key. Every node runs in its own capped
-systemd user scope (`MYCELIUM_NODE_MEMORY`, default `1G`, no swap;
-`MYCELIUM_NODE_CPU`, default `50%`). It serves until stopped (Ctrl-C, a
-TERM to the script, or `MYCELIUM_NETWORK_FOR` seconds), then stops every
-node by its PID; every `MYCELIUM_NETWORK_FRAME` seconds it writes
-`DIR/frames/N.txt`: the observer's frame, the POW++ reading
-(`mycelium-server --console --proofs`: each payment by proof, its payee,
-the act and words it cites, its language level and each other court's
-reading of the same act; and every closure minted twice), each mind's
-`now` (the ask queue by path, ROADMAP §10) and each node's memory and CPU
-time. Keep `scripts/observer` and `scripts/timeline` working: both
-scripts read them.
-
 What the two commands hold:
 
 - **Clippy** reads every member and target with warnings denied. The lint

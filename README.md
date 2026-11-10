@@ -188,6 +188,19 @@ The network keeps running, and the script prints the commands for reading
 it, until Ctrl-C. `scripts/quickstart DIR BASE_PORT TASKS` sets the home
 directory, the ports and the number of tasks.
 
+`scripts/network DIR BASE_PORT MINDS` brings up the whole network on one
+machine:
+- three hyphae from a genesis allocation;
+- `MINDS` sovereign minds (`mycelium-client`), each inside Noise and
+  chattering at one rendezvous;
+- a kernel's house with a mind seated in its domain;
+- the SDK client as the paid worker, on each hypha in turn.
+
+Every node runs in a capped systemd user scope. At each frame the script
+writes the observer's reading, the POW++ reading
+(`mycelium-server --console --proofs`), each mind's `now` and each node's
+memory and CPU. Its header lists every option.
+
 ---
 
 ## Contents

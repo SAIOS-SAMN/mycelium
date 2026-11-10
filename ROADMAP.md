@@ -183,7 +183,7 @@ Ed25519 and verified on admission. The track adds:
 - address discovery beyond the provisioned `peers`;
 - signed re-provisioning of a node's `bind` and `peers` after first boot;
 - deployment tooling for hosts beyond one machine. On one machine,
-  `scripts/network` (AGENTS.md) stands the whole network up: three
+  `scripts/network` (README, Quick start) stands the whole network up: three
   hyphae from a genesis allocation, sovereign minds inside Noise
   chattering at one rendezvous, a house with a seated mind, each node in
   a capped systemd user scope, with the observer's frames and the POW++

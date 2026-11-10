@@ -3,11 +3,14 @@
   genesis allocation, MINDS sovereign minds (`mycelium-client`) on their
   own keys inside Noise, chattering at one rendezvous, a kernel's house
   with a seated mind where a seats house is built, and the SDK client as
-  the paid worker asked of two courts under one key; each node in a
+  the paid worker on each hypha in turn, under one key; each node in a
   capped systemd user scope, stopped by its PID; frames every
   `MYCELIUM_NETWORK_FRAME` seconds (observer, POW++ reading, each mind's
-  `now`, each node's memory and CPU). Documented in AGENTS.md beside the
-  quickstart.
+  `now`, each node's memory and CPU). Described in README's Quick start;
+  the script's header lists every option.
+- `sdk/examples/client.rs`: a deferral on a later claim of a task no
+  longer discards the claims of that task already judged, a paid closure
+  among them.
 - `mycelium-server --console --proofs` (`src/bin/mycelium-server/proofs.rs`):
   a reading, never stored. Per payment carrying a proof on each court's
   journal (`ACT_ENTRIES`): the proof, payee, amount per lane and act; the
