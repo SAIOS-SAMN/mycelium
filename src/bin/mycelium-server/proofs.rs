@@ -12,9 +12,10 @@
 //! WHAT IT READS, each from a reader the courts already serve:
 //! - the payments: the court's own journal rows (`ACT_ENTRIES`, the rows a
 //!   witness re-derives a fold over), each row's proof (`Entry.arm`), payee,
-//!   per-lane amount and the stamp of the act it stands at. A row folded
-//!   into an epoch is read only at its checkpoint (MU-ECONOMY §6.1), and is
-//!   counted so;
+//!   per-lane amount and the stamp of the act it stands at. A payment
+//!   folded into an epoch row is not listed: the court's reading by proof
+//!   counts it at the fold's checkpoint (MU-ECONOMY §6.1), and the epoch
+//!   rows are counted so;
 //! - the closure each payment cites: the act at that stamp and the words it
 //!   names, each read off the word the court holds (`ACT_WHY`, own place);
 //! - the language level (78.174 §1 item 7): a named word with a sentence's
@@ -34,7 +35,9 @@
 //!   (`Reading::Judged`) by the task's whole citation. A citation answered
 //!   as a first closure more than once, at two courts or to two voices, is
 //!   two mints of one closure: an EQUIVOCATION OF THE ADVANCE, named with
-//!   each court, voice and height.
+//!   each court, voice and height. §3.4 burns the second mint; no court
+//!   burns it yet (one closure per network is v0.5.0's), and the reading
+//!   says both mints stand.
 
 use mycelium::anastome::dialogue::why::{decode_why_reply, encode_why, Named, Why, WhyAsk};
 use mycelium::anastome::dialogue::{decode_entries_reply, encode_entries_request, is_deferral, PENDING_CODE};
@@ -88,18 +91,46 @@ impl Level {
         }
     }
 
-    /// What the ruling pays at this level (78.174 §1 item 7), said beside
-    /// the arm a payment carries: letters never paid; words POWR and
-    /// citation shares; conjugate classes POWC; sentences POUW; POWV at
-    /// every level.
-    pub(crate) fn ruled(self, arm: Arm) -> &'static str {
+    /// WHERE A PAYMENT STANDS IN THE RULED MAP (78.174 §1 item 7): letters
+    /// never paid; words POWR and citation shares; conjugate classes POWC;
+    /// sentences POUW; POWV at every level. A conjugate class is told apart
+    /// by no reading the courts serve, so POWC at a word stands only as a
+    /// citation share.
+    pub(crate) fn ruled(self, arm: Arm) -> Ruled {
         match (self, arm) {
-            (_, Arm::Powv) => "ruled (POWV at every level)",
-            (Level::Sentence, Arm::Pouw) => "ruled (sentences: POUW)",
-            (Level::Word, Arm::Powr) => "ruled (words: POWR)",
-            (Level::Word, Arm::Pouw | Arm::Powc) => "ruled only as a citation share (words: POWR plus citation shares)",
-            (Level::Sentence, Arm::Powc | Arm::Powr) => "not in the ruled map at a sentence (sentences: POUW)",
-            (Level::Unread, _) => "the level is unread: the act names no word",
+            (_, Arm::Powv) => Ruled::AtEveryLevel,
+            (Level::Sentence, Arm::Pouw) | (Level::Word, Arm::Powr) => Ruled::AtThisLevel,
+            (Level::Word, Arm::Pouw | Arm::Powc) => Ruled::CitationShare,
+            (Level::Sentence, Arm::Powc | Arm::Powr) => Ruled::NotAtThisLevel,
+            (Level::Unread, _) => Ruled::LevelUnread,
+        }
+    }
+}
+
+/// A payment's standing in the ruled map, read off its level and its arm.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Ruled {
+    /// POWV, ruled at every level.
+    AtEveryLevel,
+    /// The arm the map rules at this level: POUW at a sentence, POWR at a
+    /// word.
+    AtThisLevel,
+    /// At a word, POUW or POWC stands only as a citation share.
+    CitationShare,
+    /// At a sentence, POWC or POWR is not in the map.
+    NotAtThisLevel,
+    /// The act names no word the court holds, so no level is read.
+    LevelUnread,
+}
+
+impl Ruled {
+    fn says(self) -> &'static str {
+        match self {
+            Ruled::AtEveryLevel => "ruled (POWV at every level)",
+            Ruled::AtThisLevel => "ruled at this level (sentences POUW, words POWR)",
+            Ruled::CitationShare => "ruled only as a citation share (words: POWR plus citation shares)",
+            Ruled::NotAtThisLevel => "not in the ruled map at a sentence (sentences: POUW)",
+            Ruled::LevelUnread => "the level is unread: the act names no word the court serves",
         }
     }
 }
@@ -330,7 +361,7 @@ fn payments(court: &Court, courts: &[Court], lines: &mut Vec<String>) -> u64 {
     };
     let folded = rows.iter().filter(|e| e.kind == Kind::Epoch).count();
     lines.push(format!(
-        "  {DIM}{} rows served of {total}; {folded} epoch rows: payments before a fold are read at its checkpoint only (MU-ECONOMY §6.1){RESET}",
+        "  {DIM}{} rows served of {total}; {folded} epoch rows: a payment folded before them is not listed here, and is counted under BY PROOF at the fold's checkpoint (MU-ECONOMY §6.1){RESET}",
         rows.len()
     ));
     let mut whys: Vec<(Stamp, Asked)> = Vec::new();
@@ -368,7 +399,7 @@ fn payments(court: &Court, courts: &[Court], lines: &mut Vec<String>) -> u64 {
             "    closure: the {} act; level {} — {}",
             String::from_utf8_lossy(here.kind.name()),
             level.name(),
-            level.ruled(arm)
+            level.ruled(arm).says()
         ));
         for n in &here.named {
             lines.push(format!("      names {}", named_line(n)));
@@ -463,7 +494,9 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         for p in all {
             lines.push(format!("    first closure to voice {} at {} (height {}, {} first verdicts)", short(&p.voice), said(&p.court, &courts), p.height, p.first));
         }
-        lines.push("    a second mint is burned naming both receipts (§3.4): each court's POUW burned is read under BY PROOF above".to_string());
+        lines.push(format!(
+            "    {YELLOW}§3.4 burns a second mint naming both receipts; no court burns it yet (one closure per network, v0.5.0): both mints stand{RESET}"
+        ));
     }
     for l in lines {
         println!("{l}");
