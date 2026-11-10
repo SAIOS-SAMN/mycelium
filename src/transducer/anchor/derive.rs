@@ -146,7 +146,6 @@ pub enum CarryingRefusal {
 /// Whether `t` carries the footprint `fp` (sorted) on `scene`, its read
 /// metered: one read per node of the term, each node reading its support of
 /// the scene once. `None` where the token is spent.
-#[cfg(test)]
 pub(crate) fn carries(t: &Selection, fp: &[SectionSite], scene: &[PaintedSite], budget: &mut crate::physics::Budget) -> Option<bool> {
     for _ in 0..t.size() {
         if !budget.spend() {
@@ -159,7 +158,6 @@ pub(crate) fn carries(t: &Selection, fp: &[SectionSite], scene: &[PaintedSite], 
 
 /// Whether `t` carries `footprint` on `scene` — the reconstruction a court
 /// judges a held term by on a withheld pair — metered as [`carries`].
-#[cfg(test)]
 pub fn carries_footprint(t: &Selection, footprint: &[SectionSite], scene: &[PaintedSite], budget: &mut crate::physics::Budget) -> Option<bool> {
     carries(t, &sorted(footprint.to_vec()), scene, budget)
 }
@@ -170,7 +168,6 @@ pub fn carries_footprint(t: &Selection, footprint: &[SectionSite], scene: &[Pain
 /// anchor; the train FAMILY determines it jointly (`derive_pi`): the terms
 /// common to every pair's set, read by key. The walk is the closure's
 /// boundary, each evaluation metered; a spent token refuses the whole set.
-#[cfg(test)]
 pub fn derive_carrying_all(
     footprint: &[SectionSite],
     scene: &[PaintedSite],

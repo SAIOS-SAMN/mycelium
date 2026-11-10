@@ -347,3 +347,34 @@ fn pay_solve_acts_on_nothing_at_zero_discharge() {
     assert_eq!(k.treasury.balance_mu(&voice), [0; 4], "nothing minted");
     assert!(k.take_offers().is_empty(), "nothing docketed or offered");
 }
+
+/// #158 — A SOLVE IS JUDGED ON THE WITHHELD PAIRS ITS TASK'S REGISTRATION
+/// FIXED, AND THE JUDGED RULE CARRIES ITS ANCHOR: before any pair is bound
+/// for the task there is nothing to reconstruct against; bound with its
+/// family, the rule is solved and π* is bound at the same judgement, the
+/// rule judged carrying exactly the common set bound, its address unmoved.
+#[test]
+fn judged_rule_carries_its_anchor_on_registered_withheld_pairs() {
+    let family = carried();
+    let rule = rule_over(&family);
+    let mut k = Court::new();
+    // A test court's stroke is the minimal one; the binding reads every
+    // carrying term of the family's closure, so this court holds a sealed
+    // host's capacity rather than the minimal stroke's.
+    k.physics.capacity = 1 << 40;
+    let task = [3u8; 32];
+    let before = k.judge_task_solve_on_stroke(&rule, &task);
+    assert!(matches!(before.verdict, SolveVerdict::Unverifiable), "no pair fixed, no verdict: {:?}", before.verdict);
+    assert!(before.pi.is_none(), "nothing judged, nothing bound");
+    k.bind_task_family(task, family.clone());
+    k.bind_task_withheld(task, family.clone());
+    let mut judged = k.judge_task_solve_on_stroke(&rule, &task);
+    while matches!(judged.verdict, SolveVerdict::Unread) {
+        judged = k.judge_task_solve_on_stroke(&rule, &task);
+    }
+    assert!(matches!(judged.verdict, SolveVerdict::Solved { .. }), "{:?}", judged.verdict);
+    let Some(Ok(bound)) = &judged.pi else { panic!("π* is bound at the judgement: {:?}", judged.pi) };
+    assert!(bound.unbound.is_empty(), "the closing rule covers every withheld change");
+    assert_eq!(judged.judged.anchor(), bound.terms.as_slice(), "the judged rule carries the common set");
+    assert_eq!(judged.judged.address(), rule.address(), "π never renames");
+}
