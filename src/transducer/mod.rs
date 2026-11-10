@@ -8,8 +8,8 @@
 pub mod base;
 /// MU-SENSING §2 — the sample: the sensor's only input, of any rank.
 pub mod sample;
-/// 78.179 §1 — the sample's manifold: replacing the envelope.
-pub mod sample_manifold;
+/// 78.179 §1 — the manifold: one factor per phase, replacing the envelope.
+pub mod manifold;
 /// MU-SENSING §4 — the perspective: the roles of a sample's axes and of its
 /// place in its family; no axis is privileged by the code.
 pub mod perspective;

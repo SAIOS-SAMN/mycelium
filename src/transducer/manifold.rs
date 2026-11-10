@@ -1,26 +1,24 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE SAMPLE'S MANIFOLD (78.179 §1; MU-SENSING §3.1; ROADMAP track 26, #32 item 6):
-//! the sample built as a manifold, one factor per phase, replacing the sample's
-//! legacy "envelope".
+//! THE MANIFOLD (78.179 §1; MU-SENSING §3.1): the geometric manifold an
+//! observation lifts into, one factor per phase, replacing legacy "envelopes".
 //!
 //! A phase's period is read from the content, never from the extent alone:
-//! - **Circle:** a circle `S¹` of period `p` only where `p` is the least proper
-//!   divisor of the extent `e` such that every site's symbol equals the symbol
-//!   `p` steps on round the extent.
+//! - **Circle:** a circle `S¹` of period `p` where `p` is the least proper
+//!   divisor of the extent `e` such that content repeats `p` steps on round the
+//!   extent. The far seam glues to the near; site `s` is turn `s/p` with winding `⌊s/p⌋`.
 //! - **Interval:** otherwise an interval chart of extent `e`, with boundary.
-//! - **Product:** the sample is the product of its phases. A sample whose every
-//!   phase is a circle is a torus `Tⁿ`. Where an axis is nested (#176), it is a
-//!   fibration.
+//! - **The manifold is the product of its phases.** A manifold whose every
+//!   phase is a circle is a torus `Tⁿ`. Where an axis is nested, it is a
+//!   fibration: coarse base and fine fibre.
 
 use super::base::Site;
 use super::sample::{AxisReading, Sample};
 
-/// ONE PHASE OF A SAMPLE'S MANIFOLD (78.179 §1): either a circle `S¹` of
-/// period `p` read from repeating content, or an interval chart of extent `e`
-/// with boundary.
+/// ONE PHASE OF A MANIFOLD: either a circle `S¹` of period `p` read from
+/// repeating content, or an interval chart of extent `e` with boundary.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PhaseManifold {
+pub enum Phase {
     /// A circle `S¹` of period `p` (a proper divisor of extent `e`). The far
     /// seam glues to the near; site `s` is the turn `s/p` with winding `⌊s/p⌋`.
     Circle { period: usize },
@@ -28,98 +26,98 @@ pub enum PhaseManifold {
     Interval { extent: usize },
 }
 
-impl PhaseManifold {
+impl Phase {
     /// The extent of this phase.
     pub fn extent(&self) -> usize {
         match *self {
-            PhaseManifold::Circle { period } => period,
-            PhaseManifold::Interval { extent } => extent,
+            Phase::Circle { period } => period,
+            Phase::Interval { extent } => extent,
         }
     }
 
     /// Is this phase a circle `S¹`?
     pub fn is_circle(&self) -> bool {
-        matches!(self, PhaseManifold::Circle { .. })
+        matches!(self, Phase::Circle { .. })
     }
 
     /// Is this phase an interval chart with boundary?
     pub fn is_interval(&self) -> bool {
-        matches!(self, PhaseManifold::Interval { .. })
+        matches!(self, Phase::Interval { .. })
     }
 }
 
-/// AN AXIS IN A SAMPLE'S MANIFOLD: a single phase, or a fibration where an axis
-/// is nested (#176; MU-SENSING §3.6).
+/// AN AXIS IN A MANIFOLD: a single phase, or a fibration where an axis is nested
+/// (#176; MU-SENSING §3.6).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum AxisManifold {
+pub enum Axis {
     /// A single phase on this axis.
-    One(PhaseManifold),
+    One(Phase),
     /// A nested axis as a fibration: the coarse phase is the base, the fine
     /// phase is the fibre.
     Fibred {
-        base: PhaseManifold,
-        fibre: PhaseManifold,
+        base: Phase,
+        fibre: Phase,
     },
 }
 
-impl AxisManifold {
+impl Axis {
     /// Is this axis a fibration of levels?
     pub fn is_fibred(&self) -> bool {
-        matches!(self, AxisManifold::Fibred { .. })
+        matches!(self, Axis::Fibred { .. })
     }
 
     /// Is every phase on this axis a circle?
     pub fn is_all_circles(&self) -> bool {
         match self {
-            AxisManifold::One(p) => p.is_circle(),
-            AxisManifold::Fibred { base, fibre } => base.is_circle() && fibre.is_circle(),
+            Axis::One(p) => p.is_circle(),
+            Axis::Fibred { base, fibre } => base.is_circle() && fibre.is_circle(),
         }
     }
 
     /// The combined extent (measure) along this axis, or `None` on overflow.
     pub fn measure(&self) -> Option<usize> {
         match self {
-            AxisManifold::One(p) => Some(p.extent()),
-            AxisManifold::Fibred { base, fibre } => base.extent().checked_mul(fibre.extent()),
+            Axis::One(p) => Some(p.extent()),
+            Axis::Fibred { base, fibre } => base.extent().checked_mul(fibre.extent()),
         }
     }
 }
 
-/// THE SAMPLE'S MANIFOLD (78.179 §1; #32 item 6): the manifold the sample is
-/// built as once lifted into the field.
+/// THE MANIFOLD (78.179 §1): the open-dimensional manifold the mind navigates
+/// and contemplates.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SampleManifold {
-    axes: Vec<AxisManifold>,
+pub struct Manifold {
+    axes: Vec<Axis>,
 }
 
-impl SampleManifold {
-    /// A sample manifold with the given axis manifolds.
-    pub fn new(axes: Vec<AxisManifold>) -> SampleManifold {
-        SampleManifold { axes }
+impl Manifold {
+    /// A manifold with the given axes.
+    pub fn new(axes: Vec<Axis>) -> Manifold {
+        Manifold { axes }
     }
 
-    /// The count of axes (the sample's rank).
+    /// The count of axes (the manifold's rank / dimension).
     pub fn rank(&self) -> usize {
         self.axes.len()
     }
 
     /// The axes of the manifold in canonical address order.
-    pub fn axes(&self) -> &[AxisManifold] {
+    pub fn axes(&self) -> &[Axis] {
         &self.axes
     }
 
     /// Axis `axis`, or None if past the rank.
-    pub fn axis(&self, axis: usize) -> Option<&AxisManifold> {
+    pub fn axis(&self, axis: usize) -> Option<&Axis> {
         self.axes.get(axis)
     }
 
     /// A fully periodic torus `Tⁿ` with the given periods (78.179 §1).
-    pub fn torus(periods: &[usize]) -> SampleManifold {
+    pub fn torus(periods: &[usize]) -> Manifold {
         let axes = periods
             .iter()
-            .map(|&p| AxisManifold::One(PhaseManifold::Circle { period: p }))
+            .map(|&p| Axis::One(Phase::Circle { period: p }))
             .collect();
-        SampleManifold { axes }
+        Manifold { axes }
     }
 
     /// Is the manifold a torus `Tⁿ` (every phase is a circle `S¹`)?
@@ -132,13 +130,13 @@ impl SampleManifold {
         self.axes.iter().try_fold(1usize, |acc, a| acc.checked_mul(a.measure()?))
     }
 
-    /// READ A SAMPLE'S MANIFOLD FROM ITS CONTENT (78.179 §1): one factor per
+    /// LIFTS AN OBSERVATION INTO THE MANIFOLD (78.179 §1): one factor per
     /// phase.
     ///
     /// For each axis, tests proper divisors `p` of the extent `e` in ascending
     /// order. A phase is a circle `S¹` of period `p` where every site's symbol
     /// equals the symbol `p` steps on round the extent; otherwise an interval.
-    pub fn of(sample: &Sample) -> SampleManifold {
+    pub fn lift_from(sample: &Sample) -> Manifold {
         let rank = sample.rank();
         let mut axes = Vec::with_capacity(rank);
         for axis in 0..rank {
@@ -146,29 +144,28 @@ impl SampleManifold {
                 AxisReading::Read(e) => e,
                 AxisReading::Unread => 0,
             };
-            let phase = detect_phase_manifold(sample, axis, extent);
-            axes.push(AxisManifold::One(phase));
+            let phase = detect_phase(sample, axis, extent);
+            axes.push(Axis::One(phase));
         }
-        SampleManifold { axes }
+        Manifold { axes }
     }
 }
 
 /// Detects whether an axis is a circle of proper period `p`, or an interval of
 /// extent `e`.
-fn detect_phase_manifold(sample: &Sample, axis: usize, extent: usize) -> PhaseManifold {
+fn detect_phase(sample: &Sample, axis: usize, extent: usize) -> Phase {
     if extent <= 1 {
-        return PhaseManifold::Interval { extent };
+        return Phase::Interval { extent };
     }
-    // Proper divisors in ascending order: 1 <= p < extent
     for p in 1..extent {
         if extent % p != 0 {
             continue;
         }
         if is_periodic_along_axis(sample, axis, extent, p) {
-            return PhaseManifold::Circle { period: p };
+            return Phase::Circle { period: p };
         }
     }
-    PhaseManifold::Interval { extent }
+    Phase::Interval { extent }
 }
 
 /// Checks if every site in the sample repeats with period `p` along `axis`.
@@ -176,7 +173,6 @@ fn is_periodic_along_axis(sample: &Sample, axis: usize, extent: usize, p: usize)
     let check = || -> Option<bool> {
         for site in sample.sites() {
             let sym = sample.symbol_at(&site).ok()?;
-            // Target site shifted by p steps on round the extent
             let mut target_axes = site.axes().to_vec();
             if let Some(coord) = target_axes.get_mut(axis) {
                 let current = usize::try_from(*coord).ok()?;
@@ -214,65 +210,51 @@ mod tests {
 
     #[test]
     fn periodic_content_becomes_circle() {
-        // Repeated sequence [1, 2, 1, 2]: extent 4, period 2
         let s = sample_1d(&[1, 2, 1, 2]);
-        let m = SampleManifold::of(&s);
+        let m = Manifold::lift_from(&s);
         assert_eq!(m.rank(), 1);
-        assert_eq!(
-            m.axes()[0],
-            AxisManifold::One(PhaseManifold::Circle { period: 2 })
-        );
+        assert_eq!(m.axes()[0], Axis::One(Phase::Circle { period: 2 }));
         assert!(m.is_torus(), "a 1D circle is a 1-torus T¹");
     }
 
     #[test]
     fn constant_content_becomes_circle_period_one() {
-        // Constant sequence [5, 5, 5]: extent 3, period 1
         let s = sample_1d(&[5, 5, 5]);
-        let m = SampleManifold::of(&s);
-        assert_eq!(
-            m.axes()[0],
-            AxisManifold::One(PhaseManifold::Circle { period: 1 })
-        );
+        let m = Manifold::lift_from(&s);
+        assert_eq!(m.axes()[0], Axis::One(Phase::Circle { period: 1 }));
     }
 
     #[test]
     fn non_repeating_content_becomes_interval() {
-        // [1, 2, 3, 4] has no proper divisor period
         let s = sample_1d(&[1, 2, 3, 4]);
-        let m = SampleManifold::of(&s);
-        assert_eq!(
-            m.axes()[0],
-            AxisManifold::One(PhaseManifold::Interval { extent: 4 })
-        );
+        let m = Manifold::lift_from(&s);
+        assert_eq!(m.axes()[0], Axis::One(Phase::Interval { extent: 4 }));
         assert!(!m.is_torus());
     }
 
     #[test]
     fn fully_periodic_2d_sample_is_torus_t2() {
-        // 2x4 grid:
-        // row 0: 7, 8, 7, 8
-        // row 1: 7, 8, 7, 8
-        // Rows are identical (period 1 along axis 0), cols repeat with period 2 (along axis 1)
         let s = sample_2d(2, 4, &[7, 8, 7, 8, 7, 8, 7, 8]);
-        let m = SampleManifold::of(&s);
+        let m = Manifold::lift_from(&s);
         assert_eq!(m.rank(), 2);
-        assert_eq!(
-            m.axes()[0],
-            AxisManifold::One(PhaseManifold::Circle { period: 1 })
-        );
-        assert_eq!(
-            m.axes()[1],
-            AxisManifold::One(PhaseManifold::Circle { period: 2 })
-        );
+        assert_eq!(m.axes()[0], Axis::One(Phase::Circle { period: 1 }));
+        assert_eq!(m.axes()[1], Axis::One(Phase::Circle { period: 2 }));
         assert!(m.is_torus(), "both phases circles => torus T²");
     }
 
     #[test]
     fn torus_constructor_creates_all_circle_phases() {
-        let t = SampleManifold::torus(&[3, 5, 7]);
+        let t = Manifold::torus(&[3, 5, 7]);
         assert_eq!(t.rank(), 3);
         assert!(t.is_torus(), "T³");
         assert_eq!(t.measure(), Some(105));
+    }
+
+    #[test]
+    fn sample_lift_produces_manifold() {
+        let s = sample_1d(&[1, 2, 1, 2]);
+        let m = s.lift();
+        assert_eq!(m.rank(), 1);
+        assert_eq!(m.axes()[0], Axis::One(Phase::Circle { period: 2 }));
     }
 }
