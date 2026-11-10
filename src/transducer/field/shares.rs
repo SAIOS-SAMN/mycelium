@@ -13,7 +13,7 @@
 //! ```
 
 use super::carrier::{frame_plane, Cohesion, FieldRefusal};
-use super::Well;
+use super::{Contemplation, Well};
 
 impl Well {
     /// THE WELL'S COHESION, PER PLANE (the viscosity): its inflation's
@@ -25,5 +25,39 @@ impl Well {
     pub fn cohesion(&self) -> Result<Cohesion, FieldRefusal> {
         let plane = frame_plane(self.body()?.membrane().plane())?;
         Cohesion::of(&[(plane, self.inflation()?.gauge)])
+    }
+}
+
+impl Contemplation {
+    /// THE HELD FIELD'S COHESION, PER PLANE (MU-CLIENT §4.9, §7.1): one held
+    /// share `c_k = H/(H + R)` on each distinct frame plane its held wells
+    /// stand on, read from each well's inflation on its membrane's frame plane.
+    /// `None` when no well is held. Never stored and never summed into one
+    /// number.
+    pub fn cohesion(&self) -> Result<Option<Cohesion>, FieldRefusal> {
+        let mut frames = Vec::new();
+        for (_, well) in self.wells.scoped() {
+            let body = match well.body() {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
+            let plane = frame_plane(body.membrane().plane())?;
+            let gauge = well.inflation()?.gauge;
+            if frames.iter().any(|(p, _)| p == &plane) {
+                continue;
+            }
+            frames.push((plane, gauge));
+        }
+        if frames.is_empty() {
+            Ok(None)
+        } else {
+            Cohesion::of(&frames).map(Some)
+        }
+    }
+
+    /// The cohesion of the specific thought at `address` ([`Well::cohesion`]),
+    /// or `None` where no thought stands at `address`.
+    pub fn cohesion_of(&self, address: &[u8]) -> Option<Result<Cohesion, FieldRefusal>> {
+        self.wells.get(address).map(Well::cohesion)
     }
 }
