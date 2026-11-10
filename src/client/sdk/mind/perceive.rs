@@ -869,6 +869,12 @@ impl Mind {
         }
     }
 
+    /// MU-CLIENT §4.1, §4.2 — Depth Perception: inspect the task perceived
+    /// at its observed rank and lifted into manifolds.
+    pub fn task_percept(&self, id: &[u8]) -> Option<&crate::transducer::family::transduce::TaskPercept> {
+        self.board.percepts.get(id)
+    }
+
     /// WHERE A SCENE'S COMPREHENSION STOPPED, read for the observer: counted
     /// by reading, and kept on the task it stopped on.
     fn stopped(&mut self, id: &[u8], reading: SceneKind, stop: Stop) {

@@ -15,5 +15,5 @@
 - Owed: pricing `ACT_RECEIPTS`'s replay arm for a folded tick (it needs a
   staker and a signature on that request).
 - Claims `retrieve_round_trips_as_domain_sub_kind_19`,
-  `retrieve_claims_read_price_and_refuses_by_name`,
+  `retrieve_claims_reads_price_and_refuses_unpaid`,
   `retriever_verifies_section_and_receipts_under_head`.

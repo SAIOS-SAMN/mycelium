@@ -37,7 +37,7 @@
   - `one_plane_composes_by_its_regime` (11b-iii: `1` elliptic, `5/7`
     hyperbolic);
   - `closed_forms_on_one_plane_agree_with_the_general_law`;
-  - `inverses_that_do_not_exist_are_refused_by_name`;
+  - `turning_inverse_refuses_nonexistent`;
   - `degrees_read_as_certified_sectors`;
   - `register_reaches_stated_turning_values`
     (`src/physics/laws/clauses/tests/turning.rs`: the served clause at

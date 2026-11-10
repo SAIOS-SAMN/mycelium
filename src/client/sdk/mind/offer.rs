@@ -58,8 +58,8 @@ impl Offer {
     /// stands on, each once, in key order.
     pub(crate) fn of(train: &crate::transducer::family::Family) -> Offer {
         let mut charts: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for (before, after) in crate::transducer::family::perceive_family(train) {
-            for body in before.iter().chain(&after) {
+        for pair in crate::transducer::family::perceive_family(train) {
+            for body in pair.input.iter().chain(&pair.output) {
                 charts.insert(body.moduli.key().as_bytes(), ());
             }
         }

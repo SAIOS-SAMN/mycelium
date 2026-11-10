@@ -1883,8 +1883,18 @@ Each phase is one commit:
      site and the frame's momentum read the re-period of each phase
      (`element::Reperiod`, `p′ᵢ/pᵢ` axis by axis). Claims
      `reperiod_carries_sites_between_extents_phase_by_phase`,
-     `momentum_read_per_phase_across_anisotropic_reperiod`. Open: the
-     magnitude's planar chains (`family::magnitude`, MU-SENSING §8).
+     `momentum_read_per_phase_across_anisotropic_reperiod`.
+   - **Built** (branch `sensing-magnitude`; ruled 2026-11-06 on #32): a
+     family's magnitude is read at the samples' own rank, S and G from
+     each pair's projected record and H from the boundary by grade
+     `n − 1` (the chain-length term retired); a pair whose record does not
+     read is held as residue citing its refusal (`OffSite`), contributing
+     nothing. The genesis bond and the mind's `family_magnitude` read
+     alike; the bond's value changes, a recut. Claims
+     `magnitude_reads_counts_at_rank_n_and_h_by_grade_n_minus_one`,
+     `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`,
+     `scaled_pair_is_measured_refused_pair_is_residue` (a projection that
+     lands resolves an unequal enclosure; confirmed on #32).
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
@@ -1954,7 +1964,7 @@ Each phase is one commit:
      denominator is its extent.
    - Claims: `task_round_trips_samples_of_rank_n`,
      `extent_past_its_field_is_refused_never_widened`,
-     `symbol_bytes_overflow_is_refused_by_name`.
+     `symbol_bytes_refuses_overflow`.
    - **Built**, inside v0.3.0's break; `WIRE_VERSION` stays `0x0200`
      (no tag carries it yet: v0.3.0-rc.2 is `0x0104`), and the solve act
      is signed as `mycelium solve v3`.
@@ -2125,6 +2135,33 @@ Each phase is one commit:
      4. The rest of S4a: a family's pairs lifted as transitions between
         their bodies' charts (the factorisation's motion), and nesting as
         a fibration of levels where the family is invariant.
+        **Built in part** (branch `field-s4-transitions`, stacked on
+        `field-s8-motions`): on the lift's convention agreed 2026-11-06
+        (78.171 §8; netstratum docs/117 §11.6), the phase measured from
+        the shared lift unit `e₊₍ₙ₊₁₎`, every signed permutation and its
+        re-period lifts whole as a motion of the field
+        (`carrier::motion_of`: a reversal the flip of `e₊ᵢ` and one whole
+        turning on its plane, the winding the transduction's `p − s`
+        writes; a transposition `(i j)` the 90° turning on `e₊ᵢe₊ⱼ` then
+        the flip of `e₊ᵢ`), and a pair is lifted as transitions between
+        its bodies' charts (`carrier::transitions_of`, `PairTransition`; a
+        body carried split or merged keeps its refusal). `carry_point`
+        reads the phase origin so. No degree, chart or address moves, so
+        no recut. Claims
+        `every_signed_permutation_lifts_whole_as_a_motion_of_the_field`,
+        `reversal_is_the_reflection_in_its_own_unit_alone`,
+        `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s`,
+        `pair_lifted_as_transitions_between_its_bodies_charts`.
+        The nesting as a fibration of levels (branch `field-s4-fibration`):
+        an axis the family's nesting takes apart (`Taken::Apart`, the
+        reading ruled on #32 and built in #176) is a level
+        (`carrier::Level`), its base the coarse phase on the axis's own
+        plane, one point per block, and over each base point the fibre
+        the block's own field, lifted with its own atlas, the separator
+        left out; a sample lifts as its whole lift and its levels
+        (`carrier::Fibred::of`); an axis kept whole or held superposed is
+        no level. Claims `axis_taken_apart_lifts_as_a_fibration_of_levels`,
+        `axis_kept_whole_is_no_level`. Stage 4 is then built.
      5. S8, the field's motions as one group: the turning, the reflection
         and the pole swap (`forms::passage::Poles::swap`) and the
         inversion in the membrane, the boost on a frame plane, the
@@ -2230,7 +2267,7 @@ Each phase is one commit:
       - Claims: the five above, `rank_one_task_is_perceived`,
         `no_axis_is_privileged_in_perception`,
         `bodies_connect_by_shared_cell_of_grade_n_minus_one`,
-        `rank_beyond_the_alphabet_is_refused_by_name`.
+        `perspective_refuses_rank_beyond_alphabet`.
       - No task, word or chart address changes.
     - **Open** (the next phase):
       - the word, chart and rule-language machinery's rank-2 carrier
@@ -2321,7 +2358,7 @@ Each phase is one commit:
       symbol set refuses a test input of another width by name
       (`SymbolSet::of_family` returns `SymbolRefusal::Width`). Claims
       `section_site_is_the_sample_coordinate_restricted_by_the_perspective`,
-      `test_input_of_another_width_refuses_the_family_set_by_name`. No
+      `symbol_set_refuses_differing_test_width`. No
       wire, task, word or chart address change.
     - **Stage 2b, the planar tuples held as `SectionSite`** (branch
       `s4d2b-section-tuples`):

@@ -112,9 +112,14 @@ MU-PRODUCT and MU-XSEPTUM; this section is the order they are used in.
 
 ### 2.3 Perceive and produce
 
-The agent perceives what the hypha or its seat exports (a task's train
-pairs, a feed family, a seat's senses), and produces signed work: a solve,
-a word, a sentence, a rewrite, an attestation (MU-CLIENT §5).
+The agent perceives what the hypha or its seat exports (a task, a feed
+family, a seat's senses), and produces signed work: a solve, a word, a
+sentence, a rewrite, an attestation (MU-CLIENT §5). A task is a family of
+manifolds: each sample a manifold, each train pair two manifolds and the
+map between them that a rule reconstructs, and each test input a manifold
+whose map the court withholds (proposal 78.179 §3). What the agent asserts
+carries its evidence as the word's stalk, a sheaf over the word's star in
+the cover's nerve (78.179 §2).
 
 ### 2.4 Get paid
 
@@ -185,7 +190,16 @@ Concordance is the joining instrument.
 6. **Offer seats** (78.145; MU-CLIENT §6). The world model builds each
    seated agent's senses from its predicted state, and takes the agent's
    actions as the inputs it predicts the next state from. It may also run
-   resident minds in its own process (§5.1).
+   resident minds in its own process (§5.1). The house reads the takes and
+   calls in its mail by READ-MAIL. **READ-MAIL is a held read with no time
+   bound** (78.146 as amended, ruled 2026-10-17;
+   `src/bin/mycelium-server/deferred_reads.rs`). A read whose box holds
+   nothing past its cursor is answered at the court's next event: a seat
+   post filed on the relay, or the keeper signing its next TUniversal
+   reading. The hold reads no clock, so on a quiet relay it can stand for
+   any length of time. A house sets no read timeout on a READ-MAIL, or
+   treats a timeout as "nothing yet" and asks again. A read asked again
+   while one is held answers the earlier one (`sdk::house`; #133).
 7. **Uplink through its reserve** (Concordance 4.1; the boundary law,
    §5a). The universe's work reaches the court through its reserve tier's
    folds, open to challenge for the challenge window; a fold from any other

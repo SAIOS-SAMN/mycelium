@@ -610,9 +610,8 @@ under the new words: the five-kind algebra (2026-09-01, historical) and
 the flow from perception to syllabus (2026-09-06). The texts moved here as ruled (§4.1,
 §5.2) keep their words and read under this table. The mind's module took
 the new name in a names-only change (`src/client/sdk/mind/express.rs`);
-the carrier and receipt names (`src/client/sdk/utterance.rs`,
-`Action::Uttered`) stay until row L19 lands: MU-RECURSION 1.9 retires
-`Uttered` on carriers and receipts as their rows land.
+the carrier and receipt names retired with row L19 (`src/client/sdk/assertion.rs`,
+`Assertion`; MU-RECURSION 1.9).
 
 ### 5.2 The lexicon of the network: one sense per word (ruled 2026-09-26: the language is annotated so that no two senses overlap and each word's place in the network of structures is exact)
 
@@ -757,7 +756,7 @@ act carried one.
 | `0x07` | `ACT_HANDOFF` | Transition | universe crossing | A tier's handoff offer (MU-HOSTING) |
 | `0x08` | `ACT_EVIDENCE` | Transition | court-to-court exchange | A court pulls a selection fibre's birth evidence |
 | `0x09` | `Refine` (no constant) | **Retired** (2026-10-11) | — | An optimization is a Retire rewrite a mind asserts (MU-CLIENT §5.4) |
-| `0x0B` | `ACT_TASK` | Observation | read | The signed work envelope |
+| `0x0B` | `ACT_TASK` | Observation | read | The task, signed work served as a family of manifolds: each pair two manifolds and the map the rule reconstructs, the test inputs without their outputs (78.179 §3; carrier `dialogue::TaskEnvelope`, to be renamed `TaskFamily`, #165) |
 | `0x0C` | `ACT_SOLVE` | Transition | assertion | Kind 0, a solve: claims a closure, and its verdict pays; kind 1, a claim of factorisation: an adjudicated perception, never paid (MU-SENSING §3.9) |
 | `0x0D` | `ACT_SYLLABUS` | Transition | assertion | A voice's signed pull of the ratified stream; its presentation request asks a residue of the court's presentation (78.160 P1) |
 | `0x0E` | `ACT_ADOPT` | Exchange | court-to-court exchange | An upheld word propagated to every server (MU-CLIENT §5.4: a word the court lacks) |

@@ -66,6 +66,10 @@ pub(crate) enum FieldWork {
     /// (agreed language with the hearer's HOLD, or a letter unmet), framed:
     /// the field posts it on the mind's own hypha carrier, never waited on.
     Speak { body: Vec<u8>, agreed: bool },
+    /// MU-CLIENT §5.3(5) (#145) — a peer's verified frame said under a
+    /// question's coordinates (`key`: the peer, then the coordinates),
+    /// held with the question it answers.
+    Answered { key: Vec<u8>, frame: Vec<u8> },
 }
 
 /// ONE QUESTION THIS MIND ASKED (MU-CLIENT §5.3): the ring it did not know,
@@ -77,7 +81,7 @@ pub(crate) enum FieldWork {
 pub(crate) struct Question {
     ring: crate::transducer::cga::Mv,
     parts: Vec<crate::transducer::cga::Mv>,
-    residue: crate::transducer::cga::Mv,
+    pub(super) residue: crate::transducer::cga::Mv,
     factors: Option<Vec<crate::transducer::cga::Mv>>,
     at: u64,
     /// 78.177 (ruled 2026-11-06) — THE EVIDENCE OF THE HEARD WORD THE
@@ -85,6 +89,10 @@ pub(crate) struct Question {
     /// read true on its scene: what makes the question one a court can
     /// measure (E1). A question with none stays the conversation's.
     pub(super) evidence: Option<chatter::Evidence>,
+    /// MU-CLIENT §5.3(5) (#145) — THE PEERS' VERIFIED FRAMES said under this
+    /// question's coordinates: the receipts a peer record is folded from,
+    /// held while the question is and lapsing with it.
+    pub(super) frames: Vec<Vec<u8>>,
 }
 
 impl Question {
@@ -523,6 +531,9 @@ impl Mind {
             };
             match next {
                 Some(FieldWork::Speak { body, agreed }) => self.speak_agreed(body, agreed),
+                // A peer's frame under a question's coordinates is held with
+                // the question at once: it is a receipt, never a hearing.
+                Some(FieldWork::Answered { key, frame }) => self.hold_answer_frame(&key, frame),
                 Some(w) => self.board.field_waiting.push_back(w),
                 None => break,
             }
@@ -572,6 +583,7 @@ impl Mind {
                 }
                 // The buffer holds no speech (the door posts it at once).
                 FieldWork::Speak { body, agreed } => self.speak_agreed(body, agreed),
+                FieldWork::Answered { key, frame } => self.hold_answer_frame(&key, frame),
             }
         }
         self.board.hearings_wait = !self.board.field_waiting.is_empty() || !self.board.field_waiting_crossed.is_empty();
@@ -638,6 +650,15 @@ impl Mind {
             crate::observe::note_mind(|m| m.repeats[1] += 1);
             return None;
         }
+        // MU-CLIENT §5.3(5) (#145) — ADDRESSED BY THE PEER'S RECORD: a class
+        // this speaker answered inexactly is not asked of it again; the
+        // residue is the mind's own escaping orbit, bound by construction as
+        // a lapsed question's is.
+        if let super::peers::Addressed::Inexact = self.addressed(speaker, &residue) {
+            let mut budget = self.physics.stroke();
+            self.compose_or_construct(&residue, None, &mut budget);
+            return None;
+        }
         let mut key = speaker.to_vec();
         key.extend_from_slice(&question_key(said, vertex));
         // MU-CLIENT §4.13 — THE QUESTION STANDS AS ITS RESIDUE'S ORBIT: the
@@ -652,7 +673,7 @@ impl Mind {
             return None;
         }
         let at = self.own_k();
-        self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at, evidence: None });
+        self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at, evidence: None, frames: Vec::new() });
         crate::observe::note_mind(|m| m.asks[0] += 1);
         Some(residue)
     }
@@ -704,7 +725,9 @@ impl Mind {
                 return;
             }
             for k in ready {
-                let Some(q) = self.questions.remove(&k) else { continue };
+                let Some(mut q) = self.questions.remove(&k) else { continue };
+                // #145 — its peers' frames stay while the closure is cited.
+                self.keep_closed_frames(&k, &q.residue, std::mem::take(&mut q.frames));
                 // GIVEN where the ring was asked whole and came back an atom;
                 // DERIVED where known words or known factors made it.
                 let given = atom(&q) && q.parts.is_empty() && q.ring.projective_eq(&q.residue);
@@ -1292,7 +1315,16 @@ impl Carrier {
             return;
         }
         match c.said {
-            Said::Say { said, words, evidence } => self.hear_said(&c.speaker, said, &words, evidence),
+            Said::Say { said, words, evidence } => {
+                // #145 — a Say under a question's coordinates is a peer's
+                // receipt for that question, held whole as verified.
+                if said.starts_with(b"?") {
+                    let mut key = c.speaker.to_vec();
+                    key.extend_from_slice(&said);
+                    let _ = self.field.send(FieldWork::Answered { key, frame: f.to_vec() });
+                }
+                self.hear_said(&c.speaker, said, &words, evidence)
+            }
             Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words),
             Said::Ack { said, words } => self.acknowledged(&c.speaker, &said, &words),
             Said::Hold { said, words, .. } => self.held_back(&c.speaker, &said, &words, f),
