@@ -85,7 +85,7 @@ pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
 pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not reconstruct";
 /// 23.8: a lane of the voice's room did not cover the draw. Nothing is
 /// docketed; the refusal travels to the voice.
-pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occupied lane";
+pub const REFUSE_ROOM: &str = "voice room does not cover the expression on an occupied lane";
 /// 45.8, 34.1 (ruled 2026-09-09): a fold behind a prefix that is not
 /// fully final, and a fold whose epoch rows do not conserve.
 pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
@@ -106,7 +106,7 @@ pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor t
 /// 50.6, 34.1 (L7): a tape with no vertex that acts is a chain, refused
 /// whole; a word vertex that does not carry its body onto its image on the
 /// court's copy of the family is not a word for that body (50.1 step 1).
-pub const REFUSE_NOT_A_SENTENCE: &str = "utterance is a chain, not a sentence";
+pub const REFUSE_NOT_A_SENTENCE: &str = "expression is a chain, not a sentence";
 pub const REFUSE_VERTEX_BODY: &str = "vertex does not carry its body onto its image";
 /// 50.9 (L8): a sentence citing a refusal receipt is not the contraction
 /// of the refused sentence at the coordinate the court named.
