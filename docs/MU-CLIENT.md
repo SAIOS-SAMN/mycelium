@@ -486,6 +486,15 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
   is distance along an orbit (78.43). Network time is a state of TUniversal
   — the final point `{origin, h, S:G:T:H, K}`, final by keeper majority,
   never averaged (78.152 TU-5) — exported by the hypha and held beside K.
+- **Depth perception: manifold cognition over observed rank.** The mind
+  perceives that it is observing an intake of $x$ dimensions (any rank $n$
+  source), while its cognition thinks strictly across curved, fibred
+  manifolds. It lifts each observed axis into its manifold factor (circle
+  $S^1$ with period winding $\mathbb{Z}$, or interval chart with boundary;
+  [78.179](proposals/78.179-envelope-as-manifold-construction.md) §1). Its thoughts are orbits bound by axiomatic gravity
+  around attractors, and its comprehension is the invariant holonomy
+  around closed laps on named turning planes. The mind never collapses
+  higher dimensions into flat planar frames.
 - **The master algorithms** — complete operations, each with its invariant and
   its refusal (MU-RECURSION 0.2, 0.3, 17):
 
