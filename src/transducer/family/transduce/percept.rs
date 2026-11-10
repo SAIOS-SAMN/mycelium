@@ -31,6 +31,14 @@ pub struct PairFactored {
     pub output_manifold: Manifold,
 }
 
+impl PairFactored {
+    /// Lifts this pair under factorisation `f` into carrier transitions between charts
+    /// of the field atlas ([`crate::transducer::field::carrier::PairTransition`]).
+    pub fn carrier_transitions(&self, x: &Sample, y: &Sample, f: &super::Factorisation) -> Result<Vec<Result<crate::transducer::field::carrier::PairTransition, super::TransductionRefusal>>, crate::transducer::field::carrier::FieldRefusal> {
+        crate::transducer::field::carrier::transitions_of(x, y, f)
+    }
+}
+
 /// A TASK PERCEIVED AT ITS OWN RANK (MU-SENSING §1, §3; MU-CLIENT §4.1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskPercept {
