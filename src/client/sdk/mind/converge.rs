@@ -164,6 +164,21 @@ impl Scenes {
         }
     }
 
+    /// The scene citation of a held family: spoken on, or pulled.
+    pub(crate) fn scene_of_family(&self, family: &crate::transducer::family::Family) -> Option<Vec<u8>> {
+        for (scene, words) in self.by_scene.scoped() {
+            if words.family == *family {
+                return Some(scene);
+            }
+        }
+        for (scene, (f, _)) in self.pulled.scoped() {
+            if f == family {
+                return Some(scene);
+            }
+        }
+        None
+    }
+
     /// 78.177 §4a(2) — THE SENTENCE A QUESTION ON `scene` RIDES: the least
     /// by address of the closed sentences this mind spoke there (rule 15,
     /// by coordinates, never by arrival); none where it spoke none.

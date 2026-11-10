@@ -531,8 +531,8 @@ impl Mind {
     ///   is adjoined.
     /// - No rotation to read: unread.
     ///
-    /// Each word with the scene its thought was perceived in (E1); a twist's
-    /// word names none.
+    /// Each word with the scene its thought was perceived in (E1); a closed
+    /// twist names the scene of the thought that twisted (78.177 §4a(4)).
     pub(crate) fn transcribe_closed(&mut self, budget: &mut crate::physics::Budget) -> Vec<(Element, Vec<u8>)> {
         use crate::transducer::sentence::rung::Transcribed;
         let mut words = Vec::new();
@@ -541,18 +541,19 @@ impl Mind {
                 words.push((word, family));
             }
         }
-        // MU-CLIENT §4.4(1) — WHAT CHANGED AT A LATER RETURN: the twist the
-        // pull put on the orbit, transcribed by the same transcriber at its
-        // own period where it returns; a twist of no finite order is the
-        // thought's torsion, held, and nothing is said of it.
-        for twist in self.contemplation.take_twists() {
+        // MU-CLIENT §4.4(1), 78.177 §4a(4) — WHAT CHANGED AT A LATER RETURN:
+        // the twist the pull put on the orbit, transcribed by the same
+        // transcriber at its own period where it returns, asserted under
+        // the family it was perceived in; a twist of no finite order is
+        // the thought's torsion, held, and nothing is said of it.
+        for (twist, family) in self.contemplation.take_twists() {
             let period = crate::transducer::element::conformal_factors(&twist)
                 .ok()
                 .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok())
                 .and_then(|r| r.order());
             let Some(crate::transducer::alphabet::Order::Finite(ell)) = period else { continue };
             if let (Transcribed::Spelled, Some(word)) = self.transcribe(&twist, u64::from(ell), budget) {
-                words.push((word, Vec::new()));
+                words.push((word, family));
             }
         }
         words

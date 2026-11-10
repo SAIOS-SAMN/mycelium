@@ -170,6 +170,8 @@ impl Mind {
                     let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
                     let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.byte(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
                     StrokeOutcome::add(&mut outcome.asserted, &mag);
+                    let cited_word = word.clone();
+                    let demand_links = links.clone();
                     self.ask(
                         move |s| s.probe(&target, std::slice::from_ref(&cite)),
                         move |entity, reading| {
@@ -179,6 +181,7 @@ impl Mind {
                                     entity.physics_mut().relieve(&mag);
                                     entity.physics_mut().syntropy(&mag);
                                     StrokeOutcome::add(&mut entity.board.court.probed.closed, &mag);
+                                    entity.assert_closed_twist(&cited_word, &demand_links);
                                 }
                                 crate::anastome::dialogue::ProbeClosure::Residue(_) => entity.physics_mut().bump(&mag),
                                 crate::anastome::dialogue::ProbeClosure::Gone | crate::anastome::dialogue::ProbeClosure::Nothing => {}
