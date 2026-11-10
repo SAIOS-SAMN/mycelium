@@ -43,7 +43,7 @@ and convergence or collision brings the branches back into alignment
 ## 2. What a change is
 
 - One phase per pull request where practical, each leaving the tree green:
-  the [Definition of done](../AGENTS.md#definition-of-done) holds,
+  the [Checks](../AGENTS.md#checks) pass,
   documentation in step, a CHANGELOG fragment under `changes/`.
 - Commit form: an imperative subject of at most 72 characters; a body
   saying what changed and why, naming its ROADMAP track or issue; a
@@ -142,8 +142,8 @@ network's own clock:
 - Release tags are signed. The release states the build's hash, re-derivable
   by anyone from the tagged source and `Cargo.lock` (ROADMAP track 14, item
   5); a hypha's build attestation names it.
-- The release checklist lives in CONTRIBUTING: the Definition of done
-  green on the tagged tree, the CHANGELOG section final, the test-mesh run recorded, the operator's
+- The release checklist lives in CONTRIBUTING: the checks (clippy and
+  the tests) green on the tagged tree, the CHANGELOG section final, the test-mesh run recorded, the operator's
   authorization recorded in the release pull request.
 
 ---

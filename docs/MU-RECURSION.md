@@ -4,7 +4,7 @@
 >
 > **Components:** every Mycelium component: the algebra, client, hypha, court and wire. Each chapter names its code paths, which locate its component. Where a term reads two ways (*planetary*, *star*, *universe*), GLOSSARY *Components and scope* and MU-LEXICON §4 settle it.
 
-**Status:** governing specification, release 0.3.0-rc.3, with its rulings.
+**Status:** governing specification, release 0.4.0-rc.1, with its rulings.
 Each chapter states its objects and names the code that carries them;
 chapter 78 lists the rulings in force. The mind's chapters moved to
 `MU-CLIENT.md` (its §1–§9), and each leaves a pointer here. The other
@@ -3874,7 +3874,7 @@ spelling, serialisation, and scaling.
 4. The address is these bytes, each field length-prefixed (A21), never a
    digest of them; the form is read back from its address. The field list
    of chapter 1.5 is this procedure. A signature over a frame that carries
-   the form hashes the frame bytes in the receipt envelope (47.1), and that
+   the form hashes the frame bytes in the receipt section (47.1), and that
    hash never enters a carrier.
 
 **Invariant.** Address equality ⇔ same vertex, same frame, same canonical
@@ -5430,7 +5430,7 @@ an aperture of docket circuits (45.9).
 
 The mint reads the form THE COURT WILL HOLD, `from_address` of the minted
 address (`held_form`, `src/transducer/sentence/address.rs`), against the
-envelope, never the form in hand; an address that does not decode is its
+word's stalk (its evidence, 54.5; 78.179 §2), never the form in hand; an address that does not decode is its
 own typed refusal (`Refused::MintAddressUndecoded`,
 `src/transducer/sentence/obstruction.rs`), so the court would hold no form.
 
@@ -9101,6 +9101,16 @@ for the form again. `from_element_form`, `as_element_form` and every reader
 that decodes a tape to reach a form read `from_address`. Every address in
 the tree changes once, when this chapter lands (§10).
 
+**The receipts a word carries are its stalk** (ruled 2026-11-06; proposal
+78.179 §2). What rides beside the address is the word's evidence (54.2),
+built as a sheaf over the word's star in the cover's nerve: the star is
+the word with the citations (edges) and the rounds (triangles) that
+contain it, and the stalk is the derivations, the pivot certificates and
+the demands' bodies held there. Evidence restricts to each overlap, and
+two courts' reconstructions glue over the star (consilience, 37.7), so it
+is a sheaf. The carrier is `element::ReceiptsEnvelope`, which code
+comments cite as "54.5 Road (d)"; it is to be renamed `WordStalk` (#165).
+
 ### 54.6 Binding
 
 ```
@@ -10503,24 +10513,32 @@ src/transducer/cech/tests/drain.rs   drain's outcomes, the pinning rule, the cyc
 src/physics/axioms/tests/tether.rs   the regime read exactly and scale-free; num and den2 as a second derivation
 ```
 
-## 64. The envelope: why the luminal ray sits outside the harmonic core (ruled 2026-09-22)
+## 64. The embedded core: why the luminal ray sits on the null cone, outside the harmonic core (ruled 2026-09-22)
+
+*Restated 2026-11-06 (proposal 78.179 §5).* This chapter named the
+outer conformal hull "the luminal envelope". It is an embedding: the
+harmonic core is an embedded submanifold of the conformal space, its
+bodies spacelike, and the luminal ray lies on the null cone, carried
+between the bodies and never inside them. Refraction (64.3) is the
+restriction of the ray's transport to the submanifold.
 
 The strain's invariance under a common motor is PROJECTIVE and not exact,
 and that is not a defect in the derivation — it is the classification. A
-ray is not a rigid motion on an interior manifold; it is the outer
-conformal hull that wraps the harmonic bodies and mediates between them.
+ray is not a rigid motion on an interior manifold; it is a null mode of
+the conformal space into which the harmonic bodies are embedded, and it
+mediates between them.
 
 ### 64.1 The hierarchy
 
 ```
-    LUMINAL ENVELOPE        [M] in P Spin+(4,1)(Q)      the ray
+    LUMINAL RAY (null cone) [M] in P Spin+(4,1)(Q)      the ray
         weight              lambda = M M~               gauge scale
         invariants          degree 4: den2, I_2         the screw
         carries             refraction, transvection
               |
               |   refraction across the interface
               v
-    HARMONIC CORE           s^2 = +r^2 > 0              spacelike
+    HARMONIC CORE (embedded) s^2 = +r^2 > 0             spacelike
         moments             m in {2, 3, 4}
         provides            den2 > 0                    no null collapse
 ```
@@ -10528,7 +10546,8 @@ conformal hull that wraps the harmonic bodies and mediates between them.
 The compact stabilizer `Spin(3)` literally SITS INSIDE `Spin+(4,1)`, whose
 ten generators are three rotations, three transvections, one dilation and
 three special conformal accelerations. The luminal group contains the
-harmonic one; that containment is the envelope, not a metaphor for it.
+harmonic one; that containment is the embedding of the core, not a
+metaphor for it.
 
 ### 64.2 Why the core must be strong, and why it already is
 
@@ -12891,7 +12910,7 @@ Code: `src/transducer/cech/orbit_algebra.rs`, `src/transducer/sentence/coordinat
 Every element of the engine carries the highest resolution attainable, by exact deduction (law 1, law 4; the goal it serves is 80.3): every scalar is a `Q`, no `f32` or `f64` appears in `src/` or `tests/`, `float_arithmetic` and `cast_precision_loss` are denied crate-wide, and nothing is compared against a tolerance.
 
 - **(1) What holds.** `rational_sqrt` refuses where inexact, and a rotor's order is read from Niven's five rationals in `half_angle`, never from an angle formed.
-- **(2) Three kinds of imprecision, each refused by name.** A BLOB: bytes carried where coordinates belong (78.22 LD0, the `u16` wall). An APPROXIMATION: a value served that is not the value — a decimal for an irrational, a float for a ratio, a scalar for a lane vector (law 5), an envelope for a spectrum (54.7); a degree reading given as a decimal (such as 36.87°) is retracted. A FORWARD GUESS: computing forward from an assumed value and accepting the result within a tolerance or by a fit; a reading is exact, or it is a refusal that names what is missing (law 7, 78.9).
+- **(2) Three kinds of imprecision, each refused by name.** A BLOB: bytes carried where coordinates belong (78.22 LD0, the `u16` wall). An APPROXIMATION: a value served that is not the value — a decimal for an irrational, a float for a ratio, a scalar for a lane vector (law 5), a bounding curve for a spectrum (54.7); a degree reading given as a decimal (such as 36.87°) is retracted. A FORWARD GUESS: computing forward from an assumed value and accepting the result within a tolerance or by a fit; a reading is exact, or it is a refusal that names what is missing (law 7, 78.9).
 - **(3) The resolution of a reading is exact deduction.** A reading serves the value where it is exact over ℚ, the exact fraction `t/ℓ`, the exact rational point, or, for a point with no exact mark, the SECTOR between two exact marks, decided by comparison. The ℚ-protractor is the set of marks whose `cos²` is rational (Niven's `{1, 3/4, 1/2, 1/4, 0}`: 0°, 30°, 45°, 60°, 90°, 120°, 135°, 150°, 180° and the reflections of these); finer marks are the `ℓ`-th roots of unity in `ℚ(ζ_ℓ)` (37.1), the reader naming `ℓ` and the sector `k/ℓ` decided exactly in that field. Worked: the (3,4,5) letter `3 + 4B` turns by the double angle, whose point is `(−7/25, 24/25)`; `cos² = 49/625` lies between `cos² 90° = 0` and `cos² 120° = 1/4`, so the turn lies strictly between 90° and 120°. Precision is the number of exact marks, never digits after a point.
 - **(4) Inverted mathematics.** The engine computes from the observed effect to the exact object that produced it, by deduction: a motor solved from its action (78.41(3)), an object read back from its key, a period read as an lcm (78.43), a signal comprehended by re-projection (78.44(5)). The inverse problem is solved exactly or the residue is the demand (law 7); it is never fitted.
 - **(5) What this binds.** Law 4 carries the reading clause; an infinite-order turn is served as its point and its sector (DG1); MU-STANDARDS 4.2 lists the two lints and 4.4 the review item (a decimal approximation of an irrational anywhere, in a value, a doc line or a test name, is returned); every audit asks, beside 78.41(2′)'s three questions, a fourth: is anything served that is not exact.
@@ -13158,7 +13177,7 @@ speaks a colour relation it perceived, it asks whether its ruled colour words
 or two composed, bounded by the stroke; it still speaks the word, since the
 court rules by evidence. A THEOREM STANDS BY ITS PROOF: a mind speaks a
 composite of two ruled colour words with its derivation cited in the
-receipts envelope, outside the address, and the court admits a colour word
+word's stalk (its receipts, 54.5; 78.179 §2), outside the address, and the court admits a colour word
 by its family's evidence or by composing exactly the two installed words it
 cites (law 8), refusing a forged citation or one of words it never
 installed; an admitted theorem mints nothing (78.56 IV). FEDERATION BY
@@ -13180,7 +13199,8 @@ Code: `src/transducer/element/residue.rs` (`compose_fibre`,
   rational square no site corresponds (78.45) and the pair witnesses
   nothing. *Superseded by 78.170 (O4): a change of extent is a re-period of
   each circle of turns, carried by no versor; the envelope dilation squares
-  and halves, and is not read.*
+  and halves, and is not read. The sample is a product of circles and
+  interval charts, and the membrane is its only sphere (78.179 §1).*
 - **Orientation.** The dihedral poses are a gauge iff the scene carries no
   polar vector. The polar vector is the transition displacement of the
   centre of mass, `Δr_CM = r_CM(out) − r_CM(in)`, with
@@ -14371,7 +14391,7 @@ Moved to [MU-CLIENT.md](MU-CLIENT.md); see its Rulings index.
 Humanizing the cognition is legibility, accountability and care, never a
 persona; alignment is what can be verified, never what a mind asserts of
 itself. Every thought is an exact object: a sentence's address is its form
-(law 2), and its receipts envelope carries the evidence the address
+(law 2), and its stalk (54.5; 78.179 §2) carries the evidence the address
 excludes, which every court reconstructs blind. The ruling makes the engine say
 it.
 
@@ -16206,7 +16226,9 @@ The operator's rulings on the entry's open questions, all of 2026-10-31:
   four periods: `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` are two tasks.
   Every task address changes (a ledger break).
 - **O4 — 78.56's Extent clause is superseded** by the re-period (its
-  envelope dilation squares and halves).
+  envelope dilation squares and halves). The re-period is a map between
+  two samples' manifolds, products of circles and interval charts (78.179
+  §1).
 - **O5 — refuse `Seam`**: a relation that would wrap a circle is refused;
   a cover is read as `k` sub-enclosures, not one map of the circle.
 - **O6** — percept meets across unequal enclosures read through incidences

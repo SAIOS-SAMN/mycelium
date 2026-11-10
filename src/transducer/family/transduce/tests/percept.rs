@@ -109,10 +109,17 @@ fn no_axis_is_privileged_in_perception() {
         assert_eq!(bodies(&b.output, None), bodies(&a.output, Some(&order)), "the output's bodies, relabelled");
         assert_eq!(b.factored.held().len(), a.factored.held().len(), "as many factorisations held");
         assert_eq!(residues(&b.factored, None), residues(&a.factored, Some(&order)), "the residues, relabelled");
+        assert_eq!(a.input_manifold.rank(), 3);
+        assert_eq!(a.output_manifold.rank(), 3);
+        assert_eq!(b.input_manifold.rank(), 3);
+        assert_eq!(b.output_manifold.rank(), 3);
     }
     for (a, b) in p.tests.iter().zip(&q.tests) {
         assert_eq!(bodies(b, None), bodies(a, Some(&order)));
     }
+    assert_eq!(p.test_manifolds.len(), 1);
+    assert_eq!(p.test_manifold(0).map(|m| m.rank()), Some(3));
+    assert_eq!(q.test_manifold(0).map(|m| m.rank()), Some(3));
 }
 
 /// A family of two ranks is refused by name, never padded or cut.

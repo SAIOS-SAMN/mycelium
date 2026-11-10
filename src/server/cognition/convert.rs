@@ -374,10 +374,10 @@ impl Court {
                 // its sitting reserve converts, through its vertex.
                 let Some(domain) = self.tier_domain.get(&c.tier).copied() else { return refuse(R::Unbound) };
                 if h.who != c.tier || !self.is_reserve(&c.tier) {
-                    return Handed::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::NotThroughCore {
                         act: crate::court::admission::UniverseAct::ConversionOut,
                         domain,
-                    });
+                    }));
                 }
                 if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::ConversionOut, domain) {
                     return Handed::Boundary(why);

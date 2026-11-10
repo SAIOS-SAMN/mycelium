@@ -38,8 +38,8 @@ fn treasury_carriage_measures_award_flat_in_word() {
     assert_eq!((award.records, award.largest, award.bytes), (2, field, 2 * field), "flat in the word's size");
     let mut tries = Vec::new();
     t.put_tries(&mut tries);
-    let (stakes, balances, held) = crate::economy::Treasury::take_tries(&tries, &mut 0).expect("the tries read back");
-    let back = crate::economy::Treasury::from_parts(stakes, balances, held, t.entries().to_vec());
+    let (stakes, balances, held, folded) = crate::economy::Treasury::take_tries(&tries, &mut 0).expect("the tries read back");
+    let back = crate::economy::Treasury::from_parts(stakes, balances, held, folded, t.entries().to_vec());
     assert!(back.escrow_of(&[7u8; 3]).is_none(), "the award rides its word's node, not the treasury's tries");
 }
 

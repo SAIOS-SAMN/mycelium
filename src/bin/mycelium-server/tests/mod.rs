@@ -6,6 +6,7 @@ mod genesis;
 mod pacing;
 mod patience;
 mod pointed;
+mod proofs;
 mod standing;
 mod strokes;
 mod tick;

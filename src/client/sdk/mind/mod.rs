@@ -6,10 +6,13 @@
 //! the quote, the speech, the adjudication, and what each writes.
 
 pub(super) mod seating;
+pub mod amend;
 pub(super) mod boot;
 pub(super) mod chatter;
 pub(super) mod contract;
 pub(super) mod converge;
+pub(crate) mod listed;
+pub(super) mod peers;
 pub(super) mod court;
 pub(super) mod factor;
 pub(super) mod family;
@@ -146,6 +149,8 @@ pub struct Mind {
     /// ACT1 (78.21(3)) — the court's height this voice had heard, and its
     /// own `K`, when its genome was last written whole; none before.
     pub(crate) genome_persisted: Option<(u64, u64)>,
+    /// MU-CLIENT §4.10, ROADMAP track 10 — amendments held beside under experience.
+    pub(crate) amendments: Vec<self::amend::Amendment>,
     /// THE SEALED SET (50.9): addresses a court refused, each with the mind's
     /// own K at which it heard the refusal (78.49). Read before any frame is
     /// built; a sealed tape is refused by the mind itself.
@@ -223,6 +228,11 @@ pub struct Mind {
     /// its meaning or it stands an aperture cycle unanswered. The mind's,
     /// never its conversation's carrier's.
     pub(crate) questions: crate::network::nerve::Keyed<self::chatter::Question>,
+    /// MU-CLIENT §5.3(5) (#145) — THE PEERS' FRAMES OF CLOSED QUESTIONS, by
+    /// the question's key: each closure's residue and the frames said under
+    /// it, kept while the closure is cited (its residue known in the
+    /// vocabulary) and let go where it is not.
+    pub(crate) closed_answers: crate::network::nerve::Keyed<self::peers::Closed>,
     /// MU-CLIENT §5.5 — THE SCENES THIS MIND SPOKE WORDS ON, what a heard
     /// word is read against, and the convergences found there
     /// (`mind::converge`).

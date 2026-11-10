@@ -112,9 +112,14 @@ MU-PRODUCT and MU-XSEPTUM; this section is the order they are used in.
 
 ### 2.3 Perceive and produce
 
-The agent perceives what the hypha or its seat exports (a task's train
-pairs, a feed family, a seat's senses), and produces signed work: a solve,
-a word, a sentence, a rewrite, an attestation (MU-CLIENT §5).
+The agent perceives what the hypha or its seat exports (a task, a feed
+family, a seat's senses), and produces signed work: a solve, a word, a
+sentence, a rewrite, an attestation (MU-CLIENT §5). A task is a family of
+manifolds: each sample a manifold, each train pair two manifolds and the
+map between them that a rule reconstructs, and each test input a manifold
+whose map the court withholds (proposal 78.179 §3). What the agent asserts
+carries its evidence as the word's stalk, a sheaf over the word's star in
+the cover's nerve (78.179 §2).
 
 ### 2.4 Get paid
 
@@ -713,10 +718,11 @@ candidate.
 **`NotSignatory` at the vertex (Built, B4).** Each universe act reads its
 domain's sitting reserve's alignment (one read per signing event of the
 reserve, never per receipt held, on the act's stroke; #118) before it
-seals; a key's own acts are never read. **Next:**
+seals; a key's own acts are never read. Each refusal at the tube stands
+on the boundary reading under `ACT_OBSERVE` (§5a.7, **Built**). **Next:**
 the tube between two universes bounded by the clauses both enabled (a
-mouth's far-end acceptance is not yet read), an act read under a changed
-clause as signed, and the boundary reading under `ACT_OBSERVE`.
+mouth's far-end acceptance is not yet read), and an act read under a
+changed clause as signed.
 
 ### 5a.5 The vertex: where a universe's cones join the hypha's
 
@@ -821,7 +827,7 @@ logs:
 | The named twists at each vertex (open obstructions), per domain | Rings of inner routes whose holonomy is not the identity, each with its exact lane vector | **Built** (`ChallengeRequest::Obstructions`, `Court::open_obstructions`) |
 | A fold's finality reading | Provisional or final, bonded or not | **Built** (`FinalityReading`) |
 | A universe's position and dilation from its anchors | Where it stands against TUniversal | **Built** (MU-CHRONOMETRY §3.3) |
-| The boundary reading: refusals at the universal core tube by name and by domain (`NotThroughCore`, `NotLawful`, `NotSignatory`) under `ACT_OBSERVE` | Where a universe's acts try to bypass the core, or fail the universal laws | **Specified** (B4) |
+| The boundary reading: refusals at the universal core tube by name and by domain (`NotThroughCore`, `NotSignatory`, `Bounded`, `Unaligned`, and a fold's `NotLawful`) under `ACT_OBSERVE`, one row per domain, act and name: the last refusal whole (the clause and the reserve's reading of it, or the laws broken), the court's height then, and the count since boot | Where a universe's acts try to bypass the core, or fail the universal laws | **Built** (B4; `observe::BoundaryReading`, tag 27, `--reading boundary`). Rows are kept only for domains the court holds |
 | Reconstruction events at the boundary: Collapse (a crossing admitted), Converse (two courts reconstruct one crossing, each from the evidence it holds), Collision (two crossings claim one structure, such as two folds over one head) | The boundary as reconstruction, read across a mesh | **Specified** (MU-SCIENCE §5.0; ROADMAP track 8) |
 | Each domain's signatory reading: the clause set its reserve signed (each clause's version, enabled or vetoed) and each divergence held | Which universes stand under which regulation, and which clauses each reads under an earlier version | **Specified** (B2) |
 | A tube's shared clauses: for a core tube between two universes, the clauses both enabled and each bound a veto sets | What the tube carries, and what it stops by name | **Specified** (B2) |
@@ -862,7 +868,7 @@ logs:
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
 | **B2** | Clause-by-clause signatures by adjudicated reading (each clause by its content, enabled or vetoed; the network clauses never vetoed; **Built**: the register, modes 7 and 8, `NotSignatory` at mode 8; each signing recorded on the ledger as `Cite::Signing` and the alignment reading on mode 9, §5a.4); `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/clauses/`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/persistence/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** (**Built**, the fold's transitions under L0) | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/court/admission/reconstructed.rs`, `src/server/cognition/cite.rs` | A wire change: a fold carries its transitions section, and `Uplinked` gains `NotLawful` (tag 11) and `Unread` (tag 12). No layout change: the receipt cites the fold's coordinates as before |
-| **B4** (**Built**: `NotThroughCore` and `NotSignatory` at the tube) | `NotThroughCore` naming the act and the domain; `NotSignatory` at the tube read from the alignment, a vetoed kernel clause bounding only what it governs; the boundary reading under `ACT_OBSERVE` and reconstruction events at the boundary with track 8 (open) | `src/court/admission/boundary.rs`, `src/server/cognition/boundary.rs`; `src/observe/`, `src/bin/mycelium-server/control.rs` for the reading | A wire change: each universe act's reply carries `Boundary` (§5a.5; MU-CONFORMANCE §2.2) |
+| **B4** (**Built**: `NotThroughCore` and `NotSignatory` at the tube; the boundary reading) | `NotThroughCore` naming the act and the domain; `NotSignatory` at the tube read from the alignment, a vetoed kernel clause bounding only what it governs; the boundary reading under `ACT_OBSERVE` (built); reconstruction events at the boundary with track 8 (open) | `src/court/admission/boundary.rs`, `src/server/cognition/boundary.rs` (`Court::at_tube`); `src/observe/boundary.rs`, `src/bin/mycelium-server/judge/observe.rs` for the reading | A wire change: each universe act's reply carries `Boundary` (§5a.5; MU-CONFORMANCE §2.2) |
 | **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |
 
 Claims each phase proves, by the algebra (MU-STANDARDS 3.1):

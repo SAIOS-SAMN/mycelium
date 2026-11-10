@@ -397,7 +397,7 @@ impl Mind {
         // MU-CLIENT §5.4 (E1) — each under the scene its thought was
         // perceived in.
         for (word, family) in thoughts {
-            let _ = self.speak_word_on(&word, &[], &family);
+            let _ = self.assert_word_on(&word, &[], &family);
         }
         // MU-CLIENT §4.4(3) — what each returned thought holds against its
         // orbit (its slips) is worked at its return.

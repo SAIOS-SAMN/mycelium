@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+# NETWORK — the cognitive POW++ network on one machine, as the documents
+# specify it: three hyphae (courts) bonded from a genesis allocation, MINDS
+# sovereign minds (`mycelium-client`, the reference mind, MU-CLIENT §1), each
+# on its own key, inside Noise on every session and in its chatter
+# (`Mind::open_with_noise`, MU-PRECURSORS §3.1), the minds chattering at one
+# rendezvous; a kernel's house founding a domain and a mind seated in it
+# (MU-CLIENT §6); the SDK client as the worker whose solves the courts pay,
+# on each hypha in turn under one key; the observer's frames
+# (scripts/observer), the timeline of the worker's journal and of a mind's
+# (scripts/timeline)
+# and the POW++ reading over the courts (`mycelium-server --console
+# --proofs`, MU-ECONOMY §0, §3.4, §5.3).
+#
+# Every node runs in a capped systemd user scope (MemoryMax, no swap,
+# CPUQuota), since the host's build slots share the machine. The network
+# serves until stopped (Ctrl-C, a TERM, or FOR seconds where
+# MYCELIUM_NETWORK_FOR is set); every process is then stopped by its PID,
+# and the homes and frames stay in DIR.
+#
+# Usage: scripts/network [DIR] [BASE_PORT] [MINDS]
+#   DIR        where the homes are written (default:
+#              $TMPDIR/mycelium-network, cleared first)
+#   BASE_PORT  the hyphae serve on BASE_PORT, +1, +2 (default 7800)
+#   MINDS      how many sovereign minds (default 3), each bootstrapped on
+#              hypha a, b, c in turn
+#
+# Environment:
+#   MYCELIUM_NETWORK_FOR     serve this many seconds, then stop (default:
+#                            until stopped)
+#   MYCELIUM_NETWORK_FRAME   seconds between frames (default 300): each frame
+#                            writes DIR/frames/N.txt with the observer's frame,
+#                            each court's POW++ reading, each mind's `now`
+#                            (the ask queue by path, ROADMAP §10) and each
+#                            node's resident memory and CPU time
+#   MYCELIUM_NETWORK_WORK    how many tasks the SDK client (the worker whose
+#                            solves are paid) asks of each hypha in turn,
+#                            under one key (default 30, the corpus)
+#   MYCELIUM_NODE_MEMORY     a node's MemoryMax (default 1G)
+#   MYCELIUM_NODE_CPU        a node's CPUQuota (default 50%)
+#   MYCELIUM_SEAT_TARGET     a target directory whose release build holds
+#                            examples/seats (the house that seats a mind) and
+#                            the mycelium-client that sits in it; default the
+#                            target below. Where no seats house is built, the
+#                            house founds its domain only and no mind is seated.
+#
+# The ARC-AGI-2 corpus is read from $MYCELIUM_CORPUS or data/arc-agi-2, its
+# first 30 training tasks posted as the network's corpus, as in
+# scripts/quickstart. The binaries are read from $CARGO_TARGET_DIR (default
+# target/).
+set -u
+cd "$(dirname "$0")/.." || exit 1
+ROOT=$(pwd)
+DIR="${1:-${TMPDIR:-/tmp}/mycelium-network}"
+BASE="${2:-7800}"
+MINDS="${3:-3}"
+CORPUS_ROOT="${MYCELIUM_CORPUS:-$ROOT/data/arc-agi-2}"
+TARGET="${CARGO_TARGET_DIR:-$ROOT/target}"
+SEAT_TARGET="${MYCELIUM_SEAT_TARGET:-$TARGET}"
+FOR="${MYCELIUM_NETWORK_FOR:-}"
+FRAME="${MYCELIUM_NETWORK_FRAME:-300}"
+MEM="${MYCELIUM_NODE_MEMORY:-1G}"
+CPU="${MYCELIUM_NODE_CPU:-50%}"
+SRV="$TARGET/release/mycelium-server"
+CLI="$TARGET/release/mycelium-client"
+HOUSE="$TARGET/release/examples/house"
+EX="$TARGET/release/examples/client"
+WORK="${MYCELIUM_NETWORK_WORK:-30}"
+SEATS="$SEAT_TARGET/release/examples/seats"
+SEAT_CLI="$SEAT_TARGET/release/mycelium-client"
+DECODE="$TARGET/release/mycelium-arc-agi"
+say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
+
+if [ ! -d "$CORPUS_ROOT/training" ]; then
+  echo "No ARC-AGI-2 corpus at $CORPUS_ROOT/training (see scripts/quickstart)."
+  exit 1
+fi
+case "$MINDS" in '' | *[!0-9]*) echo "MINDS is a count, not $MINDS"; exit 2 ;; esac
+if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$HOUSE" ] || [ ! -x "$EX" ] || [ ! -x "$DECODE" ]; then
+  say "building (release)"
+  cargo build --release --bins || exit 1
+  cargo build --release -p mycelium-sdk --example house --example client || exit 1
+  cargo build --release -p mycelium-source-arc-agi --bin mycelium-arc-agi || exit 1
+fi
+
+# NAMES[i] runs as PIDS[i]; every one is stopped by that PID.
+PIDS=()
+NAMES=()
+# capped NAME LOG CMD... — CMD in its own user scope, its PID kept. The scope
+# execs CMD, so the PID is the node's own.
+capped() {
+  local name=$1 log=$2
+  shift 2
+  systemd-run --user --scope -q -p MemoryMax="$MEM" -p MemorySwapMax=0 -p CPUQuota="$CPU" \
+    env "${NODE_ENV[@]}" "$@" > "$log" 2>&1 &
+  PIDS+=($!)
+  NAMES+=("$name")
+}
+NODE_ENV=(MYCELIUM_NODE=1)
+stop() {
+  trap - EXIT INT TERM
+  if [ -n "${SLEEPER:-}" ]; then kill "$SLEEPER" 2>/dev/null; fi
+  # Minds first (an interrupt saves each genome), then the courts.
+  for i in "${!PIDS[@]}"; do
+    case "${NAMES[$i]}" in hypha-*) ;; *) kill -INT "${PIDS[$i]}" 2>/dev/null ;; esac
+  done
+  for i in "${!PIDS[@]}"; do
+    case "${NAMES[$i]}" in hypha-*) kill -TERM "${PIDS[$i]}" 2>/dev/null ;; esac
+  done
+  wait 2>/dev/null
+  echo; echo "stopped; the homes and frames are in $DIR"
+}
+trap stop EXIT
+trap 'exit 0' INT TERM
+
+rm -rf "$DIR"; mkdir -p "$DIR/corpus" "$DIR/frames"
+"$DECODE" decode "$CORPUS_ROOT/training" "$DIR/corpus" 30 > /dev/null || exit 1
+PORT_a=$BASE; PORT_b=$((BASE + 1)); PORT_c=$((BASE + 2))
+port() { eval "echo \$PORT_$1"; }
+HYPHAE=(a b c)
+MINDLIST=()
+for i in $(seq 1 "$MINDS"); do MINDLIST+=("m$i"); done
+
+say "1. identities: one key per hypha, per mind, for the seated mind and the house"
+for n in "${HYPHAE[@]}"; do "$SRV" --home "$DIR/$n" --init || exit 1; done | tee "$DIR/init.txt"
+for m in "${MINDLIST[@]}" seated worker; do "$CLI" --home "$DIR/$m" --init || exit 1; done | tee -a "$DIR/init.txt"
+
+say "2. the genesis allocation: the hyphae bonded by every court, each mind funded"
+grep '^genesis line: hypha' "$DIR/init.txt" | cut -d' ' -f3- > "$DIR/genesis"
+grep '^genesis line: voice' "$DIR/init.txt" | cut -d' ' -f3-4 | sed 's/$/ 8 8 1 8/' >> "$DIR/genesis"
+cat "$DIR/genesis"
+for n in "${HYPHAE[@]}"; do
+  echo "127.0.0.1:$(port "$n")" > "$DIR/$n/bind"
+  for m in "${HYPHAE[@]}"; do
+    if [ "$m" != "$n" ]; then echo "127.0.0.1:$(port "$m")"; fi
+  done > "$DIR/$n/peers"
+  cp "$DIR/genesis" "$DIR/$n/genesis"
+done
+
+say "3. the corpus, signed by hypha a and registered on every hypha"
+"$SRV" --home "$DIR/a" --sign-corpus "$DIR/corpus" || exit 1
+for n in b c; do cp "$DIR/a/corpora/corpus.manifest" "$DIR/$n/corpora/"; done
+
+say "4. the courts, each capped at $MEM and $CPU: a mints the genesis, b and c adopt it"
+capped hypha-a "$DIR/a.log" "$SRV" --home "$DIR/a" --mint-genesis
+minted=0
+for _ in $(seq 1 120); do
+  if grep -q 'genesis .* written' "$DIR/a.log"; then minted=1; break; fi
+  if ! kill -0 "${PIDS[0]}" 2>/dev/null; then break; fi
+  sleep 1
+done
+if [ "$minted" != 1 ]; then echo "hypha a wrote no genesis; see $DIR/a.log"; exit 1; fi
+capped hypha-b "$DIR/b.log" "$SRV" --home "$DIR/b"
+capped hypha-c "$DIR/c.log" "$SRV" --home "$DIR/c"
+adopted=0
+for _ in $(seq 1 180); do
+  n=0
+  for h in b c; do
+    if "$SRV" --home "$DIR/$h" --check 2>/dev/null | grep -q 'genesis [0-9a-f]'; then n=$((n + 1)); fi
+  done
+  if [ "$n" = 2 ]; then adopted=1; break; fi
+  sleep 1
+done
+for h in "${HYPHAE[@]}"; do echo "$h: $("$SRV" --home "$DIR/$h" --check 2>/dev/null | grep '^  mesh:')"; done
+if [ "$adopted" != 1 ]; then echo "b and c did not adopt the genesis; see $DIR/b.log, $DIR/c.log"; exit 1; fi
+
+say "5. $MINDS sovereign minds, inside Noise, chattering at $DIR/chatter"
+i=0
+for m in "${MINDLIST[@]}"; do
+  h=${HYPHAE[$((i % 3))]}; i=$((i + 1))
+  echo "127.0.0.1:$(port "$h")" > "$DIR/$m/bootstrap"
+  # The first mind's journal carries the trace lines the timeline renders.
+  case "$m" in m1) NODE_ENV=(MYC_TRACE=1) ;; *) NODE_ENV=(MYCELIUM_NODE=1) ;; esac
+  capped "mind-$m" "$DIR/$m.log" "$CLI" --home "$DIR/$m"
+  echo "$m on hypha $h (pid ${PIDS[-1]})"
+done
+NODE_ENV=(MYCELIUM_NODE=1)
+
+say "6. a kernel's house on hypha c, and a mind seated in its domain"
+"$HOUSE" "$DIR/house" "127.0.0.1:$PORT_c" > "$DIR/house.txt" 2>&1
+grep -E '^(house|domain|crossing)' "$DIR/house.txt"
+DOMAIN=$(sed -n 's/^house \([0-9a-f]\{64\}\)$/\1/p' "$DIR/house.txt" | head -n1)
+echo "127.0.0.1:$PORT_c" > "$DIR/seated/bootstrap"
+if [ -n "$DOMAIN" ] && [ -x "$SEATS" ] && [ -x "$SEAT_CLI" ]; then
+  capped house-seats "$DIR/seats.log" "$SEATS" "$DIR/house" "127.0.0.1:$PORT_c" 30
+  capped mind-seated "$DIR/seated.log" "$SEAT_CLI" --home "$DIR/seated" --seat "$DOMAIN" 1
+  echo "seat 1 of domain ${DOMAIN:0:16}… listed by $SEATS; the seated mind sits it"
+else
+  echo "no seats house at $SEATS (MYCELIUM_SEAT_TARGET): the domain is founded and no mind is seated"
+fi
+
+# ONE FRAME: the observer's frame of the mesh, each court's POW++ reading,
+# each mind's `now` and each node's memory and CPU, written to DIR/frames.
+frame() {
+  local f="$DIR/frames/$1.txt"
+  {
+    echo "### frame $1"
+    echo "### keys (name, then the key's head the readings name it by)"
+    sed -n "s|^$DIR/\([a-z0-9]*\): [a-z]* key .* vk \([0-9a-f]\{8\}\).*$|\1 \2|p" "$DIR/init.txt"
+    echo "### observer"
+    MYCELIUM_SERVER="$SRV" scripts/observer once "$DIR/a" "$DIR/b" "$DIR/c"
+    echo "observer exit $?"
+    echo "### proofs"
+    "$SRV" --console --home "$DIR/a" --proofs
+    echo "proofs exit $?"
+    for m in "${MINDLIST[@]}" seated; do
+      [ -f "$DIR/$m/voice.key" ] || continue
+      vk=$(sed -n "s|^$DIR/$m: voice key .* vk \([0-9a-f]\{64\}\)$|\1|p" "$DIR/init.txt" | head -n1)
+      echo "### now $m"
+      "$CLI" --home "$DIR/$m" --call now --mind "${vk:0:8}"
+    done
+    echo "### nodes (name pid rss_kib cpu_time)"
+    for i in "${!PIDS[@]}"; do
+      echo "${NAMES[$i]} ${PIDS[$i]} $(ps -o rss=,time= -p "${PIDS[$i]}" 2>/dev/null || echo 'stopped')"
+    done
+  } > "$f" 2>&1
+  echo "frame $1 written to $f"
+}
+
+say "7. the SDK client works $WORK tasks on each hypha in turn, under one key"
+# The SDK client (sdk/examples/client.rs) is the worker whose solves the
+# courts pay, as in scripts/quickstart. Each court's registry is its own
+# today (MU-ECONOMY §11.3 F2), so a closure presented at a second court is
+# a second mint of one point, which the POW++ reading names (§3.4).
+if [ -x "$EX" ]; then
+  for h in "${HYPHAE[@]}"; do
+    # MYC_TRACE: each reader of the worker's stroke writes its trace line,
+    # the journal the timeline renders (as in scripts/quickstart).
+    MYC_TRACE=1 "$EX" "$DIR/worker" "127.0.0.1:$(port "$h")" "$WORK" > "$DIR/worker-$h.txt" 2>&1
+    echo "worker on $h: exit $?, $(grep -c 'solved: first' "$DIR/worker-$h.txt") first closures, $(grep -c 'solved: ' "$DIR/worker-$h.txt") solves"
+  done
+else
+  echo "no SDK client at $EX: no worker"
+fi
+
+say "8. the first frame: observer, POW++ reading, minds' now, nodes"
+frame 0
+sed -n '/^### proofs/,/^proofs exit/p' "$DIR/frames/0.txt" | grep -E 'POW\+\+|paid S:G:T:H|equivocation|no closure' | head -n 20
+
+say "9. the timeline of the worker's journal on hypha a (scripts/timeline)"
+# A sovereign mind asks for a task only under strain (MU-CLIENT §4.13), so
+# an idle mind's journal may hold no trace line yet; the worker's always
+# does where it extracted a family. m1's timeline is rendered in each frame.
+if [ -f "$DIR/worker-a.txt" ]; then scripts/timeline "$DIR/worker-a.txt" > "$DIR/frames/timeline-worker.txt" 2>&1; echo "timeline exit $? ($DIR/frames/timeline-worker.txt)"; fi
+
+say "the network is running"
+cat <<EOF
+  hyphae    127.0.0.1:$PORT_a  127.0.0.1:$PORT_b  127.0.0.1:$PORT_c   (logs: $DIR/{a,b,c}.log)
+  minds     ${MINDLIST[*]} seated   (logs: $DIR/<mind>.log; rendezvous $DIR/chatter)
+  observer  MYCELIUM_SERVER=$SRV scripts/observer 5 $DIR/a $DIR/b $DIR/c
+  POW++     $SRV --console --home $DIR/a --proofs
+  a mind    $CLI --home $DIR/m1 --call now
+  frames    $DIR/frames (one every $FRAME s)
+  pids      $(for i in "${!PIDS[@]}"; do printf '%s=%s ' "${NAMES[$i]}" "${PIDS[$i]}"; done)
+
+Ctrl-C (or kill -TERM $$) stops the network; each node is stopped by its pid.
+EOF
+n=1
+elapsed=0
+while [ -z "$FOR" ] || [ "$elapsed" -lt "$FOR" ]; do
+  # Waited on in the background, so Ctrl-C (or a TERM) reaches the trap at once.
+  sleep "$FRAME" & SLEEPER=$!; wait "$SLEEPER"
+  elapsed=$((elapsed + FRAME))
+  frame "$n"
+  if [ -f "$DIR/m1.log" ]; then scripts/timeline "$DIR/m1.log" > "$DIR/frames/timeline-$n.txt" 2>&1; fi
+  n=$((n + 1))
+done

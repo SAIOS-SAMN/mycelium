@@ -91,13 +91,19 @@ fn founded() -> Court {
 /// The domain founded and its reserve designated, the Concordance not
 /// signed.
 fn unsigned() -> Court {
+    unsigned_as(&domain_key(), &reserve_key(), &line_key())
+}
+
+/// [`unsigned`] for the domain `domain`, its reserve `reserve` and its line
+/// `line`.
+fn unsigned_as(domain: &SigningKey, reserve: &SigningKey, line: &SigningKey) -> Court {
     let mut k = Court::new();
-    let mut tiers = vec![vk(&reserve_key()), vk(&line_key())];
+    let mut tiers = vec![vk(reserve), vk(line)];
     tiers.sort();
-    let genesis = DomainGenesis { domain: vk(&domain_key()), tiers }.sign(&domain_key());
+    let genesis = DomainGenesis { domain: vk(domain), tiers }.sign(domain);
     assert!(matches!(k.hear_domain(&genesis), Founded::Sealed { .. }), "founded");
-    let r = Reservation { domain: vk(&domain_key()), tier: vk(&reserve_key()), nonce: [0; 32] };
-    assert!(matches!(k.designate_reserve(&r.sign(&domain_key())), Founded::Reserved { now: true, .. }), "reserved");
+    let r = Reservation { domain: vk(domain), tier: vk(reserve), nonce: [0; 32] };
+    assert!(matches!(k.designate_reserve(&r.sign(domain)), Founded::Reserved { now: true, .. }), "reserved");
     calibrate(&mut k);
     k
 }
@@ -368,4 +374,44 @@ fn signed_reserve_lawful_crossing_admitted() {
     let entry = LedgerEntry { domain, u: 1, commitment: [1; 32], events: [0; 32], point: fp(10), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
     let anchored = k.ledger(&entry.signed(&reserve_key()), Some(fp(10)));
     assert!(!matches!(anchored, Ledgered::Boundary(_)), "the anchor reaches the court's own checks: {anchored:?}");
+}
+
+/// B4 — THE BOUNDARY READING (MU-HOSTING §5a.7): each refusal the court
+/// answers at a tube stands on the reading under its domain, act and name,
+/// the last one whole with its height and the count since boot. An unsigned
+/// reserve's fold refused twice is one `NotSignatory` row counted twice, its
+/// clause and reading kept; a line's fold is a `NotThroughCore` row; once
+/// signed, a fold that breaks temporal monotonicity is a `NotLawful` row
+/// naming the law; and a crossing admitted adds nothing. A domain of its own
+/// keeps the rows apart from every other test's court.
+#[test]
+fn tube_refusals_read_by_domain_act_and_name() {
+    use crate::court::admission::{Boundary, UniverseAct};
+    use crate::observe::{boundary_reading, AtTube, TubeRow};
+    use crate::physics::laws::clauses::ClauseReading;
+    let (domain_k, reserve_k, line_k) = (SigningKey::from_bytes(&[41; 32]), SigningKey::from_bytes(&[42; 32]), SigningKey::from_bytes(&[43; 32]));
+    let domain = vk(&domain_k);
+    let rows = || -> Vec<TubeRow> { boundary_reading().rows.into_iter().filter(|r| r.last.domain() == domain).collect() };
+    let mut k = unsigned_as(&domain_k, &reserve_k, &line_k);
+    assert!(rows().is_empty(), "nothing refused yet");
+    let crossing = fold(&reserve_k, 7, vec![lawful()]).sign(&reserve_k);
+    let first = k.hear_uplink(&crossing);
+    assert_eq!(k.hear_uplink(&crossing), first, "refused alike twice");
+    let off = k.hear_uplink(&fold(&line_k, 7, vec![lawful()]).sign(&line_k));
+    assert_eq!(off, Uplinked::Boundary(Boundary::NotThroughCore { act: UniverseAct::Fold, domain }));
+    let held = rows();
+    let unsigned = held.iter().find(|r| r.last.name() == "NotSignatory").expect("the unsigned reserve's row");
+    let Uplinked::Boundary(refused) = first else { panic!("refused at the tube") };
+    assert_eq!((unsigned.times, unsigned.height, &unsigned.last), (2, k.height(), &AtTube::Refused(refused)), "one row, counted twice, the last whole");
+    assert!(matches!(&unsigned.last, AtTube::Refused(Boundary::NotSignatory { reading, .. }) if **reading == ClauseReading::Unread), "the reading kept");
+    let core = held.iter().find(|r| r.last.name() == "NotThroughCore").expect("the line's row");
+    assert_eq!((core.times, core.last.act()), (1, UniverseAct::Fold), "the line's fold, apart");
+    assert_eq!(held.len(), 2, "one row per name");
+    signs(&mut k, &reserve_k);
+    assert!(matches!(k.hear_uplink(&fold(&reserve_k, 7, vec![lawful(), still()]).sign(&reserve_k)), Uplinked::NotLawful { .. }));
+    let broke = rows().into_iter().find(|r| r.last.name() == "NotLawful").expect("the unlawful fold's row");
+    assert_eq!((broke.times, broke.last), (1, AtTube::NotLawful { domain, laws: vec![Law::Time] }), "the law it broke, named");
+    let before = rows();
+    assert!(matches!(k.hear_uplink(&crossing), Uplinked::Admitted { .. }), "signed, it crosses");
+    assert_eq!(rows(), before, "an admission is no refusal");
 }

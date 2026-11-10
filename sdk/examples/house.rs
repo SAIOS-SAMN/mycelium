@@ -8,7 +8,8 @@
 //! `house <house home> <hypha address>`
 //!
 //! 1. Identity — the house's Ed25519 key, read from `<house home>/voice.key`
-//!    or minted there.
+//!    or minted there; its session inside Noise on the home's static key
+//!    (`Session::with_noise`, the hyphae pinned in `<house home>/noise.pins`).
 //! 2. The Concordance — its clause register read (`ACT_LAWS` mode 7), each
 //!    clause's fixtures reconstructed here (`house::sign_concordance`) and
 //!    the readings signed by the key, presented to the hypha (mode 8), which
@@ -106,7 +107,16 @@ fn main() -> ExitCode {
     let (voice, key) = mycelium_sdk::voice::load_or_mint(&format!("{home}/voice.key"));
     let domain = key.verifying_key().to_bytes();
     println!("house {}", hex32(&domain));
-    let session = Session::open(endpoint, voice);
+    // Every act inside Noise where the hypha speaks it, on the house home's
+    // static key, the hyphae pinned beside it (MU-PRECURSORS §3.1).
+    let noise = match mycelium_sdk::session::NoiseHome::open(std::path::Path::new(home)) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("{home}: the Noise home does not open: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let session = Session::open(endpoint, voice).with_noise(noise);
 
     let served = match session.speak(encode_concordance_request()) {
         Ok(reply) => decode_concordance_reply(&reply),

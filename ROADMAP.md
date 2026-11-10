@@ -38,9 +38,9 @@ xylarium pin it. The table below is kept as the record of what it closed.
 | Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break, N4's `ListingField`→`ListingCoherence` and `Coord::Shell`→`Coord::Cells` ruled and built); #55 done |
 | rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | Done: `v0.3.0` tagged on rc.3's commit; both peers' KERNEL conformance reads passed; netstratum and xylarium pinned |
 
-**1a. In progress: v0.4.0.** A new break, in which word, chart and task
-addresses, act layouts and signing domains may change (CHANGELOG ›
-Unreleased, held in `changes/`). Merged so far, each with its PR:
+**1a. Release candidate: v0.4.0-rc.1** (2026-11-10; the scope frozen). The
+break in which word, chart and task addresses, act layouts and signing
+domains changed (CHANGELOG › 0.4.0-rc.1). What it holds, each with its PR:
 - Track 26 S4b–S4d: rank-`n` perception, transduction as factorisation,
   the hypha serving any rank and the claim of factorisation (#80); the
   word machinery on `SectionSample`/`SectionSite`, `family::Grid` retired,
@@ -57,23 +57,46 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 - LAW-COORDINATE v1: `forms::coordinate`, proposal 78.173 (#106).
 - Naming: track 11 closed (#89), prose and identifiers say reconstruct and
   sample (#104, #107).
+- Track 24 B2 and B3: the Concordance signed clause by clause by
+  reconstructing fixtures, `CONCORDANCE_HASH` retired (#109); each signing
+  an event on the ledger, alignment read from it (`ACT_LAWS` mode 9, #114);
+  a crossing at the universal core tube reconstructed under the universal
+  laws, refused `NotThroughCore` or `NotSignatory` (`src/court/admission/boundary.rs`).
+- LAW-COORDINATE v2–v4: the advance, an event's bell, the merger and
+  fission (fixtures 7–10, read in `forms/src/tests/motion.rs`; #110);
+  vector lanes, H in degrees on turning planes, open lanes (#117, #129);
+  the composition of turnings, fixture 11b (#186). LAW-PASSAGE v3, the
+  pole swap (#116).
+- The development standard: done is `cargo clippy` and `cargo test`, the
+  gate as workspace tests, changelog fragments (#113); CI runs both as
+  `clippy and tests` (#121, #223).
+- Track 26 field stages 1–5 and stage 4 in part: the sample lifted into
+  the field's atlas, wells on attractors, nuclei as second moments, the
+  field's motions as one exact group, nesting as a fibration, the manifold
+  carrier (#131, #153, #175, #183, #191, #197, #203, #207, #208, #210).
+- The client mind (track 10, client stream): flux on its lanes, signed
+  receipts and equivocation proofs, Rewrites, peer records, cohesion, a
+  held question carried to a court and K3, tasks asked only under strain
+  (#163, #170, #179, #201, #213, #215, #217, #219).
+- The server: π* bound at the A9 judgement (#214); a fold's checkpoint
+  keeps issuance by source (#220); the cognitive POW++ network on one
+  machine, `scripts/network` and `mycelium-server --console --proofs`
+  (#216); RETRIEVE and the priced coordinate retrieval (#172, #185).
 
 | Item | Issue | State |
 |---|---|---|
-| B2: signing the Concordance clause by clause by reconstructing fixtures; `CONCORDANCE_HASH` retired | track 24 | Built on branch `b2-signing`, merging |
-| Development standard: done is `cargo clippy` and `cargo test`; the gate as workspace tests; CHANGELOG fragments; documents name what exists | — | Built on branch `workflow-standard`, merging |
-| B2, next stage: each kernel's reading and signature recorded on the ledger; v0.3.0's agreed clauses carried forward; alignment read from the hypha | track 24 | Built on branch `b2-ledger` (`Cite::Signing`, `ACT_LAWS` mode 9, `clauses::history`) |
-| B3, B4: a domain's crossings refused `NotSignatory` at the universal core tube until its sitting reserve's alignment converses on every network clause of the version served; the boundary reading | track 24 | Built on branch `b3-vertex` (the fold's transitions under L0, `NotThroughCore`, `NotSignatory` at the tube); the boundary reading open |
-| LAW-COORDINATE fixtures 7–10 (advance, an event's bell, merger with offsets, fission) | 78.173 | Next; exact statements agreed with netstratum |
+| B4: the boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | track 24 | The boundary reading built (`observe::BoundaryReading`, `--reading boundary`); reconstruction events open, with track 8 |
+| A reflex act waits unbounded behind a long court hold; the SDK session's read is `Pace::Blocking` (law 9) | [#221](https://github.com/SAIOS-SAMN/mycelium/issues/221) | Filed; design to rule before code |
+| LAW-COORDINATE fixtures 7–10 and 13–16 served as a clause | 78.173 | Built and read locally; serving them needs a fixture operation and object tag, a wire change left to the clause's drafting (78.173 step 4) |
 | LAW-FIELD v1, agreed with the peer kernels | [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) | 78.171 amended (a–e, 2026-11-05): the pole basis, the signature per plane, the winding with each phase in degrees, spheres as enclosures only, the orbit's shear per netstratum docs/121; fixtures read by netstratum; xylarium's reading owed |
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
-| Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
-| Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
+| Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32), [#134](https://github.com/SAIOS-SAMN/mycelium/issues/134) | Field stages 1–5 built; the remaining stages in progress on the client stream |
+| Track 10: the sovereign mind, thinking about adjudicated perception | [#135](https://github.com/SAIOS-SAMN/mycelium/issues/135) | In progress on the client stream |
 | The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Ruled 2026-11-06 (78.180 ruling 6), to build: no letter written by hand past `n = 3` (section samples, letters adjoined only by the presentation's growth); the ray a translation versor of the sample's rank |
-| Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
-| Documentation audit: bounded documents, status out of prose | — | After the development standard |
+| Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25, [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) | Drafted for v0.5.0 (#178, #181); the writing of X1's parts waits on #160 |
+| Documentation audit: bounded documents, status out of prose | — | Open |
 
-**1b. Next, v0.5.0: the economy as motions.** The release's headline,
+**1b. Next, v0.5.0: the economy as motions** (drafts #178, #181, #189, opened onto rc.1). The release's headline,
 ruled 2026-11-05 and specified in
 [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md); §9 there lists the present
 implementation each item replaces. A wire and persisted-layout change,
@@ -182,7 +205,12 @@ Ed25519 and verified on admission. The track adds:
   network-contract change;
 - address discovery beyond the provisioned `peers`;
 - signed re-provisioning of a node's `bind` and `peers` after first boot;
-- deployment tooling for hosts beyond one machine.
+- deployment tooling for hosts beyond one machine. On one machine,
+  `scripts/network` (README, Quick start) stands the whole network up: three
+  hyphae from a genesis allocation, sovereign minds inside Noise
+  chattering at one rendezvous, a house with a seated mind, each node in
+  a capped systemd user scope, with the observer's frames and the POW++
+  reading (`mycelium-server --console --proofs`) written as it serves.
 
 ## 6. Ledger evolution
 
@@ -1440,7 +1468,7 @@ adjudicated reading (B2). Each phase is one commit:
      lanes, open lanes by ruled opening, the caller's intervals, the
      re-origin across a throat and dilation invariance), with fixtures
      1–16 in `forms/src/tests/`. The clause register serves v3 (a wire
-     change to the coordinate's writing, `changes/coordinate-v3.md`).
+     change to the coordinate's writing; CHANGELOG 0.4.0-rc.1, *FORMS-COORDINATE v3*).
      Next: rewire `chronometry::tuniversal::TPoint` as the form's
      one-component non-negative case (claimed today by writing and
      order), and the ruled act that opens a lane. Open: the
@@ -1486,9 +1514,12 @@ adjudicated reading (B2). Each phase is one commit:
      `key_own_act_unbound_by_the_tube`,
      `kernel_clause_veto_bounds_only_its_clause`,
      `signed_reserve_lawful_crossing_admitted`.
-   - Open: the boundary reading under `ACT_OBSERVE`; a tube between two
-     universes bounded by both sides' clauses (a mouth's far-end
-     acceptance is not read).
+   - **Built**: the boundary reading under `ACT_OBSERVE` (MU-HOSTING
+     §5a.7): each refusal at the tube by domain, act and name, the last
+     whole, its height and count (`tube_refusals_read_by_domain_act_and_name`,
+     `boundary_reading_reads_back_each_name`).
+   - Open: a tube between two universes bounded by both sides' clauses (a
+     mouth's far-end acceptance is not read).
    - **Built** (#118): the per-crossing alignment read costs the reserve's
      signing events, never the ledger. The ledger keeps where each signing
      event stands (`kernel‖stamp‖n`, coordinates only,
@@ -1541,13 +1572,12 @@ for each phase:
    (MU-STANDARDS 3.1). Include the `compile_fail` doc tests that prove a
    wrong structure does not compile.
 4. Build the phase, and hold it to
-   [AGENTS › Definition of done](AGENTS.md#definition-of-done) before the
-   pull request.
+   [AGENTS › Checks](AGENTS.md#checks) before the pull request.
 5. Register each guard the phase builds in `gate/src/drift.rs`
    (regression, ruling, guarding type, claim); the gate refuses an entry
    whose type or claim is missing.
-6. Open the pull request from the template; CI's `check` runs the
-   definition of done on it. A
+6. Open the pull request from the template; CI's `clippy and tests`
+   runs the two commands on it. A
    phase that changes the wire or the ledger layout says so under
    *Network contract*.
 
@@ -1728,7 +1758,7 @@ hypha holds tasks as families of samples and knows no source.
 
 **How to build a phase:** as in track 25 (a branch; the specification read
 whole; the claims first; the
-[Definition of done](AGENTS.md#definition-of-done); one commit; a pull
+[Checks](AGENTS.md#checks); one commit; a pull
 request that names #32).
 
 Each phase is one commit:
@@ -1894,8 +1924,18 @@ Each phase is one commit:
      site and the frame's momentum read the re-period of each phase
      (`element::Reperiod`, `p′ᵢ/pᵢ` axis by axis). Claims
      `reperiod_carries_sites_between_extents_phase_by_phase`,
-     `momentum_read_per_phase_across_anisotropic_reperiod`. Open: the
-     magnitude's planar chains (`family::magnitude`, MU-SENSING §8).
+     `momentum_read_per_phase_across_anisotropic_reperiod`.
+   - **Built** (branch `sensing-magnitude`; ruled 2026-11-06 on #32): a
+     family's magnitude is read at the samples' own rank, S and G from
+     each pair's projected record and H from the boundary by grade
+     `n − 1` (the chain-length term retired); a pair whose record does not
+     read is held as residue citing its refusal (`OffSite`), contributing
+     nothing. The genesis bond and the mind's `family_magnitude` read
+     alike; the bond's value changes, a recut. Claims
+     `magnitude_reads_counts_at_rank_n_and_h_by_grade_n_minus_one`,
+     `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`,
+     `scaled_pair_is_measured_refused_pair_is_residue` (a projection that
+     lands resolves an unequal enclosure; confirmed on #32).
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
@@ -1965,7 +2005,7 @@ Each phase is one commit:
      denominator is its extent.
    - Claims: `task_round_trips_samples_of_rank_n`,
      `extent_past_its_field_is_refused_never_widened`,
-     `symbol_bytes_overflow_is_refused_by_name`.
+     `symbol_bytes_refuses_overflow`.
    - **Built**, inside v0.3.0's break; `WIRE_VERSION` stays `0x0200`
      (no tag carries it yet: v0.3.0-rc.2 is `0x0104`), and the solve act
      is signed as `mycelium solve v3`.
@@ -2153,7 +2193,16 @@ Each phase is one commit:
         `reversal_is_the_reflection_in_its_own_unit_alone`,
         `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s`,
         `pair_lifted_as_transitions_between_its_bodies_charts`.
-        **Owed:** the nesting as a fibration of levels.
+        The nesting as a fibration of levels (branch `field-s4-fibration`):
+        an axis the family's nesting takes apart (`Taken::Apart`, the
+        reading ruled on #32 and built in #176) is a level
+        (`carrier::Level`), its base the coarse phase on the axis's own
+        plane, one point per block, and over each base point the fibre
+        the block's own field, lifted with its own atlas, the separator
+        left out; a sample lifts as its whole lift and its levels
+        (`carrier::Fibred::of`); an axis kept whole or held superposed is
+        no level. Claims `axis_taken_apart_lifts_as_a_fibration_of_levels`,
+        `axis_kept_whole_is_no_level`. Stage 4 is then built.
      5. S8, the field's motions as one group: the turning, the reflection
         and the pole swap (`forms::passage::Poles::swap`) and the
         inversion in the membrane, the boost on a frame plane, the
@@ -2259,7 +2308,7 @@ Each phase is one commit:
       - Claims: the five above, `rank_one_task_is_perceived`,
         `no_axis_is_privileged_in_perception`,
         `bodies_connect_by_shared_cell_of_grade_n_minus_one`,
-        `rank_beyond_the_alphabet_is_refused_by_name`.
+        `perspective_refuses_rank_beyond_alphabet`.
       - No task, word or chart address changes.
     - **Open** (the next phase):
       - the word, chart and rule-language machinery's rank-2 carrier
@@ -2350,7 +2399,7 @@ Each phase is one commit:
       symbol set refuses a test input of another width by name
       (`SymbolSet::of_family` returns `SymbolRefusal::Width`). Claims
       `section_site_is_the_sample_coordinate_restricted_by_the_perspective`,
-      `test_input_of_another_width_refuses_the_family_set_by_name`. No
+      `symbol_set_refuses_differing_test_width`. No
       wire, task, word or chart address change.
     - **Stage 2b, the planar tuples held as `SectionSite`** (branch
       `s4d2b-section-tuples`):

@@ -47,8 +47,8 @@ pub type Spores = Keyed<Vec<Shape>>;
 /// The input bodies a family's frames were perceived as, by chart.
 pub fn spores_of(frames: &crate::transducer::family::Frames) -> Spores {
     let mut spores: Spores = Keyed::new();
-    for (ins, _) in frames {
-        for b in ins {
+    for pair in frames {
+        for b in &pair.input {
             let key = b.moduli.key();
             match spores.get_mut(key.as_bytes()) {
                 Some(v) => v.push(b.shape.clone()),

@@ -28,10 +28,10 @@ and those documents differ, the documents govern.
    preamble (the laws). Search for each section a code comment cites
    before changing that code.
 5. **Check the tree first**: run the two commands of the
-   [Definition of done](#definition-of-done) on the unchanged tree.
+   [Checks](#checks) on the unchanged tree.
 6. **Work one item**, as the ROADMAP track's *How to build a phase*
    says where it has one: a worktree and branch, the claims first, then
-   the [Definition of done](#definition-of-done), then a pull request that
+   the [Checks](#checks), then a pull request that
    names the issue (`Closes #N`).
 
 Questions of design that the specification does not settle are not
@@ -87,21 +87,27 @@ lawful at one site and a defect at another.
 - Keep public documents general. Integration specifics of a particular
   peer kernel belong in that kernel's own repository.
 
-## Definition of done
+## Checks
 
 Every developer of this tree is an AI agent; no person is in the loop
-(coordinator ruling). A change is done when both commands pass on its
-branch, run in its own worktree:
+(coordinator ruling). Two commands check every change, run on its branch
+in its own worktree:
 
 ```sh
 cargo clippy --release --workspace --all-targets -- -D warnings
 cargo test --release --workspace
 ```
 
-CI (`.github/workflows/definition-of-done.yml`, the required status `clippy and tests`) runs both commands on every pull request, with the corpus present; workers still run them locally before pushing, under the machine's memory cap.
+CI (`.github/workflows/clippy-and-tests.yml`, workflow and required
+status `clippy and tests`) runs both on every pull request, with the
+corpus present; workers still run them locally before pushing, under the
+machine's memory cap. CI runs these two commands and nothing else: a
+green status says nothing of the quickstart, the changelog fragment or a
+network contract's approval.
 
-Nothing else is required, with one addition: a change to the wire or the
-mesh also runs `scripts/quickstart DIR BASE_PORT`. It brings up a
+A change is ready for a pull request when both pass on its branch with
+main merged in, its changelog fragment is written, and, where it changes
+the wire or the mesh, `scripts/quickstart DIR BASE_PORT` passes. It brings up a
 three-hypha network from nothing, works the SDK client, the conformance
 suite and a house against it, then runs `scripts/observer` over its mesh
 and `scripts/timeline` over the client's journal; either failing fails
@@ -154,8 +160,7 @@ How the work is held:
 
 ## Before a pull request
 
-- The [Definition of done](#definition-of-done) holds on the branch with
-  main merged in.
+- The [Checks](#checks) pass on the branch with main merged in.
 - Read the change against [The regressions that recur](#the-regressions-that-recur).
 - If the change touches the wire, the ledger layout, a law version or the
   Concordance, state it under *Network contract* in the pull request. It then needs operator

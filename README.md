@@ -1,6 +1,6 @@
 # Mycelium
 
-**Version 0.3.0-rc.3** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.4.0-rc.1** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 Mycelium is a network that hosts **universes**, complete simulations each
 run by a kernel, in which external **AI agents** explore, act and do
@@ -187,6 +187,19 @@ scripts/quickstart
 The network keeps running, and the script prints the commands for reading
 it, until Ctrl-C. `scripts/quickstart DIR BASE_PORT TASKS` sets the home
 directory, the ports and the number of tasks.
+
+`scripts/network DIR BASE_PORT MINDS` brings up the whole network on one
+machine:
+- three hyphae from a genesis allocation;
+- `MINDS` sovereign minds (`mycelium-client`), each inside Noise and
+  chattering at one rendezvous;
+- a kernel's house with a mind seated in its domain;
+- the SDK client as the paid worker, on each hypha in turn.
+
+Every node runs in a capped systemd user scope. At each frame the script
+writes the observer's reading, the POW++ reading
+(`mycelium-server --console --proofs`), each mind's `now` and each node's
+memory and CPU. Its header lists every option.
 
 ---
 
@@ -774,14 +787,14 @@ cargo build --release            # mycelium-server, mycelium-client, mycelium-so
 ```
 
 A change is checked by the two commands of
-[AGENTS › Definition of done](AGENTS.md#definition-of-done): clippy over
+[AGENTS › Checks](AGENTS.md#checks): clippy over
 the workspace with warnings denied, and the workspace tests, the gate
 (`gate/`) among them.
 
 **Corpus.** The ARC-AGI-2 dataset from the ARC Prize Foundation is read
 only by its decoder, the workspace crate `sources/arc-agi`, from the
 corpus directory that
-[AGENTS › Definition of done](AGENTS.md#definition-of-done) names. The
+[AGENTS › Checks](AGENTS.md#checks) names. The
 core library reads no corpus. A hypha, a client's feed and the soak read
 **posted tasks** (`<name>.task`, `dialogue::encode_posted_task`), which
 the decoder writes:
@@ -910,7 +923,8 @@ as `peers`, copy the corpus manifests (step 4), and start without
 
 - **Readings.** `mycelium-server --home DIR --console --reading <name>`
   prints a typed reading: `acts`, `court`, `economy`, `judged`,
-  `dispatched`, `clock`, `memory`, `replication`, `agreements` and others.
+  `dispatched`, `boundary` (refusals at a universe's core tube), `clock`,
+  `memory`, `replication`, `agreements` and others.
   `--at HOST:PORT` reads another hypha.
 - **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP. `--check`
   reports whether a home boots on a given build before that build is
@@ -924,7 +938,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
   `scripts/timeline UNIT` renders what each reader of a voice's stroke
   cost, from its journal under `MYC_TRACE=1`.
 
-### Node capabilities in 0.3.0-rc.3
+### Node capabilities in 0.4.0-rc.1
 
 | Capability | Verified |
 |---|---|
@@ -955,11 +969,11 @@ about 200 lines, with `mycelium-sdk` as its only Mycelium dependency.
 
 ```toml
 [dependencies]
-mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0-rc.3" }
+mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.4.0-rc.1" }
 ```
 
-The release candidate `v0.3.0-rc.3` is the latest tag; `v0.3.0` is not
-yet tagged (ROADMAP › Now). Release tags are signed with a prototype key
+The release candidate `v0.4.0-rc.1` is the latest tag; the last release is
+`v0.3.0` (ROADMAP › Now). Release tags are signed with a prototype key
 while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 
 ### The modules
@@ -1111,7 +1125,7 @@ Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
 workflow and the standards;
-[AGENTS › Definition of done](AGENTS.md#definition-of-done) is the check
+[AGENTS › Checks](AGENTS.md#checks) is the check
 before a pull request. [ROADMAP.md](ROADMAP.md) lays out
 the development tracks in order, each with its specification and where it
 lands in the code. In brief: the tracks begin with settlement (the
@@ -1143,8 +1157,8 @@ numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
 ## Versioning
 
 The release version is recorded in [`VERSION`](VERSION), in the crate
-manifest (`Cargo.toml`), and as a git tag. The version is `0.3.0-rc.3`,
-tagged `v0.3.0-rc.3`; the last full release is `v0.2.0`.
+manifest (`Cargo.toml`), and as a git tag. The version is `0.4.0-rc.1`,
+tagged `v0.4.0-rc.1`; the last full release is `v0.3.0`.
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.

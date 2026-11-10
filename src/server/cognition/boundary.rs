@@ -25,6 +25,11 @@ impl Court {
     /// by clause of the register served. `NotThroughCore` where the domain
     /// has no sitting reserve: no act of it reaches the vertex.
     pub(crate) fn signatory(&mut self, act: UniverseAct, domain: [u8; 32], reads: &mut crate::physics::Budget) -> Result<(), Boundary> {
+        self.signatory_read(act, domain, reads).map_err(|b| self.at_tube(b))
+    }
+
+    /// The reading itself, every refusal unnoted.
+    fn signatory_read(&mut self, act: UniverseAct, domain: [u8; 32], reads: &mut crate::physics::Budget) -> Result<(), Boundary> {
         let Some(reserve) = self.reserve_of(&domain) else { return Err(Boundary::NotThroughCore { act, domain }) };
         let unaligned = |why| Boundary::Unaligned { act, domain, why };
         let held = register().map_err(|r| unaligned(AlignmentRefusal::Unregistered { id: r.id }))?;
@@ -55,5 +60,13 @@ impl Court {
     pub(crate) fn signatory_now(&mut self, act: UniverseAct, domain: [u8; 32]) -> Result<(), Boundary> {
         let mut reads = self.physics.stroke();
         self.signatory(act, domain, &mut reads)
+    }
+
+    /// A REFUSAL AT THE TUBE, ANSWERED: noted on the boundary reading at
+    /// this court's height (MU-HOSTING §5a.7, B4), then returned as the
+    /// reply carries it. The reading is never read back by the court.
+    pub(crate) fn at_tube(&self, b: Boundary) -> Boundary {
+        crate::observe::note_at_tube(&crate::observe::AtTube::Refused(b.clone()), self.height());
+        b
     }
 }
