@@ -195,10 +195,11 @@ pub(super) fn family_percept(
         // THE FRAMES THE STROKE WAS SIZED BY, perceived once by the caller
         // (`perceive_family`): read, never perceived a second time. A pair
         // the frames do not hold was not perceived, and is not reached.
-        let Some((a_bodies, b_bodies)) = frames.get(k) else {
+        let Some(pair) = frames.get(k) else {
             unreached.push(k);
             continue;
         };
+        let (a_bodies, b_bodies) = (&pair.input, &pair.output);
         ins.extend(a_bodies.iter().cloned());
         outs.extend(b_bodies.iter().cloned());
     }
