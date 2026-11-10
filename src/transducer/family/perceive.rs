@@ -170,9 +170,15 @@ pub fn perceive_parts(sample: &SectionSample) -> Vec<Body> {
     by_hue.scoped().flat_map(|(_, ls)| bodies_of(ls)).collect()
 }
 
-/// A FAMILY'S FRAMES, PERCEIVED: each pair's input bodies and output bodies,
-/// frame `k` at `k`.
-pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;
+/// A PAIR'S BODIES, PERCEIVED: each pair's input bodies and output bodies.
+pub type PairBodies = (Vec<Body>, Vec<Body>);
+
+/// A FAMILY'S BODIES ACROSS ITS PAIRS: pair `k` at index `k`.
+pub type FamilyBodies = Vec<PairBodies>;
+
+/// Legacy alias for [`FamilyBodies`]: in open-dimensional cognition, a pair of
+/// observations is an open-dimensional enclosure of bodies, never a flat 2D frame.
+pub type Frames = FamilyBodies;
 
 /// THE FAMILY'S FRAMES PERCEIVED ONCE (rule 10, ruled 2026-09-26): each
 /// frame's bodies read by its components, the one reading an extraction's
