@@ -456,7 +456,19 @@ impl Court {
     pub fn hear_uplink(&mut self, f: &crate::anastome::dialogue::uplink::SignedFold) -> crate::anastome::dialogue::uplink::Uplinked {
         match crate::court::admission::Reconstructed::fold(f) {
             Ok(r) => self.admit_uplink(&r),
-            Err(refused) => refused,
+            Err(refused) => {
+                // MU-HOSTING §5a.7, B4 — a fold of a domain held here that
+                // breaks the universal laws is a refusal at its tube, read by
+                // the laws it broke; a fold of no domain held is no
+                // universe's act here.
+                if let (crate::anastome::dialogue::uplink::Uplinked::NotLawful { breaches, .. }, Some(domain)) =
+                    (&refused, self.tier_domain.get(&f.fold.tier).copied())
+                {
+                    let laws = crate::physics::laws::LAWS.into_iter().filter(|l| breaches.iter().any(|(b, _)| b == l)).collect();
+                    crate::observe::note_at_tube(&crate::observe::AtTube::NotLawful { domain, laws }, self.height());
+                }
+                refused
+            }
         }
     }
 
@@ -530,7 +542,7 @@ impl Court {
         // its reserve's, and lines never touch the court. Track 24 B4: any
         // other path is no event of the universe's cone, `NotThroughCore`.
         if self.reserve_of(&domain) != Some(f.fold.tier) {
-            return Uplinked::Boundary(crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain });
+            return Uplinked::Boundary(self.at_tube(crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain }));
         }
         // Concordance §0 — and only while its reserve converses on every
         // network clause of the register served (`NotSignatory`).
