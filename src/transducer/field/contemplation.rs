@@ -159,8 +159,9 @@ pub struct Contemplation {
     /// taken whole each time.
     pub(crate) came_round: Vec<Vec<u8>>,
     /// MU-CLIENT §4.4(1) — the twists thoughts that came round again carry,
-    /// for the voice to transcribe at its return; taken whole each time.
-    pub(crate) twists: Vec<crate::transducer::cga::Mv>,
+    /// with each thought's perceived family (78.177 §4a(4)), for the voice
+    /// to transcribe at its return; taken whole each time.
+    pub(crate) twists: Vec<(crate::transducer::cga::Mv, Vec<u8>)>,
     /// MU-CLIENT §3.1 — the thoughts by the scene they were perceived in
     /// (the family's coordinate), by ordinal; an entry leaves with its last
     /// thought.

@@ -86,3 +86,27 @@ fn question_rides_the_askers_own_closed_sentence_on_the_scene() {
     let form = crate::transducer::sentence::from_element_form(&sentence).expect("a sentence tape");
     assert!(form.demand_vertices().next().is_some(), "the heard word's bodies ride it as demand vertices");
 }
+
+/// 78.177 §4a(4) — THE CLOSER ASSERTS THE CLOSED TWIST UNDER THE FAMILY:
+/// where another mind listed a demand vertex of its question and the
+/// closer's cited form reproduces its bodies, the closer asserts the
+/// closed twist under the scene's family (`Mind::assert_closed_twist`);
+/// the asker is paid nothing.
+#[test]
+fn closer_asserts_closed_twist_under_the_family() {
+    let word = slide(0, 2);
+    let mut closer = Mind::open("127.0.0.1:1", Voice::named("closer"));
+    closer.scenes.hold(&SCENE, &family(), &word);
+    let demands = crate::client::sdk::mind::listed::heard_bodies(&word, &family());
+    assert!(!demands.is_empty(), "demands stand on the scene");
+    let (_, _, links) = &demands[0];
+    let mut field = std::mem::take(&mut closer.field);
+    let asserted = field.think(|| {
+        closer.assert_closed_twist(&word, links)
+    });
+    closer.field = field;
+    assert!(asserted, "closer asserts the closed twist under the family");
+    assert!(closer.speaking.contains(word.address().as_bytes()), "spoken under the evidence's scene");
+    let (held_scenes, _) = closer.scenes.held();
+    assert!(held_scenes > 0, "the word is held under the scene");
+}
