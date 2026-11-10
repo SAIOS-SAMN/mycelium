@@ -57,21 +57,44 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 - LAW-COORDINATE v1: `forms::coordinate`, proposal 78.173 (#106).
 - Naming: track 11 closed (#89), prose and identifiers say reconstruct and
   sample (#104, #107).
+- Track 24 B2 and B3: the Concordance signed clause by clause by
+  reconstructing fixtures, `CONCORDANCE_HASH` retired (#109); each signing
+  an event on the ledger, alignment read from it (`ACT_LAWS` mode 9, #114);
+  a crossing at the universal core tube reconstructed under the universal
+  laws, refused `NotThroughCore` or `NotSignatory` (`src/court/admission/boundary.rs`).
+- LAW-COORDINATE v2–v4: the advance, an event's bell, the merger and
+  fission (fixtures 7–10, read in `forms/src/tests/motion.rs`; #110);
+  vector lanes, H in degrees on turning planes, open lanes (#117, #129);
+  the composition of turnings, fixture 11b (#186). LAW-PASSAGE v3, the
+  pole swap (#116).
+- The development standard: done is `cargo clippy` and `cargo test`, the
+  gate as workspace tests, changelog fragments (#113); CI runs both as
+  `clippy and tests` (#121, #223).
+- Track 26 field stages 1–5 and stage 4 in part: the sample lifted into
+  the field's atlas, wells on attractors, nuclei as second moments, the
+  field's motions as one exact group, nesting as a fibration, the manifold
+  carrier (#131, #153, #175, #183, #191, #197, #203, #207, #208, #210).
+- The client mind (track 10, client stream): flux on its lanes, signed
+  receipts and equivocation proofs, Rewrites, peer records, cohesion, a
+  held question carried to a court and K3, tasks asked only under strain
+  (#163, #170, #179, #201, #213, #215, #217, #219).
+- The server: π* bound at the A9 judgement (#214); a fold's checkpoint
+  keeps issuance by source (#220); the cognitive POW++ network on one
+  machine, `scripts/network` and `mycelium-server --console --proofs`
+  (#216); RETRIEVE and the priced coordinate retrieval (#172, #185).
 
 | Item | Issue | State |
 |---|---|---|
-| B2: signing the Concordance clause by clause by reconstructing fixtures; `CONCORDANCE_HASH` retired | track 24 | Built on branch `b2-signing`, merging |
-| Development standard: done is `cargo clippy` and `cargo test`; the gate as workspace tests; CHANGELOG fragments; documents name what exists | — | Built on branch `workflow-standard`, merging |
-| B2, next stage: each kernel's reading and signature recorded on the ledger; v0.3.0's agreed clauses carried forward; alignment read from the hypha | track 24 | Built on branch `b2-ledger` (`Cite::Signing`, `ACT_LAWS` mode 9, `clauses::history`) |
-| B3, B4: a domain's crossings refused `NotSignatory` at the universal core tube until its sitting reserve's alignment converses on every network clause of the version served; the boundary reading | track 24 | Built on branch `b3-vertex` (the fold's transitions under L0, `NotThroughCore`, `NotSignatory` at the tube); the boundary reading open |
-| LAW-COORDINATE fixtures 7–10 (advance, an event's bell, merger with offsets, fission) | 78.173 | Next; exact statements agreed with netstratum |
+| B4: the boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | track 24 | Open, next on the server (MU-HOSTING §5a.9, B4) |
+| A reflex act waits unbounded behind a long court hold; the SDK session's read is `Pace::Blocking` (law 9) | [#221](https://github.com/SAIOS-SAMN/mycelium/issues/221) | Filed; design to rule before code |
+| LAW-COORDINATE fixtures 7–10 and 13–16 served as a clause | 78.173 | Built and read locally; serving them needs a fixture operation and object tag, a wire change left to the clause's drafting (78.173 step 4) |
 | LAW-FIELD v1, agreed with the peer kernels | [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) | 78.171 amended (a–e, 2026-11-05): the pole basis, the signature per plane, the winding with each phase in degrees, spheres as enclosures only, the orbit's shear per netstratum docs/121; fixtures read by netstratum; xylarium's reading owed |
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
-| Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
-| Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
+| Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32), [#134](https://github.com/SAIOS-SAMN/mycelium/issues/134) | Field stages 1–5 built; the remaining stages in progress on the client stream |
+| Track 10: the sovereign mind, thinking about adjudicated perception | [#135](https://github.com/SAIOS-SAMN/mycelium/issues/135) | In progress on the client stream |
 | The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Ruled 2026-11-06 (78.180 ruling 6), to build: no letter written by hand past `n = 3` (section samples, letters adjoined only by the presentation's growth); the ray a translation versor of the sample's rank |
-| Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
-| Documentation audit: bounded documents, status out of prose | — | After the development standard |
+| Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25, [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) | Drafted for v0.5.0 (#178, #181); the writing of X1's parts waits on #160 |
+| Documentation audit: bounded documents, status out of prose | — | Open |
 
 **1b. Next, v0.5.0: the economy as motions.** The release's headline,
 ruled 2026-11-05 and specified in
