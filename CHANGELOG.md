@@ -10,7 +10,7 @@ Unreleased entries live in [`changes/`](changes/), one file per change
 (named by its branch or topic) holding exactly the markdown of its entry,
 opened by its `### ` heading. At release time they are assembled into the
 release's section here, newest first by the commit that added each, and
-the files are removed. AGENTS.md's *Definition of done* says how a change
+the files are removed. AGENTS.md's *Checks* says how a change
 adds one.
 
 v0.4.0 is in progress. It opens a new break: word and chart addresses

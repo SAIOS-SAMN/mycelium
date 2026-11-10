@@ -1186,4 +1186,17 @@ impl Mind {
             self.unheard.len(),
         ]
     }
+
+    /// MU-CLIENT §4.9, §7.1 — COHESION, THE VISCOSITY: per turning plane k, the
+    /// held share c_k = A/(A + Q) = ν(1/t); read over the mind's held thoughts
+    /// in contemplation. Keyed vector over planes, never summed and never stored.
+    pub fn cohesion(&self) -> Result<Option<crate::transducer::field::carrier::Cohesion>, crate::transducer::field::carrier::FieldRefusal> {
+        self.contemplation.cohesion()
+    }
+
+    /// The cohesion of the specific thought at `address` ([`Well::cohesion`]),
+    /// or `None` where no thought stands at `address`.
+    pub fn cohesion_of(&self, address: &[u8]) -> Option<Result<crate::transducer::field::carrier::Cohesion, crate::transducer::field::carrier::FieldRefusal>> {
+        self.contemplation.cohesion_of(address)
+    }
 }

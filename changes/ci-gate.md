@@ -1,8 +1,8 @@
-### CI runs the definition of done on every pull request; corpus tests refuse without a corpus
+### CI runs clippy and the tests on every pull request; corpus tests refuse without a corpus
 - **Network contract:** none. No wire byte, act, ledger layout, task,
   word or chart address changes.
-- `.github/workflows/definition-of-done.yml` (workflow `definition of done`,
-  job `clippy and tests`, named by function) runs on every
+- `.github/workflows/clippy-and-tests.yml` (workflow and job
+  `clippy and tests`, named for the commands it runs) runs on every
   pull request and every push to main: it fetches the ARC-AGI-2 corpus
   into `MYCELIUM_CORPUS`, then runs
   `cargo clippy --release --workspace --all-targets -- -D warnings` and
