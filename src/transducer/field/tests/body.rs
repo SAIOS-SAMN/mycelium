@@ -122,20 +122,27 @@ fn well_stage_is_a_coordinate_not_a_flag() {
     assert!(WellStage::thought() < WellStage::default(), "on the ring before rested");
 }
 
-/// A MIND'S WELL IS STATED AND RECONSTRUCTED BY A COURT: the statement
-/// writes the body and no reading; the court derives the curvature (the
-/// holonomy per revolution), the precession and the stage from it and
-/// admits the mind's claim on a match.
+/// A MIND'S WELL IS STATED AND RECONSTRUCTED BY A COURT (track 26 S9c): the
+/// statement writes the body and no reading; the court derives the curvature
+/// (the holonomy per revolution), the precession, the monodromy and the stage
+/// from it and admits the mind's claim on a match.
 #[test]
 fn mind_well_stated_and_reconstructed_by_a_court() {
     let (mut c, k) = held_at(0);
     let b = c.wells.get_mut(&k).expect("held");
+    let unbound = FieldRefusal::Unbound { charts: vec![b.centre()] };
+    assert_eq!(b.monodromy(), Err(unbound.clone()), "flat: no orbit bound");
     b.orbit = Some(revolution_about(&b.centre(), 30));
+    assert_eq!(b.monodromy(), Ok(Monodromy::Torsion { order: 4 }), "three 30° steps close at order four");
     let mut stated = Vec::new();
     b.put_statement(&mut stated).expect("stated");
     let claimed = Curvature { centre: b.centre(), holonomy: b.holonomy() };
     let court = admit_well(&stated, &claimed).expect("the court admits");
     assert_eq!(court.stage(), b.stage, "the stage reconstructed");
     assert_eq!(court.centre(), &b.centre(), "at the well's chart");
+    assert_eq!(court.holonomy(), b.holonomy(), "the holonomy derived by the court");
     assert_eq!(court.precession(), b.precession(), "the precession derived by the court");
+    assert_eq!(court.monodromy(), b.monodromy(), "the monodromy derived by the court");
+    assert_eq!(claimed.monodromy(), b.monodromy(), "claimed monodromy agrees");
+    assert_eq!(claimed.precession(), b.precession(), "claimed precession agrees");
 }

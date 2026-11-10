@@ -9,6 +9,7 @@ mod fixtures;
 mod gravity;
 mod law_field;
 mod lift;
+mod monodromy;
 mod motions;
 mod rotor;
 mod statement;

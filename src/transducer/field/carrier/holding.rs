@@ -7,7 +7,7 @@
 
 use super::atlas::{Atlas, Attractor, Chart, Orbit, Precession};
 use super::enclosing::{stand, Labels, Membrane};
-use super::holonomy::Holonomy;
+use super::holonomy::{Holonomy, Monodromy};
 use super::refusal::FieldRefusal;
 use super::shares::{frame_plane, Cohesion};
 use super::turning::FramePlanes;
@@ -160,6 +160,12 @@ impl WellBody {
     /// `Unbound` with its centre where it binds no orbit.
     pub fn precession(&self) -> Result<Precession, FieldRefusal> {
         self.attractor.precession()
+    }
+
+    /// THE MONODROMY OF ITS ORBIT PER REVOLUTION (78.171 §3.2; MU-SENSING §3.8):
+    /// flat, torsion or rupture; refused `Unbound` where it binds no orbit.
+    pub fn monodromy(&self) -> Result<Monodromy, FieldRefusal> {
+        self.attractor.monodromy()
     }
 
     /// THE INFLATION AT `hold` AND `reach`: the frame state built on the
