@@ -60,18 +60,22 @@ pub enum Kind {
 impl Kind {
     /// Which side of `supply = genesis + mint − burn` this row falls on.
     /// Exhaustive: a kind that moved the supply and was not named here
-    /// would not compile. An `epoch` row stands for the net of the issued
-    /// and burned rows it replaced, so it reads on the issued side.
+    /// would not compile. An `epoch` row is the net of the balances the
+    /// rows it replaced moved, and moves no supply (§6.1): what those rows
+    /// issued and burned is read at the fold's checkpoint
+    /// ([`super::fold::FoldedIssuance`]), so the epoch row reads on neither
+    /// side.
     pub(crate) fn issues(&self) -> Option<bool> {
         match self {
-            Kind::Genesis | Kind::Mint | Kind::Epoch => Some(true),
+            Kind::Genesis | Kind::Mint => Some(true),
             Kind::Burn | Kind::Slash => Some(false),
             Kind::Stake
             | Kind::Unstake
             | Kind::Transfer
             | Kind::Escrow
             | Kind::Release
-            | Kind::Revoke => None,
+            | Kind::Revoke
+            | Kind::Epoch => None,
         }
     }
 }
@@ -177,6 +181,10 @@ pub struct Treasury {
     /// Exact over ℚ: a sum of amounts has no carrier to pass.
     pub(crate) issued: Mu,
     pub(crate) burned: Mu,
+    /// §6.1 — THE ISSUANCE EVERY FOLD CHECKPOINTED, by source: what the
+    /// folded rows issued and burned, which their epoch rows do not carry.
+    /// Written only by `fold`; persisted with the carriers.
+    pub(crate) folded: super::fold::FoldedIssuance,
     /// Sum of live identity bonds. Escrowed awards are `escrowed`, never this.
     pub(crate) bond_total: Mu,
     /// Enrolled identities and the μ⃗ each staked, keyed by identity.
@@ -229,6 +237,7 @@ impl Default for Treasury {
             entries: Vec::new(),
             issued: Mu::zero(),
             burned: Mu::zero(),
+            folded: super::fold::FoldedIssuance::default(),
             bond_total: Mu::zero(),
             stakes: crate::network::nerve::Keyed::new(),
             escrowed: crate::network::nerve::Keyed::new(),
@@ -464,11 +473,12 @@ impl Treasury {
         self.entries.push(e);
     }
 
-    /// Fold the supply from the journal in one pass. `restore` reads the
-    /// rows off disk directly, so this is where the two sums come back —
-    /// the one O(journal) pass the doctrine sanctions, at load.
+    /// Fold the supply from the journal in one pass, on the issuance every
+    /// fold checkpointed. `restore` reads the rows off disk directly, so
+    /// this is where the two sums come back — the one O(journal) pass the
+    /// doctrine sanctions, at load.
     pub(crate) fn refold_supply(&mut self) {
-        let (mut issued, mut burned) = (Mu::zero(), Mu::zero());
+        let (mut issued, mut burned) = (self.folded.issued(), self.folded.burned());
         for e in &self.entries {
             match e.kind.issues() {
                 Some(true) => issued.step(&e.mu),
@@ -480,10 +490,10 @@ impl Treasury {
         self.burned = burned;
     }
 
-    /// 78.152 TU-1 — WHAT THIS LEDGER ISSUED, per lane, cumulative: genesis,
-    /// mint and the epoch rows that stand for them across a fold — the
-    /// discharge it booked as mint on the genesis it stood on. It only rises
-    /// (a burn leaves supply, never issuance), and a fold keeps it exactly.
+    /// 78.152 TU-1 — WHAT THIS LEDGER ISSUED, per lane, cumulative: genesis
+    /// and mint, the folded ones read at the checkpoint — the discharge it
+    /// booked as mint on the genesis it stood on. It only rises (a burn
+    /// leaves supply, never issuance), and a fold keeps it exactly.
     pub fn issued(&self) -> &Mu {
         &self.issued
     }
@@ -492,9 +502,14 @@ impl Treasury {
     /// §6 keeps separable from them. "Nothing was minted" is a claim about
     /// verified work and must not be read off `supply()`, which includes
     /// seeded value by construction — a testnet differs from the beta only
-    /// in that term.
+    /// in that term. The folded mints are read at the checkpoint.
     pub fn minted(&self) -> Mu {
-        Mu::sum(self.entries.iter().filter(|e| e.kind == Kind::Mint).map(|e| &e.mu))
+        self.folded.minted().add(&Mu::sum(self.entries.iter().filter(|e| e.kind == Kind::Mint).map(|e| &e.mu)))
+    }
+
+    /// The issuance every fold checkpointed, by source (§6.1).
+    pub fn folded(&self) -> &super::fold::FoldedIssuance {
+        &self.folded
     }
 
     /// LD3-a — A LINE REBOUND BEFORE ITS FIRST ACT MOVES ITS ORIGIN: the
@@ -523,8 +538,9 @@ impl Treasury {
     /// A mint of an arm is paid; a burn of an arm is burned. A POWC use is
     /// ONE transfer written as TWO equal rows, its debit and its credit, so
     /// the arm's transfer rows read in pairs and the paid is one of each pair
-    /// — exact, since every pair is two equal vectors. `None` where a flow's
-    /// row count passes its carrier (rule 11).
+    /// — exact, since every pair is two equal vectors. The folded rows are
+    /// read at the fold's checkpoint (§6.1). `None` where a flow's row count
+    /// passes its carrier (rule 11).
     ///
     /// THE FLOWS by kind and the TUITION `court` was paid read off the same
     /// rows: a transfer's two rows are one flow, its debit first and its
@@ -573,6 +589,14 @@ impl Treasury {
                 _ => continue,
             };
             into.step(&row.mu);
+        }
+        // §6.1 — what the folded rows paid and burned, read at the
+        // checkpoint: a fold removes nothing a proof was paid.
+        for arm in Arm::ALL {
+            let slot = usize::from(Arm::byte(Some(arm)));
+            e.paid[arm.index()].step(&self.folded.minted[slot]);
+            e.burned[arm.index()].step(&self.folded.burned[slot]);
+            moved[arm.index()].step(&self.folded.transferred[slot]);
         }
         for (paid, pairs) in e.paid.iter_mut().zip(&moved) {
             paid.step(&pairs.part(2)?);
