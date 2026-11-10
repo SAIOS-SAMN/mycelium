@@ -108,10 +108,11 @@ fn modes_round_trips_and_refuses_zero_amount() {
     let _ = Mode::Hue(crate::transducer::sentence::presentation::GaugeMode::Move(3, 0)).key().expect("a move has coordinates");
 }
 
-/// An open-dimensional enclosure scales mode amounts by its exact measure
-/// at rank n (MU-ENGINEERING §9.3; 78.174 §1 item 9): rank 1 (measure 5),
-/// rank 2 (measure 6), rank 3 (measure 24), rank 4 (measure 120),
-/// confirming that dimensions never collapse into flat 2D frames.
+/// A MOTION'S MODES ARE READ AT THE SHARE GIVEN (78.174 §1 item 9;
+/// MU-ENGINEERING §9.3): the enclosure's measure is the product of its
+/// periods at every rank (5; 6; 24; 120 at ranks 1 to 4), and a slide's
+/// mode amount is its unit amount times the share `m / measure`, exactly,
+/// at each.
 #[test]
 fn of_motion_scales_by_open_dimensional_enclosure_share() {
     let slide_mv = slide(2, 0);
