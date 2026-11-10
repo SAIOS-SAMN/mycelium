@@ -9,6 +9,7 @@ use super::enclosing::Membrane;
 use super::holonomy::{Holonomy, Motion};
 use super::refusal::FieldRefusal;
 use super::turning::FramePlanes;
+use crate::transducer::cga::Mv;
 use crate::transducer::stalk::{ChartAxis, Invariant};
 
 /// A CHART (78.171 §2; MU-RECURSION 78.41), its one meaning: a body's exact
@@ -258,5 +259,25 @@ impl Atlas {
     /// no attractor, no curvature.
     pub fn curvature(&self) -> Vec<Curvature> {
         self.attractors.iter().map(|a| Curvature { centre: a.centre.clone(), holonomy: a.holonomy() }).collect()
+    }
+
+    /// AXIOMATIC GRAVITY: the shear of each held attractor's bound orbit on
+    /// the orthogonal orbit class of `orbit` (MU-SENSING §3.7). Flat (empty)
+    /// where no attractor binds an orbit.
+    pub fn axiomatic_shear(&self, orbit: &Orbit) -> Result<Vec<Mv>, FieldRefusal> {
+        let mut out = Vec::new();
+        let Some(target) = super::gravity::primary_plane(orbit) else {
+            return Ok(out);
+        };
+        for attractor in &self.attractors {
+            if let Some(held) = &attractor.orbit {
+                if let Some(held_plane) = super::gravity::primary_plane(held) {
+                    if let Some(split) = super::gravity::axiomatic_shear(&held_plane, &target)? {
+                        out.push(split.drag);
+                    }
+                }
+            }
+        }
+        Ok(out)
     }
 }
