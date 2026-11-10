@@ -40,7 +40,8 @@ fn admit_refuses_claimed_curvature_court_does_not_derive() {
 
 /// A well's body is stated as its own atlas and its stage, and a court
 /// reconstructs it and derives its curvature itself: the 90° of three 30°
-/// steps per revolution admitted, a claim of 135° refused `Differs` with
+/// steps per revolution admitted, its precession and monodromy derived afresh
+/// by the court and matching the claim, a claim of 135° refused `Differs` with
 /// the pair, and a flat well's `Unbound` derived on both sides.
 #[test]
 fn well_body_stated_and_admitted_by_its_curvature() {
@@ -52,6 +53,11 @@ fn well_body_stated_and_admitted_by_its_curvature() {
     let claimed = Curvature { centre: charts[0].clone(), holonomy: body.holonomy() };
     let admitted = admit_well(&stated, &claimed).expect("admitted");
     assert_eq!(admitted.stage(), WellStage::perceived(), "the stage is stated and read back");
+    assert_eq!(admitted.holonomy(), body.holonomy(), "holonomy derived by the court");
+    assert_eq!(admitted.precession(), body.precession(), "precession derived by the court");
+    assert_eq!(admitted.monodromy(), body.monodromy(), "monodromy derived by the court");
+    assert_eq!(claimed.monodromy(), body.monodromy(), "claimed monodromy agrees");
+    assert_eq!(claimed.precession(), body.precession(), "claimed precession agrees");
     let other = WellBody::of(lifted.frame, charts[0].clone(), Some(revolution_turning(&charts, &p, 45, 1)), WellStage::perceived()).expect("stands");
     let wrong = Curvature { centre: charts[0].clone(), holonomy: other.holonomy() };
     assert_eq!(admit_well(&stated, &wrong).map(|_| ()), Err(StatementRefusal::Differs { pairs: vec![(Some(wrong.clone()), Some(claimed))] }));

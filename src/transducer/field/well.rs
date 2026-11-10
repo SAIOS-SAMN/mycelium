@@ -5,7 +5,7 @@
 //! glued by, and the class it was seeded from.
 
 use super::*;
-use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, Orbit, Precession, WellBody, WellStage};
+use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, Monodromy, Orbit, Precession, WellBody, WellStage};
 
 /// THE KEYED READ OF A HELD WORD'S SECTION BY ADDRESS: the rotation the
 /// chart names and the carriage it names it at. Both halves, because a
@@ -508,6 +508,13 @@ impl Well {
     /// refused `Unbound` where it binds no orbit.
     pub fn precession(&self) -> Result<Precession, FieldRefusal> {
         self.body()?.precession()
+    }
+
+    /// THE MONODROMY OF ITS ORBIT PER REVOLUTION (78.171 §3.2; MU-SENSING §3.8):
+    /// flat (order 1), torsion (order ℓ) or rupture (infinite order);
+    /// refused `Unbound` where it binds no orbit.
+    pub fn monodromy(&self) -> Result<Monodromy, FieldRefusal> {
+        self.body()?.monodromy()
     }
 
     /// THE WELL'S INFLATION, a gauge reading: the frame state on its
