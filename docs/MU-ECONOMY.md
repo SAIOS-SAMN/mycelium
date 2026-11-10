@@ -532,6 +532,20 @@ organ that took it (47.3). A payout is never proven by a stored balance.
 A re-traversal reads the cone between the payment and its closure. A
 folded prefix is read at its checkpoint (§6.1).
 
+**Read today** (`mycelium-server --console --proofs`,
+`src/bin/mycelium-server/proofs.rs`): a reading over the running mesh,
+never stored. Per payment on each court's journal that carries a proof:
+the proof, the payee, the amount per lane and the act it stands at; the
+words that act names; the level read off them (§12's pay by level: a
+named sentence, named words, or unread, since no served reading tells a
+letter from a word or names a conjugate class); and each other court's
+reading of the same act at its stamp, the same act and words read off its
+own copy (the same point) or a residue naming what differs. It also names
+every task paid as a first closure more than once as an equivocation of
+the advance (§3.4). The re-traversal of this section through the release
+and its verifications to the closure's reconstruction needs the payment
+to cite its causes, which is v0.5.0's (§9).
+
 ### 5.4 Between courts: the Note
 
 A transfer between voices homed at different courts is the xSEPTUM Note
@@ -595,6 +609,23 @@ Both equations hold before and after it, and a witness re-derives the
 nets before it co-signs. A fold that does not conserve is refused
 `REFUSE_FOLD_INEXACT` and writes nothing. Heights continue across a fold,
 and install receipts survive it.
+
+**Built** (`economy::fold::FoldedIssuance`). The epoch rows carry only the
+balances' nets. What the folded rows issued and burned is kept beside them
+as the fold's checkpoint, gross and by source. Each source is the row's own
+coordinate `[kind tag, arm byte]`: genesis, mints, transfers and burns by
+the proof each carried, and slashes. So every reading stays the same across
+a fold: issued and burned, each apart from the other; the earned supply,
+apart from genesis (§6); and what each proof paid and burned (§0). A fold
+that would move issued or burned refuses `REFUSE_FOLD_INEXACT`. The
+checkpoint is persisted with the carriers (the `folded` trie). Claims:
+`economy::tests::fold` (`fold_keeps_what_each_proof_paid`,
+`fold_keeps_genesis_apart_from_the_earned`,
+`fold_keeps_issued_and_burned_each`,
+`second_fold_reads_the_first_folds_issuance_once`,
+`checkpoint_source_at_no_coordinate_is_refused`,
+`restored_fold_keeps_its_issuance`). Owed: a witness re-derives the nets it
+co-signs, not the checkpoint, which no fold receipt signs yet.
 
 ## 7. Metabolism and money
 

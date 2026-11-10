@@ -101,7 +101,7 @@ fn conformance_kernel_profile_omits_task_and_solve() {
 
 /// A kernel that does not found its domain fails by that act's name alone.
 #[test]
-fn conformance_kernel_missing_founding_fails_by_name() {
+fn conformance_kernel_fails_on_missing_founding() {
     let report = check_codecs(&[Profile::Kernel], |a| HOUSE_EXAMPLE.contains(&a.name) && a.name != "domain founding");
     assert!(!report.conforms());
     let failed: Vec<&str> = report.failures().map(|(act, _)| act).collect();

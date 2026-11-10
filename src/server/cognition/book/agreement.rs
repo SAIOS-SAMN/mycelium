@@ -42,12 +42,12 @@ pub struct Attested {
 }
 
 /// Every pair's section empty: the word changed nothing true there.
-fn empty(l: &Local) -> bool {
+pub(super) fn empty(l: &Local) -> bool {
     l.sites.iter().all(crate::network::nerve::Keyed::is_empty)
 }
 
 /// A word the court measures by its own section (`Court::discharge_on`, W).
-fn sectioned(word: &Element) -> bool {
+pub(super) fn sectioned(word: &Element) -> bool {
     word.is_connection() && !word.is_colour_word()
 }
 
@@ -144,7 +144,7 @@ impl Court {
 }
 
 /// An attestation's key: the word's address, then the attesting mind.
-fn attestation_key(address: &[u8], peer: &[u8; 32]) -> Vec<u8> {
+pub(super) fn attestation_key(address: &[u8], peer: &[u8; 32]) -> Vec<u8> {
     let mut k = Vec::with_capacity(address.len() + 32);
     crate::transducer::address::put_key_bytes(&mut k, address);
     k.extend_from_slice(peer);

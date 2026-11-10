@@ -88,3 +88,26 @@ fn well_cohesion_read_per_plane_never_summed() {
     let mixed = Key::generator(Axis::unit(Square::Positive, 1).expect("+1"), Axis::unit(Square::Negative, 2).expect("-2")).expect("a key");
     assert!(matches!(Cohesion::of(&[(mixed, frame(1, 1))]), Err(FieldRefusal::NotTurningPlane(_))));
 }
+
+/// CONTEMPLATION READS COHESION OVER HELD THOUGHTS (MU-CLIENT §4.9, §7.1):
+/// an empty contemplation has `None`; holding a thought reads its cohesion
+/// on its membrane's plane, its viscosity and fluidity summing to 1.
+#[test]
+fn contemplation_cohesion_reads_per_plane_over_held_wells() {
+    let mut c = Contemplation::new();
+    assert_eq!(c.cohesion().expect("reading"), None, "empty contemplation has no cohesion");
+
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
+    let (key, well) = c.wells.scoped().next().map(|(k, w)| (k.clone(), w.clone())).expect("held well");
+
+    let cohesion = c.cohesion().expect("reading").expect("cohesion stands");
+    let plane = frame_plane(well.body().expect("stands").membrane().plane()).expect("frame plane");
+    assert_eq!(cohesion.planes().len(), 1);
+    assert_eq!(cohesion.on(&plane), Some(&Q::one()));
+
+    let of_thought = c.cohesion_of(&key).expect("thought stands").expect("cohesion of thought");
+    assert_eq!(of_thought, cohesion);
+
+    let fluidity = cohesion.fluidity();
+    assert_eq!(fluidity, vec![(plane, q(0, 1))]);
+}

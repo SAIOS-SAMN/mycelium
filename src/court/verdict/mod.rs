@@ -23,5 +23,4 @@ pub use refusals::*;
 pub use resume::*;
 pub(crate) use terrain::*;
 pub use ruling::*;
-#[cfg(test)]
 pub use selection::*;

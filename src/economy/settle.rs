@@ -175,12 +175,19 @@ impl Treasury {
     /// close beyond its words', never the arithmetic left after the shares —
     /// capped by what is left, and what is left above it never issued (E1).
     /// `None` for a word, whose voices take what is left.
+    ///
+    /// K3 (78.177 §4a(1), ruled 2026-11-06) — `converged` are the minds
+    /// whose own words converged with this one, each with its share of the
+    /// frame: they are paid POWC out of the composition premium, after the
+    /// base and use shares (`Treasury::pay_converging`); a word has no
+    /// premium, and its convergences are held as claims, never minted.
     pub fn settle_recursive(
         &mut self,
         escrow: &[u8],
         shares: &[([u8; 32], Mu)],
         pay: &Mu,
         premium: Option<Mu>,
+        converged: &[([u8; 32], Mu)],
         anchor: Anchor,
     ) -> Mu {
         let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
@@ -199,11 +206,17 @@ impl Treasury {
             left = rest;
             self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
         }
-        let taken = match premium {
-            Some(p) => p.capped(&left),
-            None => left,
+        let (taken, composed) = match premium {
+            Some(p) => {
+                let p = p.capped(&left);
+                (p.clone(), p)
+            }
+            None => (left, Mu::zero()),
         };
-        self.mint_claim(&voices, taken.clone(), anchor);
+        // K3: the converging minds out of the premium; the voices keep the
+        // rest of it. `to_minds ≤ composed ≤ taken` on every lane.
+        let to_minds = self.pay_converging(escrow, &composed, converged, anchor);
+        self.mint_claim(&voices, taken.shortfall(&to_minds), anchor);
         taken
     }
 

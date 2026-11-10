@@ -368,7 +368,7 @@ impl Court {
         }
         let reserve = match self.reserve_signed(&e.domain, &e.signed_bytes(), &s.sig) {
             Ok(r) => r,
-            Err(true) => return Ledgered::Boundary(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: e.domain }),
+            Err(true) => return Ledgered::Boundary(self.at_tube(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: e.domain })),
             Err(false) => return refuse(R::Unsigned),
         };
         if let Err(why) = self.signatory(UniverseAct::Anchor, e.domain, reads) {
@@ -519,7 +519,7 @@ impl Court {
         }
         let reserve = match self.reserve_signed(&a.domain, &a.signed_bytes(), &s.sig) {
             Ok(r) => r,
-            Err(true) => return Mapped::Boundary(Boundary::NotThroughCore { act: UniverseAct::Map, domain: a.domain }),
+            Err(true) => return Mapped::Boundary(self.at_tube(Boundary::NotThroughCore { act: UniverseAct::Map, domain: a.domain })),
             Err(false) => return refuse(R::Unsigned),
         };
         if let Err(why) = self.signatory_now(UniverseAct::Map, a.domain) {

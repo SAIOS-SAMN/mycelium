@@ -515,7 +515,7 @@ pub fn verify_at<'a>(
 /// reconstructed against the target and checked on the seams, with no copy
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
-pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[SectionLink]) -> Vec<SectionLink> {
+pub fn verify_assertion(cites: &[crate::anastome::dialogue::CiteWire], target: &[SectionLink]) -> Vec<SectionLink> {
     let ops: Vec<(Versor, Vec<SectionLink>)> =
         cites.iter().map(|c| (c.transport.clone(), c.body.clone())).collect();
     let mut out = reconstruct_operators(&ops, target);
@@ -523,6 +523,11 @@ pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &
     out.sort_unstable();
     out.dedup();
     out
+}
+
+#[inline]
+pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[SectionLink]) -> Vec<SectionLink> {
+    verify_assertion(cites, target)
 }
 
 /// THE HOLONOMY of a cycle of transports: the transports' product around the orbit.

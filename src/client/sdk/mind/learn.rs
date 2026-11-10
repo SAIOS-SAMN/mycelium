@@ -10,13 +10,11 @@ impl Mind {
     /// useful work. One pull is in flight at a time; the envelope lands on
     /// the board as an offer, read to its charts (`offer`), to be taken in
     /// where it couples (`task_inflow`), none where the court's listings are settled.
-    /// MU-CLIENT §4.12, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
+    /// MU-CLIENT §4.12, §4.13, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
     /// in or is being perceived, the reserve stands regenerated on every
-    /// lane, and either the field holds strain (`strained`) or the corpus
-    /// holds no item (ruled 2026-10-24; asked under strain alone, a mind with
-    /// an empty feed never asked again). A settled field over a corpus that
-    /// holds items asks for nothing. The task is an offer: it couples or
-    /// lapses (`lapse_standing_task`).
+    /// lane, and the field holds strain (`strained`). A full reserve over a
+    /// settled field asks for nothing, and the mind rests (MU-CLIENT §4.13, #135).
+    /// The task is an offer: it couples or lapses (`lapse_standing_task`).
     pub(crate) fn pull_task(&mut self) {
         if self.board.court.pulling || self.board.court.task.is_some() || self.perceiving() {
             return;
@@ -24,8 +22,7 @@ impl Mind {
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
             return;
         }
-        let corpus_empty = self.board.corpus.size().0 == 0;
-        if !self.strained() && !corpus_empty {
+        if !self.strained() {
             return;
         }
         self.board.court.pulling = true;

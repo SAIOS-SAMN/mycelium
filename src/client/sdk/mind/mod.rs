@@ -6,10 +6,12 @@
 //! the quote, the speech, the adjudication, and what each writes.
 
 pub(super) mod seating;
+pub mod amend;
 pub(super) mod boot;
 pub(super) mod chatter;
 pub(super) mod contract;
 pub(super) mod converge;
+pub(crate) mod listed;
 pub(super) mod peers;
 pub(super) mod court;
 pub(super) mod factor;
@@ -147,6 +149,8 @@ pub struct Mind {
     /// ACT1 (78.21(3)) — the court's height this voice had heard, and its
     /// own `K`, when its genome was last written whole; none before.
     pub(crate) genome_persisted: Option<(u64, u64)>,
+    /// MU-CLIENT §4.10, ROADMAP track 10 — amendments held beside under experience.
+    pub(crate) amendments: Vec<self::amend::Amendment>,
     /// THE SEALED SET (50.9): addresses a court refused, each with the mind's
     /// own K at which it heard the refusal (78.49). Read before any frame is
     /// built; a sealed tape is refused by the mind itself.

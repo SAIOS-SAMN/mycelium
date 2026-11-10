@@ -4,7 +4,7 @@
 >
 > **Components:** the hypha and client binaries as built. No game term.
 
-**Status:** overview, release 0.3.0-rc.3. §1, the wire description in §4, and
+**Status:** overview, release 0.4.0-rc.1. §1, the wire description in §4, and
 §5–§8 are checked against the code. §2, §3 and the rest of §4 describe the language, the
 court organ and the mesh module by module;
 where a part is specified and not wired, the section says so. Later
@@ -176,7 +176,7 @@ leaves by relocation to a cold carrier, never by deletion (`MU-ECONOMY.md`
 ## 7. The gate and the `Keyed` carrier
 
 The gate is held by the two commands of
-[AGENTS › Definition of done](../AGENTS.md#definition-of-done):
+[AGENTS › Checks](../AGENTS.md#checks):
 
 1. the source checks, the tests of the workspace crate `gate/`, over
    `src/`, `algebra/src/`, `forms/src/`, `sdk/src/` and `gate/`: the
