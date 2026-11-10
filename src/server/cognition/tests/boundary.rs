@@ -394,10 +394,10 @@ fn tube_refusals_read_by_domain_act_and_name() {
     let rows = || -> Vec<TubeRow> { boundary_reading().rows.into_iter().filter(|r| r.last.domain() == domain).collect() };
     let mut k = unsigned_as(&domain_k, &reserve_k, &line_k);
     assert!(rows().is_empty(), "nothing refused yet");
-    let crossing = fold(&reserve_k, 7, vec![lawful()]).sign(&reserve_k);
+    let crossing = fold(&reserve_k, 7, vec![lawful()]).signed(&reserve_k);
     let first = k.hear_uplink(&crossing);
     assert_eq!(k.hear_uplink(&crossing), first, "refused alike twice");
-    let off = k.hear_uplink(&fold(&line_k, 7, vec![lawful()]).sign(&line_k));
+    let off = k.hear_uplink(&fold(&line_k, 7, vec![lawful()]).signed(&line_k));
     assert_eq!(off, Uplinked::Boundary(Boundary::NotThroughCore { act: UniverseAct::Fold, domain }));
     let held = rows();
     let unsigned = held.iter().find(|r| r.last.name() == "NotSignatory").expect("the unsigned reserve's row");
@@ -408,7 +408,7 @@ fn tube_refusals_read_by_domain_act_and_name() {
     assert_eq!((core.times, core.last.act()), (1, UniverseAct::Fold), "the line's fold, apart");
     assert_eq!(held.len(), 2, "one row per name");
     signs(&mut k, &reserve_k);
-    assert!(matches!(k.hear_uplink(&fold(&reserve_k, 7, vec![lawful(), still()]).sign(&reserve_k)), Uplinked::NotLawful { .. }));
+    assert!(matches!(k.hear_uplink(&fold(&reserve_k, 7, vec![lawful(), still()]).signed(&reserve_k)), Uplinked::NotLawful { .. }));
     let broke = rows().into_iter().find(|r| r.last.name() == "NotLawful").expect("the unlawful fold's row");
     assert_eq!((broke.times, broke.last), (1, AtTube::NotLawful { domain, laws: vec![Law::Time] }), "the law it broke, named");
     let before = rows();

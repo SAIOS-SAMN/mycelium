@@ -3,7 +3,7 @@
 // MU-HOSTING §5a.7, §5a.9 B4; ROADMAP track 24 — THE BOUNDARY READING:
 // every refusal this court answered at a universe's universal core tube, by
 // domain, by act and by the refusal's name (`NotThroughCore`, `NotSignatory`,
-// `Bounded`, `Unaligned`, and a fold's `NotLawful`), served under
+// `Bounded`, `Unaligned`, `Crossing` (X1), and a fold's `NotLawful`), served under
 // `ACT_OBSERVE`. Written where the court refuses; read only at a question and
 // never read back by the court, so it touches nothing in consensus.
 //
@@ -21,8 +21,8 @@ use crate::physics::laws::{Law, LAWS};
 use std::sync::{LazyLock, Mutex};
 
 /// THE NAMES A CROSSING IS REFUSED BY at the tube, at the code each row
-/// carries: the four of [`Boundary`] by its wire tag, then `NotLawful`.
-pub const TUBE_REFUSALS: [&str; 5] = ["NotThroughCore", "NotSignatory", "Bounded", "Unaligned", "NotLawful"];
+/// carries: the five of [`Boundary`] by its wire tag, then `NotLawful`.
+pub const TUBE_REFUSALS: [&str; 6] = ["NotThroughCore", "NotSignatory", "Bounded", "Unaligned", "Crossing", "NotLawful"];
 
 /// ONE REFUSAL AT THE UNIVERSAL CORE TUBE, whole.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -58,7 +58,8 @@ impl AtTube {
             AtTube::Refused(Boundary::NotSignatory { .. }) => 1,
             AtTube::Refused(Boundary::Bounded { .. }) => 2,
             AtTube::Refused(Boundary::Unaligned { .. }) => 3,
-            AtTube::NotLawful { .. } => 4,
+            AtTube::Refused(Boundary::Crossing { .. }) => 4,
+            AtTube::NotLawful { .. } => 5,
         }
     }
 
@@ -178,7 +179,7 @@ impl BoundaryReading {
     /// The reading as the console prints it: the count per name, then one
     /// line per domain, act and name, the domain whole and what decided it.
     pub fn lines(&self) -> Vec<String> {
-        let mut per = [0u64; 5];
+        let mut per = [0u64; 6];
         for r in &self.rows {
             if let Some(s) = per.get_mut(usize::from(r.last.code())) {
                 if let Some(v) = s.checked_add(r.times) {
@@ -193,6 +194,7 @@ impl BoundaryReading {
                 AtTube::Refused(Boundary::NotSignatory { clause, reading, .. }) => format!(" · {} v{} {reading:?}", clause.law, clause.version),
                 AtTube::Refused(Boundary::Bounded { clause, .. }) => format!(" · vetoed {} v{}", clause.law, clause.version),
                 AtTube::Refused(Boundary::Unaligned { why, .. }) => format!(" · {why:?}"),
+                AtTube::Refused(Boundary::Crossing { why, .. }) => format!(" · crossing {why:?}"),
                 AtTube::Refused(Boundary::NotThroughCore { .. }) => String::new(),
                 AtTube::NotLawful { laws, .. } => format!(" · broke {}", laws.iter().map(|l| l.name()).collect::<Vec<_>>().join(", ")),
             };

@@ -376,7 +376,7 @@ impl Court {
             return Ledgered::Boundary(why);
         }
         if let Err(why) = s.crossing.verify() {
-            return Ledgered::Boundary(Boundary::Crossing { act: UniverseAct::Anchor, domain: e.domain, why });
+            return Ledgered::Boundary(self.at_tube(Boundary::Crossing { act: UniverseAct::Anchor, domain: e.domain, why }));
         }
         if !self.final_in_view(&e.point, fin.as_ref()) {
             return refuse(R::NotFinal);
@@ -531,7 +531,7 @@ impl Court {
             return Mapped::Boundary(why);
         }
         if let Err(why) = s.crossing.verify() {
-            return Mapped::Boundary(Boundary::Crossing { act: UniverseAct::Map, domain: a.domain, why });
+            return Mapped::Boundary(self.at_tube(Boundary::Crossing { act: UniverseAct::Map, domain: a.domain, why }));
         }
         if !self.final_in_view(&a.point, fin.as_ref()) {
             return refuse(R::NotFinal);

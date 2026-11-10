@@ -19,13 +19,15 @@ fn boundary_reading_reads_back_each_name() {
             row(AtTube::Refused(Boundary::NotSignatory { act: UniverseAct::Fold, domain: party(1), clause: clause.clone(), reading: Box::new(ClauseReading::Unread) }), 1),
             row(AtTube::Refused(Boundary::Bounded { act: UniverseAct::Anchor, domain: party(2), clause: clause.clone() }), 2),
             row(AtTube::Refused(Boundary::Unaligned { act: UniverseAct::Statement, domain: party(2), why: AlignmentRefusal::StrokeSpent }), 1),
+            row(AtTube::Refused(Boundary::Crossing { act: UniverseAct::Mouth, domain: party(3), why: crate::anastome::dialogue::crossing_record::CrossingRefusal::Absent }), 5),
             row(AtTube::NotLawful { domain: party(3), laws: vec![Law::Momentum, Law::Time] }, 4),
         ],
     };
     assert_eq!(reading.rows.iter().map(|r| r.last.name()).collect::<Vec<_>>(), TUBE_REFUSALS, "one row of each name, at its code");
     reads_back(&[Reading::Boundary(Box::new(reading.clone()))]);
     let lines = reading.lines();
-    assert!(lines[0].contains("NotThroughCore 3 · NotSignatory 1 · Bounded 2 · Unaligned 1 · NotLawful 4"), "counted per name: {}", lines[0]);
+    assert!(lines[0].contains("NotThroughCore 3 · NotSignatory 1 · Bounded 2 · Unaligned 1 · Crossing 5 · NotLawful 4"), "counted per name: {}", lines[0]);
     assert!(lines.iter().any(|l| l.contains(&"03".repeat(32)) && l.contains("NotLawful ×4") && l.contains("broke momentum, temporal monotonicity")), "the laws broken, named");
     assert!(lines.iter().any(|l| l.contains("vetoed FORMS-COORDINATE")), "the vetoed clause, named");
+    assert!(lines.iter().any(|l| l.contains("Crossing ×5") && l.contains("crossing Absent")), "the crossing refusal, named");
 }

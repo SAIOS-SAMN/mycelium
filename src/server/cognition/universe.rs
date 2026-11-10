@@ -130,7 +130,7 @@ impl Court {
             return Founded::Boundary(why);
         }
         if let Err(why) = s.crossing.verify() {
-            return Founded::Boundary(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Statement, domain: st.domain, why });
+            return Founded::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Statement, domain: st.domain, why }));
         }
         let mut u = self.universe_of(&st.domain);
         let body = match &st.stated {

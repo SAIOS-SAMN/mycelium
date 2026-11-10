@@ -383,7 +383,7 @@ impl Court {
                     return Handed::Boundary(why);
                 }
                 if let Err(why) = crate::anastome::dialogue::crossing_record::verify_carried(h.crossing.as_deref()) {
-                    return Handed::Boundary(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::ConversionOut, domain, why });
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::ConversionOut, domain, why }));
                 }
                 // 78.139 — the reserve unit is the reserve's basket: none
                 // converted until it is stated.

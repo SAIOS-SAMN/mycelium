@@ -334,7 +334,7 @@ fn handoff_mouth_tube_supersedes_untethered_mouth() {
     let again = Mouth { nonce: [8; 32], ..new };
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(again)).signed(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
     let not_legacy = Mouth { tube: Some(Tube { supersedes: Some(tube_id), ..tube() }), nonce: [6; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(not_legacy)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(not_legacy)).signed(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
     let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.tube_of(&tube_id), k.tube_of(&tube_id), "the tube restored");
     assert_eq!(booted.tube_of(&old), None, "the untethered record, untethered");

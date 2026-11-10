@@ -182,7 +182,7 @@ impl Court {
             return Granted::Boundary(why);
         }
         if let Err(why) = s.crossing.verify() {
-            return Granted::Boundary(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Manifest, domain: m.domain, why });
+            return Granted::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Manifest, domain: m.domain, why }));
         }
         if !nuclei_hold(&m.nuclei) {
             return refuse(GrantRefusal::Malformed);
