@@ -11,6 +11,8 @@ pub mod comprehension;
 pub mod concluded;
 pub mod genome;
 mod house;
+pub mod hypha_acts;
+mod retrieval;
 pub mod mind;
 pub mod quote;
 pub mod rule;
@@ -18,7 +20,7 @@ pub mod seat;
 pub mod seat_mind;
 pub mod session;
 pub mod signed_receipts;
-pub mod utterance;
+pub mod assertion;
 pub mod voice;
 pub mod working_atlas;
 
@@ -39,8 +41,9 @@ pub(crate) use mind::HeldSaying;
 pub use quote::*;
 pub use session::*;
 pub use signed_receipts::{Holding, SignedReceipts};
-pub use utterance::*;
+pub use assertion::*;
 pub use voice::*;
+pub use crate::transducer::field::carrier::Cohesion;
 pub use working_atlas::*;
 
 use crate::anastome::dialogue;

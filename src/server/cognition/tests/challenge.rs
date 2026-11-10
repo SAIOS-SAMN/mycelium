@@ -9,6 +9,7 @@ use crate::anastome::dialogue::challenge::{line_head, Challenge, ChallengeRefusa
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, Net, TierFold, Uplinked};
 use super::fixtures::close_through;
 use crate::chronometry::{Cite, Stamp};
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use crate::server::cognition::Court;
 use crate::transducer::cech::coefficient::Coefficient;
 use ed25519_dalek::SigningKey;
@@ -103,7 +104,7 @@ fn sealed(k: &mut Court, f: TierFold, by: &SigningKey) -> FoldAt {
     let mut prefix = [5u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
     let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-    match k.hear_uplink(&carrier.sign(&reserve())) {
+    match k.hear_uplink(&carrier.signed(&reserve())) {
         Uplinked::Chained { at, .. } => FoldAt { stamp: at, path: vec![0] },
         other => panic!("carried: {other:?}"),
     }
@@ -156,12 +157,15 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
     assert_eq!(k.challenge(&evidence(&not_it, &at, a_entries()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheFold));
     let Challenged::Upheld { prefix, .. } = k.challenge(&evidence(&f, &at, a_entries()).sign(&challenger())) else { panic!("upheld") };
     let head = k.chain.head().expect("sealed");
-    assert_eq!(head.cites, vec![Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }], "the upheld prefix on the receipt");
+    assert!(
+        super::fixtures::cites_restate(&head.cites, &[Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }]),
+        "the upheld prefix on the receipt: {:?}",
+        head.cites
+    );
     assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: None });
     close_through(&mut k, at.stamp.h).expect("the window closes, sealed");
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "the windows restore");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("the windows reconstruct").into_object();
     assert_eq!(booted.finality(&at), Finality::Final { upheld: true }, "and read the same");
 }
 
@@ -312,7 +316,7 @@ fn challenge_returns_child_netting_of_falsified_parent() {
         let mut prefix = [6u8; 32];
         prefix[0] = nonce;
         let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-        k.hear_uplink(&carrier.sign(&reserve()))
+        k.hear_uplink(&carrier.signed(&reserve()))
     };
     assert!(matches!(refile(&mut k, 1), Uplinked::ChildRefused { .. }), "consumed by P");
     let reply = k.challenge(&evidence(&lie, &lie_at, lying_line).sign(&challenger()));
@@ -466,8 +470,7 @@ fn orbit_prunes_final_child_and_parent_reads_final() {
     assert!(k.ledgers.finals.contains(&a_at.key()), "to a stub its unfinished parent names");
     assert_eq!(k.finality(&a_at), Finality::Final { upheld: false });
     assert_eq!(k.reconstructions.len(), 1, "P's stream stands within its window");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let mut booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false }, "the stub read final across the restart");
     // P's window closes: final through its pruned child.
     close_through(&mut booted, p_at.stamp.h).expect("P's window closes");
@@ -535,8 +538,7 @@ fn line_head_round_trips_with_setting_fold() {
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
     assert_eq!(k.line_head(&verifying(&a)), (f.prefix, Some(at.clone())));
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.line_head(&verifying(&a)), (f.prefix, Some(at)), "re-derived from the records");
 }
 
@@ -551,7 +553,7 @@ fn finality_grandfathers_pre_line_fold() {
     let (_, p, _) = tiers();
     let mut k = founded();
     let rf = TierFold { tier: verifying(&reserve()), ..a_fold() };
-    let Uplinked::Admitted { at, .. } = k.hear_uplink(&rf.clone().sign(&reserve())) else { panic!("the reserve's own") };
+    let Uplinked::Admitted { at, .. } = k.hear_uplink(&rf.clone().signed(&reserve())) else { panic!("the reserve's own") };
     let r_at = FoldAt::sealed(at);
     // As sealed before 2(c): admitted, held by its coordinates, never recorded.
     k.ledgers.records.remove(&r_at.key());
@@ -645,9 +647,8 @@ fn window_close_reconstructs_from_sealed_citation() {
     let mut k = founded();
     let at = sealed(&mut k, a_fold(), &a);
     let r = close_through(&mut k, at.stamp.h).expect("sealed");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
-    assert_eq!(booted.chain.node(&r.stamp).map(|n| n.cites.clone()), Some(r.cites.clone()), "the close on the line");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
+    assert!(booted.chain.node(&r.stamp).is_some_and(|n| super::fixtures::cites_restate(&n.cites, &r.cites)), "the close on the line");
     assert_eq!(booted.window_close(at.stamp.h), k.window_close(at.stamp.h));
     assert_eq!(booted.finality(&at), Finality::Final { upheld: false });
 }

@@ -5,6 +5,7 @@ mod deferral;
 mod genesis;
 mod pacing;
 mod patience;
+mod proofs;
 mod standing;
 mod strokes;
 mod tick;

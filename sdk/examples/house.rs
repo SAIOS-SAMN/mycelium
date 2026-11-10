@@ -8,7 +8,8 @@
 //! `house <house home> <hypha address>`
 //!
 //! 1. Identity — the house's Ed25519 key, read from `<house home>/voice.key`
-//!    or minted there.
+//!    or minted there; its session inside Noise on the home's static key
+//!    (`Session::with_noise`, the hyphae pinned in `<house home>/noise.pins`).
 //! 2. The Concordance — its clause register read (`ACT_LAWS` mode 7), each
 //!    clause's fixtures reconstructed here (`house::sign_concordance`) and
 //!    the readings signed by the key, presented to the hypha (mode 8), which
@@ -47,7 +48,7 @@ use mycelium_sdk::conformance::{run, Profile};
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::house::{
     decode_alignment_reply, decode_clock_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_clock_request,
-    encode_concordance_request, encode_signature_request, payload_hash, rotator, sign_concordance, sphere_at, carried_body, Assent, BodyMoments, BodyState,
+    encode_concordance_request, encode_signature_request, payload_hash, rotator, sign_concordance, membrane_at, carried_body, Assent, BodyMoments, BodyState,
     ClauseReading, DomainGenesis, Founded, Reservation, Transition,
 };
 use mycelium_sdk::prelude::*;
@@ -106,7 +107,16 @@ fn main() -> ExitCode {
     let (voice, key) = mycelium_sdk::voice::load_or_mint(&format!("{home}/voice.key"));
     let domain = key.verifying_key().to_bytes();
     println!("house {}", hex32(&domain));
-    let session = Session::open(endpoint, voice);
+    // Every act inside Noise where the hypha speaks it, on the house home's
+    // static key, the hyphae pinned beside it (MU-PRECURSORS §3.1).
+    let noise = match mycelium_sdk::session::NoiseHome::open(std::path::Path::new(home)) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("{home}: the Noise home does not open: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let session = Session::open(endpoint, voice).with_noise(noise);
 
     let served = match session.speak(encode_concordance_request()) {
         Ok(reply) => decode_concordance_reply(&reply),
@@ -180,13 +190,13 @@ fn main() -> ExitCode {
     }
 }
 
-/// The (3,4,5) turn carrying a unit sphere at `(1, 0, 0)`, heights 7 → 8:
+/// The (3,4,5) turn carrying a unit membrane at `(1, 0, 0)`, heights 7 → 8:
 /// a transition lawful under every law of the register.
 fn lawful() -> Option<Transition> {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let turn = rotator(&q(2), &q(1));
     let body = BodyMoments { centre: vec![q(1), q(0), q(0)], mass: q(1), moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]] };
-    let nucleus = sphere_at(&body.centre, &q(1));
+    let nucleus = membrane_at(&body.centre, &q(1))?;
     let after = BodyState { nucleus: turn.sandwich(&nucleus), body: carried_body(&body, &turn)? };
     Some(Transition { motion: turn, heights: (7, 8), bodies: vec![(BodyState { nucleus, body }, after)], hues: Default::default(), fluxes: Vec::new() })
 }
@@ -197,6 +207,8 @@ fn lawful() -> Option<Transition> {
 /// the universal laws and admits only while the reserve converses on every
 /// network clause it signed above. Whether it crossed.
 fn reserve_and_cross(session: &Session, key: &mycelium_sdk::prelude::SigningKey) -> bool {
+    use mycelium_sdk::forms::{Crossing, Place};
+    use mycelium_sdk::house::tuniversal::{Origin, TPoint};
     use mycelium_sdk::house::uplink::{decode_uplink_reply, encode_uplink, TierFold, Uplinked};
     let domain = key.verifying_key().to_bytes();
     if !matches!(session.reserve_reading(domain), Ok(r) if r.current == Some(domain)) {
@@ -219,7 +231,16 @@ fn reserve_and_cross(session: &Session, key: &mycelium_sdk::prelude::SigningKey)
         handoffs: Vec::new(),
         transitions: vec![transition],
     };
-    match session.speak(encode_uplink(&fold.sign(key))) {
+    // X1 (#160) — the fold carries its crossing through the core tube: here
+    // one that moves no body of its own (the transition carries the body),
+    // at the zero point of the domain's origin, over one phase of period 1.
+    let at = TPoint { origin: Origin { genesis: domain, epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    let crossing = Crossing::still(Place { at, parents: Vec::new() }, vec![1]);
+    let Some(frame) = fold.sign_crossed(crossing, key).and_then(|f| encode_uplink(&f)) else {
+        println!("crossing: the record does not write");
+        return false;
+    };
+    match session.speak(frame) {
         Ok(reply) => match decode_uplink_reply(&reply) {
             Some(Uplinked::Admitted { at, receipt }) => {
                 println!("crossing: a lawful transition through the universal core tube, admitted at height {}, receipt {}", at.h, hex32(&receipt));

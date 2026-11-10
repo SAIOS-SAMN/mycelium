@@ -31,7 +31,8 @@ section named:
    closure is one point network-wide (§3.4, §5.3).
 6. Between courts the Note settles; between universes μ is the connecting
    reserve and crosses only at the universal core tube (§5.4, §10).
-7. A shared economic law form is proposed, to come as 78.174 (§10.4).
+7. The rulings are recorded in proposal 78.174; a shared economic law
+   form with the peer kernels is to come as its amendment (§10.4).
 
 Only the flat ledger is retired: one sequence of rows, one balance per
 party, one number per lane. "Ledger" names the multi-dimensional ledger of
@@ -92,7 +93,8 @@ on the lane its kind names, each with an exact rational amount:
 
 A holding holds its modes, each keyed by its canonical coordinates (A21).
 A payment adds modes; a draw removes modes or is refused naming the mode
-it lacks. Nothing is projected to a count (MU-RECURSION 78.162). The carrier
+it lacks. A per-lane draw takes that lane's modes in proportion to their
+amounts, and never another lane's (§2.5). Nothing is projected to a count (MU-RECURSION 78.162). The carrier
 is `economy::modes::Modes` (`src/economy/modes.rs`): add, a draw refused
 naming the mode short (`Short`), the modes of a motion
 (`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), and the
@@ -120,8 +122,12 @@ A discharge with no frame (a rewrite's yield, a listing bound to no
 family) keeps its own measure as `n/1`. The readers are
 `DeflationRead::mu`, `Local::mu`, `transduce::share_of_enclosure` and
 `Transduction::lane_shares`. A word's magnitude, a family's metabolism, a
-demand's ask and a stroke's size stay counts and are not μ. How the share
-of the frame sets each mode's amount is §12 item 4.
+demand's ask and a stroke's size stay counts and are not μ. A mode's
+amount is its share of the enclosure, never the mass carried (78.174 §1 item
+9; §12 item 4; MU-ENGINEERING §9.3): a closure's motion modes are read at
+the share of the output enclosure its carried mass covers (its measure at
+rank `n`), and its hue modes at the pair's G share, so a recolour pays G by
+its share (`DeflationRead::modes`, `Modes::of_motion`, `Modes::of_gauge`).
 
 **Lanes are open-dimensional** (ruled 2026-11-05). S, G, T and H are the
 network's base lanes. μ, the coordinate and the Concordance are
@@ -243,6 +249,51 @@ Only an event moves a holding, and the event cites its causes:
 - **A fold** is a checkpoint of a line's prefix (§6.1).
 
 No event carries a clock reading (MU-RECURSION chapter 45).
+
+### 2.5 Holdings no motion made
+
+A holding's modes are the motions verified work moved (§1). Some value is
+held although no motion of the network's lanes made it. Ruled by the
+coordinator on 2026-11-06, under the operator's delegation (#169;
+[78.180](proposals/78.180-delegated-rulings-2026-11-06.md) ruling 3):
+- **Reserves, deficits, rooms and prices are readings**, never holdings.
+  Each is read off holdings and motions when it is needed, carries no
+  modes of its own, and is never stored.
+- **A bond holds the modes it was staked from.** Staking carries the
+  balance's modes unchanged into the bond (§2.3, §4).
+- **A genesis allocation is held at the founding mode.** The founding
+  mode is the identity motion of its lane. It is stated explicitly as the
+  mode, never left empty, and its amount is its share of the frame (§1).
+  Its issuance cites the founding receipt (§2.4).
+- **A Note's mode-0 receipt is a founding-mode receipt** (#168). It is
+  admitted under the rule that admits a genesis allocation and is not held
+  for review (MU-XSEPTUM §5.3).
+
+**Draws and mints** (ruled by the coordinator on 2026-11-06, under the
+operator's delegation, on #169's follow-up; 78.180 ruling 3):
+- **A per-lane amount is drawn from the modes on that lane**, in
+  proportion to their amounts, computed exactly in ℚ. The draw is
+  deterministic: no choice is hidden in the payer, and no rounding is
+  left behind.
+- **A lane is never paid from another lane's modes.** Where the lane holds
+  too little, the draw is refused by name (`Short`, naming the mode).
+- **The modes drawn travel with the transfer**: tuition, gas, tolls,
+  conversion, stake top-up, partial slash and lease hold.
+- **A mint carries the modes of the motion its proof cites.** Every mint
+  pays for a proof, and every proof is a relation between motions (§0;
+  78.174):
+
+  | Mint | Modes it carries |
+  |---|---|
+  | Word use or citation (POWR shares) | The cited word's closure modes |
+  | POWR, or a Rewrite | The reduction's: the modes of the family the reduction absorbs |
+  | POWC | The converging orbits' class |
+  | Consilience (POWV) | The re-traversed closure's |
+  | Torse, recall | Their own motion's |
+
+- **A mint whose proof cites no motion** (a subsidy, or a mint at a door
+  with no closure) is minted at the founding mode, as genesis is, and
+  never with empty modes.
 
 ## 3. Issuance
 
@@ -481,6 +532,20 @@ organ that took it (47.3). A payout is never proven by a stored balance.
 A re-traversal reads the cone between the payment and its closure. A
 folded prefix is read at its checkpoint (§6.1).
 
+**Read today** (`mycelium-server --console --proofs`,
+`src/bin/mycelium-server/proofs.rs`): a reading over the running mesh,
+never stored. Per payment on each court's journal that carries a proof:
+the proof, the payee, the amount per lane and the act it stands at; the
+words that act names; the level read off them (§12's pay by level: a
+named sentence, named words, or unread, since no served reading tells a
+letter from a word or names a conjugate class); and each other court's
+reading of the same act at its stamp, the same act and words read off its
+own copy (the same point) or a residue naming what differs. It also names
+every task paid as a first closure more than once as an equivocation of
+the advance (§3.4). The re-traversal of this section through the release
+and its verifications to the closure's reconstruction needs the payment
+to cite its causes, which is v0.5.0's (§9).
+
 ### 5.4 Between courts: the Note
 
 A transfer between voices homed at different courts is the xSEPTUM Note
@@ -544,6 +609,23 @@ Both equations hold before and after it, and a witness re-derives the
 nets before it co-signs. A fold that does not conserve is refused
 `REFUSE_FOLD_INEXACT` and writes nothing. Heights continue across a fold,
 and install receipts survive it.
+
+**Built** (`economy::fold::FoldedIssuance`). The epoch rows carry only the
+balances' nets. What the folded rows issued and burned is kept beside them
+as the fold's checkpoint, gross and by source. Each source is the row's own
+coordinate `[kind tag, arm byte]`: genesis, mints, transfers and burns by
+the proof each carried, and slashes. So every reading stays the same across
+a fold: issued and burned, each apart from the other; the earned supply,
+apart from genesis (§6); and what each proof paid and burned (§0). A fold
+that would move issued or burned refuses `REFUSE_FOLD_INEXACT`. The
+checkpoint is persisted with the carriers (the `folded` trie). Claims:
+`economy::tests::fold` (`fold_keeps_what_each_proof_paid`,
+`fold_keeps_genesis_apart_from_the_earned`,
+`fold_keeps_issued_and_burned_each`,
+`second_fold_reads_the_first_folds_issuance_once`,
+`checkpoint_source_at_no_coordinate_is_refused`,
+`restored_fold_keeps_its_issuance`). Owed: a witness re-derives the nets it
+co-signs, not the checkpoint, which no fold receipt signs yet.
 
 ## 7. Metabolism and money
 
@@ -707,13 +789,15 @@ universe's reserve:
 - **Every universe keeps its sovereignty.** A universe that stops trading
   keeps its own economy whole, and its μ stays its reserve's holding.
 
-### 10.4 A shared economic law form (proposal 78.174, to come)
+### 10.4 A shared economic law form (proposal 78.174)
 
 The economy at the boundary is to become a law form taken through
 [MU-RELEASE §3a](MU-RELEASE.md#3a-how-a-hypha-standard-becomes-a-kernel-standard),
 as LAW-COORDINATE is: μ's modes, the reserve, and conversion at the
 universal core tube, with joint-read fixtures that the peer kernels
-reconstruct. It will be proposed as 78.174. It is not drafted here.
+reconstruct. [Proposal 78.174](proposals/78.174-economy-as-motions.md)
+records the operator's rulings of 2026-11-05 on this model; the law form
+with the peers is a later amendment of it, not drafted here.
 
 ## 11. Fairness across capacity
 
@@ -832,10 +916,12 @@ for its lessee for one window.
 
 ## 12. Open: what the model leaves to a ruling
 
-1. **Lanes as vectors in the coordinate.** `FORMS-COORDINATE` v3 holds
-   each lane as a vector of exact components keyed by axis, with the
-   advance, merger and fission per component (78.173 §1, §3). How a
-   holding's modes are keyed as those components is not yet stated.
+1. **Lanes as vectors in the coordinate.** *Closed (operator,
+   2026-11-05; proposal 78.174 §1 item 2: a holding is a point whose
+   lanes are `Modes`).* `FORMS-COORDINATE` v3 holds each lane as a vector
+   of exact components keyed by axis, with the advance, merger and fission
+   per component (78.173 §1, §3); a holding's modes are its coordinate's
+   components, never `Mu` scalars.
 2. **Where a role is written.** *Closed (ruled 2026-11-05: a holding is a
    point).* A holding is one point, its coordinate. Estates nest as
    origins: a holder's estate, and a role within it (balance, bond, held
@@ -847,12 +933,21 @@ for its lessee for one window.
    means closed orbits everywhere).* A holding's `K` is LAW-COORDINATE's,
    the whole turns of H (`⌊|L_H|⌋`); a line's receipt index, which this
    item called its `K` (47.1), is `i` in prose.
-4. **A mode's amount and the share of the frame.** Today each mode is read
-   at its closed pair's carried mass (`DeflationRead::modes`), while the
-   per-lane payment is the share of the frame (§1). Which gauge sets a
-   mode's amount is not ruled.
-5. **Room over modes.** Room reads a bond's whole part on each lane; read
-   over modes, that is a projection to one count per lane.
+4. **A mode's amount and the share of the frame.** *Closed (operator,
+   2026-11-05; proposal 78.174 §1 item 9: a mode's amount is its share of
+   the frame, never S mass; a recolour pays G by its share).* Today each
+   mode is read at its closed pair's carried mass (`DeflationRead::modes`);
+   v0.5.0 reads it as the share of the frame (§1). The genesis bond is
+   read the same way at v0.5.0: since track 26 S4 it holds lane counts
+   read at the samples' own rank (`family::magnitude`; ruled 2026-11-06 on
+   #32), and its move to the share of the frame goes with the `Mu` →
+   `Modes` stages, not before.
+5. **Room over modes.** *Closed (coordinator, 2026-11-06, under the
+   operator's delegation; #169; 78.180 ruling 3).* Room is a reading, never
+   a holding: it is read per lane and per mode over the bond's modes it
+   draws on (§2.5), never as one count per lane and never as a scalar.
+   Today room reads a bond's whole part on each lane (`REFUSE_ROOM`), the
+   projection v0.5.0 retires.
 6. **POWC's earlier instance.** *Closed (ruled 2026-11-05: POWC is
    widened).* In 74 (CV4) the closer cites the refusing mind's receipt, so
    the two orbits' cones are not disjoint at the well. Lineages that share
@@ -863,8 +958,24 @@ for its lessee for one window.
    equivocation, as F2b and MU-RECURSION 47.4 burn a second mint; claims
    the cones leave unordered are held as a residue; F2a's equal shares are
    retired (§3.4).
-8. **The ask under modes.** A demand is a residue, which has no motion yet,
-   so its ask has no modes; 78.149 (b)'s lane-wise cap of a payment by the
-   ask needs a stated form.
+8. **The ask under modes.** *Closed (coordinator, 2026-11-06, under the
+   operator's delegation; #169; 78.180 ruling 3).* A demand is a residue,
+   which has no motion yet, so its ask holds no modes of its own. The ask
+   is a reading per lane and per mode over the holdings it draws on, never
+   a scalar, and 78.149 (b)'s cap of a payment by the ask reads it so.
 9. **The Note's amounts.** MU-XSEPTUM §5 writes μ as `4×u64`, which
-   predates both `Mu` and `Modes`; it is restated with track 1.
+   predates both `Mu` and `Modes`. Under 78.174 §1 item 2 its amounts are
+   `Modes`; the restatement is built with v0.5.0. Its mode-0 receipt is a
+   founding-mode receipt, admitted under the rule that admits a genesis
+   allocation and not held for review (§2.5; #168, closed by 78.180
+   ruling 3).
+
+Also ruled by the operator on 2026-11-05 and recorded in proposal 78.174
+§1: pay by level (letters never paid; words POWR plus citation shares;
+conjugate classes POWC; sentences POUW; POWV at every level), a seated
+mind paid to its own key (Concordance v5 6.2a); the compute lease's
+availability yield on escrowed idle capacity, paid from the recycled pool
+(§7.2) and never minted; tile turns read as H modes in degrees on their
+named plane; and reflections carried on a lane of their own, P (parity,
+proposed in 78.178), a mirrored closure's pay held as a claim until P
+opens.

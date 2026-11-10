@@ -71,6 +71,8 @@ fn rank_one_task_is_perceived() {
     assert_eq!(held.len(), 2);
     let reversal = held.iter().find(|f| f.residue.is_empty()).expect("the reversal carries the signal whole");
     assert_eq!(reversal.recomposed(&train[0].0).as_ref(), Ok(&train[0].1));
+    let transitions = pair.carrier_transitions(&train[0].0, &train[0].1, reversal).expect("transitions lift onto carrier");
+    assert!(!transitions.is_empty(), "carrier transitions between charts are produced");
 }
 
 /// A claim the in-process court heard, and the verdict it answered.

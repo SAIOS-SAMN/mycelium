@@ -40,8 +40,8 @@ pub use constructors::{carry, construct, constructor_orbit, is_constructor, Cons
 pub(crate) use constructors::{constructors_of_base_turn, TurnUnspelled};
 pub use dual::{contract_to_face, dual_frame, wedge, ReciprocalBasis};
 pub use embedding::{
-    base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,
-    rotator_on_blade, sphere_at, translator_at,
+    base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, membrane, membrane_at, point_at, rotator,
+    rotator_on_blade, translator_at,
 };
 pub use enclosure::{centre_point, containment, enclosure, nesting, Containment};
 pub use fixed::{centre_of, Centre, PoleAt};

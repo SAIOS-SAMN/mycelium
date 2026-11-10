@@ -131,7 +131,10 @@ impl Court {
                         false => None,
                     };
                     let glued = premium.is_some();
-                    let taken = self.treasury.settle_recursive(address, &shares, &pay, premium, installed);
+                    // K3 (78.177 §4a(1)) — the minds whose words converged
+                    // with this one, paid out of its composition premium.
+                    let converged = self.converging_minds(address, &w);
+                    let taken = self.treasury.settle_recursive(address, &shares, &pay, premium, &converged, installed);
                     // The pays by kind, for the observer (MU-CLIENT §5.6).
                     let kind = match (glued, w.is_connection(), self.conjugate_of(&w).is_some()) {
                         (true, _, _) => "sentence gluings",

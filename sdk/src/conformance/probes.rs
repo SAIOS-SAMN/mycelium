@@ -10,7 +10,7 @@ use mycelium::anastome::dialogue::seat::{Arg, Post, Role, Seat, SeatFn, Seats, T
 use mycelium::anastome::dialogue::universe::{Genesis, Geometry, Parent};
 use mycelium::physics::laws::{BodyState, Transition};
 use mycelium::physics::equilibrium::{carried_body, BodyMoments};
-use mycelium::transducer::cga::{rotator, sphere_at, Mv};
+use mycelium::transducer::cga::{membrane_at, rotator, Mv};
 use num_rational::BigRational as Q;
 
 fn q(n: i64) -> Q {
@@ -35,7 +35,7 @@ fn carried() -> Option<Vec<(BodyState, BodyState)>> {
                 mass: q(1),
                 moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]],
             };
-            let nucleus = sphere_at(&body.centre, &q(1));
+            let nucleus = membrane_at(&body.centre, &q(1))?;
             let after = BodyState { nucleus: rotor().sandwich(&nucleus), body: carried_body(&body, &rotor())? };
             Some((BodyState { nucleus, body }, after))
         })
@@ -61,6 +61,16 @@ pub(crate) fn genesis() -> Genesis {
 pub(crate) fn origin(domain: [u8; 32]) -> BigBangRecord {
     let commitment = mycelium::chronometry::payload_hash(b"mycelium conformance universe");
     BigBangRecord { domain, kind: 0, version: 2, commitment, universe: Some(genesis()) }
+}
+
+/// X1 (#160) — THE CROSSING A PROBE'S UNIVERSE ACT CARRIES: one that moves
+/// no body (`Crossing::still`), at the zero point of the domain's own
+/// origin, over a frame of one phase of period 1, citing nothing.
+pub(crate) fn crossing(domain: [u8; 32]) -> mycelium::anastome::dialogue::crossing_record::Crossing {
+    use mycelium::anastome::dialogue::crossing_record::{Crossing, Place};
+    use mycelium::chronometry::tuniversal::{Origin, TPoint};
+    let at = TPoint { origin: Origin { genesis: domain, epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    Crossing::still(Place { at, parents: Vec::new() }, vec![1])
 }
 
 /// A MANIFEST of one kind of nuclei, one hydrogen nucleus, under a nonce.

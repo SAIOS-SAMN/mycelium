@@ -20,11 +20,12 @@
 //! use mycelium::arc;
 //! ```
 
-use super::family::transduce::{Ground, Unground};
+use super::family::transduce::{Ground, Sense, SignedPermutation, Unground};
 use super::family::{Family, Task};
 use super::alphabet::ALPHABET_SAMPLE_RANK;
+use super::perspective::Perspective;
 use super::sample::{Place, Sample, SampleRefusal};
-use super::spelled::{PaintedSite, SectionSample, SectionSite};
+use super::spelled::{PaintedSite, SectionSample};
 
 /// THE WIDTH OF A RASTER. A raster is rectangular (every reader that takes
 /// one refuses a ragged one), so line zero is a COORDINATE of the raster
@@ -152,8 +153,8 @@ pub(crate) fn stand_on(g: u8) {
 /// A TASK'S FRAME FIXED ON THE FAMILY'S OWN GROUND: under `Ground::One(g)`
 /// the moments of [`frame_fixed`] weigh the sites off `g` the train family
 /// shows. Under a vortex or no ground the frame stays as read: no candidate
-/// is picked to weigh by, and the frame becomes a perspective in S6
-/// (MU-SENSING §4). A perspective a sensor may take after intake, never
+/// is picked to weigh by ([`frame_fixing`], a perspective since S6;
+/// MU-SENSING §4). A perspective a sensor may take after intake, never
 /// before a task is addressed: no decoder hands its tasks through it, and
 /// a task's identity reads no frame fixing (MU-SENSING §3.4, scope
 /// separation).
@@ -198,11 +199,33 @@ pub fn enclosure_fixed_on_ground(task: Task) -> Task {
 /// the frame given is kept (law 10: held, never broken by an arbitrary
 /// choice). The symbols are never relabelled: the detector is a Dirichlet
 /// boundary, the laboratory's anchor for every mind (78.56 II).
+///
+/// THE FRAME FIXING IS A PERSPECTIVE (MU-SENSING §4; track 26 S6): the
+/// moments name a pose ([`frame_fixing`]), and the task is read through it
+/// ([`Perspective::read`]), each sample at its place. Nothing posted is
+/// rewritten: the task handed in is the source's, and what returns is the
+/// sensor's reading of it.
 pub fn frame_fixed(task: Task) -> Task {
+    let perspective = frame_fixing(&task);
+    let at = |g: &SectionSample| read_through(&perspective, g);
+    Task {
+        train: task.train.iter().map(|(a, b)| (at(a), at(b))).collect(),
+        test: task.test.iter().map(|(a, b)| (at(a), b.as_ref().map(at))).collect(),
+    }
+}
+
+/// THE PERSPECTIVE THE FRAME FIXING TAKES (MU-SENSING §4; track 26 S6): the
+/// section's default roles, every axis space, in the pose the scene's own
+/// moments name ([`frame_fixed`]): output axis `j` reads the axis the even
+/// moments order `j`-th, reversed where its odd moments read negative. The
+/// identity pose where the task carries a polar vector (78.56) or where the
+/// moments name no other.
+pub fn frame_fixing(task: &Task) -> Perspective {
+    let identity = Perspective::of_sample(ALPHABET_SAMPLE_RANK);
     // 78.56 — A TASK WITH A POLAR VECTOR HAS A PHYSICAL ORIENTATION: its
     // momentum breaks the lattice's symmetry, and its frame is kept.
     if !momentum_vanishes(&task.train) {
-        return task;
+        return identity;
     }
     // THE MOMENTS, per axis and per order 1..=4, over the visible samples.
     let mut moment = [[0i128; 4]; ALPHABET_SAMPLE_RANK];
@@ -232,25 +255,48 @@ pub fn frame_fixed(task: Task) -> Task {
     // A stable ordering: axes whose even moments tie keep the order given.
     #[expect(clippy::disallowed_methods, reason = "rule 4 — a gauge-fixing condition, not a choice among candidates: the axes are ordered by the even moments the scene itself carries (78.54)")]
     order.sort_by_key(|&axis| (moment[axis][1], moment[axis][3]));
-    let at = |g: &SectionSample| reoriented(g, order, reversed);
-    Task {
-        train: task.train.iter().map(|(a, b)| (at(a), at(b))).collect(),
-        test: task.test.iter().map(|(a, b)| (at(a), b.as_ref().map(at))).collect(),
+    let images = order
+        .iter()
+        .map(|&axis| match reversed[axis] {
+            true => (axis, Sense::Reversed),
+            false => (axis, Sense::Kept),
+        })
+        .collect();
+    let Ok(pose) = SignedPermutation::new(images) else { return identity };
+    match Perspective::posed(identity.roles().to_vec(), pose) {
+        Ok(p) => p,
+        Err(_) => identity,
+    }
+}
+
+/// A SECTION SAMPLE READ THROUGH `perspective`: the sample as the
+/// perspective reads it, admitted onto the section, its place kept; the
+/// sample as given where the reading leaves the section (a pose keeps the
+/// rank and the symbols, so a raster's reading stays on it).
+fn read_through(perspective: &Perspective, g: &SectionSample) -> SectionSample {
+    match perspective.read(g.sample()).ok().and_then(|s| SectionSample::of(s).ok()) {
+        Some(s) => s,
+        None => g.clone(),
     }
 }
 
 /// 78.56 — WHETHER THE TASK CARRIES NO POLAR VECTOR: its momentum (the
-/// mass-weighted displacement from input to output, `Σ_out X − s·Σ_in X`
-/// in centred coordinates across each pair's envelope dilation, summed
-/// over the train pairs, every painted site a unit of mass) is exactly
-/// zero. `false` where it is not, and where any pair's dilation is
-/// irrational (its momentum unread: the orientation is held physical, so
-/// the frame is never un-fixed by a guess). Read by [`frame_fixed`] alone.
+/// mass-weighted displacement from input to output, `Σ_out Xᵢ − (p′ᵢ/pᵢ)·Σ_in
+/// Xᵢ` on each axis in centred coordinates across that phase's re-period,
+/// summed over the train pairs, every painted site a unit of mass) is
+/// exactly zero. `false` where it is not, and where a pair's two members
+/// are of different rank or a period is empty (its momentum unread: the
+/// orientation is held physical, so the frame is never un-fixed by a
+/// guess). Read by [`frame_fixed`] alone. Since track 26 S4 each phase
+/// re-periods by its own ratio; the envelopes' dilation, which squared the
+/// extents (law 11), is retired.
 pub fn momentum_vanishes(train: &Family) -> bool {
     use num_rational::Ratio;
     let mut total: [Ratio<i128>; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|_| Ratio::from_integer(0));
     for (a, b) in train {
-        let Some((p, q)) = super::family::envelope_dilation(a.sample(), b.sample()) else { return false };
+        let Some(r) = super::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()) else { return false };
+        let ratios: Option<Vec<(i128, i128)>> = r.periods().iter().map(|&(p_in, p_out)| Some((i128::try_from(p_out).ok()?, i128::try_from(p_in).ok().filter(|&q| q != 0)?))).collect();
+        let Some(ratios) = ratios.filter(|rs| rs.len() == ALPHABET_SAMPLE_RANK) else { return false };
         // A scene's first moment, per axis, each painted site a unit of mass.
         let moment = |g: &SectionSample| -> [i128; ALPHABET_SAMPLE_RANK] {
             let e = g.extents();
@@ -264,8 +310,8 @@ pub fn momentum_vanishes(train: &Family) -> bool {
             m
         };
         let (m_in, m_out) = (moment(a), moment(b));
-        for (axis, t) in total.iter_mut().enumerate() {
-            *t += Ratio::from_integer(m_out[axis]) - Ratio::new(m_in[axis] * i128::from(p), i128::from(q));
+        for ((axis, t), &(p, q)) in total.iter_mut().enumerate().zip(&ratios) {
+            *t += Ratio::from_integer(m_out[axis]) - Ratio::new(m_in[axis] * p, q);
         }
     }
     total.iter().all(|t| *t == Ratio::from_integer(0))
@@ -289,45 +335,6 @@ pub fn painted_sites(g: &SectionSample) -> Vec<PaintedSite> {
 /// integer: `X = 2x − (n − 1)`.
 pub(crate) fn centred(x: i64, n: usize) -> i128 {
     2 * i128::from(x) - (n as i128 - 1)
-}
-
-/// A section sample with the axes of its plane permuted (`order[j]` is the
-/// axis read as the j-th) and reversed where `reversed[axis]`: one pass over
-/// every site, so no symbol is written that the sample did not hold. The
-/// sample keeps its place.
-fn reoriented(g: &SectionSample, order: [usize; ALPHABET_SAMPLE_RANK], reversed: [bool; ALPHABET_SAMPLE_RANK]) -> SectionSample {
-    match reoriented_of(g, order, reversed) {
-        Some(s) => s,
-        None => g.clone(),
-    }
-}
-
-/// [`reoriented`], or `None` where the permuted extents hold no sample on
-/// the section or a site reads none of `g`'s.
-fn reoriented_of(g: &SectionSample, order: [usize; ALPHABET_SAMPLE_RANK], reversed: [bool; ALPHABET_SAMPLE_RANK]) -> Option<SectionSample> {
-    let e = g.extents();
-    let ne: [usize; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|j| e[order[j]]);
-    // The permuted extents hold the same count of sites: the canvas holds
-    // `g`'s symbols until every site of it is written below, each once.
-    let sample = Sample::new(ne.to_vec(), 1, g.symbols().to_vec(), g.sample().place().clone()).ok()?;
-    let mut out = SectionSample::of(sample).ok()?;
-    let mut writes = Vec::with_capacity(g.symbols().len());
-    for (at, _) in out.sites() {
-        let at = at.coordinates();
-        // The source site: output axis `i` reads source axis `order[i]`.
-        let mut site = [0i64; ALPHABET_SAMPLE_RANK];
-        for (i, &axis) in order.iter().enumerate() {
-            site[axis] = match reversed[axis] {
-                true => i64::try_from(e[axis]).ok()? - 1 - at[i],
-                false => at[i],
-            };
-        }
-        writes.push((SectionSite::on_plane(at), g.at(SectionSite::on_plane(site))?));
-    }
-    for (at, h) in writes {
-        out.paint(at, h)?;
-    }
-    Some(out)
 }
 
 // ── THE SAMPLE BRIDGE (ROADMAP track 26, S4; MU-SENSING §2) ────────────────

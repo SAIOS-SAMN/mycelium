@@ -8,6 +8,7 @@ use crate::anastome::dialogue::domain::{Founded, Reservation};
 use crate::anastome::dialogue::handoff::{ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Side, State};
 use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFold, Uplinked};
 use crate::economy::tests::Counts;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
@@ -57,7 +58,7 @@ fn designate(k: &mut Court, tier: &SigningKey, nonce: u8) -> Founded {
 fn basket(k: &mut Court) {
     use crate::anastome::dialogue::universe::{Statement, Stated};
     let s = Statement { domain: verifying(&domain()), stated: Stated::Basket(vec![(1, (1, 1)), (8, (8, 1))]) };
-    assert!(matches!(k.state(&s.sign(&x())), Founded::Stated { .. }));
+    assert!(matches!(k.state(&s.signed(&x())), Founded::Stated { .. }));
 }
 
 /// μ seeded on a key, as the fixture's genesis seeds its own.
@@ -97,11 +98,10 @@ fn designate_reserve_redesignates_at_reserve_fold() {
     assert!(matches!(k.designate_reserve(&succession), Founded::Reserved { now: false, .. }), "pending, signed by the sitting reserve");
     assert_eq!(k.reserve_of(&verifying(&domain())), Some(verifying(&x())), "never mid-era");
     assert_eq!(k.reserve_reading(&verifying(&domain())).pending, Some(verifying(&x2())), "the pending redesignation, read");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let mut booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     super::boundary::calibrate(&mut booted);
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x())));
-    assert!(matches!(booted.hear_uplink(&fold(1, Vec::new(), Vec::new()).sign(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");
+    assert!(matches!(booted.hear_uplink(&fold(1, Vec::new(), Vec::new()).signed(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x2())), "the redesignation holds from the anchor");
 }
 
@@ -115,29 +115,29 @@ fn convert_out_pays_from_reserve_never_mints() {
     let mut k = founded();
     assert!(matches!(designate(&mut k, &x(), 1), Founded::Reserved { .. }));
     fund(&mut k, verifying(&x()), [8, 0, 0, 0]);
-    let refused = |k: &mut Court, c: ConvertOut, by: &SigningKey| match k.handoff(&Handoff::ConvertOut(Box::new(c)).sign(by)) {
+    let refused = |k: &mut Court, c: ConvertOut, by: &SigningKey| match k.handoff(&Handoff::ConvertOut(Box::new(c)).signed(by)) {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
     assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the reserve's basket");
     basket(&mut k);
     assert_eq!(refused(&mut k, out(10, (1, 0), 1), &x()), HandoffRefusal::Inexact, "a rate over zero is no rate");
-    let by_line = k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) })).sign(&x2()));
+    let by_line = k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) })).signed(&x2()));
     let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::ConversionOut, domain: verifying(&domain()) };
     assert_eq!(by_line, Handed::Boundary(off_core), "only the sitting reserve converts out");
     assert_eq!(refused(&mut k, out(20, (1, 1), 1), &x()), HandoffRefusal::ReserveShort, "a rate never mints μ");
     let supply = k.treasury.balance_mu(&verifying(&x())).n()[0] + k.treasury.balance_mu(&verifying(&holder())).n()[0];
-    let first = k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).sign(&x()));
+    let first = k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).signed(&x()));
     let Handed::Sealed { id, state: State::Accepted, .. } = first else { panic!("{first:?}") };
     assert_eq!((k.treasury.balance_mu(&verifying(&x())).n()[0], k.treasury.balance_mu(&verifying(&holder())).n()[0]), (3, 5));
     assert_eq!(k.treasury.balance_mu(&verifying(&x())).n()[0] + k.treasury.balance_mu(&verifying(&holder())).n()[0], supply, "Σ = 0");
-    assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).sign(&x())), first, "a resend");
+    assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).signed(&x())), first, "a resend");
     assert_eq!(k.treasury.balance_mu(&verifying(&holder())).n()[0], 5, "paid once");
     let leaving = vec![(PLAYER, [0, -10, 0, 0])];
-    assert!(matches!(k.hear_uplink(&fold(1, leaving.clone(), Vec::new()).sign(&x())), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 1 })));
-    assert!(matches!(k.hear_uplink(&fold(1, leaving.clone(), vec![(id, Side::Out)]).sign(&x())), Uplinked::Admitted { .. }));
+    assert!(matches!(k.hear_uplink(&fold(1, leaving.clone(), Vec::new()).signed(&x())), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 1 })));
+    assert!(matches!(k.hear_uplink(&fold(1, leaving.clone(), vec![(id, Side::Out)]).signed(&x())), Uplinked::Admitted { .. }));
     assert_eq!(
-        k.hear_uplink(&fold(2, leaving, vec![(id, Side::Out)]).sign(&x())),
+        k.hear_uplink(&fold(2, leaving, vec![(id, Side::Out)]).signed(&x())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::Consumed }
     );
 }
@@ -159,13 +159,13 @@ fn convert_in_holds_escrow_until_reserve_answers() {
     assert_eq!(k.treasury.balance_mu(&verifying(&holder())).n()[0], 3, "held from the holder");
     let arriving = vec![(PLAYER, [0, 7, 0, 0])];
     assert_eq!(
-        k.hear_uplink(&fold(1, arriving.clone(), vec![(id, Side::In)]).sign(&x())),
+        k.hear_uplink(&fold(1, arriving.clone(), vec![(id, Side::In)]).signed(&x())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::NotYet }
     );
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&holder())), Handed::Refused(HandoffRefusal::NotTheTier)));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&x())), Handed::Sealed { state: State::Accepted, .. }));
     assert_eq!(k.treasury.balance_mu(&verifying(&x())).n()[0], 3, "into the reserve");
-    assert!(matches!(k.hear_uplink(&fold(1, arriving, vec![(id, Side::In)]).sign(&x())), Uplinked::Admitted { .. }));
+    assert!(matches!(k.hear_uplink(&fold(1, arriving, vec![(id, Side::In)]).signed(&x())), Uplinked::Admitted { .. }));
     // Refused: refunded whole.
     let Handed::Sealed { id, .. } = k.handoff(&Handoff::ConvertIn(Box::new(offer(2))).sign(&holder())) else { panic!() };
     assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&x())), Handed::Sealed { state: State::Returned, .. }));

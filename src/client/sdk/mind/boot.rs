@@ -94,6 +94,7 @@ impl Mind {
             comprehending: crate::network::nerve::Keyed::new(),
             comprehended_after: Vec::new(),
             genome_persisted: None,
+            amendments: Vec::new(),
             sealed: crate::network::nerve::Keyed::new(),
             contractions: crate::network::nerve::Keyed::new(),
             contracted: Vec::new(),
@@ -109,6 +110,7 @@ impl Mind {
             field: Default::default(),
             remembered: crate::network::nerve::Keyed::new(),
             questions: crate::network::nerve::Keyed::new(),
+            closed_answers: crate::network::nerve::Keyed::new(),
             scenes: Default::default(),
         }
     }

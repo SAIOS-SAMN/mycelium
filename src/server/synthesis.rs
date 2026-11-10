@@ -50,7 +50,7 @@ pub fn probe(
     };
     // The expression is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
-    let residue = crate::transducer::sentence::verify_utterance(cites, listing.sub());
+    let residue = crate::transducer::sentence::verify_assertion(cites, listing.sub());
     let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
     g.run(|g, _| {
         // A SECTION is the hypha's reading, never the speaker's flag: a cite

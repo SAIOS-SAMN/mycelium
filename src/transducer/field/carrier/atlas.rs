@@ -9,6 +9,7 @@ use super::enclosing::Membrane;
 use super::holonomy::{Holonomy, Motion};
 use super::refusal::FieldRefusal;
 use super::turning::FramePlanes;
+use crate::transducer::cga::Mv;
 use crate::transducer::stalk::{ChartAxis, Invariant};
 
 /// A CHART (78.171 §2; MU-RECURSION 78.41), its one meaning: a body's exact
@@ -61,13 +62,16 @@ pub struct Orbit {
 }
 
 /// THE PRECESSION PER REVOLUTION (78.171 §3.3; MU-SENSING §3.9), the
-/// residue of a revolution's transitions: an advance on the planes the
-/// holonomy turns on, or none, where the closed geodesic returns exactly
-/// in a curved field and the orbit is resonant, lawful and never refused.
+/// residue of a revolution's transitions: an advance on the planes where the
+/// holonomy's motion is not the identity, or none, where the closed geodesic
+/// returns exactly in a curved field and the orbit is resonant, lawful and
+/// never refused. A resonant orbit keeps its holonomy whole, its winding
+/// with it: three 120° steps compose to 360° with `K = 1`, never read back
+/// as the flat path's 0° (`flat_and_resonant_separated_by_kept_winding`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Precession {
     Advances(Holonomy),
-    Resonant,
+    Resonant(Holonomy),
 }
 
 impl Orbit {
@@ -109,13 +113,15 @@ impl Orbit {
         self.revolution.iter().try_fold(Motion::identity(), |m, t| m.then(&t.motion)).map(Holonomy::of)
     }
 
-    /// THE PRECESSION PER REVOLUTION: the holonomy's advance where it turns
-    /// on some plane, `Resonant` where it is the identity on every plane
-    /// (`0°`, `K = 0`). Refused as [`Orbit::holonomy`] refuses.
+    /// THE PRECESSION PER REVOLUTION: the holonomy's advance where its
+    /// motion on some plane is not the identity, `Resonant` with the
+    /// holonomy, its winding kept, where the motion is the identity on every
+    /// plane (`0°` with `K = 0`, or `360°` with `K = 1`, and so on). Refused
+    /// as [`Orbit::holonomy`] refuses.
     pub fn precession(&self) -> Result<Precession, FieldRefusal> {
         let h = self.holonomy()?;
-        Ok(match h.turnings() {
-            [] => Precession::Resonant,
+        Ok(match h.monodromy() {
+            super::holonomy::Monodromy::Flat => Precession::Resonant(h),
             _ => Precession::Advances(h),
         })
     }
@@ -253,5 +259,25 @@ impl Atlas {
     /// no attractor, no curvature.
     pub fn curvature(&self) -> Vec<Curvature> {
         self.attractors.iter().map(|a| Curvature { centre: a.centre.clone(), holonomy: a.holonomy() }).collect()
+    }
+
+    /// AXIOMATIC GRAVITY: the shear of each held attractor's bound orbit on
+    /// the orthogonal orbit class of `orbit` (MU-SENSING §3.7). Flat (empty)
+    /// where no attractor binds an orbit.
+    pub fn axiomatic_shear(&self, orbit: &Orbit) -> Result<Vec<Mv>, FieldRefusal> {
+        let mut out = Vec::new();
+        let Some(target) = super::gravity::primary_plane(orbit) else {
+            return Ok(out);
+        };
+        for attractor in &self.attractors {
+            if let Some(held) = &attractor.orbit {
+                if let Some(held_plane) = super::gravity::primary_plane(held) {
+                    if let Some(split) = super::gravity::axiomatic_shear(&held_plane, &target)? {
+                        out.push(split.drag);
+                    }
+                }
+            }
+        }
+        Ok(out)
     }
 }

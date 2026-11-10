@@ -11,6 +11,7 @@ use crate::anastome::dialogue::uplink::{TierFold, Uplinked};
 use super::fixtures::close_through;
 use crate::server::cognition::handoff::toll_key;
 use crate::server::cognition::Court;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -88,7 +89,7 @@ fn open(k: &mut Court, m: Mouth) -> [u8; 32] {
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&reserve(4)), [1, 0, 0, 0], anchor);
     let id = m.citation();
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))), Handed::Sealed { .. }));
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(4))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }));
     id
 }
@@ -160,7 +161,7 @@ fn tariff_parts_sum_exactly_under_adversarial_shares() {
 #[test]
 fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
     let mut k = founded();
-    let offer = |k: &mut Court, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
+    let offer = |k: &mut Court, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(4))) {
         Handed::Refused(r) => Some(r),
         _ => None,
     };
@@ -218,8 +219,7 @@ fn settle_windows_releases_toll_parts_together() {
     fund(&mut k, verifying(&reserve(5)), [11, 0, 0, 15]);
     let Handed::Sealed { id, at: traversed, .. } = traverse(&mut k, m, passage(7, 3, 1)) else { panic!() };
     let Handed::Sealed { at: accepted, .. } = k.handoff(&Handoff::Accept { id }.sign(&reserve(4))) else { panic!() };
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.toll_held_for(&verifying(&line())), halves(7, 5), "the toll held across a restart");
     let mut k = booted;
     assert!(k.window_close(accepted.h).is_err(), "no keeper has carried the acceptance yet");
@@ -248,7 +248,7 @@ fn challenge_default_refunds_toll_parts_together() {
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { .. }), "accepted");
     let leaving = vec![([1; 32], [-7, 0, 0, -3])];
     let fold = TierFold { tier: traveller, prefix: [1; 32], rows: leaving, declared: Vec::new(), children: Vec::new(), handoffs: vec![(id, Side::Out)], transitions: Vec::new() };
-    let Uplinked::Admitted { at, .. } = k.hear_uplink(&fold.sign(&reserve(5))) else { panic!("the OUT side consumed") };
+    let Uplinked::Admitted { at, .. } = k.hear_uplink(&fold.signed(&reserve(5))) else { panic!("the OUT side consumed") };
     let at = crate::anastome::dialogue::uplink::FoldAt::sealed(at);
     assert!(k.fold_holds_toll(&at), "the toll rides on the fold");
     let Challenged::Demanded { at: asked, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&key(60))) else { panic!() };

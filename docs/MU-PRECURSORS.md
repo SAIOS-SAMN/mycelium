@@ -841,11 +841,11 @@ mapping from the spaces world models already declare.
 
 ### 4.1 The current state
 
-- `Cargo.toml` is a workspace: the root package `mycelium` 0.3.0-rc.3,
+- `Cargo.toml` is a workspace: the root package `mycelium` 0.4.0-rc.1,
   Apache-2.0, `rust-version = "1.82"`, with three binaries
   (`mycelium-server`, `mycelium-client`, `mycelium-soak`), and the members
   `forms`, `mycelium-sdk` (`sdk/`) and `mycelium-source-arc-agi`
-  (`sources/arc-agi`), each at 0.3.0-rc.3, under one lock file and
+  (`sources/arc-agi`), each at 0.4.0-rc.1, under one lock file and
   one lint table (`[workspace.lints]`). The gate is the member `gate`,
   whose tests read the tree (the earlier `xtask`, outside the workspace,
   was removed).

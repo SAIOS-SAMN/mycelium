@@ -326,15 +326,41 @@ impl Cite {
 /// WHAT AN ACT NAMES (LD0 as ruled, 78.22, 78.24): coordinates the reader
 /// already holds the named thing under, fixed in size by the algebra and
 /// never a copy of it.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// A citation has no `==`: a fold's root carries a [`Predecessor`], so two
+/// citations are compared by what they cite ([`Cite::restates`]), each in
+/// its own sense (MU-ANTI-FLATTENING 13; ROADMAP track 25 X0). The claim
+/// `cite_has_no_equality`:
+///
+/// ```compile_fail,E0369
+/// use mycelium::chronometry::Cite;
+/// fn same(a: &Cite, b: &Cite) -> bool {
+///     a == b
+/// }
+/// ```
+///
+/// The named comparison, which compiles:
+///
+/// ```
+/// use mycelium::chronometry::{Cite, Stamp};
+/// use mycelium::court::admission::Predecessor;
+/// let at = Stamp { h: 4, vk: [3; 32], k: 9, i: 2 };
+/// let root = Cite::Root { at, hash: Predecessor::of_bytes([5; 32]) };
+/// assert!(root.restates(&root.clone()));
+/// ```
+///
+/// [`Predecessor`]: crate::court::admission::Predecessor
+#[derive(Debug, Clone)]
 pub enum Cite {
     /// A word or a form by its FIBRE — its chart, and for a word with a
     /// rotor its class record; a form's fibre is its chart alone — and the
     /// stamp of the act that admitted it, which locates it exactly.
     Word { chart: Invariant, class: Option<ClassRecord>, at: Stamp },
     /// A fold's root (45.8): the stamp of the archived prefix's head and
-    /// its chain hash.
-    Root { at: Stamp, hash: [u8; 32] },
+    /// its chain hash, a digest in the link sense (MU-ANTI-FLATTENING 13):
+    /// it names the record the fold stands on, compared only by
+    /// [`Predecessor::continues`](crate::court::admission::Predecessor::continues).
+    Root { at: Stamp, hash: crate::court::admission::Predecessor },
     /// 78.37, TP1 — THE DOCKET'S HELD CLASS: a ring the orbit's transport
     /// closed at holonomy ≠ 1, by its class vector inline, and its COVER —
     /// the charts its thoughts stand on, by key, ascending — whose
@@ -426,9 +452,38 @@ pub enum Cite {
     /// TUniversal point the act was read at. The alignment reading is
     /// derived from these events (`clauses::read_alignment`).
     Signing { kernel: [u8; 32], reserve: Option<[u8; 32]>, verdict: Box<crate::physics::laws::clauses::Verdict> },
+    /// CB1, 78.26(2) (ruled on #148, 2026-11-06) — THE DOCKET'S LOST
+    /// BRACKET, a demand: the typed vertex naming the two chambers, each by
+    /// its bodies' coordinates (KB1), and their bracket `A∘B − B∘A`, exact,
+    /// which no cell of the sentence holds; and its cover, as a demand's. No
+    /// enclosure is formed for it (NB1: a cell is minted only at a witness);
+    /// a witness certifying a cell that wraps both chambers and holds the
+    /// bracket is its answer. Volatile on the plan, as every docket entry.
+    Bracket {
+        chambers: Box<[Vec<Vec<u8>>; 2]>,
+        bracket: Box<crate::transducer::cga::LinearFunction>,
+        cover: Option<Vec<Vec<u8>>>,
+    },
 }
 
 impl Cite {
+    /// `self` CITES WHAT `held` CITES. Two roots: one stamp, with a chain
+    /// continuing across the two hashes (link sense,
+    /// [`Predecessor::continues`](crate::court::admission::Predecessor::continues)).
+    /// Any other pair: one canonical writing, the coordinates written out
+    /// (A21). A citation that does not write restates nothing. Two
+    /// citations are compared by this, never by `==`.
+    pub fn restates(&self, held: &Cite) -> bool {
+        match (self, held) {
+            (Cite::Root { at, hash }, Cite::Root { at: was, hash: named }) => at == was && hash.continues(named),
+            (Cite::Root { .. }, _) | (_, Cite::Root { .. }) => false,
+            _ => {
+                let (mut a, mut b) = (Vec::new(), Vec::new());
+                self.put_canonical(&mut a).is_some() && held.put_canonical(&mut b).is_some() && a == b
+            }
+        }
+    }
+
     /// The stamp the citation locates by — a word's or a root's. A docket's
     /// class or demand is located by its coordinates, never by a stamp.
     pub fn at(&self) -> Option<Stamp> {
@@ -436,6 +491,7 @@ impl Cite {
             Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
             Cite::Class { .. }
             | Cite::Demand { .. }
+            | Cite::Bracket { .. }
             | Cite::Refusal { .. }
             | Cite::Uplink { .. }
             | Cite::Chained { .. }
@@ -454,7 +510,7 @@ impl Cite {
     /// A docket entry's cover, where it is one and its cover read.
     pub fn cover(&self) -> Option<&[Vec<u8>]> {
         match self {
-            Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
+            Cite::Class { cover, .. } | Cite::Demand { cover, .. } | Cite::Bracket { cover, .. } => cover.as_deref(),
             Cite::Word { .. }
             | Cite::Root { .. }
             | Cite::Refusal { .. }
@@ -493,7 +549,7 @@ impl Cite {
             Cite::Root { at, hash } => {
                 rec.push(1);
                 at.put_canonical(&mut rec);
-                rec.extend_from_slice(hash);
+                rec.extend_from_slice(&hash.bytes());
             }
             Cite::Refusal { chart, kind } => {
                 rec.push(4);
@@ -602,18 +658,18 @@ impl Cite {
                     | Cite::Origin { .. }
                     | Cite::Stated { .. }
                     | Cite::Window { .. }
-                    | Cite::Signing { .. } => {}
+                    | Cite::Signing { .. }
+                    | Cite::Bracket { .. } => {}
                 }
-                match cover {
-                    None => rec.push(0),
-                    Some(charts) => {
-                        rec.push(1);
-                        crate::transducer::address::put_u32_count(&mut rec, charts.len())?;
-                        for c in charts {
-                            crate::transducer::address::put_bytes(&mut rec, c)?;
-                        }
-                    }
+                put_cover(&mut rec, cover)?;
+            }
+            Cite::Bracket { chambers, bracket, cover } => {
+                rec.push(17);
+                for bodies in chambers.iter() {
+                    put_key_list(&mut rec, bodies)?;
                 }
+                bracket.put_canonical(&mut rec);
+                put_cover(&mut rec, cover)?;
             }
         }
         out.append(&mut rec);
@@ -643,7 +699,7 @@ impl Cite {
                 let at = Stamp::take_canonical(b, p)?;
                 let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 *p += 32;
-                Some(Cite::Root { at, hash })
+                Some(Cite::Root { at, hash: crate::court::admission::Predecessor::of_bytes(hash) })
             }
             4 => {
                 let chart = Invariant::take_canonical(b, p)?;
@@ -757,35 +813,68 @@ impl Cite {
                     }
                     _ => None,
                 };
-                let cover = match *b.get(*p)? {
-                    0 => {
-                        *p += 1;
-                        None
-                    }
-                    1 => {
-                        *p += 1;
-                        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
-                        *p += 4;
-                        // Each chart is at least its length; a count the body
-                        // cannot hold refuses before anything is reserved.
-                        if n > b.len().checked_sub(*p)? / 4 {
-                            return None;
-                        }
-                        let mut charts = Vec::with_capacity(n);
-                        for _ in 0..n {
-                            charts.push(crate::transducer::address::take_bytes(b, p)?);
-                        }
-                        Some(charts)
-                    }
-                    _ => return None,
-                };
+                let cover = take_cover(b, p)?;
                 Some(match rotor {
                     Some(rotor) => Cite::Class { class, rotor, cover },
                     None => Cite::Demand { class, residue, cover },
                 })
             }
+            17 => {
+                let chambers = Box::new([take_key_list(b, p)?, take_key_list(b, p)?]);
+                let bracket = Box::new(crate::transducer::cga::LinearFunction::take_canonical(b, p)?);
+                let cover = take_cover(b, p)?;
+                Some(Cite::Bracket { chambers, bracket, cover })
+            }
             _ => None,
         }
+    }
+}
+
+/// Keys written out in turn, their count first, each by its length.
+fn put_key_list(rec: &mut Vec<u8>, keys: &[Vec<u8>]) -> Option<()> {
+    crate::transducer::address::put_u32_count(rec, keys.len())?;
+    for k in keys {
+        crate::transducer::address::put_bytes(rec, k)?;
+    }
+    Some(())
+}
+
+/// The inverse of [`put_key_list`].
+fn take_key_list(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
+    let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+    *p += 4;
+    // Each key is at least its length; a count the body cannot hold refuses
+    // before anything is reserved.
+    if n > b.len().checked_sub(*p)? / 4 {
+        return None;
+    }
+    let mut keys = Vec::with_capacity(n);
+    for _ in 0..n {
+        keys.push(crate::transducer::address::take_bytes(b, p)?);
+    }
+    Some(keys)
+}
+
+/// A docket entry's cover: absent (its enclosure owed), or its charts' keys.
+fn put_cover(rec: &mut Vec<u8>, cover: &Option<Vec<Vec<u8>>>) -> Option<()> {
+    match cover {
+        None => rec.push(0),
+        Some(charts) => {
+            rec.push(1);
+            put_key_list(rec, charts)?;
+        }
+    }
+    Some(())
+}
+
+/// The inverse of [`put_cover`].
+fn take_cover(b: &[u8], p: &mut usize) -> Option<Option<Vec<Vec<u8>>>> {
+    let flag = *b.get(*p)?;
+    *p += 1;
+    match flag {
+        0 => Some(None),
+        1 => Some(Some(take_key_list(b, p)?)),
+        _ => None,
     }
 }
 

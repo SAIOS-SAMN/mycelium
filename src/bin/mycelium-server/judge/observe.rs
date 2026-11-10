@@ -135,6 +135,9 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
             // MU-PRECURSORS §3.1 — every peer this hypha met, by its channel:
             // a plaintext peer is named here, never hidden.
             observe::replace(own, Reading::Channels(Box::new(observe::Channels::now())));
+            // MU-HOSTING §5a.7, track 24 B4 — the refusals this court
+            // answered at its universes' core tubes, by domain, act and name.
+            observe::replace(own, Reading::Boundary(Box::new(observe::boundary_reading())));
             // The frame's whole body: `encode_reply` counts its own header
             // against it (D4.6).
             let budget = mycelium::network::wire::frame_budget();

@@ -33,6 +33,12 @@ pub(crate) struct CourtPace {
     /// answers a quote; the mind's beat drags on these lanes
     /// (`Field::beat_under`).
     pub(crate) deficit: [u64; 4],
+    /// MU-CLIENT §3.1 (#136) — THE MIND'S WELL FOR EACH HYPHA, its
+    /// attachment, by the hypha's key: the flux its acts pressed on each
+    /// lane, standing as the deficit does until the field's next beat.
+    pub(crate) wells: crate::network::nerve::Keyed<crate::client::sdk::hypha_acts::Attachment>,
+    /// One read of the hyphas' lines in flight at a time.
+    pub(crate) reading_acts: bool,
     last_synced_height: u64,
     pub(crate) quoting: bool,
     pub(crate) quoted: Option<YieldQuote>,
@@ -163,7 +169,9 @@ impl Mind {
                     }
                     let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
                     let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.byte(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
-                    StrokeOutcome::add(&mut outcome.uttered, &mag);
+                    StrokeOutcome::add(&mut outcome.asserted, &mag);
+                    let cited_word = word.clone();
+                    let demand_links = links.clone();
                     self.ask(
                         move |s| s.probe(&target, std::slice::from_ref(&cite)),
                         move |entity, reading| {
@@ -173,6 +181,7 @@ impl Mind {
                                     entity.physics_mut().relieve(&mag);
                                     entity.physics_mut().syntropy(&mag);
                                     StrokeOutcome::add(&mut entity.board.court.probed.closed, &mag);
+                                    entity.assert_closed_twist(&cited_word, &demand_links);
                                 }
                                 crate::anastome::dialogue::ProbeClosure::Residue(_) => entity.physics_mut().bump(&mag),
                                 crate::anastome::dialogue::ProbeClosure::Gone | crate::anastome::dialogue::ProbeClosure::Nothing => {}
@@ -204,7 +213,7 @@ impl Mind {
         if !self.couples(&envelope.id, &offer.charts) {
             return;
         }
-        let mag = super::family::family_magnitude(&envelope.train);
+        let mag = super::family::family_magnitude(&envelope.train).lanes();
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             return;
         }
@@ -272,6 +281,7 @@ impl Mind {
         self.discover();
         self.pull_syllabus();
         self.sync_genome();
+        self.read_hypha_acts();
         let pace = &mut self.board.court;
         pace.last_synced_height = pace.last_height;
     }

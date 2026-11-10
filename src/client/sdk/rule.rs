@@ -468,8 +468,8 @@ fn sentence_on_ground(steps: &[Step], family: &[(SectionSample, SectionSample)],
     let frames = family::perceive_family(family);
     let mut acts: crate::network::nerve::Keyed<Acting, crate::network::nerve::coord::ChartCarriage> =
         crate::network::nerve::Keyed::new();
-    for (ins, _) in &frames {
-        for body in ins {
+    for pair in &frames {
+        for body in &pair.input {
             let member = Acting {
                 chart: body.moduli.clone(),
                 carriage: Box::new(carriage.clone()),

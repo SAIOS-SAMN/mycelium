@@ -119,7 +119,8 @@ fn solve() -> Result<String, String> {
 
 /// TRACK 26 S4c — a claim of factorisation at rank 3 and width 2: the
 /// motion (a signed permutation and the enclosure it is taken onto), the
-/// residue's links and the stated ground, signed; and each of the three
+/// residue's links, the stated perspective (track 26 S6) and the stated
+/// ground, signed; and each of the three
 /// verdicts.
 fn factorisation() -> Result<String, String> {
     use mycelium::transducer::base::Site;
@@ -129,9 +130,13 @@ fn factorisation() -> Result<String, String> {
     let motion = Motion { permutation, onto: Enclosure::new(vec![3, 2, 2]).map_err(|e| format!("{e:?}"))? };
     let residue = vec![Link::new(Site::of([0, 1, 1]), vec![0, 0], vec![0, 7]), Link::new(Site::of([2, 0, 1]), vec![0, 3], vec![0, 0])];
     let ground = vec![0u8, 0];
-    let bytes = d::encode_factorisation(&key(), &CITATION, 1, &motion, &residue, Some(&ground)).ok_or("the claim does not encode")?;
+    let pose = SignedPermutation::new(vec![(2, Sense::Kept), (0, Sense::Reversed), (1, Sense::Kept)]).map_err(|e| format!("{e:?}"))?;
+    let perspective = mycelium::transducer::perspective::Perspective::of_sample(3)
+        .shifted(&mycelium::transducer::perspective::SensorMotion::Pose(pose))
+        .map_err(|e| format!("{e:?}"))?;
+    let bytes = d::encode_factorisation(&key(), &CITATION, 1, &motion, &residue, &perspective, Some(&ground)).ok_or("the claim does not encode")?;
     let act = d::decode_factorisation(&bytes).ok_or("the claim did not decode")?;
-    let want = d::FactorisationAct { voice: voice(), task: CITATION, pair: 1, motion, residue: residue.clone(), ground: Some(ground), signed: true };
+    let want = d::FactorisationAct { voice: voice(), task: CITATION, pair: 1, motion, residue: residue.clone(), perspective, ground: Some(ground), signed: true };
     same("the claim of factorisation", Some(act), want)?;
     same("the claim's kind under the solve", d::solve_kind(&bytes), d::SOLVE_KIND_FACTORISATION)?;
     same("the claim read as a solve of outputs", Some(d::decode_solve(&bytes).is_none()), true)?;
@@ -142,7 +147,7 @@ fn factorisation() -> Result<String, String> {
     ] {
         same("the factorisation verdict", d::decode_factor_verdict(&d::encode_factor_verdict(&v)), v)?;
     }
-    Ok("the signed claim of a rank-3 motion and residue at width 2, its stated ground, and the three verdicts decode to the values sent".to_string())
+    Ok("the signed claim of a rank-3 motion and residue at width 2, its stated perspective and ground, and the three verdicts decode to the values sent".to_string())
 }
 
 fn laws_register() -> Result<String, String> {
@@ -305,9 +310,10 @@ fn domain_origin() -> Result<String, String> {
 
 fn domain_statement() -> Result<String, String> {
     let stated = d::universe::Stated::Basket(vec![(1, (1, 1)), (8, (2, 3))]);
-    let signed = d::universe::Statement { domain: voice(), stated }.sign(&key());
+    let signed = d::universe::Statement { domain: voice(), stated }.sign(super::probes::crossing(voice()), &key()).ok_or("the statement does not sign")?;
     let replies = [dom::Founded::Stated { at: stamp(), receipt: CITATION }, dom::Founded::AlreadyStated, dom::Founded::NotAUniverse];
-    domain_act("the statement", &d::universe::encode_statement(&signed), dom::DomainRequest::State(signed.clone()), &replies)?;
+    let bytes = d::universe::encode_statement(&signed).ok_or("the statement does not encode")?;
+    domain_act("the statement", &bytes, dom::DomainRequest::State(signed.clone()), &replies)?;
     Ok("the basket stated and the answers decode".to_string())
 }
 
@@ -329,7 +335,7 @@ fn domain_origin_reading() -> Result<String, String> {
 
 fn domain_manifest() -> Result<String, String> {
     use d::endowment::{decode_grant_reply, encode_grant_reply, encode_manifest, GrantRefusal, Granted};
-    let signed = super::probes::manifest(voice()).sign(&key()).ok_or("the manifest does not sign")?;
+    let signed = super::probes::manifest(voice()).sign(super::probes::crossing(voice()), &key()).ok_or("the manifest does not sign")?;
     let bytes = encode_manifest(&signed).ok_or("the manifest does not encode")?;
     same("the manifest", dom::decode_domain_request(&bytes), dom::DomainRequest::Manifest(Box::new(signed)))?;
     for g in [Granted::Sealed { mu: share()?, founding: true, at: stamp(), receipt: CITATION }, Granted::Refused(GrantRefusal::Short)] {

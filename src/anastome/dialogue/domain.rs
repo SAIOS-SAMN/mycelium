@@ -190,6 +190,9 @@ pub enum DomainRequest {
     /// 78.155b — what the court can grant and has granted, read; nothing
     /// sealed.
     ReadEndowment([u8; 32]),
+    /// 78.154 (4), #159 — a COORDINATE RETRIEVAL: the receipts at a final
+    /// point's tick, priced and drawn from the staker's stake.
+    Retrieve(Box<super::retrieve::SignedRetrieve>),
 }
 
 /// FORMAT: sub-kind byte of ACT_DOMAIN for a reserve read.
@@ -514,9 +517,10 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
         k @ (super::universe::KIND_GEOMETRY | super::universe::KIND_BASKET | super::universe::KIND_JOIN) => {
             p += 1;
             let statement = super::universe::Statement::take(k, domain, rest, &mut p)?;
+            let crossing = Box::new(super::crossing_record::Crossing::take(rest, &mut p).ok()?);
             let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
             p += 64;
-            return (p == rest.len()).then_some(DomainRequest::State(super::universe::SignedStatement { statement, sig }));
+            return (p == rest.len()).then_some(DomainRequest::State(super::universe::SignedStatement { statement, crossing, sig }));
         }
         KIND_READ_BOND => {
             p += 1;
@@ -565,6 +569,12 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             return (p == rest.len()).then_some(DomainRequest::Manifest(Box::new(s)));
         }
         super::endowment::KIND_READ_ENDOWMENT => return (rest.len() == p + 1).then_some(DomainRequest::ReadEndowment(domain)),
+        // #159 — a coordinate retrieval.
+        super::retrieve::KIND_RETRIEVE => {
+            p += 1;
+            let s = super::retrieve::take_retrieve(domain, rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::Retrieve(Box::new(s)));
+        }
         KIND_RESERVE => {}
         _ => return None,
     }

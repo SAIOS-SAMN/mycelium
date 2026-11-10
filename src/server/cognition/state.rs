@@ -268,8 +268,9 @@ pub struct Court {
         usize,
     )>,
     /// Addresses fetched as Dialect or Slashed — (chart key, stratum root at
-    /// fetch). Dropped when confirm_peer_holds sees that root move.
-    pub(crate) heard: crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>,
+    /// fetch, in the address sense). Dropped when confirm_peer_holds sees
+    /// that root no longer locate the peer's stratum.
+    pub(crate) heard: crate::network::nerve::Keyed<(Vec<u8>, crate::court::admission::Locator)>,
     /// Heard addresses keyed by the chart they were heard under, so the
     /// two readers that want one chart's heard addresses read a fibre
     /// instead of the whole set — as `chart_listings` is to listings.
@@ -335,6 +336,10 @@ pub struct Court {
     pub(crate) task_listings: crate::network::nerve::Keyed<Vec<Address>>,
     /// Train pairs of a bound task. Install mints only what a rule speaks.
     pub(crate) task_family: crate::network::nerve::Keyed<Vec<crate::transducer::family::TrainPair>>,
+    /// #158 — A BOUND TASK'S WITHHELD PAIRS, as its registration fixed them
+    /// (`TaskRegistry::withheld`), bound with its family and never chosen at
+    /// a judgement. Volatile, as the family is.
+    pub(crate) task_withheld: crate::network::nerve::Keyed<Vec<crate::transducer::family::TrainPair>>,
     /// Sentence address → task, from perceive_speech. Reconstruction reads the family.
     pub(crate) speech_task: crate::network::nerve::Keyed<Address>,
     /// THE SENTENCES THIS COURT REFUSED (50.9): the kind, the coordinate
@@ -727,9 +732,10 @@ impl Court {
     /// measured from the registered tasks and re-staked,
     /// `mycelium-server.rs` `set_genesis_cover`). It is a starting corpus,
     /// not a measurement of the live one, and it is a bond a voice may work
-    /// within before any corpus arrives. It is measured by `family_cover`,
-    /// so it is the lane-wise SUM over these pairs (12.6) and covers each of
-    /// them; an envelope over them would not.
+    /// within before any corpus arrives. It is measured by `section_cover`
+    /// at the samples' own rank (track 26 S4), so it is the lane-wise SUM
+    /// over these pairs (12.6) and covers each of them; an envelope over
+    /// them would not.
     pub(crate) fn measured_test_cover() -> Option<[u64; 4]> {
         use crate::transducer::spelled::SectionSample;
         type Lines = Vec<Vec<u8>>;
@@ -747,7 +753,7 @@ impl Court {
         // The starting corpus read at intake, each pair as samples.
         let family: Vec<(SectionSample, SectionSample)> =
             lines.iter().map(|(x, y)| Some((SectionSample::of_lines(x).ok()?, SectionSample::of_lines(y).ok()?))).collect::<Option<_>>()?;
-        crate::transducer::family::magnitude::family_cover(&family)
+        crate::transducer::family::magnitude::section_cover(&family)?.bond()
     }
 
     /// The genesis covering bond, if measured.

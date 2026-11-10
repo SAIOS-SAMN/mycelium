@@ -14,6 +14,8 @@
 //! it.
 
 pub mod board;
+pub mod bracket;
+pub mod class_algebra;
 pub mod coboundary;
 pub mod coefficient;
 pub mod complex;
@@ -31,6 +33,7 @@ pub mod quotient;
 pub mod remainder;
 
 pub use board::{independent, Applied, Board, Pivot};
+pub use bracket::{answering_cell, cross_brackets, Bracketed, CrossBracket, CrossBrackets, CrossUnread};
 pub use coboundary::*;
 pub use complex::*;
 pub use connecting::{connecting, Glued, Unglued};
@@ -47,4 +50,4 @@ use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{Element, Versor};
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

@@ -11,6 +11,7 @@
 //! MAP 14, READ-MAP 15, TRAVERSE 16 (`crossing.rs`). The ruled bytes are
 //! otherwise exactly as ruled.
 
+use super::crossing_record::{crossed, Crossing};
 use crate::chronometry::tuniversal::TPoint;
 
 /// ACT_DOMAIN's sub-kind mark (as `domain.rs` writes it).
@@ -115,10 +116,13 @@ impl LedgerEntry {
         crate::chronometry::payload_hash(&self.signed_bytes())
     }
 
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedLedger {
+    /// Signed by the reserve with the crossing the anchor carries (X1,
+    /// #160): the signature is over [`SignedLedger::signed_bytes`]. `None`
+    /// where a turn of the record cannot be written.
+    pub fn sign(self, crossing: Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedLedger> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedLedger { entry: self, sig }
+        let sig = key.sign(&crossed(self.signed_bytes(), &crossing)?).to_bytes();
+        Some(SignedLedger { entry: self, crossing, sig })
     }
 
     /// The body as stored and served: `[u][commitment][events][point]
@@ -145,14 +149,26 @@ impl LedgerEntry {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedLedger {
     pub entry: LedgerEntry,
+    /// X1 (#160) — the crossing the anchor carries through the universal
+    /// core tube.
+    pub crossing: Crossing,
     pub sig: [u8; 64],
 }
 
+impl SignedLedger {
+    /// THE BYTES THE SIGNATURE IS OVER: the entry's own, then its crossing
+    /// written out whole. The entry's hash stays its own bytes'.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        crossed(self.entry.signed_bytes(), &self.crossing)
+    }
+}
+
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][12][u u64 LE][commitment 32][events
-/// 32][cited final TPoint 84][parent entry 32][nonce 32][sig 64]`, then —
-/// only where it applied crossings — `[count][(crossing 32, u_applied u64
-/// LE) …]`, signed.
-pub fn encode_ledger(s: &SignedLedger) -> Vec<u8> {
+/// 32][cited final TPoint 84][parent entry 32][nonce 32][crossing][sig 64]`,
+/// then — only where it applied crossings — `[count][(crossing 32,
+/// u_applied u64 LE) …]`, signed. `None` where a turn of the record cannot
+/// be written.
+pub fn encode_ledger(s: &SignedLedger) -> Option<Vec<u8>> {
     let e = &s.entry;
     let mut out = head(&e.domain, KIND_LEDGER);
     out.extend_from_slice(&e.u.to_le_bytes());
@@ -161,11 +177,12 @@ pub fn encode_ledger(s: &SignedLedger) -> Vec<u8> {
     e.point.put(&mut out);
     out.extend_from_slice(&e.parent);
     out.extend_from_slice(&e.nonce);
+    s.crossing.put(&mut out)?;
     out.extend_from_slice(&s.sig);
     if !e.applied.is_empty() {
         put_applied(&mut out, &e.applied);
     }
-    out
+    Some(out)
 }
 
 /// The entry after the sub-kind byte, read whole; an empty applied list is
@@ -175,13 +192,14 @@ pub(crate) fn take_ledger(domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<S
     let (commitment, events) = (key32(b, p)?, key32(b, p)?);
     let point = TPoint::take(b, p)?;
     let (parent, nonce) = (key32(b, p)?, key32(b, p)?);
+    let crossing = Crossing::take(b, p).ok()?;
     let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
     *p += 64;
     let applied = match *p < b.len() {
         true => Some(take_applied(b, p)?).filter(|a| !a.is_empty())?,
         false => Vec::new(),
     };
-    Some(SignedLedger { entry: LedgerEntry { domain, u, commitment, events, point, parent, applied, nonce }, sig })
+    Some(SignedLedger { entry: LedgerEntry { domain, u, commitment, events, point, parent, applied, nonce }, crossing, sig })
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][13][after u u64 LE]`.
@@ -583,40 +601,55 @@ impl MapAct {
         out
     }
 
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedMap {
+    /// Signed by the reserve with the crossing the map carries (X1, #160).
+    /// `None` where a turn of the record cannot be written.
+    pub fn sign(self, crossing: Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedMap> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedMap { act: self, sig }
+        let sig = key.sign(&crossed(self.signed_bytes(), &crossing)?).to_bytes();
+        Some(SignedMap { act: self, crossing, sig })
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedMap {
     pub act: MapAct,
+    /// X1 (#160) — the crossing the map carries.
+    pub crossing: Crossing,
     pub sig: [u8; 64],
+}
+
+impl SignedMap {
+    /// THE BYTES THE SIGNATURE IS OVER: the act's own, then its crossing
+    /// written out whole.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        crossed(self.act.signed_bytes(), &self.crossing)
+    }
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][14][point 84][record][nonce 32][sig
 /// 64]`; a record `[0][mouth 32][side u8][N u64 LE]` or `[1][kind u8][mouth
 /// 32][side u8][mouth 32][side u8][span n u64][span d u64][0 | 1 keeper 32]`
 /// or a local throat `[2][throat key 32][keeper 32][frame_0 Mv][frame_1
-/// Mv][N u64 LE]`.
-pub fn encode_map(s: &SignedMap) -> Vec<u8> {
+/// Mv][N u64 LE]`. X1 (#160): the crossing between the nonce and the
+/// signature. `None` where a turn of the record cannot be written.
+pub fn encode_map(s: &SignedMap) -> Option<Vec<u8>> {
     let mut out = head(&s.act.domain, KIND_MAP);
     s.act.point.put(&mut out);
     s.act.record.put(&mut out);
     out.extend_from_slice(&s.act.nonce);
+    s.crossing.put(&mut out)?;
     out.extend_from_slice(&s.sig);
-    out
+    Some(out)
 }
 
 pub(crate) fn take_map(domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<SignedMap> {
     let point = TPoint::take(b, p)?;
     let record = MapRecord::take(b, p)?;
     let nonce = key32(b, p)?;
+    let crossing = Crossing::take(b, p).ok()?;
     let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
     *p += 64;
-    Some(SignedMap { act: MapAct { domain, point, record, nonce }, sig })
+    Some(SignedMap { act: MapAct { domain, point, record, nonce }, crossing, sig })
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][15]`.

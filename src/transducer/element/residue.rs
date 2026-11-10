@@ -222,43 +222,54 @@ pub fn from_canonical(chain: &CanonicalChain) -> Element {
 // ── #97: THE MEASURED FRAME (moved from the former `arc` module unchanged,
 // ROADMAP track 26, S1) ──────────────────────────────────────────────────
 //
-// A pair of frames h_in × w_in and h_out × w_out is related by the re-period
-// of each circle, ρ = (h_out/h_in, w_out/w_in) ∈ ℚ², read on its
-// transduction (`family::transduce`): bodies' bands in turns, never a common
-// lattice. Equal frames are the planar coboundary, and ρ rides as the word's
-// frame fibre. Its four counts are two planar axes fixed, a defect named in
-// MU-SENSING §8 for the re-period of each of a sample's `n` phases to
-// replace (track 26, S4).
+// A pair of samples is related by the re-period of each phase, `p′ᵢ/pᵢ`,
+// read on its transduction (`family::transduce`): bodies' bands in turns,
+// never a common lattice (MU-SENSING §3.1). Equal enclosures are the
+// coboundary, and the re-periods ride as the word's frame fibre.
 
-/// THE MEASURED FRAME of a pair: four exact counts, never a ratio and never
-/// a guess. A word at a frame that is not (1,1) is a DIFFERENT word from its
-/// planar shadow (`from_canonical_framed` reads the ratio off the counts).
-/// The former `arc::frame_ratio` and its gcd had no caller and are deleted
-/// (ROADMAP track 26, S1).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// THE MEASURED RE-PERIOD of a pair (MU-SENSING §3.1; track 26 S4): the
+/// input's and the output's period on each phase, exact counts, never a
+/// ratio and never a guess, at the pair's own rank. A word whose phases
+/// re-period alike by `ρ ≠ 1` is a DIFFERENT word from its unframed shadow
+/// (`from_canonical_framed` reads the re-period off the counts). It replaces
+/// the four planar counts `(h_in, w_in, h_out, w_out)`, which fixed two axes
+/// (the defect MU-SENSING §8 named).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Reperiod {
-    pub h_in: usize,
-    pub w_in: usize,
-    pub h_out: usize,
-    pub w_out: usize,
+    periods: Vec<(usize, usize)>,
 }
 
 impl Reperiod {
-    /// Identity: no scale. Unframed speech uses this so its key matches a
-    /// planar intake.
-    pub const IDENTITY: Reperiod = Reperiod { h_in: 1, w_in: 1, h_out: 1, w_out: 1 };
+    /// Identity: no phase re-periodded. Unframed speech uses this so its
+    /// key matches an unframed intake.
+    pub const IDENTITY: Reperiod = Reperiod { periods: Vec::new() };
 
-    /// The frame of a pair whose extents are known.
-    pub const fn new(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Reperiod {
-        Reperiod { h_in, w_in, h_out, w_out }
+    /// THE RE-PERIOD OF A PAIR OF EXTENTS, phase by phase, or `None` where
+    /// the two are of different rank: a section is never padded or cut.
+    pub fn of_extents(input: &[usize], output: &[usize]) -> Option<Reperiod> {
+        (input.len() == output.len()).then(|| Reperiod { periods: input.iter().copied().zip(output.iter().copied()).collect() })
+    }
+
+    /// Each phase's period on the input and on the output, in axis order.
+    pub fn periods(&self) -> &[(usize, usize)] {
+        &self.periods
+    }
+
+    /// THE ONE RE-PERIOD EVERY PHASE SHARES, `p′/p`, where every input
+    /// period is past 0 and every phase re-periods alike; `None` otherwise
+    /// (no phase, an empty input, or phases re-periodded apart: an
+    /// anisotropic re-period, which no dilator carries).
+    pub fn shared(&self) -> Option<Q> {
+        let mut ratios = self.periods.iter().map(|&(p, q)| (p > 0).then(|| Q::new(BigInt::from(q as u64), BigInt::from(p as u64))));
+        let first = ratios.next()??;
+        ratios.all(|r| r.as_ref() == Some(&first)).then_some(first)
     }
 }
 
-/// A residue germ with its FRAME FIBRE: the exact frame map
-/// ρ = (h_out/h_in, w_out/w_in) ∈ ℚ² enters the spatial generator's
-/// diagonal, so a word at ρ ≠ (1,1) is a different word from its planar
-/// shadow (identity and substance both carry the fibre; only translation is
-/// quotiented). `frame` is (h_in, w_in, h_out, w_out).
+/// A residue germ with its FRAME FIBRE: the exact re-period `ρ` every phase
+/// shares enters the spatial generator's diagonal, so a word at `ρ ≠ 1` is a
+/// different word from its unframed shadow (identity and substance both
+/// carry the fibre; only translation is quotiented).
 /// The unique listing key of a demand: the address of the framed residue.
 /// Intake, the book, quote, attest, probe, settle, task, and the nerve
 /// route all use this, never an unframed shadow.
@@ -284,14 +295,9 @@ pub fn from_residue_framed(g: &ResidueGerm, frame: &Reperiod) -> Option<Element>
 /// [`from_canonical`] is.
 pub fn from_canonical_framed(chain: &CanonicalChain, frame: &Reperiod) -> Element {
     let mut e = from_canonical(chain);
-    let Reperiod { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *frame;
-    if hi > 0 && wi > 0 && (hi, wi) != (ho, wo) {
-        let rh = Q::new(BigInt::from(ho as u64), BigInt::from(hi as u64));
-        let rw = Q::new(BigInt::from(wo as u64), BigInt::from(wi as u64));
-        if rh == rw && !rh.is_one() {
-            e.action.spatial = Some(crate::transducer::cga::dilator(&rh));
-            e.address.take();
-        }
+    if let Some(rho) = frame.shared().filter(|r| !r.is_one()) {
+        e.action.spatial = Some(crate::transducer::cga::dilator(&rho));
+        e.address.take();
     }
     e
 }

@@ -16,29 +16,49 @@
 //! percept itself is read at any rank.
 
 use super::{factorisations, Enclosed, Factored, Ground, TransductionRefusal};
+use crate::transducer::manifold::Manifold;
 use crate::transducer::perspective::Perspective;
 use crate::transducer::sample::Sample;
 
-/// ONE PAIR PERCEIVED: its two frames lifted, and its factorisations.
+/// ONE PAIR PERCEIVED: its input and output lifted into enclosures and manifolds,
+/// and its factorisations.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PairFactored {
     pub input: Enclosed,
     pub output: Enclosed,
     pub factored: Factored,
+    pub input_manifold: Manifold,
+    pub output_manifold: Manifold,
 }
 
-/// A TASK PERCEIVED AT ITS OWN RANK.
+impl PairFactored {
+    /// Lifts this pair under factorisation `f` into carrier transitions between charts
+    /// of the field atlas ([`crate::transducer::field::carrier::PairTransition`]).
+    pub fn carrier_transitions(&self, x: &Sample, y: &Sample, f: &super::Factorisation) -> Result<Vec<Result<crate::transducer::field::carrier::PairTransition, super::TransductionRefusal>>, crate::transducer::field::carrier::FieldRefusal> {
+        crate::transducer::field::carrier::transitions_of(x, y, f)
+    }
+}
+
+/// A TASK PERCEIVED AT ITS OWN RANK (MU-SENSING §1, §3; MU-CLIENT §4.1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskPercept {
-    /// The roles of the samples' axes: the default perspective of the
-    /// family's rank.
+    /// The perspective the samples were read under: the default of the
+    /// family's rank ([`TaskPercept::of`]), or the one stated
+    /// ([`TaskPercept::under`]). A claim on the percept states it.
     pub perspective: Perspective,
     /// The ground the family's relations show (MU-SENSING §3.4).
     pub ground: Ground<Vec<u8>>,
     /// Each train pair, lifted and factored.
     pub train: Vec<PairFactored>,
-    /// Each test input, lifted.
+    /// Each test input, lifted into an enclosure.
     pub tests: Vec<Enclosed>,
+    /// Each test input, lifted into a manifold carrier.
+    pub test_manifolds: Vec<Manifold>,
+    /// HOW EACH AXIS WAS TAKEN APART (MU-SENSING §3.6): per axis, the
+    /// factorings every pair admits, those some pair refuses, and whether
+    /// one collapsed the vortex. A coordinate of the percept, so speech
+    /// projects back to the source's own extents.
+    pub nesting: Vec<super::AxisNesting>,
 }
 
 /// WHY A TASK IS NOT PERCEIVED, named.
@@ -67,19 +87,61 @@ impl TaskPercept {
         let mut pairs = Vec::with_capacity(train.len());
         for (pair, (x, y)) in train.iter().enumerate() {
             let factored = factorisations(x, y, budget).map_err(|why| PerceptRefusal::Pair { pair, why })?;
-            pairs.push(PairFactored { input: Enclosed::of(x), output: Enclosed::of(y), factored });
+            pairs.push(PairFactored {
+                input: Enclosed::of(x),
+                output: Enclosed::of(y),
+                factored,
+                input_manifold: x.lift(),
+                output_manifold: y.lift(),
+            });
         }
         Ok(TaskPercept {
             perspective: Perspective::of_sample(rank),
             ground: Ground::of(train),
             train: pairs,
             tests: tests.iter().map(Enclosed::of).collect(),
+            test_manifolds: tests.iter().map(Sample::lift).collect(),
+            nesting: super::nesting_of(train),
         })
+    }
+
+    /// PERCEIVE A FAMILY UNDER `perspective` (MU-SENSING §4; track 26 S6):
+    /// every sample read through it ([`Perspective::read`], its place kept),
+    /// then perceived as [`TaskPercept::of`] perceives, the percept holding
+    /// the perspective it was read under. The posted samples are not
+    /// rewritten. `Rank` where a sample's rank is not the perspective's.
+    pub fn under(
+        perspective: &Perspective,
+        train: &[(Sample, Sample)],
+        tests: &[Sample],
+        budget: &mut crate::physics::Budget,
+    ) -> Result<TaskPercept, PerceptRefusal> {
+        let read = |s: &Sample| perspective.read(s).map_err(|_| PerceptRefusal::Rank { family: perspective.rank(), sample: s.rank() });
+        let train = train.iter().map(|(x, y)| Ok((read(x)?, read(y)?))).collect::<Result<Vec<_>, PerceptRefusal>>()?;
+        let tests = tests.iter().map(read).collect::<Result<Vec<_>, PerceptRefusal>>()?;
+        let mut percept = TaskPercept::of(&train, &tests, budget)?;
+        percept.perspective = perspective.clone();
+        Ok(percept)
     }
 
     /// The rank the task was read at: the count of its axes, every one of
     /// them read. A dimension past it is unread (MU-SENSING §5).
     pub fn rank(&self) -> usize {
         self.perspective.rank()
+    }
+
+    /// Depth perception: the manifold carrier of training pair `pair`, (input, output).
+    pub fn pair_manifold(&self, pair: usize) -> Option<(&Manifold, &Manifold)> {
+        self.train.get(pair).map(|p| (&p.input_manifold, &p.output_manifold))
+    }
+
+    /// Depth perception: the manifold carrier of test input `test`.
+    pub fn test_manifold(&self, test: usize) -> Option<&Manifold> {
+        self.test_manifolds.get(test)
+    }
+
+    /// Depth perception: the manifold carrier of each training pair.
+    pub fn train_manifolds(&self) -> impl Iterator<Item = (&Manifold, &Manifold)> {
+        self.train.iter().map(|p| (&p.input_manifold, &p.output_manifold))
     }
 }

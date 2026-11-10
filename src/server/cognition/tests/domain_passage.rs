@@ -10,6 +10,7 @@ use crate::server::cognition::Court;
 use crate::transducer::cga::Mv;
 use ed25519_dalek::SigningKey;
 use num_rational::BigRational;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 
 fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
@@ -80,7 +81,7 @@ fn open(k: &mut Court, m: Mouth, a: u8, b: u8) -> [u8; 32] {
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&reserve(a)), [bank, 0, 0, 0], anchor);
     let id = m.citation();
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(a))), Handed::Sealed { .. }));
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(a))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(b))), Handed::Sealed { state: State::Accepted, .. }));
     id
 }
@@ -103,7 +104,7 @@ fn cargo(a: u8, b: u8, nonce: u8) -> Offer {
 #[test]
 fn handoff_mouth_refuses_malformed_builders_and_frames() {
     let mut k = founded();
-    let offer = |k: &mut Court, m: Mouth, by: &SigningKey| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(by)) {
+    let offer = |k: &mut Court, m: Mouth, by: &SigningKey| match k.handoff(&Handoff::Mouth(Box::new(m)).signed(by)) {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
@@ -130,7 +131,7 @@ fn handoff_traverse_pays_toll_to_keeper() {
     let mut k = founded();
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&reserve(5)), [10, 0, 0, 0], anchor);
-    assert!(matches!(k.handoff(&Handoff::Offer(Box::new(cargo(4, 5, 1))).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoMouth)));
+    assert!(matches!(k.handoff(&Handoff::Offer(Box::new(cargo(4, 5, 1))).signed(&reserve(4))), Handed::Refused(HandoffRefusal::NoMouth)));
     let id = open(&mut k, mouth(4, 5, one(), turn(), [3, 0, 0, 0]), 4, 5);
     let other = open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);
     let wrong = Handoff::Traverse { offer: Box::new(cargo(4, 5, 1)), mouth: other };
@@ -210,7 +211,7 @@ fn tube_of_reads_places_and_levels_on_curved_space() {
     use crate::transducer::cga::{translator_at, E1};
     use num_rational::BigRational as Q;
     let mut k = founded();
-    let offer = |k: &mut Court, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
+    let offer = |k: &mut Court, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(4))) {
         Handed::Refused(r) => Some(r),
         _ => None,
     };
@@ -254,15 +255,15 @@ fn handoff_mouth_line_builds_road_reserve_keeps() {
     let away = crate::transducer::cga::geodesic_transvection(&crate::transducer::cga::hyperboloid_pole(), &step).expect("a transvection");
     let road = Mouth { from_tier: verifying(&line), to_tier: verifying(&reserve(4)), keeper: verifying(&reserve(4)), ..mouth(4, 4, one(), away, [0; 4]) };
     let id = road.citation();
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(road)).sign(&line)), Handed::Sealed { .. }), "a line offers a road");
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(road)).signed(&line)), Handed::Sealed { .. }), "a line offers a road");
     assert_eq!(k.treasury.balance_mu(&verifying(&line)).n()[0],1, "the builder banks the throat");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }), "its reserve accepts");
     let within = Offer { from_tier: verifying(&line), to_tier: verifying(&reserve(4)), ..cargo(4, 4, 1) };
-    assert!(matches!(k.handoff(&Handoff::Offer(Box::new(within.clone())).sign(&line)), Handed::Refused(HandoffRefusal::Unbound)), "no road, no handoff within");
+    assert!(matches!(k.handoff(&Handoff::Offer(Box::new(within.clone())).signed(&line)), Handed::Refused(HandoffRefusal::Unbound)), "no road, no handoff within");
     let along = Handoff::Traverse { offer: Box::new(within), mouth: id };
     assert!(matches!(k.handoff(&along.sign(&line)), Handed::Sealed { .. }), "along the road");
     let across = Mouth { from_tier: verifying(&line), keeper: verifying(&reserve(4)), nonce: [8; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(across)).sign(&line)), Handed::Sealed { .. }), "a line builds across, its reserve keeping");
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(across)).signed(&line)), Handed::Sealed { .. }), "a line builds across, its reserve keeping");
 }
 
 /// A THROAT IS BANKED, FED, DRAWN AND RETURNED — NEVER RETIRED: the
@@ -278,7 +279,7 @@ fn handoff_feed_keeps_throat_bank_with_draw() {
     let refused = Mouth { tube: Some(Tube { mass: (5, 2), ..tube() }), nonce: [3; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
     let anchor = k.anchor();
     k.treasury.genesis(offerer, [3, 0, 0, 0], anchor);
-    let Handed::Sealed { id: no, .. } = k.handoff(&Handoff::Mouth(Box::new(refused)).sign(&reserve(4))) else { panic!() };
+    let Handed::Sealed { id: no, .. } = k.handoff(&Handoff::Mouth(Box::new(refused)).signed(&reserve(4))) else { panic!() };
     assert_eq!(k.treasury.balance_mu(&offerer).n()[0],0, "⌈5/2⌉ = 3 banked at the offer");
     assert!(matches!(k.handoff(&Handoff::Refuse { id: no }.sign(&reserve(5))), Handed::Sealed { .. }));
     assert_eq!(k.treasury.balance_mu(&offerer).n()[0],3, "refused: the bank back to its face");
@@ -287,7 +288,7 @@ fn handoff_feed_keeps_throat_bank_with_draw() {
     assert_eq!(k.treasury.held_of(&throat_key(&id, &offerer)).map(|h| h.mu.clone().n()[0]), Some(3));
     let before = k.tube_of(&id).expect("a tube").from_level;
     k.treasury.genesis(keeper, [4, 0, 0, 0], anchor);
-    let act = |k: &mut Court, h: Handoff, by: &SigningKey| k.handoff(&h.sign(by));
+    let act = |k: &mut Court, h: Handoff, by: &SigningKey| k.handoff(&h.signed(by));
     assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(4)), Handed::Refused(HandoffRefusal::NotTheTier), "the keeper feeds");
     assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 1 }, &reserve(5)), Handed::Refused(HandoffRefusal::Stale));
     assert!(matches!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(5)), Handed::Sealed { .. }));
@@ -296,8 +297,7 @@ fn handoff_feed_keeps_throat_bank_with_draw() {
     assert_eq!(fed.mass, (13, 2), "5/2 + 4");
     let (Level::Curved(after), Level::Curved(before)) = (&fed.from_level, &before) else { panic!("curved faces") };
     assert!(after > before, "fed, the throat widens");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.tube_of(&id), Some(fed), "the bank restored");
     assert_eq!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 7, seq: 1 }, &reserve(5)), Handed::Refused(HandoffRefusal::Starved), "never massless");
     assert!(matches!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 6, seq: 1 }, &reserve(5)), Handed::Sealed { .. }));
@@ -332,11 +332,10 @@ fn handoff_mouth_tube_supersedes_untethered_mouth() {
     assert_eq!(k.handoffs.mouths.get(&old).map(|h| h.state), Some(State::Returned), "closed, its record kept");
     assert_eq!(k.handoff_read(&crossing).map(|r| r.0), Some(State::Returned), "in flight, returned");
     let again = Mouth { nonce: [8; 32], ..new };
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(again)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(again)).signed(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
     let not_legacy = Mouth { tube: Some(Tube { supersedes: Some(tube_id), ..tube() }), nonce: [6; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(not_legacy)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(not_legacy)).signed(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.tube_of(&tube_id), k.tube_of(&tube_id), "the tube restored");
     assert_eq!(booted.tube_of(&old), None, "the untethered record, untethered");
 }

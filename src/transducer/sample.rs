@@ -66,10 +66,14 @@ impl<'a> Symbol<'a> {
         self.0.len()
     }
 
-    /// The symbol's bytes, for the two raster ends alone: speech writing a
-    /// sample back, and content written out as an address (A21). Inside
-    /// the crate only; no reader takes them as a number.
-    pub(crate) fn bytes(&self) -> &'a [u8] {
+    /// THE SYMBOL'S BYTES, for the two raster ends alone: a source's
+    /// decoder writing a sample back into its own format (a house reading a
+    /// mind's outputs, beside [`Sample::sites`] and [`Sample::symbol_at`]),
+    /// speech writing a sample back, and content written out as an address
+    /// (A21). Public for decoders and the speech end only (track 26, asked
+    /// by netstratum on #32); no reader of the sensor takes them as a
+    /// number, an order or a meaning (MU-SENSING §3.3).
+    pub fn bytes(&self) -> &'a [u8] {
         self.0
     }
 }
@@ -265,5 +269,11 @@ impl Sample {
             }
             Site::new(axes)
         })
+    }
+
+    /// LIFTS THE OBSERVATION INTO THE MANIFOLD (78.179 §1; MU-SENSING §3.1):
+    /// one factor per phase, replacing legacy bounds and envelopes.
+    pub fn lift(&self) -> super::manifold::Manifold {
+        super::manifold::Manifold::lift_from(self)
     }
 }

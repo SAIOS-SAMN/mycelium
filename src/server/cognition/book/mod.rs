@@ -6,6 +6,7 @@
 
 pub mod agreement;
 pub mod awaiting;
+pub mod converged;
 pub mod demand;
 pub mod language;
 pub mod rewrite;

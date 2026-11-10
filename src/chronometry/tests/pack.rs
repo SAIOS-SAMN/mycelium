@@ -92,7 +92,7 @@ fn node_reads_as_sealed_once_predecessor_left() {
         e.append(ActKind::Orbit, frame, Vec::new(), [9; 32], Vec::new()).expect("the close")
     };
     let (_, root) = e.fold_before(shut.stamp.place()).expect("folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash.bytes() }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash }];
     let fold = e.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node");
     let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());

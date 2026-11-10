@@ -11,8 +11,7 @@
 //! EXISTS once the object has volume, because a null point is non-invertible.
 //! The base has three coordinates, row, column and frame (51.1).
 use mycelium::transducer::cga::{
-    base_at, boundary_dual, e_inf, e_o, on_sphere, point_at, rotator, rotator_on_blade, sphere_at, translator_at, Mv,
-    E1, E3,
+    base_at, boundary_dual, e_inf, e_o, membrane_at, point_at, rotator, rotator_on_blade, translator_at, Mv, E1, E3,
 };
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -22,8 +21,13 @@ use num_rational::BigRational;
 fn point(a: &BigRational, b: &BigRational, c: &BigRational) -> Mv {
     point_at(&[a.clone(), b.clone(), c.clone()])
 }
-fn sphere(a: &BigRational, b: &BigRational, c: &BigRational, r2: &BigRational) -> Mv {
-    sphere_at(&[a.clone(), b.clone(), c.clone()], r2)
+/// A body's own enclosure: the membrane about a centre at the gauge `rho`.
+fn sphere(a: &BigRational, b: &BigRational, c: &BigRational, rho: &BigRational) -> Mv {
+    membrane_at(&[a.clone(), b.clone(), c.clone()], rho).expect("a positive gauge")
+}
+/// Does the base point `p` stand on the enclosure `s`? `⟨X(p) S⟩₀ = 0`, exact.
+fn stands_on(p: &Mv, s: &Mv) -> bool {
+    p.geo(s).scalar_part() == q(0)
 }
 fn translator(a: &BigRational, b: &BigRational, c: &BigRational) -> Mv {
     translator_at(&[a.clone(), b.clone(), c.clone()])
@@ -77,14 +81,15 @@ fn translator_at_moves_point_in_one_sandwich() {
     assert!(moved.geo(&moved).scalar_part() == q(0), "the moved body is still on the cone");
 }
 
-/// A sphere is a volumetric body: a base point lies on it iff X(p)·S = 0, exact.
+/// An enclosure is a volumetric body: the membrane about the origin at the
+/// gauge 3 holds a base point iff `X(p)·S = 0`, exact.
 #[test]
-fn on_sphere_is_true_on_surface() {
-    let s = sphere(&q(0), &q(0), &q(0), &q(9)); // centre origin, r² = 9
-    assert!(on_sphere(&point(&q(3), &q(0), &q(0)), &s), "(3,0,0) is on the r²=9 sphere");
-    assert!(on_sphere(&point(&q(0), &q(3), &q(0)), &s), "(0,3,0) too");
-    assert!(on_sphere(&point(&q(0), &q(0), &q(3)), &s), "and (0,0,3): the frame axis is a base axis");
-    assert!(!on_sphere(&point(&q(2), &q(0), &q(0)), &s), "(2,0,0) is inside, not on it");
+fn membrane_at_gauge_holds_points_at_that_gauge() {
+    let s = sphere(&q(0), &q(0), &q(0), &q(3));
+    assert!(stands_on(&point(&q(3), &q(0), &q(0)), &s), "(3,0,0) stands on the membrane at gauge 3");
+    assert!(stands_on(&point(&q(0), &q(3), &q(0)), &s), "(0,3,0) too");
+    assert!(stands_on(&point(&q(0), &q(0), &q(3)), &s), "and (0,0,3): the frame axis is a base axis");
+    assert!(!stands_on(&point(&q(2), &q(0), &q(0)), &s), "(2,0,0) is inside, not on it");
     // Its centre reads back exactly.
     assert_eq!(base(&s), Some((q(0), q(0), q(0))), "the sphere's centre is the origin");
 }
@@ -103,8 +108,8 @@ fn is_versor_refuses_null_point_and_accepts_sphere() {
     assert!(!is_versor(&p_a), "a null point is no versor — the collapse");
     assert!(!is_versor(&p_b), "so no demand forms between volumeless points");
 
-    let s_a = sphere(&q(1), &q(1), &q(0), &q(4));
-    let s_b = sphere(&q(4), &q(1), &q(0), &q(4));
+    let s_a = sphere(&q(1), &q(1), &q(0), &q(2));
+    let s_b = sphere(&q(4), &q(1), &q(0), &q(2));
     assert!(is_versor(&s_a), "a sphere has volume, hence it acts");
     let qd = s_b.geo(&s_a.reverse());
     // `S_A S̃_A` is the identity ray: a non-zero scalar.
@@ -145,7 +150,7 @@ fn rotator_rotates_whole_body_in_one_sandwich() {
 /// the bridge from the multivector body to its cellular boundary/2-chain.
 #[test]
 fn boundary_dual_projects_sphere_to_boundary() {
-    let s = sphere(&q(2), &q(1), &q(0), &q(4));
+    let s = sphere(&q(2), &q(1), &q(0), &q(2));
     // Read in the corpus's space, n = 3, named.
     let d = boundary_dual(&s, 3).expect("the pseudoscalar is invertible");
     assert!(!d.is_zero(), "the boundary projection carries the body's dual");

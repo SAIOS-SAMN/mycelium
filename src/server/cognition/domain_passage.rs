@@ -268,8 +268,9 @@ fn fits_both(t: &crate::anastome::dialogue::handoff::Tube, mass: &num_rational::
 /// and never on a grid (MU-DERIVATIONS D1.2 Phase A): a curved face always
 /// holds it; a sphere face holds the cap of angular radius `r = 2m/R` short of
 /// the antipode, `r < π`, decided by refining `π` until its enclosure leaves
-/// `r` (`certified::separates`); a torus face holds the horizon sphere of
-/// radius `2m` APART from its image under every period (`enclosure::
+/// `r` (`certified::separates`); a torus face holds the horizon, the
+/// membrane at the gauge `2m` (`cga::membrane_at`, no squared radius),
+/// APART from its image under every period (`enclosure::
 /// containment`), the meet 78.162 (5) names, no ratio formed. `None` for a
 /// non-positive mass or radius, or a period that does not read.
 pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Option<bool> {
@@ -291,7 +292,7 @@ pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Opt
         Geometry::Torus { periods, .. } => {
             let rho = &two * mass;
             let origin = vec![Q::zero(); periods.len()];
-            let horizon = crate::transducer::cga::sphere_at(&origin, &(&rho * &rho));
+            let horizon = crate::transducer::cga::membrane_at(&origin, &rho)?;
             for (axis, (n, d)) in periods.iter().enumerate() {
                 if *d == 0 || *n == 0 {
                     return None;
@@ -623,6 +624,9 @@ impl Court {
                 if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Mouth, dx) {
                     return Handed::Boundary(why);
                 }
+                if let Err(why) = crate::anastome::dialogue::crossing_record::verify_carried(h.crossing.as_deref()) {
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Mouth, domain: dx, why }));
+                }
                 // 78.136 — THE LINES BUILD, THE RESERVE KEEPS (as ruled):
                 // the offerer is any tier of its
                 // domain — a builder LINE building a road, or the reserve;
@@ -686,10 +690,10 @@ impl Court {
                     // Track 24 B4 — a core tube is the universe's act: only
                     // its sitting reserve offers one, through its vertex.
                     if self.reserve_of(&dx) != Some(m.from_tier) {
-                        return Handed::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                        return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::NotThroughCore {
                             act: crate::court::admission::UniverseAct::Mouth,
                             domain: dx,
-                        });
+                        }));
                     }
                     if m.keeper != m.from_tier {
                         return refuse(R::NotKeeper);

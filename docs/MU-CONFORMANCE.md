@@ -63,8 +63,9 @@ acts, each once. Each `ActRequirement` names:
 - `fields`: the exact fields that decoder reads back.
 
 `Statement::union(profiles)` is the acts of a client declaring
-`profiles`. At this tree the statement stands at wire `0x0200` (v2.0) and
-law version 5.
+`profiles`. At this tree the statement stands at wire `0x0300` (v3.0: the
+crossing record X1 carried on the seven universe acts, MU-HOSTING §5a.10)
+and law version 5.
 
 **μ fields (wire v2.0).** Every field that carries μ — the solve verdict's
 and receipt's paid μ, the grant's μ, the wallet's balance, bond and held,
@@ -92,7 +93,7 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 | MAY | `laws concordance` (mode 7), `laws signature` (mode 8), `laws alignment` (mode 9) | `decode_concordance_reply`, `decode_signature_reply`, `decode_alignment_reply` | as the kernel profile's |
 | MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
 | MAY | `probe`, `peers`, `syllabus`, `speech` (each sentence with, optionally, the ground its claim was spoken under; MU-SENSING §6.2), `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
-| MAY | `solve factorisation` (`ACT_SOLVE`, claim kind 1, `SOLVE_KIND_FACTORISATION`; signed as `mycelium factorisation v1`: a train pair's motion and residue at any rank, with, optionally, the ground the claim was spoken under; MU-SENSING §3.9) | `decode_factorisation`, `decode_factor_verdict` | the act: voice, task, pair, motion (sources, senses, periods), residue (links), stated ground (or none), signature; the verdict: admitted, the residue of the residues (unclaimed, uncarried), or the refusal by name |
+| MAY | `solve factorisation` (`ACT_SOLVE`, claim kind 1, `SOLVE_KIND_FACTORISATION`; signed as `mycelium factorisation v2`: a train pair's motion and residue at any rank, the perspective it was perceived under (track 26 S6), and, optionally, the ground the claim was spoken under; MU-SENSING §3.9, §4) | `decode_factorisation`, `decode_factor_verdict` | the act: voice, task, pair, motion (sources, senses, periods), residue (links), stated perspective (pose sources and senses, roles), stated ground (or none), signature; the verdict: admitted, the residue of the residues (unclaimed, uncarried), or the refusal by name |
 
 **Claim kinds of the solve (track 26 S4c).** The solve act carries its
 claim kind as the byte after its tag, the statement's mode for the act:

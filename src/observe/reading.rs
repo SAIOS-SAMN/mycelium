@@ -57,10 +57,15 @@ pub const TAG_JUDGED: u8 = 25;
 /// plaintext) and side.
 /// FORMAT: channels reading tag byte.
 pub const TAG_CHANNELS: u8 = 26;
+/// MU-HOSTING §5a.7, track 24 B4 — the refusals a court answered at its
+/// universes' core tubes, by domain, act and name.
+/// FORMAT: boundary reading tag byte.
+pub const TAG_BOUNDARY: u8 = 27;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 17] = [
+pub const READING_NAMES: [(&str, u8); 18] = [
+    ("boundary", TAG_BOUNDARY),
     ("channels", TAG_CHANNELS),
     ("asked", TAG_ASKED),
     ("dispatched", TAG_DISPATCHED),
@@ -842,6 +847,8 @@ pub enum Reading {
     Judged(Box<super::JudgedSolves>),
     /// The peers a host met, by channel and side (`TAG_CHANNELS`).
     Channels(Box<super::Channels>),
+    /// The refusals a court answered at its tubes (`TAG_BOUNDARY`).
+    Boundary(Box<super::BoundaryReading>),
 }
 
 impl Reading {
@@ -864,6 +871,7 @@ impl Reading {
             Reading::Dispatched(_) => TAG_DISPATCHED,
             Reading::Judged(_) => TAG_JUDGED,
             Reading::Channels(_) => TAG_CHANNELS,
+            Reading::Boundary(_) => TAG_BOUNDARY,
         }
     }
 
@@ -904,6 +912,7 @@ impl Reading {
             (Reading::Judged(a), Reading::Judged(b)) => *a = b.clone(),
             // The book is read whole at the question; the later stands.
             (Reading::Channels(a), Reading::Channels(b)) => *a = b.clone(),
+            (Reading::Boundary(a), Reading::Boundary(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -946,6 +955,7 @@ impl Reading {
             Reading::Dispatched(r) => r.put(out),
             Reading::Judged(r) => r.put(out),
             Reading::Channels(r) => r.put(out),
+            Reading::Boundary(r) => r.put(out),
         }
     }
 
@@ -970,6 +980,7 @@ impl Reading {
             TAG_DISPATCHED => Some(Reading::Dispatched(Box::new(super::Dispatched::take(b, p)?))),
             TAG_JUDGED => Some(Reading::Judged(Box::new(super::JudgedSolves::take(b, p)?))),
             TAG_CHANNELS => Some(Reading::Channels(Box::new(super::Channels::take(b, p)?))),
+            TAG_BOUNDARY => Some(Reading::Boundary(Box::new(super::BoundaryReading::take(b, p)?))),
             _ => None,
         }
     }

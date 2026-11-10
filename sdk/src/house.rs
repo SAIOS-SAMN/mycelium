@@ -22,6 +22,15 @@
 //! (`found_domain`, `reserve`, `reserve_reading`) and the seat acts
 //! (`seat_post`, `list_seats`, `read_mail`).
 //!
+//! **READ-MAIL is a held read with no time bound** (78.146 as amended,
+//! ruled 2026-10-17). A read whose box holds nothing past its cursor is
+//! answered at the court's next event: a seat post filed on the relay, or
+//! the keeper signing its next TUniversal reading. The hold reads no clock,
+//! so on a quiet relay it can stand for any length of time. A caller sets
+//! no read timeout on a READ-MAIL, or treats a timeout as "nothing yet" and
+//! asks again. A read asked again while one is held answers the earlier
+//! one, so asking again never holds two. `Session` sets no read timeout.
+//!
 //! | Group | Items |
 //! |---|---|
 //! | The Concordance | [`ConcordanceClause`], [`Fixture`], [`Object`], [`sign_concordance`], [`reconstruct_fixture`], [`Signing`], [`SigningRefusal`], modes 7 and 8; the alignment reading, [`Alignment`], [`ClauseReading`], mode 9 |
@@ -150,9 +159,10 @@ pub use mycelium::sdk::seat_mind::task::{FN_DECLINE, FN_SOLVE, KIND_TASK};
 
 /// A body carried rigidly by a motion: its state after a transition.
 pub use mycelium::physics::equilibrium::carried_body;
-/// Building a transition: a rational rotor, a translator, a sphere at a
-/// centre; and why a motion's modes did not split.
-pub use mycelium::transducer::cga::{rotator, sphere_at, translator_at, Undecomposed};
+/// Building a transition: a rational rotor, a translator, a body's own
+/// enclosure (the membrane at a centre and a gauge; 78.171 amendment (d));
+/// and why a motion's modes did not split.
+pub use mycelium::transducer::cga::{membrane_at, rotator, translator_at, Undecomposed};
 
 /// FRAMING: a frame delimited by its length, the head's length read, an
 /// act's budget and the most one envelope delimits.
@@ -183,6 +193,15 @@ pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeRead
 /// a mapped wormhole, signed by the payer; the court's answer (`Crossed`):
 /// the crossing's hash, the gas and the map fee, or the refusal by name.
 pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, CrossRefusal, Crossed, Declaration, Gas, SignedTraverse, Traverse};
+
+/// RETRIEVE (`ACT_DOMAIN` kind 19, 78.154 (4), #159): a coordinate
+/// retrieval of the receipts at a final point's tick, signed by the staker
+/// and priced from its stake ([`Session::retrieve`](crate::session::Session));
+/// the answer carries the court's signed section over its head, which the
+/// retriever checks with [`verify_retrieved`].
+pub use mycelium::anastome::dialogue::retrieve::{
+    decode_retrieve_reply, encode_retrieve, verify_retrieved, Placed, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
+};
 
 /// A UNIVERSE'S LEDGER AND MAP (`ACT_DOMAIN` kinds 12–15, 78.154): an entry
 /// chained and sealed, never judged; the ledger read by pages; a map act

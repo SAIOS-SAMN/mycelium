@@ -62,11 +62,11 @@ k.basis_insert(from_canonical(&germinate(&painted(&a), &painted(&rot)).unwrap())
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 k.basis_insert(
-    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::new(4, 4, 8, 8)),
+    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[4, 4], &[8, 8]).expect("one rank")),
     [7; 32],
 );
 k.basis_insert(
-    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::new(3, 3, 6, 6)),
+    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[3, 3], &[6, 6]).expect("one rank")),
     [8; 32],
 );
 assert!(k.basis_len() >= 2, "two distinct addresses remain");
@@ -100,8 +100,7 @@ k.leak_unruled(crate::transducer::element::from_canonical(
     &germinate(&painted(&[(8, 0, 2), (8, 1, 2)]), &painted(&[(8, 0, 5), (8, 1, 5)])).unwrap(),
 ));
 let snap = k.snapshot();
-let mut booted = Court::new();
-assert!(booted.restore(&snap));
+let booted = Court::new().reconstruct(&snap).expect("reconstructs").into_object();
 assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuilds from the federation");
 }
 
@@ -118,12 +117,10 @@ let [(ruled, _), ..] = k.court_federation.as_slice() else { panic!("a ruled word
 let addr: Vec<u8> = ruled.as_bytes().to_vec();
 k.forget_discoverer(&addr);
 assert!(k.discoverer_of(&addr).is_none(), "its discoverer is gone");
-let mut booted = Court::new();
-assert!(booted.restore(&k.snapshot()));
+let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
 assert_eq!(booted.basis_len(), kept, "the word stands in the basis again, adopted from the federation");
 assert!(booted.discoverer_of(&addr).is_none(), "no discoverer invented for it");
-let mut again = Court::new();
-assert!(again.restore(&booted.snapshot()), "and it round-trips");
+let again = Court::new().reconstruct(&booted.snapshot()).expect("and it round-trips").into_object();
 assert_eq!(again.basis_len(), kept);
 }
 
@@ -257,7 +254,7 @@ moved[0] = 7;
 k.confirm_peer_holds(&[crate::transducer::sheaf::StratumDigest {
     inv,
     count: 0,
-    root: moved.to_vec(),
+    root: crate::court::admission::Locator::of_bytes(moved),
 }], [2; 32]);
 assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 }
@@ -451,8 +448,7 @@ assert_eq!(rank.counts().0 + rank.counts().1, rank.closure_len());
 // door, so a court that boots reports what it reported before.
 let before = k.closure_now().counts();
 let snap = k.snapshot();
-let mut k2 = Court::new();
-assert!(k2.restore(&snap), "the ledger restores");
+let mut k2 = Court::new().reconstruct(&snap).expect("the ledger reconstructs").into_object();
 let back = k2.closure_now();
 assert_eq!(back.counts(), walk(&back), "restored, the counts are the carrier's");
 assert_eq!(back.counts(), before, "and are what was written");

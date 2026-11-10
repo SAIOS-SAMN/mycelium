@@ -31,6 +31,10 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     }
     // The final point is read off the shelf before the court is taken.
     let fin = crate::tuniversal::final_point();
+    if let DomainRequest::Retrieve(s) = &request {
+        retrieve(stream, frame, context, s, fin);
+        return;
+    }
     let body = match crate::court_lock::held!(context.court) {
         // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
         // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
@@ -57,6 +61,8 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
             DomainRequest::ReadEndowment(domain) => {
                 k.endowment_reading(&domain).and_then(|r| mycelium::anastome::dialogue::endowment::encode_endowment_reading(&r)).into_iter().flatten().collect()
             }
+            // Answered above, beside the court's signed position.
+            DomainRequest::Retrieve(_) => Vec::new(),
         }),
         Err(_) => return,
     };
@@ -65,4 +71,48 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         return;
     }
     answer(stream, Delimited { body });
+}
+
+/// #159 — A COORDINATE RETRIEVAL (`ACT_DOMAIN` sub-kind 19), answered beside
+/// the court's own 47.1 section over its head at the answer, signed over the
+/// request (`retrieve::answered_payload`): the retriever verifies the
+/// section and that the receipts stand under its head. A served answer this
+/// court cannot sign is answered with nothing, never unsigned; it is
+/// acknowledged only once the claim it drew is durable (78.137).
+fn retrieve(stream: &mut Channel, frame: &Delimited, context: &Context, s: &mycelium::anastome::dialogue::retrieve::SignedRetrieve, fin: Option<mycelium::chronometry::tuniversal::TPoint>) {
+    use mycelium::anastome::dialogue::retrieve::{answered_payload, encode_retrieve_reply, Retrieved};
+    let read = match crate::court_lock::held!(context.court) {
+        Ok(mut h) => h.run(|k, _| k.retrieve_signed(s, fin)),
+        Err(_) => return,
+    };
+    let answer_with = match &read {
+        Retrieved::Served { receipts, .. } => {
+            let payload = answered_payload(&s.retrieve);
+            let Some(section) = crate::admission::sign_position(&context.court, &context.mesh, &mycelium::transducer::stalk::Invariant::default(), &payload) else {
+                eprintln!("  retrieve unanswered: this court holds no position to sign");
+                return;
+            };
+            // Each receipt's ancestry to the head the section signs, on the
+            // hold's stroke.
+            let head = section.receipt.stamp;
+            let paths = match crate::court_lock::held!(context.court) {
+                Ok(mut h) => h.run(|k, reads| k.ancestry(&head, receipts, reads)),
+                Err(_) => return,
+            };
+            let Some(paths) = paths else {
+                eprintln!("  retrieve unanswered: a receipt's ancestry to the signed head was not read whole");
+                return;
+            };
+            Some((section, paths))
+        }
+        Retrieved::Refused(_) => None,
+    };
+    if !crate::persist::durable(&context.court, &context.state_path) {
+        return;
+    }
+    let Some(body) = encode_retrieve_reply(&read, answer_with.as_ref().map(|(s, p)| (s, p.as_slice()))) else {
+        eprintln!("  retrieve unanswered: a receipt or the section cannot be written");
+        return;
+    };
+    answer(stream, Delimited { lane: frame.lane, body });
 }

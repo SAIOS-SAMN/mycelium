@@ -45,7 +45,7 @@ fn manifest(nonce: u8) -> Manifest {
 }
 
 fn signed(m: Manifest, by: u8) -> SignedManifest {
-    m.sign(&key(by)).expect("the manifest writes")
+    m.sign(crate::anastome::dialogue::crossing_record::still(), &key(by)).expect("the manifest writes")
 }
 
 /// THE MANIFEST AND ITS READING TRAVEL WHOLE: a manifest of astronomical
@@ -137,8 +137,7 @@ fn endowment_reading_survives_restart() {
     assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { .. }));
     let before = k.endowment_reading(&reserve_domain());
     let snap = k.snapshot();
-    let mut booted = Court::new();
-    assert!(booted.restore(&snap), "clean restore");
+    let booted = Court::new().reconstruct(&snap).expect("a clean reconstruction").into_object();
     let after = booted.endowment_reading(&reserve_domain());
     assert_eq!(after.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)), before.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)));
 }
@@ -163,8 +162,7 @@ fn growth_size_sums_closures_in_universe() {
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
     let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "clean restore");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("a clean reconstruction").into_object();
     assert_eq!(booted.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "the size survives a restart");
     // A grant sealed takes the closures it answered.
     let anchor = k.anchor();

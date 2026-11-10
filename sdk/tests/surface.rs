@@ -270,7 +270,7 @@ use mycelium_sdk::house::encode_batch_request as _;
 use mycelium_sdk::house::encode_verify_request as _;
 use mycelium_sdk::house::put_transition as _;
 use mycelium_sdk::house::rotator as _;
-use mycelium_sdk::house::sphere_at as _;
+use mycelium_sdk::house::membrane_at as _;
 use mycelium_sdk::house::take_transition as _;
 use mycelium_sdk::house::take_verdict as _;
 use mycelium_sdk::house::translator_at as _;
@@ -537,6 +537,18 @@ use mycelium_sdk::house::DELIMITED_MAX as _;
 use mycelium_sdk::house::HEAD as _;
 
 // forms
+use mycelium_sdk::forms::crossed as _;
+use mycelium_sdk::forms::put_address_only as _;
+use mycelium_sdk::forms::verify_carried as _;
+use mycelium_sdk::forms::Body as _;
+use mycelium_sdk::forms::Clauses as _;
+use mycelium_sdk::forms::Content as _;
+use mycelium_sdk::forms::Crossing as _;
+use mycelium_sdk::forms::CrossingRefusal as _;
+use mycelium_sdk::forms::Motion as _;
+use mycelium_sdk::forms::Place as _;
+use mycelium_sdk::forms::Ring as _;
+use mycelium_sdk::forms::TurnBody as _;
 use mycelium_sdk::forms::shares::share_compounds as _;
 use mycelium_sdk::forms::shares::share_compounds::Remaining as _;
 use mycelium_sdk::forms::reference as _;

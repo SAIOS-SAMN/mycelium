@@ -12,7 +12,7 @@ use std::io::Write;
 
 const ORIGIN: ([u8; 32], u32) = ([7; 32], 2);
 
-fn key(name: &str) -> HyphaKey {
+pub(super) fn key(name: &str) -> HyphaKey {
     let sk = ed25519_dalek::SigningKey::from_bytes(&HyphaKey::seed_from_name(name));
     HyphaKey { vk: sk.verifying_key(), sk }
 }
@@ -31,7 +31,7 @@ fn line(signer: [u8; 32], n: u64) -> Vec<KStepReceipt> {
 }
 
 /// A 47.1 position `key` signs at `head`, over `payload`.
-fn position(key: &HyphaKey, head: &KStepReceipt, payload: &[u8]) -> ReceiptSection {
+pub(super) fn position(key: &HyphaKey, head: &KStepReceipt, payload: &[u8]) -> ReceiptSection {
     let prefix = SignedPrefix {
         genesis: ORIGIN.0,
         epoch: ORIGIN.1,
@@ -121,7 +121,7 @@ fn burning_court() -> (String, std::sync::mpsc::Receiver<Vec<u8>>) {
 }
 
 /// A digest `key` signs, bound at `bind`, carrying `section` behind it.
-fn digest(key: &HyphaKey, bind: &str, section: &ReceiptSection) -> Vec<u8> {
+pub(super) fn digest(key: &HyphaKey, bind: &str, section: &ReceiptSection) -> Vec<u8> {
     let (room, roots, ruled) = ([1u64, 0, 0, 0], [[1u8; 32], [2; 32], [3; 32], [4; 32]], [5u8; 32]);
     let sig = key.sign(&dialogue::cover_signed_prefix(&roots, &ruled, &room));
     let mut body = dialogue::encode_cover_digest(&room, &roots, &ruled, &key.verifying_bytes(), bind, &[], &sig).expect("a digest writes");

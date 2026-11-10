@@ -85,7 +85,7 @@ pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
 pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not reconstruct";
 /// 23.8: a lane of the voice's room did not cover the draw. Nothing is
 /// docketed; the refusal travels to the voice.
-pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occupied lane";
+pub const REFUSE_ROOM: &str = "voice room does not cover the expression on an occupied lane";
 /// 45.8, 34.1 (ruled 2026-09-09): a fold behind a prefix that is not
 /// fully final, and a fold whose epoch rows do not conserve.
 pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
@@ -106,7 +106,7 @@ pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor t
 /// 50.6, 34.1 (L7): a tape with no vertex that acts is a chain, refused
 /// whole; a word vertex that does not carry its body onto its image on the
 /// court's copy of the family is not a word for that body (50.1 step 1).
-pub const REFUSE_NOT_A_SENTENCE: &str = "utterance is a chain, not a sentence";
+pub const REFUSE_NOT_A_SENTENCE: &str = "expression is a chain, not a sentence";
 pub const REFUSE_VERTEX_BODY: &str = "vertex does not carry its body onto its image";
 /// 50.9 (L8): a sentence citing a refusal receipt is not the contraction
 /// of the refused sentence at the coordinate the court named.
@@ -151,6 +151,13 @@ pub const REFUSE_BEYOND_ALPHABET: &str = "the task's samples are off the alphabe
 pub const REFUSE_FACTOR_UNSIGNED: &str = "unsigned: a claim of factorisation names its voice by the voice's signature";
 pub const REFUSE_FACTOR_NO_PAIR: &str = "no such train pair: a claim of factorisation names a train pair of the task";
 pub const REFUSE_FACTOR_MOTION: &str = "the stated motion is no motion of the posted pair";
+/// MU-SENSING §4, §6.1 (track 26 S6) — A CLAIM OF FACTORISATION WHOSE STATED
+/// PERSPECTIVE THE COURT DOES NOT READ the pair under: one of another rank
+/// than the posted pair (a section is never padded or cut), or one reading
+/// an axis in a role other than space (the transduction reads every axis it
+/// factors as a phase the bodies extend along): I.
+pub const REFUSE_FACTOR_PERSPECTIVE_RANK: &str = "the stated perspective reads another rank than the posted pair";
+pub const REFUSE_FACTOR_PERSPECTIVE_ROLE: &str = "the stated perspective reads an axis in a role a factorisation does not read: every factored axis is space";
 /// 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS: a cited form
 /// reached again while it is still being spoken. The nerve admits mutual
 /// citation (a posetal height forbade every 2-simplex), and no speech of a
@@ -214,6 +221,7 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         }
         REFUSE_CITATION_CYCLE | REFUSE_GROUND_NOT_ONE_SYMBOL | REFUSE_GROUND_NO_CANDIDATE | REFUSE_BEYOND_ALPHABET => O::Integrity,
         REFUSE_FACTOR_UNSIGNED | REFUSE_FACTOR_NO_PAIR | REFUSE_FACTOR_MOTION => O::Integrity,
+        REFUSE_FACTOR_PERSPECTIVE_RANK | REFUSE_FACTOR_PERSPECTIVE_ROLE => O::Integrity,
         REFUSE_UNREAD => O::NoQuestion,
         REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
             O::Integrity

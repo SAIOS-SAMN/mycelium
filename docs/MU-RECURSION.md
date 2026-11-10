@@ -4,7 +4,7 @@
 >
 > **Components:** every Mycelium component: the algebra, client, hypha, court and wire. Each chapter names its code paths, which locate its component. Where a term reads two ways (*planetary*, *star*, *universe*), GLOSSARY *Components and scope* and MU-LEXICON §4 settle it.
 
-**Status:** governing specification, release 0.3.0-rc.3, with its rulings.
+**Status:** governing specification, release 0.4.0-rc.1, with its rulings.
 Each chapter states its objects and names the code that carries them;
 chapter 78 lists the rulings in force. The mind's chapters moved to
 `MU-CLIENT.md` (its §1–§9), and each leaves a pointer here. The other
@@ -1004,7 +1004,7 @@ read at the cited function. "Stands" has the same sense in 0.3–0.5.
 | **M3 Cold-boot migration** (17.3) | bring old stores onto M2 addresses once | `element/record.rs` (`RECORD_MAGIC`; an older record refused by name) | §10: a layout change is a clean break, never a migration | HISTORICAL: RMP1 retired; the tree migrates nothing and refuses the old by one equality |
 | **M4 Chart coordinates** (17.4) | the invariant that places a body, connection, sentence or class on the atlas, exact and identical on every node; refinement appends an axis | `transducer/stalk/` (`Invariant`, `Stalks::refine_axis` and `Stalks::refine_axes`, `stalks.rs`), `blade/` (harmonics, A.11), `sentence/chart.rs` (`chart_of`) | A.11 harmonic completeness, A6 exact axis packing, 71 (n is data) | landed; governs. HL1 open: the harmonic lift as a pencil (78.14) |
 | **M5 Class ledger identity** (17.5) | a holonomy or transition canonicalised by M1, keyed by class (15.4), one entry per (chart, pair, class) in `cocycle_at`, refined by M4 | `server/cognition/cocycle.rs`, `sentence/class.rs`, carried by `server/cognition/persistence/{read,write}.rs` (the tape is retired) | 15.4–15.6 naturality; 78.27(7) the class inline as coordinates | landed; governs as amended by 78.27 (LD3-3 rewrites its carrier) |
-| **M6 Comprehension** (17.6) | does a mind already speak an incoming word: factor it through the fibre it holds (A12); otherwise emit exactly what is new as a typed demand, never "unknown" | `client/sdk/vocabulary/comprehend.rs`, `transducer/factor.rs`, `server/cognition/reduce.rs`; AMENDED: `cech/orbit_algebra.rs` | 78.11 (CG1): comprehension of a cell is its circuits' bracket-closed orbit algebra, rank = capacity; 78.26 the four losses | landed on the voice; amended by CG1 (landed). CV1b and CB1 open: each refusal carries its content, the cross-cell bracket read |
+| **M6 Comprehension** (17.6) | does a mind already speak an incoming word: factor it through the fibre it holds (A12); otherwise emit exactly what is new as a typed demand, never "unknown" | `client/sdk/vocabulary/comprehend.rs`, `transducer/factor.rs`, `server/cognition/reduce.rs`; AMENDED: `cech/orbit_algebra.rs` | 78.11 (CG1): comprehension of a cell is its circuits' bracket-closed orbit algebra, rank = capacity; 78.26 the four losses | landed on the voice; amended by CG1 (landed). CV1b open: each refusal carries its content. CB1 landed as a reading (`cech/bracket.rs`): the cross-cell bracket read, held or lost, before any fix |
 | **M7 Wire identity** (17.7) | bytes off the wire become identities by re-derivation (M1, M2, A5), signatures verified (A10), never by comparing bytes | `network/wire.rs` (the frame and its budget), `anastome/dialogue/`, `court/verdict/blind.rs`, `bin/mycelium-server/judge/` | 47 receipts, law 2 | landed; governs. The record's magic refuses the pre-6(b) layout |
 | **M8 Court glue** (17.8) | a peer's section for a chart: goodness (14), Mayer–Vietoris (13.9), rulings by 13.10, the ledger by M5, naturality on every change | `server/cognition/court/glue.rs`, `court/verdict/reconstruct.rs`, `cech/{complex,coboundary,nerve}.rs` | 13–15 exact cohomology; 72.1b each relation at the grade of its simplex; 78.10 cells | landed for the 1-skeleton; cells at every grade landed (NB1, AD1, SY1, DF1). E4 open: CV2 (questions held), CV4 (another angle). The reconstruction is `verdict::reconstruct_resume` (`blind.rs`) → `reconstruct_form_resume` → `reconstruct_form_on_resume`, from the court's cursor (`server/cognition/court/reconstruct.rs`), `court/task.rs` and `server/synthesis.rs`; `reconstruct_form` and `derivations_compose_at` have test callers only |
 | **M9 Torsion bridge** (17.9) | the pivot orbit (A16), torsion filed (A17), certificates (A20) reconstructed on two organs; a mind's filed torsion is on the mesh before its next stroke | `transducer/field/{contemplation,idea,drive}.rs`, `sentence/pivot/{drive,trial,snap}.rs`, `sentence/form/certificate.rs` | A.8 torsional persistence, A18 rank accounting, 62 (ascend/descend), 78.7 viscosity | landed on the mind; the bridge to the mesh is E4 (CV2, CV4). T5 open: the 𝔽₂ kernel collapsing held superpositions (no implementation; `sentence/pivot/refracted.rs` forms candidates one per read and refuses UNBOUNDED). The pivot is `pivot_orbit_read` (`field/{drive,idea}.rs`); `pivot_orbit` has test callers only |
@@ -1020,7 +1020,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **The spelling peel** A22 | 50.4, 37.7, 78.29(A) | a rational block is peeled into letters of the seventeen and the adjoined generators, outer shell first, under a shrinking governor; what does not close is a demand, never a rounding; as amended the peel takes MR1's commuting modes first and peels each against the letters acting on its plane, an uncovered mode the demand of 37.7 | `alphabet/spelling.rs`, `layers.rs`, `alphabet/factor.rs`, `cga/modes.rs` | landed per plane; the mode-first peel is AL1's amendment, open — the slice's S1 (U15's triad letter `(g_core, ∇B, ΔB)`) closes it |
 | **Derivation and re-derivation** | 50.2, 1.9, 54 | a word vertex is the generators it factored through and a residue; the composed rotor is the coordinate; the court reconstructs the derivation; depth is a reading of the plexus of re-derivation (1.9, 78.31) | `alphabet/derivation.rs`, `element/receipts.rs`, `court/verdict/reconstruct.rs` | landed; governs. Step 6(b) landed. The court reconstructs by `reconstruct_resume` → `reconstruct_form_on_resume` (M8's line) |
 | **Constructors and the Gram form** | 78.12, 78.14, 78.15, 78.30(1, 6) | nuclei are sphere vectors and mirrors are odd vectors; a centroid is A4's null point and never a constructor; a cell's constructors' Gram form, read by exact elimination with no iteration, gives signature, pair regimes as `δ²` and a Coxeter system where the signs balance; the cell's content is the product of its constructors per circuit | `cga/{constructors,gram,mirrors,dual}.rs`, `cech/coxeter.rs`, `physics/axioms/coxeter.rs` | landed (GR1, GR2, CX1, MG1, MG1b, DF1, SY1); HX1 open: hyperbolic systems under Vinberg's criterion (78.29(B)) |
-| **Cells and enclosures** | 78.2, 78.10, EN1, 78.30(5) | one cell per witness element, its shape the meet of its nuclei at its own grade, faces read off it; an enclosure is the join of centres and containment is the inversive sign; nesting is the parse; a zero meet is `NoRound`, never `Congruent` (ZM1); a cell is keyed by its bodies' coordinates (KB1) | `cech/{complex,coboundary,simplex}.rs`, `cga/enclosure.rs` | landed (NB1, AD1, EN1). ZM1 landed: a zero meet reads `Congruence::NoRound(NoRound::ZeroMeet)`, never `Congruent` (`cech/orbit_algebra.rs`). KB1 landed (each cell keyed by its members' coordinates). CB1 open: the cross-cell bracket read |
+| **Cells and enclosures** | 78.2, 78.10, EN1, 78.30(5) | one cell per witness element, its shape the meet of its nuclei at its own grade, faces read off it; an enclosure is the join of centres and containment is the inversive sign; nesting is the parse; a zero meet is `NoRound`, never `Congruent` (ZM1); a cell is keyed by its bodies' coordinates (KB1) | `cech/{complex,coboundary,simplex}.rs`, `cga/enclosure.rs` | landed (NB1, AD1, EN1). ZM1 landed: a zero meet reads `Congruence::NoRound(NoRound::ZeroMeet)`, never `Congruent` (`cech/orbit_algebra.rs`). KB1 landed (each cell keyed by its members' coordinates). CB1 landed (`cech/bracket.rs`): each cross-cell bracket held by a cell or an enclosure, or lost; a lost one is a demand on the mind's docket (ruled on #148), never an enclosure formed without a witness, and a cell a witness certifies that holds it answers it |
 | **The orbit algebra** | 78.11 | a cell's comprehension is the bracket closure of its circuits' generators; rank is capacity; congruence by commutator; keeps-the-round and keeps-the-constructors read per mode; a quasi-periodic pair is held | `cech/orbit_algebra.rs` | landed (CG1, CG1b, CS1). CV1b open: its refusals carry content |
 | **Modes off the action** | 78.12, 75, 52 as amended, 78.30(3) | a motion's modes are read off its action, never a chart; the Cayley chart is a reading of a ray that has a chart point; closures per mode; a toroid is the orbit of a round under two commuting modes, a reading and never a carrier | `cga/{modes,motion,spin}.rs` | landed (MR1, MR1b, MD1, MD1b, HC1) |
 | **Refraction and tethers** | 72.1 (A.16), 78.6, 79 | a contact's transport is the refraction `(θ_bθ_a⁻¹)·V`; the tether `V = s_b s_a` is static; a cycle's holonomy is content; across a held stabilizer the refraction is read per element and collapsed by T5's kernel, never by a chosen representative (78.30(8)); routes are reused, then constructed as candidates | `sentence/pivot/{refracted,trajectory,circuit}.rs`, `sentence/inverse.rs`, `family/comprehend.rs`, `blade/tether.rs`; `physics/axioms/routes.rs` is the register's statements only (R1–R5, T1, T2, C1, C2, the conjectures), no procedure | landed (BQ5a, CT1, CT2, AX1). TH1 open: condense and drain at the family pole, keyed by sector |
@@ -1116,7 +1116,7 @@ By organ, from the sensor to the mesh; each line is the state of the tree.
 
 - **Sensor and form (chapters 2, 20 as superseded by 70, 53, 71).** A scene is covered before it is one form; hue is a fibre; `n` is data; bodies are harmonics and nuclei; contact by shared boundary cell. Landed.
 - **The word and the sentence (1, 50, 54).** A word is its rotor; a vertex its derivation; a form its address; the form tape retired from cognition; the word written whole at every site. Landed through step 6(b).
-- **Cells, constructors, the orbit algebra (78.10–78.15).** Landed in the tree; each refusal of these readers keeps its kind and loses its content (CV1b), and the cross-cell bracket has no reading yet (CB1).
+- **Cells, constructors, the orbit algebra (78.10–78.15).** Landed in the tree; each refusal of these readers keeps its kind and loses its content (CV1b), and the cross-cell bracket is read, held or lost, a lost one docketed as a demand that a witnessed cell answers (CB1, ruled on #148; `src/transducer/cech/bracket.rs`, MU-CLIENT §4.9).
 - **Refraction, tethers, routes (72.1, 78.6, 79).** Landed. Condense and drain at the family pole remain the Čech layer's (TH1).
 - **The court (5, 23, 13–15, 74, 78.9).** Glue, Mayer–Vietoris and the refusal reader landed; the court holds no questions across perspectives yet (CV2) and offers no other angle (CV4): POWC has no producer.
 - **The ledger and the economy (45, 78.21–78.24, MU-ECONOMY).** The ledger is a partial order carried as a trie with the stamp as its key; the clock reads, `K` counts a node's cycles closed by name as acts (OK1 — a ledger coordinate, never an orbit, §0.0), and a ruling's economy is applied at its node (ACT1 landed): a ruling pays POUW and POWR and slashes at its Ruling act (`rule_on`, live from the stroke's docket and from a peer's receipt), while POWC has no producer (the uncalled refine and condense arms are retired). The mind persists as keyed tries by coordinates (LD3 landed; the court writes `MYT2`, the genome `GEN7`); the escrow still lapses by extent alone (FX1).
@@ -3278,7 +3278,7 @@ are deleted.
 
 ### 16.8 A8 — RMP1 migration
 
-Runs once per store at load (`Court::restore`
+Runs once per store at load (`Court::reconstruct`
 `src/server/cognition/persistence/read.rs`, `Treasury::restore`
 `src/economy/persist.rs`, `MindLanguage::uncrystallize`
 `src/client/sdk/vocabulary/persist.rs`) and once per tape arriving from a peer on the old build.
@@ -3874,7 +3874,7 @@ spelling, serialisation, and scaling.
 4. The address is these bytes, each field length-prefixed (A21), never a
    digest of them; the form is read back from its address. The field list
    of chapter 1.5 is this procedure. A signature over a frame that carries
-   the form hashes the frame bytes in the receipt envelope (47.1), and that
+   the form hashes the frame bytes in the receipt section (47.1), and that
    hash never enters a carrier.
 
 **Invariant.** Address equality ⇔ same vertex, same frame, same canonical
@@ -3904,7 +3904,7 @@ unchanged; the ruled count is the count before minus the merges logged.
 Trace: `court remap {n} entries merged {m}`, zero `word_at` misses over the
 ruled fibres.
 
-**Binding.** `Court::restore`, `Treasury::restore`,
+**Binding.** `Court::reconstruct`, `Treasury::restore`,
 `MindLanguage::uncrystallize`, `sentence::from_element`, the `RMP1` section in
 `snapshot` and `crystallize`.
 
@@ -5430,7 +5430,7 @@ an aperture of docket circuits (45.9).
 
 The mint reads the form THE COURT WILL HOLD, `from_address` of the minted
 address (`held_form`, `src/transducer/sentence/address.rs`), against the
-envelope, never the form in hand; an address that does not decode is its
+word's stalk (its evidence, 54.5; 78.179 §2), never the form in hand; an address that does not decode is its
 own typed refusal (`Refused::MintAddressUndecoded`,
 `src/transducer/sentence/obstruction.rs`), so the court would hold no form.
 
@@ -8443,7 +8443,7 @@ a letter is the triad `(g_core, ∇B, ΔB)` and reaches the null cone.
 
 Code: `algebra/src/multivector.rs` (`E1`, `E2`, `E3`, `EP`, `EM`,
 `base_axis`); `src/transducer/cga/embedding.rs` (`e_o`, `e_inf`,
-`point_at`, `base_at`, `sphere_at`, `translator_at`, `rotator`,
+`point_at`, `base_at`, `membrane_at`, `translator_at`, `rotator`,
 `rotator_on_blade`); `src/transducer/cga/spin.rs` (`transvection`,
 `transvection_along`, `transvection_commutator`);
 `src/transducer/element/letters.rs` (`BASE_AXES`, `base_action_of`);
@@ -9100,6 +9100,16 @@ address plus its receipts (Part IX), and `FORM_TAPE_VERSION` is never bumped
 for the form again. `from_element_form`, `as_element_form` and every reader
 that decodes a tape to reach a form read `from_address`. Every address in
 the tree changes once, when this chapter lands (§10).
+
+**The receipts a word carries are its stalk** (ruled 2026-11-06; proposal
+78.179 §2). What rides beside the address is the word's evidence (54.2),
+built as a sheaf over the word's star in the cover's nerve: the star is
+the word with the citations (edges) and the rounds (triangles) that
+contain it, and the stalk is the derivations, the pivot certificates and
+the demands' bodies held there. Evidence restricts to each overlap, and
+two courts' reconstructions glue over the star (consilience, 37.7), so it
+is a sheaf. The carrier is `element::ReceiptsEnvelope`, which code
+comments cite as "54.5 Road (d)"; it is to be renamed `WordStalk` (#165).
 
 ### 54.6 Binding
 
@@ -10503,24 +10513,32 @@ src/transducer/cech/tests/drain.rs   drain's outcomes, the pinning rule, the cyc
 src/physics/axioms/tests/tether.rs   the regime read exactly and scale-free; num and den2 as a second derivation
 ```
 
-## 64. The envelope: why the luminal ray sits outside the harmonic core (ruled 2026-09-22)
+## 64. The embedded core: why the luminal ray sits on the null cone, outside the harmonic core (ruled 2026-09-22)
+
+*Restated 2026-11-06 (proposal 78.179 §5).* This chapter named the
+outer conformal hull "the luminal envelope". It is an embedding: the
+harmonic core is an embedded submanifold of the conformal space, its
+bodies spacelike, and the luminal ray lies on the null cone, carried
+between the bodies and never inside them. Refraction (64.3) is the
+restriction of the ray's transport to the submanifold.
 
 The strain's invariance under a common motor is PROJECTIVE and not exact,
 and that is not a defect in the derivation — it is the classification. A
-ray is not a rigid motion on an interior manifold; it is the outer
-conformal hull that wraps the harmonic bodies and mediates between them.
+ray is not a rigid motion on an interior manifold; it is a null mode of
+the conformal space into which the harmonic bodies are embedded, and it
+mediates between them.
 
 ### 64.1 The hierarchy
 
 ```
-    LUMINAL ENVELOPE        [M] in P Spin+(4,1)(Q)      the ray
+    LUMINAL RAY (null cone) [M] in P Spin+(4,1)(Q)      the ray
         weight              lambda = M M~               gauge scale
         invariants          degree 4: den2, I_2         the screw
         carries             refraction, transvection
               |
               |   refraction across the interface
               v
-    HARMONIC CORE           s^2 = +r^2 > 0              spacelike
+    HARMONIC CORE (embedded) s^2 = +r^2 > 0             spacelike
         moments             m in {2, 3, 4}
         provides            den2 > 0                    no null collapse
 ```
@@ -10528,7 +10546,8 @@ conformal hull that wraps the harmonic bodies and mediates between them.
 The compact stabilizer `Spin(3)` literally SITS INSIDE `Spin+(4,1)`, whose
 ten generators are three rotations, three transvections, one dilation and
 three special conformal accelerations. The luminal group contains the
-harmonic one; that containment is the envelope, not a metaphor for it.
+harmonic one; that containment is the embedding of the core, not a
+metaphor for it.
 
 ### 64.2 Why the core must be strong, and why it already is
 
@@ -12656,7 +12675,7 @@ Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.r
 - **Dead writers are deleted, not repaired** (TR1). The verdict act is deleted whole and its code byte left unassigned: a court's ruling reaches a node as a receipt through the exchange and its back-fill (45.2, 47.2), and two courts reach one verdict with no exchange of opinion (13.7, 23).
 - **LD1.** `Reading::Carriage` measures, per carrier and kind, the records, bytes and largest: awards as the treasury persists them, receipt deltas by act kind, wire frames by act tag; the proof of LD0 is a carriage flat in the form's size and bounded by `n` and the rationals' precision.
 - **C4 widened.** The tape check reads every carrier the build under check wrote (genomes, ledgers, registries, eras), not the genomes alone.
-- **Persistence.** The receipt chain is the record; the ledger, registry and eras are derived from it (law 12). A restart holds the line on disk (`ReceiptChain::from_line`, each anchor re-derived, one that does not re-derive refused) and restores the snapshot whole (`Court::restore`) against the held line (45.8); nothing is re-executed (78.137, Concordance 1.4).
+- **Persistence.** The receipt chain is the record; the ledger, registry and eras are derived from it (law 12). A restart holds the line on disk (`ReceiptChain::from_line`, each anchor re-derived, one that does not re-derive refused) and reconstructs the court from the snapshot whole (`Court::reconstruct`, a `Reconstructed<Court>`) against the held line (45.8); nothing is re-executed (78.137, Concordance 1.4).
 - **EC1.** A ruling's release, demotion or slash is applied by the node that admits its Ruling receipt (78.24(b)).
 
 Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` (`Cite`), `src/observe/carriage.rs` (`Carriage`), `src/economy/persist.rs`, `src/economy/escrow.rs`.
@@ -12891,7 +12910,7 @@ Code: `src/transducer/cech/orbit_algebra.rs`, `src/transducer/sentence/coordinat
 Every element of the engine carries the highest resolution attainable, by exact deduction (law 1, law 4; the goal it serves is 80.3): every scalar is a `Q`, no `f32` or `f64` appears in `src/` or `tests/`, `float_arithmetic` and `cast_precision_loss` are denied crate-wide, and nothing is compared against a tolerance.
 
 - **(1) What holds.** `rational_sqrt` refuses where inexact, and a rotor's order is read from Niven's five rationals in `half_angle`, never from an angle formed.
-- **(2) Three kinds of imprecision, each refused by name.** A BLOB: bytes carried where coordinates belong (78.22 LD0, the `u16` wall). An APPROXIMATION: a value served that is not the value — a decimal for an irrational, a float for a ratio, a scalar for a lane vector (law 5), an envelope for a spectrum (54.7); a degree reading given as a decimal (such as 36.87°) is retracted. A FORWARD GUESS: computing forward from an assumed value and accepting the result within a tolerance or by a fit; a reading is exact, or it is a refusal that names what is missing (law 7, 78.9).
+- **(2) Three kinds of imprecision, each refused by name.** A BLOB: bytes carried where coordinates belong (78.22 LD0, the `u16` wall). An APPROXIMATION: a value served that is not the value — a decimal for an irrational, a float for a ratio, a scalar for a lane vector (law 5), a bounding curve for a spectrum (54.7); a degree reading given as a decimal (such as 36.87°) is retracted. A FORWARD GUESS: computing forward from an assumed value and accepting the result within a tolerance or by a fit; a reading is exact, or it is a refusal that names what is missing (law 7, 78.9).
 - **(3) The resolution of a reading is exact deduction.** A reading serves the value where it is exact over ℚ, the exact fraction `t/ℓ`, the exact rational point, or, for a point with no exact mark, the SECTOR between two exact marks, decided by comparison. The ℚ-protractor is the set of marks whose `cos²` is rational (Niven's `{1, 3/4, 1/2, 1/4, 0}`: 0°, 30°, 45°, 60°, 90°, 120°, 135°, 150°, 180° and the reflections of these); finer marks are the `ℓ`-th roots of unity in `ℚ(ζ_ℓ)` (37.1), the reader naming `ℓ` and the sector `k/ℓ` decided exactly in that field. Worked: the (3,4,5) letter `3 + 4B` turns by the double angle, whose point is `(−7/25, 24/25)`; `cos² = 49/625` lies between `cos² 90° = 0` and `cos² 120° = 1/4`, so the turn lies strictly between 90° and 120°. Precision is the number of exact marks, never digits after a point.
 - **(4) Inverted mathematics.** The engine computes from the observed effect to the exact object that produced it, by deduction: a motor solved from its action (78.41(3)), an object read back from its key, a period read as an lcm (78.43), a signal comprehended by re-projection (78.44(5)). The inverse problem is solved exactly or the residue is the demand (law 7); it is never fitted.
 - **(5) What this binds.** Law 4 carries the reading clause; an infinite-order turn is served as its point and its sector (DG1); MU-STANDARDS 4.2 lists the two lints and 4.4 the review item (a decimal approximation of an irrational anywhere, in a value, a doc line or a test name, is returned); every audit asks, beside 78.41(2′)'s three questions, a fourth: is anything served that is not exact.
@@ -13158,7 +13177,7 @@ speaks a colour relation it perceived, it asks whether its ruled colour words
 or two composed, bounded by the stroke; it still speaks the word, since the
 court rules by evidence. A THEOREM STANDS BY ITS PROOF: a mind speaks a
 composite of two ruled colour words with its derivation cited in the
-receipts envelope, outside the address, and the court admits a colour word
+word's stalk (its receipts, 54.5; 78.179 §2), outside the address, and the court admits a colour word
 by its family's evidence or by composing exactly the two installed words it
 cites (law 8), refusing a forged citation or one of words it never
 installed; an admitted theorem mints nothing (78.56 IV). FEDERATION BY
@@ -13180,7 +13199,8 @@ Code: `src/transducer/element/residue.rs` (`compose_fibre`,
   rational square no site corresponds (78.45) and the pair witnesses
   nothing. *Superseded by 78.170 (O4): a change of extent is a re-period of
   each circle of turns, carried by no versor; the envelope dilation squares
-  and halves, and is not read.*
+  and halves, and is not read. The sample is a product of circles and
+  interval charts, and the membrane is its only sphere (78.179 §1).*
 - **Orientation.** The dihedral poses are a gauge iff the scene carries no
   polar vector. The polar vector is the transition displacement of the
   centre of mass, `Δr_CM = r_CM(out) − r_CM(in)`, with
@@ -14371,7 +14391,7 @@ Moved to [MU-CLIENT.md](MU-CLIENT.md); see its Rulings index.
 Humanizing the cognition is legibility, accountability and care, never a
 persona; alignment is what can be verified, never what a mind asserts of
 itself. Every thought is an exact object: a sentence's address is its form
-(law 2), and its receipts envelope carries the evidence the address
+(law 2), and its stalk (54.5; 78.179 §2) carries the evidence the address
 excludes, which every court reconstructs blind. The ruling makes the engine say
 it.
 
@@ -15525,6 +15545,13 @@ are ACT_DOMAIN sub-kinds under `[0x3E][domain 32][0x80 0x00][kind]` (kinds
   coordinate retrieval. A TRAVERSE fee and a COORDINATE RETRIEVAL (one unit
   of information on H per receipt read, at the read price) each draw a claim
   on it; an unstake is refused while any claim drawn on the stake stands.
+  The COORDINATE RETRIEVAL is `ACT_DOMAIN` sub-kind 19, RETRIEVE (ruled
+  2026-11-06, #159): the staker, the point, the cited final point and a
+  nonce under the staker's signature; answered with the receipts at the
+  tick, the fee claimed, and the court's 47.1 section over its head signed
+  over the request, which the retriever verifies (MU-HOSTING §3a.8). A
+  folded tick is refused `Folded` and read through `ACT_RECEIPTS`'s replay
+  arm; pricing that arm is owed.
 - **The connection tax (78.154a).** A declared flow kind on the reserve's
   tier fold (78.119) under the reserved coordinate `CONNECTION_TAX`
   (`b"mycelium flow: connection tax v1"`), on the existing lanes exactly as
@@ -16201,7 +16228,9 @@ The operator's rulings on the entry's open questions, all of 2026-10-31:
   four periods: `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` are two tasks.
   Every task address changes (a ledger break).
 - **O4 — 78.56's Extent clause is superseded** by the re-period (its
-  envelope dilation squares and halves).
+  envelope dilation squares and halves). The re-period is a map between
+  two samples' manifolds, products of circles and interval charts (78.179
+  §1).
 - **O5 — refuse `Seam`**: a relation that would wrap a circle is refused;
   a cover is read as `k` sub-enclosures, not one map of the circle.
 - **O6** — percept meets across unequal enclosures read through incidences

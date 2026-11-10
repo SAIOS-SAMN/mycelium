@@ -443,7 +443,7 @@ pub struct StrokeOutcome {
     pub fed: [u64; 4],
     pub pivoted: [u64; 4],
     pub stood: [u64; 4],
-    pub uttered: [u64; 4],
+    pub asserted: [u64; 4],
     pub closed: [u64; 4],
     pub learned: [u64; 4],
 }
@@ -458,7 +458,7 @@ impl StrokeOutcome {
     /// Lane-wise sum across modes.
     pub fn total(&self) -> [u64; 4] {
         let mut t = [0u64; 4];
-        for m in [&self.fed, &self.pivoted, &self.stood, &self.uttered, &self.closed, &self.learned] {
+        for m in [&self.fed, &self.pivoted, &self.stood, &self.asserted, &self.closed, &self.learned] {
             Self::add(&mut t, m);
         }
         t

@@ -42,6 +42,7 @@ pub mod reference;
 pub mod shares;
 #[cfg(test)]
 mod tests;
+pub mod turning;
 
 /// EVERY SHELL THIS CRATE HOSTS, `(law id, version)`, each read off the
 /// shell's own `LAW_ID` and `LAW_VERSION`: the rows the shared-law table
@@ -52,6 +53,7 @@ pub const LAW_IDS: &[(&str, u16)] = &[
     (shares::LAW_ID, shares::LAW_VERSION),
     (coordinate::LAW_ID, coordinate::LAW_VERSION),
     (coupling::LAW_ID, coupling::LAW_VERSION),
+    (turning::LAW_ID, turning::LAW_VERSION),
 ];
 
 /// The exact rationals every form computes over (the same object as

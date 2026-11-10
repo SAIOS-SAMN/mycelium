@@ -369,3 +369,33 @@ fn hypha_serves_a_rank_three_task() {
     assert_eq!(reg.routes(&id).map(|r| r.len()), Some(0), "routed to none, so no walk reads it again");
     assert_eq!(reg.open(&id), Some(true), "and it stays open");
 }
+
+/// #158 — THE WITHHELD PAIRS ARE FIXED BY COORDINATE AT REGISTRATION: each
+/// withheld output's place `[split, pair, member]` is recorded when the task
+/// is posted, a test input with no output withholds nothing, the reader
+/// serves exactly the pairs at those coordinates, and posting the same
+/// content again fixes nothing new.
+#[test]
+fn withheld_pairs_are_fixed_by_coordinate_at_registration() {
+    let task = task_of_lines(
+        vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
+        vec![
+            (vec![vec![0, 1], vec![0, 0]], Vec::new()),
+            (vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]]),
+        ],
+    );
+    let mut reg = TaskRegistry::new();
+    let id = reg.register(task.clone()).expect("the task has an identity");
+    let places = reg.withheld_at(&id).expect("the book holds the task").to_vec();
+    assert_eq!(places.len(), 1, "the test input with no output withholds nothing");
+    let posted = crate::anastome::dialogue::PostedTask::of_section(&task).expect("the samples post");
+    let at = posted.test.iter().find_map(|(_, y)| y.as_ref()).expect("one output posted").place().clone();
+    assert_eq!(places, vec![at.clone()], "fixed at the posted output's own coordinates");
+    let withheld = reg.withheld(&id);
+    assert_eq!(withheld.len(), 1);
+    assert_eq!(withheld[0].1.sample().place(), &at, "the reader serves the pair at that coordinate");
+    assert_eq!(withheld[0].1, vec![vec![0, 0], vec![2, 2]]);
+    assert_eq!(reg.register(task), Some(id));
+    assert_eq!(reg.withheld_at(&id).map(<[_]>::to_vec), Some(places), "registered again, nothing new is fixed");
+    assert!(reg.withheld_at(&[7u8; 32]).is_none(), "a task the book does not hold fixes none");
+}

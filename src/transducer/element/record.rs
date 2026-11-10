@@ -151,12 +151,22 @@ impl Element {
                 None => out.push(0),
             }
         }
-        match &self.anchor {
-            Some(t) => {
+        // THE ANCHOR FIBRE: `0` ⊤, `1` one term, `2` a superposition, its
+        // count and every term in key order (D3.3, #158). One term is
+        // written as it always was.
+        match self.anchor.as_slice() {
+            [] => out.push(0),
+            [t] => {
                 out.push(1);
                 t.to_bytes(&mut out);
             }
-            None => out.push(0),
+            terms => {
+                out.push(2);
+                put_u32_count(&mut out, terms.len())?;
+                for t in terms {
+                    t.to_bytes(&mut out);
+                }
+            }
         }
         put_u32_count(&mut out, self.transitions.len())?;
         for Transition { asg: a, gauge: g, fibre } in &self.transitions {
@@ -363,13 +373,27 @@ impl Element {
         let anchor = match b.get(*pos) {
             Some(1) => {
                 *pos += 1;
-                Some(crate::transducer::anchor::Selection::from_bytes(b, pos)?)
+                vec![crate::transducer::anchor::Selection::from_bytes(b, pos)?]
+            }
+            // A superposition of fewer than two terms is not this tag's: it
+            // is refused, never read as ⊤ or as one term.
+            Some(2) => {
+                *pos += 1;
+                let n = u32_at(b, pos)? as usize;
+                if n < 2 {
+                    return None;
+                }
+                let mut terms = Vec::with_capacity(n.min(b.len()));
+                for _ in 0..n {
+                    terms.push(crate::transducer::anchor::Selection::from_bytes(b, pos)?);
+                }
+                terms
             }
             Some(0) => {
                 *pos += 1;
-                None
+                Vec::new()
             }
-            _ => None,
+            _ => Vec::new(),
         };
         // A tape that ends here carries no transitions; the count is read
         // or it is absent, never a zero put in place of one.

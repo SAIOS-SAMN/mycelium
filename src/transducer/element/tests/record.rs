@@ -16,13 +16,13 @@ fn from_bytes_round_trips_anchor_and_defaults_top() {
     let g = crate::transducer::element::canonical_chain(&[link(0, 0, 1, 2), link(0, 1, 1, 2)])
         .expect("one entry per position is A5's chain");
     let plain = from_canonical(&g);
-    assert!(plain.anchor().is_none(), "born ⊤ until germination binds");
+    assert!(plain.anchor().is_empty(), "born ⊤ until a court binds");
     let pi = Selection::Minus(Box::new(Selection::Hue(1)), Box::new(Selection::Delta(Box::new(Selection::Hue(1)))));
-    let anchored = plain.clone().with_anchor(pi.clone());
+    let anchored = plain.clone().with_anchor(vec![pi.clone()]);
     let bytes = anchored.to_bytes().expect("the record writes");
     let mut pos = 0;
     let back = Element::from_bytes(&bytes, &mut pos).expect("parse");
-    assert_eq!(back.anchor(), Some(&pi), "π survives the wire");
+    assert_eq!(back.anchor(), std::slice::from_ref(&pi), "π survives the wire");
     assert_eq!(back.sub(), anchored.sub(), "Δ untouched");
     assert_eq!(back.address(), anchored.address(), "address is BASE-only — π never renames");
     // A pre-anchor serialization (anchor byte and connection count
@@ -30,8 +30,25 @@ fn from_bytes_round_trips_anchor_and_defaults_top() {
     let plain_bytes = plain.to_bytes().expect("the record writes");
     let mut pos2 = 0;
     let old = Element::from_bytes(&plain_bytes[..plain_bytes.len() - 5], &mut pos2).expect("old form");
-    assert!(old.anchor().is_none(), "absent tail = the unconstrained carrier");
+    assert!(old.anchor().is_empty(), "absent tail = the unconstrained carrier");
     assert!(old.transitions().is_empty(), "absent connection = none recorded");
+}
+
+/// THE BOUND COMMON SET SURVIVES THE RECORD WHOLE (D3.3, #158): a
+/// superposition of terms is written with its count and read back term for
+/// term, in its order, and the address does not move.
+#[test]
+fn record_carries_superposed_anchor_whole() {
+    use crate::transducer::anchor::Selection;
+    let g = crate::transducer::element::canonical_chain(&[link(0, 0, 1, 2), link(0, 1, 1, 2)])
+        .expect("one entry per position is A5's chain");
+    let plain = from_canonical(&g);
+    let common = vec![Selection::Hue(255), Selection::Hue(1), Selection::Delta(Box::new(Selection::Hue(1)))];
+    let anchored = plain.clone().with_anchor(common.clone());
+    let mut pos = 0;
+    let back = Element::from_bytes(&anchored.to_bytes().expect("the record writes"), &mut pos).expect("parse");
+    assert_eq!(back.anchor(), common.as_slice(), "every term of the superposition, in order");
+    assert_eq!(back.address(), plain.address(), "π never renames");
 }
 
 /// The transposition quotient is the CENTRED chain: the same deformation at

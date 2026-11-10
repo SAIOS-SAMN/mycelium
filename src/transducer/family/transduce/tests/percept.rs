@@ -101,17 +101,25 @@ fn no_axis_is_privileged_in_perception() {
     let q = TaskPercept::of(&moved_train, &moved_tests, &mut budget).expect("perceived");
     assert_eq!(p.rank(), 3);
     assert_eq!(q.rank(), p.rank());
-    assert_eq!(q.perspective.relabelled(&order), Some(p.perspective.clone()), "every axis space, under any labelling");
+    let relabelled_roles = q.perspective.relabelled(&order).map(|r| r.roles().to_vec());
+    assert_eq!(relabelled_roles, Some(p.perspective.roles().to_vec()), "every axis space, under any labelling");
     assert_eq!(q.ground, p.ground, "the ground reads no axis");
     for (a, b) in p.train.iter().zip(&q.train) {
         assert_eq!(bodies(&b.input, None), bodies(&a.input, Some(&order)), "the input's bodies, relabelled");
         assert_eq!(bodies(&b.output, None), bodies(&a.output, Some(&order)), "the output's bodies, relabelled");
         assert_eq!(b.factored.held().len(), a.factored.held().len(), "as many factorisations held");
         assert_eq!(residues(&b.factored, None), residues(&a.factored, Some(&order)), "the residues, relabelled");
+        assert_eq!(a.input_manifold.rank(), 3);
+        assert_eq!(a.output_manifold.rank(), 3);
+        assert_eq!(b.input_manifold.rank(), 3);
+        assert_eq!(b.output_manifold.rank(), 3);
     }
     for (a, b) in p.tests.iter().zip(&q.tests) {
         assert_eq!(bodies(b, None), bodies(a, Some(&order)));
     }
+    assert_eq!(p.test_manifolds.len(), 1);
+    assert_eq!(p.test_manifold(0).map(|m| m.rank()), Some(3));
+    assert_eq!(q.test_manifold(0).map(|m| m.rank()), Some(3));
 }
 
 /// A family of two ranks is refused by name, never padded or cut.

@@ -9,6 +9,7 @@ use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservatio
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, TierFold, Uplinked};
 use crate::economy::tests::Counts;
 use crate::server::cognition::Court;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -93,7 +94,7 @@ fn carry(k: &mut Court, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
         rate: [(1, 1); 4],
     };
     let carrier = TierFold { tier: verifying(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-    match k.hear_uplink(&carrier.sign(&reserve())) {
+    match k.hear_uplink(&carrier.signed(&reserve())) {
         Uplinked::Chained { at, .. } => Ok(FoldAt { stamp: at, path: vec![0] }),
         other => Err(other),
     }
@@ -119,12 +120,11 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
     let (f, _) = lying_fold();
     let at = carry(&mut k, f, 9).expect("carried, the line bonded");
     assert!(k.fold_bonded(&at), "a fold of a bonded tier");
-    let Uplinked::Admitted { at: bare, .. } = k.hear_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: verifying(&reserve()), ..lying_fold().0 }.sign(&reserve())) else {
+    let Uplinked::Admitted { at: bare, .. } = k.hear_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: verifying(&reserve()), ..lying_fold().0 }.signed(&reserve())) else {
         panic!("admitted")
     };
     assert!(!k.fold_bonded(&FoldAt::sealed(bare)), "an unbacked fold reads unbonded");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.bond_of(&verifying(&tier())), [7, 0, 0, 0], "the bond held across a restart");
 }
 

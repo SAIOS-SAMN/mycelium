@@ -468,8 +468,10 @@ Concordance amendment.
     `|π − p/q| > q^{−7.103}` for `q ≥ q₀`), so
     `w ≤ ⌈7.103 · log₂ q⌉ + O(1)` bits for `r = p/q`. No grid stands, and
     none is capped.
-  - Flat fit, restated as the meet it already is. The horizon is the dual
-    sphere `S = sphere_at(x_v, (2m)²) = X(x_v) − ½(2m)² e_∞`. Its image
+  - Flat fit, restated as the meet it already is. The horizon is the
+    membrane at the gauge `2m` about `x_v`, `S = membrane_at(x_v, 2m)`,
+    equal at unit weight to `X(x_v) − ½(2m)² e_∞` (no squared radius is
+    written since track 26 S7 stage 3). Its image
     under the shortest period `L` is `S' = T_L S T̃_L` (`translator_at`).
     For dual spheres, `S·S' = ½(ρ² + ρ² − L²)` and `S² = ρ²`, so
     ```text
@@ -2312,6 +2314,58 @@ withheld footprint stands, none is chosen by key. `truncate(32)` and both
 `court::verdict::tests::selection`
 (`derive_pi_keeps_every_term_reconstructing_withheld`,
 `derive_pi_refuses_spent_token_whole`). The text below is the derivation as specified.
+
+**Wiring (ruled 2026-11-06, #158; the follow-up ruled under the
+operator's delegation, [78.180](proposals/78.180-delegated-rulings-2026-11-06.md)
+ruling 4).** What binds `derive_pi` in production:
+- **The act.** π* is bound at a rule's judgement against a family (A9),
+  with no new act. It is derived on every judgement, metered, and never
+  held. It is not served as a reply of its own: the judgement's ruling
+  cites it.
+- **The evidence** comes from the corpus the court registered. A mind's
+  posted evidence never supplies a withheld pair.
+- **The withheld pairs** are the pairs of the registered task that the
+  court fixed as withheld when the task was posted. They are recorded by
+  their coordinates at registration and never chosen at the judgement, so
+  the court cannot select them to suit a word. A proposer never sees them.
+- **A word's footprint** is the support of the word's description: the
+  sites where the word's chart carries a change between input and output.
+  It is deduced from the word itself and never declared. A word whose
+  footprint misses a withheld pair's change is not bound on that pair.
+- **The anchor.** A word's anchor is the family it was derived from, which
+  is its citation. `Element::with_anchor` is wired out of `cfg(test)` so
+  that every judged word carries its anchor. `derive_pi` then binds the
+  common set at the A9 judgement.
+
+Derived from "description is language, solution is inverse" (the
+footprint is read from the description) and "clients think, hyphas
+verify" (the withheld pairs are the court's own).
+
+**Built** (#158). The withheld pairs are fixed by
+coordinate when a task is registered (`TaskRegistry::post` records each
+withheld output's place `[split, pair, member]`; `withheld` serves exactly
+those pairs), and the court binds them with the task's family at boot
+(`Court::bind_task_withheld`), so no judgement chooses them. A word's
+footprint is the support of its description, deduced by speaking the word
+onto a pair's input: the sites its speech changes
+(`transducer::family::footprint::footprint_of`). The A9 judgement is the
+solve's (`Court::judge_task_solve_on_stroke`): where the rule is `Solved`
+on the bound withheld pairs, `court::verdict::bind_pi` binds π* with
+`derive_pi` over the rule's footprints on the family and on each withheld
+pair whose change its footprint covers, metered by a stroke; a withheld
+pair whose change the footprint misses is named `Unbound` with the sites
+it missed and judges nothing, and where no withheld pair binds, the rule
+stays ⊤. The rule docketed carries the common set bound
+(`Element::with_anchor`, no longer test-only), its address unmoved. The
+element record writes a superposition of two or more terms under anchor
+tag `2` with its count; one term keeps tag `1`. Tests:
+`server::tests::registry::withheld_pairs_are_fixed_by_coordinate_at_registration`,
+`transducer::family::tests::footprint` (`footprint_is_the_sites_the_words_speech_changes`,
+`footprint_misses_a_change_the_word_does_not_speak`),
+`court::verdict::tests::selection` (`bind_pi_binds_common_set_over_deduced_footprints`,
+`word_missing_a_withheld_change_is_not_bound_on_that_pair`),
+`server::cognition::tests::solve::judged_rule_carries_its_anchor_on_registered_withheld_pairs`,
+`transducer::element::tests::record::record_carries_superposed_anchor_whole`.
 
 **Site.** `src/transducer/anchor/derive.rs:182` (in
 `derive_carrying_all`):

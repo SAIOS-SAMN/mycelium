@@ -103,13 +103,13 @@ let archived = k.why(crate::anastome::dialogue::why::WhyAsk::Own(act(1))).expect
 assert_eq!((archived.kind, archived.at.place()), (ActKind::List, act(1)));
 let fold = k.chain().opening().expect("the hot line opens at the fold").clone();
 assert_eq!((fold.kind, fold.stamp.k, fold.prev_hash().bytes()), (ActKind::Fold, 3, head_hash));
-assert_eq!(
-    fold.cites,
-    vec![crate::chronometry::Cite::Root {
-        at: crate::chronometry::Stamp::new(root.height, home, root.at),
-        hash: head_hash
-    }],
-    "the fold node cites the archived head by its stamp and hash"
+let [crate::chronometry::Cite::Root { at, hash }] = fold.cites.as_slice() else {
+    panic!("the fold node cites one root: {:?}", fold.cites)
+};
+assert_eq!(*at, crate::chronometry::Stamp::new(root.height, home, root.at), "the fold node cites the archived head by its stamp");
+assert!(
+    hash.continues(&crate::court::admission::Predecessor::of_bytes(head_hash)),
+    "and names it by its chain hash, in the link sense"
 );
 assert!(k.chain().verify_chain_integrity(), "the hot chain re-verifies from its root");
 assert_eq!(k.k_step(), 3, "K continues past the fold: the fold receipt opens orbit 3");
@@ -130,8 +130,7 @@ assert_eq!(
 );
 
 let snap = k.snapshot();
-let mut back = Court::new();
-assert!(back.restore(&snap), "the snapshot carries the root and the era");
+let back = Court::new().reconstruct(&snap).expect("the snapshot carries the root and the era").into_object();
 assert!(super::fixtures::one_root(back.chain().root(), Some(root)));
 assert!(super::fixtures::one_archive(back.archive(), k.archive()));
 assert!(back.chain().verify_chain_integrity());
@@ -205,8 +204,7 @@ fn bind_eras_reads_range_of_each_era() {
     assert!(one.contains(&close(2)) && !one.contains(&close(3)), "the first era answers its own range");
     assert!(two.contains(&close(3)) && !two.contains(&close(2)), "the second era answers its own range, not the first's");
     // The snapshot carries no filed era: the segment does.
-    let mut back = Court::new();
-    assert!(back.restore(&k.snapshot()));
+    let mut back = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert!(back.archive().is_empty(), "no filed era in the snapshot");
     back.bind_eras(path.clone()).expect("the segment binds");
     assert!(super::fixtures::one_archive(back.archive(), k.archive()), "the eras held from the eras' descriptors");
@@ -293,7 +291,7 @@ fn restore_agrees_with_bound_line() {
 
     let mut back = Court::new();
     bound(&mut back, &line);
-    assert!(back.restore(&snap), "the snapshot restores on its line");
+    let back = back.reconstruct(&snap).expect("the snapshot reconstructs on its line").into_object();
     assert_eq!(back.chain().head_stamp(), k.chain().head_stamp());
     assert!(super::fixtures::one_root(back.chain().root(), k.chain().root()));
     assert!(super::fixtures::one_run(&back.chain().nodes().collect::<Vec<_>>(), &k.chain().nodes().collect::<Vec<_>>()));
@@ -301,11 +299,11 @@ fn restore_agrees_with_bound_line() {
 
     let mut ahead = Court::new();
     bound(&mut ahead, &line);
-    assert!(ahead.restore(&early), "a line folded past the stamp an older snapshot named restores it");
+    assert!(ahead.reconstruct(&early).is_ok(), "a line folded past the stamp an older snapshot named reconstructs it");
 
     let mut lost = Court::new();
     bound(&mut lost, &dir.join("no-line"));
-    assert!(!lost.restore(&snap), "a snapshot whose line does not hold its stamp refuses");
+    assert!(lost.reconstruct(&snap).is_err(), "a snapshot whose line does not hold its stamp refuses");
     let _ = std::fs::remove_dir_all(&dir);
 }
 

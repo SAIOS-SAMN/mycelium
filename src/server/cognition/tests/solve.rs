@@ -183,6 +183,33 @@ fn paid_verdict_carries_the_modes_paid() {
     }
 }
 
+/// 78.174 §1 item 9 (operator, 2026-11-05); MU-ENGINEERING §9.3 — A MODE'S
+/// AMOUNT IS ITS SHARE OF THE ENCLOSURE, NEVER THE MASS: the clause's slide,
+/// carrying a body of mass `m` across an enclosure of measure `M = 18`
+/// (periods 3×6 at rank 2), holds its modes at `m/18` of the slide's own
+/// amounts, the share of the enclosure its work covers, and never at `m`.
+#[test]
+fn closure_mode_amount_is_its_share_of_the_enclosure() {
+    let form = carried_by_clause();
+    let family = carried_on_ground();
+    let read = crate::transducer::family::form_deflation_read(&form, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());
+    let [(x, y)] = family.as_slice() else { panic!("one pair") };
+    let m = crate::transducer::raster::on_ground_of(&family, || crate::transducer::family::deflation::pair_mass(x, y))
+        .expect("one ground")
+        .expect("the pair carried mass");
+    let enclosure = crate::transducer::family::transduce::Enclosure::of(y.sample());
+    let measure = enclosure.measure().expect("enclosure has measure");
+    assert_eq!(measure, 18, "the output sample's enclosure measure at rank 2 is 18 (3×6)");
+    let share = crate::core::Q::new(m.into(), (measure as i64).into());
+    let two = crate::core::Q::from_integer(2.into());
+    let motion = crate::transducer::cga::translator_at(&[crate::core::Q::from_integer(0.into()), two]);
+    let need = crate::transducer::cga::modes_need(&motion).expect("a slide has modes");
+    let mut stroke = crate::physics::Physics::default().stroke_n(need);
+    let expected = crate::economy::modes::Modes::of_motion(&motion, &share, &mut stroke).expect("the slide's modes read");
+    assert!(!expected.is_empty(), "the slide moves T");
+    assert_eq!(read.modes.print(), expected.print(), "the closure's modes at the share m/18 = {share}, never at the mass {m}");
+}
+
 /// A rule that does not carry a withheld pair is REFUSED by the reconstruction,
 /// with its reason and kind — the coordinate the voice learns from.
 #[test]
@@ -346,4 +373,35 @@ fn pay_solve_acts_on_nothing_at_zero_discharge() {
     assert_eq!(paid, [0; 4], "nothing paid");
     assert_eq!(k.treasury.balance_mu(&voice), [0; 4], "nothing minted");
     assert!(k.take_offers().is_empty(), "nothing docketed or offered");
+}
+
+/// #158 — A SOLVE IS JUDGED ON THE WITHHELD PAIRS ITS TASK'S REGISTRATION
+/// FIXED, AND THE JUDGED RULE CARRIES ITS ANCHOR: before any pair is bound
+/// for the task there is nothing to reconstruct against; bound with its
+/// family, the rule is solved and π* is bound at the same judgement, the
+/// rule judged carrying exactly the common set bound, its address unmoved.
+#[test]
+fn judged_rule_carries_its_anchor_on_registered_withheld_pairs() {
+    let family = carried();
+    let rule = rule_over(&family);
+    let mut k = Court::new();
+    // A test court's stroke is the minimal one; the binding reads every
+    // carrying term of the family's closure, so this court holds a sealed
+    // host's capacity rather than the minimal stroke's.
+    k.physics.capacity = 1 << 40;
+    let task = [3u8; 32];
+    let before = k.judge_task_solve_on_stroke(&rule, &task);
+    assert!(matches!(before.verdict, SolveVerdict::Unverifiable), "no pair fixed, no verdict: {:?}", before.verdict);
+    assert!(before.pi.is_none(), "nothing judged, nothing bound");
+    k.bind_task_family(task, family.clone());
+    k.bind_task_withheld(task, family.clone());
+    let mut judged = k.judge_task_solve_on_stroke(&rule, &task);
+    while matches!(judged.verdict, SolveVerdict::Unread) {
+        judged = k.judge_task_solve_on_stroke(&rule, &task);
+    }
+    assert!(matches!(judged.verdict, SolveVerdict::Solved { .. }), "{:?}", judged.verdict);
+    let Some(Ok(bound)) = &judged.pi else { panic!("π* is bound at the judgement: {:?}", judged.pi) };
+    assert!(bound.unbound.is_empty(), "the closing rule covers every withheld change");
+    assert_eq!(judged.judged.anchor(), bound.terms.as_slice(), "the judged rule carries the common set");
+    assert_eq!(judged.judged.address(), rule.address(), "π never renames");
 }
