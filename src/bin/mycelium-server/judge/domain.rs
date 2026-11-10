@@ -32,7 +32,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     // The final point is read off the shelf before the court is taken.
     let fin = crate::tuniversal::final_point();
     if let DomainRequest::Retrieve(s) = &request {
-        retrieve(stream, frame, context, s, fin);
+        retrieve(stream, context, s, fin);
         return;
     }
     let body = match crate::court_lock::held!(context.court) {
@@ -79,7 +79,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
 /// section and that the receipts stand under its head. A served answer this
 /// court cannot sign is answered with nothing, never unsigned; it is
 /// acknowledged only once the claim it drew is durable (78.137).
-fn retrieve(stream: &mut Channel, frame: &Delimited, context: &Context, s: &mycelium::anastome::dialogue::retrieve::SignedRetrieve, fin: Option<mycelium::chronometry::tuniversal::TPoint>) {
+fn retrieve(stream: &mut Channel, context: &Context, s: &mycelium::anastome::dialogue::retrieve::SignedRetrieve, fin: Option<mycelium::chronometry::tuniversal::TPoint>) {
     use mycelium::anastome::dialogue::retrieve::{answered_payload, encode_retrieve_reply, Retrieved};
     let read = match crate::court_lock::held!(context.court) {
         Ok(mut h) => h.run(|k, _| k.retrieve_signed(s, fin)),
@@ -114,5 +114,5 @@ fn retrieve(stream: &mut Channel, frame: &Delimited, context: &Context, s: &myce
         eprintln!("  retrieve unanswered: a receipt or the section cannot be written");
         return;
     };
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

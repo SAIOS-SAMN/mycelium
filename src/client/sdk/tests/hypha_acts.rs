@@ -8,7 +8,7 @@ use crate::anastome::dialogue;
 use crate::chronometry::{ActKind, KStepReceipt, ReceiptChain};
 use crate::client::sdk::hypha_acts::{chained, ActsRead, HyphaAct};
 use crate::client::sdk::*;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::sync::{Arc, Mutex};
 
 /// A HYPHA THAT ANSWERS `ACT_RECEIPTS` with the page the test sets.
@@ -18,23 +18,12 @@ fn hypha_serving(page: Arc<Mutex<Vec<KStepReceipt>>>) -> String {
     std::thread::spawn(move || {
         for conn in listener.incoming() {
             let Ok(mut s) = conn else { continue };
-            loop {
-                let mut head = [0u8; 5];
-                if s.read_exact(&mut head).is_err() {
-                    break;
-                }
-                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
-                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-                let mut body = vec![0u8; len];
-                if s.read_exact(&mut body).is_err() {
-                    break;
-                }
-                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
+            while let Some(body) = super::fixtures::read_act(&mut s) {
                 let reply = match dialogue::decode_receipts_request(&body) {
                     Some(_) => dialogue::encode_receipts_reply(&page.lock().expect("the page").clone(), 1 << 20),
                     None => Vec::new(),
                 };
-                let _ = s.write_all(&crate::network::wire::Delimited { lane, body: reply }.encode().expect("framed"));
+                let _ = s.write_all(&super::fixtures::reply_bytes(&reply));
             }
         }
     });
