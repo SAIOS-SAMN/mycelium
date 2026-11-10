@@ -154,8 +154,21 @@ pub enum Retrieved {
 /// as an equivocation where it is false, is not accountable.
 #[derive(Clone)]
 pub enum RetrieveReply {
-    Served { fee: Mu, receipts: Vec<KStepReceipt>, section: Box<super::ReceiptSection> },
+    Served { fee: Mu, placed: Vec<Placed>, section: Box<super::ReceiptSection> },
     Refused(RetrieveRefusal),
+}
+
+/// A RECEIPT RETRIEVED WITH ITS ANCESTRY TO THE SIGNED HEAD (#159, ruled
+/// 2026-11-06): the receipts on one path from it up to the head, each
+/// written out whole, in order. The first names the receipt among its
+/// predecessor and parents, each names the one before it, and the head
+/// names the last. A receipt that is the head itself has an empty path.
+/// Height alone would let a court return a receipt at a lower height that
+/// is not in its chain.
+#[derive(Clone, Debug)]
+pub struct Placed {
+    pub receipt: KStepReceipt,
+    pub path: Vec<KStepReceipt>,
 }
 
 const ANSWERED: &[u8] = b"mycelium retrieved v1";
@@ -169,21 +182,39 @@ pub fn answered_payload(r: &Retrieve) -> Vec<u8> {
     out
 }
 
-/// `[1][fee μ⃗][count u32][receipt …][section]` (each receipt in its own
-/// writing, `KStepReceipt::write`; the section as `encode_receipt_section`
-/// writes it) or `[0][code]`. `None` where a receipt or the section cannot
-/// be written, the count passes its carrier, or a served answer has no
-/// section: a reply is never cut short and never unsigned.
-pub fn encode_retrieve_reply(r: &Retrieved, section: Option<&super::ReceiptSection>) -> Option<Vec<u8>> {
+fn put_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
+    out.extend_from_slice(&u32::try_from(n).ok()?.to_le_bytes());
+    Some(())
+}
+
+fn take_count(b: &[u8], p: &mut usize) -> Option<u32> {
+    let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+    *p += 4;
+    Some(n)
+}
+
+/// `[1][fee μ⃗][count u32]([receipt][path count u32][path receipt …]) …
+/// [section]` (each receipt in its own writing, `KStepReceipt::write`; the
+/// section as `encode_receipt_section` writes it) or `[0][code]`. `paths`
+/// holds one path per receipt served, in order. `None` where a receipt or
+/// the section cannot be written, a count passes its carrier, or a served
+/// answer has no section or not one path per receipt: a reply is never cut
+/// short and never unsigned.
+pub fn encode_retrieve_reply(r: &Retrieved, answer: Option<(&super::ReceiptSection, &[Vec<KStepReceipt>])>) -> Option<Vec<u8>> {
     match r {
         Retrieved::Refused(why) => Some(vec![0, why.code()]),
         Retrieved::Served { fee, receipts } => {
-            let s = section?;
+            let (s, paths) = answer?;
+            if paths.len() != receipts.len() {
+                return None;
+            }
             let mut out = vec![1];
             fee.put(&mut out);
-            out.extend_from_slice(&u32::try_from(receipts.len()).ok()?.to_le_bytes());
-            for x in receipts {
+            put_count(&mut out, receipts.len())?;
+            for (x, path) in receipts.iter().zip(paths) {
                 x.write(&mut out)?;
+                put_count(&mut out, path.len())?;
+                path.iter().try_for_each(|y| y.write(&mut out))?;
             }
             out.extend_from_slice(&super::encode_receipt_section(&s.prefix, &s.sig, &s.receipt)?);
             Some(out)
@@ -200,12 +231,16 @@ pub fn decode_retrieve_reply(b: &[u8]) -> Option<RetrieveReply> {
         }
         1 => {
             let fee = Mu::take_from(b, &mut p)?;
-            let n = u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?);
-            p += 4;
-            let receipts = (0..n).map(|_| KStepReceipt::read(b, &mut p)).collect::<Option<Vec<_>>>()?;
+            let placed = (0..take_count(b, &mut p)?)
+                .map(|_| {
+                    let receipt = KStepReceipt::read(b, &mut p)?;
+                    let path = (0..take_count(b, &mut p)?).map(|_| KStepReceipt::read(b, &mut p)).collect::<Option<Vec<_>>>()?;
+                    Some(Placed { receipt, path })
+                })
+                .collect::<Option<Vec<_>>>()?;
             let section = super::decode_receipt_section(b, p)?;
             let end = super::receipt_section_end(b, p)?;
-            (end == b.len()).then_some(RetrieveReply::Served { fee, receipts, section: Box::new(section) })
+            (end == b.len()).then_some(RetrieveReply::Served { fee, placed, section: Box::new(section) })
         }
         _ => None,
     }
@@ -225,18 +260,28 @@ pub enum RetrievalBreach {
     Forged { at: crate::chronometry::Stamp },
     /// A receipt stands at another tick than the point asked.
     OffTick { at: crate::chronometry::Stamp },
-    /// A receipt stands above the court's signed head: its chain does not
-    /// cover it.
-    AboveHead { at: crate::chronometry::Stamp },
+    /// A receipt's path does not lead from it to the court's signed head: a
+    /// step names no predecessor or parent of the step before, or the head
+    /// does not name the last. The receipt is off the head's chain.
+    OffChain { at: crate::chronometry::Stamp },
+}
+
+/// Whether `x` names `below` as its predecessor or among its parents, by
+/// stamp and chain hash.
+fn names(x: &KStepReceipt, below: &crate::chronometry::Parent) -> bool {
+    x.prev.iter().chain(&x.parents).any(|p| crate::court::admission::Predecessor::cites(p, below))
 }
 
 /// THE RETRIEVER'S CHECK of a served answer, against the request it sent
 /// and the court's key: the section verifies under `court` and is one claim
 /// with its head receipt, it signs over this request, and every receipt
-/// re-derives, stands at the point's tick and at or below the signed head's
-/// height, so the head's chain covers it.
-pub fn verify_retrieved(request: &Retrieve, court: &[u8; 32], receipts: &[KStepReceipt], section: &super::ReceiptSection) -> Result<(), RetrievalBreach> {
-    use crate::court::admission::{verify_signature, Commitment, Reconstructed};
+/// re-derives, stands at the point's tick, and its path leads to the head:
+/// every step re-derives and names the one below it, and the head names the
+/// last. A receipt of the right height off the head's chain is refused
+/// `OffChain`.
+pub fn verify_retrieved(request: &Retrieve, court: &[u8; 32], placed: &[Placed], section: &super::ReceiptSection) -> Result<(), RetrievalBreach> {
+    use crate::chronometry::Parent;
+    use crate::court::admission::{verify_signature, Commitment, Predecessor, Reconstructed};
     let p = &section.prefix;
     verify_signature(p, court, &section.sig).map_err(|_| RetrievalBreach::Unsigned)?;
     let head = Reconstructed::receipt(&section.receipt).ok_or(RetrievalBreach::NotItsHead)?;
@@ -246,7 +291,9 @@ pub fn verify_retrieved(request: &Retrieve, court: &[u8; 32], receipts: &[KStepR
     if p.payload != answered_payload(request) {
         return Err(RetrievalBreach::OtherRequest);
     }
-    for r in receipts {
+    let head = head.object();
+    for x in placed {
+        let r = &x.receipt;
         let at = r.stamp;
         if Reconstructed::receipt(r).is_none() {
             return Err(RetrievalBreach::Forged { at });
@@ -254,8 +301,19 @@ pub fn verify_retrieved(request: &Retrieve, court: &[u8; 32], receipts: &[KStepR
         if at.h != request.point.h {
             return Err(RetrievalBreach::OffTick { at });
         }
-        if at.h > p.height {
-            return Err(RetrievalBreach::AboveHead { at });
+        let mut below = Parent::of(r);
+        for step in &x.path {
+            if Reconstructed::receipt(step).is_none() {
+                return Err(RetrievalBreach::Forged { at: step.stamp });
+            }
+            if !names(step, &below) {
+                return Err(RetrievalBreach::OffChain { at });
+            }
+            below = Parent::of(step);
+        }
+        let reached = names(head, &below) || (x.path.is_empty() && Predecessor::cites(&Parent::of(head), &below));
+        if !reached {
+            return Err(RetrievalBreach::OffChain { at });
         }
     }
     Ok(())

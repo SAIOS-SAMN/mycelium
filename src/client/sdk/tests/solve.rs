@@ -110,7 +110,8 @@ fn solve_court() -> (String, std::sync::mpsc::Receiver<crate::anastome::dialogue
 /// SOLVE IS FILED UNDER ITS OWN KEY AND PAID TO IT. The solve of a task the
 /// house set before the seat is filed with the court by the seat path
 /// (`file_seat_solve`), signed by the key the mind sat by and never by the
-/// house's; at the mind's return it reaches the court, which reads its
+/// house's; at the mind's next return (the empty scene, as a seat's call)
+/// it reaches the court, which reads its
 /// voice as that key, verifies the signature, and pays the closure to that
 /// key's account, the house's account untouched.
 #[test]
@@ -130,8 +131,12 @@ fn seated_mind_solve_paid_to_its_own_key() {
     let task = [0x5e; 32];
     let ground = crate::transducer::raster::ground_of(&family);
     mind.file_seat_solve(&seat_key, &task, std::slice::from_ref(y), &rule, &ground).expect("the solve is filed");
-    // It leaves at the mind's return (MU-CLIENT §4.4(4)): the return comes.
-    let held = mind.at_return.remove(&task).expect("held for the task's return");
+    // It leaves at the mind's next return (MU-CLIENT §4.4(4)), as a seat's
+    // call does: held under the mind's own scene, never for a thought of the
+    // task's scene, which need never return (the seated harness, #133).
+    assert!(mind.at_return.get(&task).is_none(), "never held for the task's scene");
+    let own_scene: &[u8] = &[];
+    let held = mind.at_return.remove(own_scene).expect("held for the mind's next return");
     for (_, say) in held {
         say(&mut mind);
     }

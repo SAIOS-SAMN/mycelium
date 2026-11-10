@@ -3,6 +3,7 @@ mod candidates;
 mod factor;
 mod germinate;
 mod layers;
+mod manifold;
 mod mind;
 mod perspective;
 mod raster;

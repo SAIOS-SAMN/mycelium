@@ -188,12 +188,17 @@ fn check_home(home: &Path) -> ! {
         Ok(b) => {
             // The line and the eras are held first, as the boot holds them;
             // nothing here writes to the home.
-            let mut scratch = Court::new();
-            let bound = scratch.bind_line(home.join("line")).and_then(|()| scratch.bind_eras(home.join("eras")));
+            let mut held = Court::new();
+            let bound = held.bind_line(home.join("line")).and_then(|()| held.bind_eras(home.join("eras")));
             if let Err(why) = &bound {
                 println!("  line or eras: {why}");
             }
-            if bound.is_ok() && scratch.restore(&b) {
+            let reconstructed = match bound {
+                Ok(()) => held.reconstruct(&b).map_err(|refused| println!("  {refused}")).ok(),
+                Err(_) => None,
+            };
+            if let Some(scratch) = reconstructed {
+                let mut scratch = scratch.into_object();
                 println!(
                     "  ledger: {} bytes, restores — {} ruled words, K {}, {} nodes held hot ({} this court's own), {} eras",
                     b.len(),
@@ -250,7 +255,8 @@ fn check_home(home: &Path) -> ! {
                 drop(scratch);
                 let mut back = Court::new();
                 let held = line.as_deref().map_or(Ok(()), |l| back.hold_line(l));
-                if held.is_ok() && back.restore(&again) {
+                let read_back = held.is_ok() && back.reconstruct(&again).map_err(|refused| println!("  {refused}")).is_ok();
+                if read_back {
                     println!("  ledger: as this build writes it, {} bytes beside a line of {}, restores", again.len(), line.map_or(0, |l| l.len()));
                 } else {
                     println!("  ledger: as this build writes it, {} bytes, DOES NOT RESTORE", again.len());
@@ -528,8 +534,21 @@ fn main() {
     match std::fs::read(&state_path) {
         Ok(bytes) => {
             let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at restore") };
-            let (restored, basis, entries) = h.run(|k, _| (k.restore(&bytes), k.basis_len(), k.treasury_entry_count()));
-            if !restored {
+            // The court holding its line and eras is the evidence; the
+            // snapshot reconstructs a court on it, which takes its place.
+            let (refused, basis, entries) = h.run(|k, _| {
+                let held = std::mem::replace(k, Court::new());
+                let refused = match held.reconstruct(&bytes) {
+                    Ok(reconstructed) => {
+                        *k = reconstructed.into_object();
+                        None
+                    }
+                    Err(refused) => Some(refused),
+                };
+                (refused, k.basis_len(), k.treasury_entry_count())
+            });
+            if let Some(refused) = refused {
+                eprintln!("[{tag}] {refused}");
                 // A REFUSAL THAT NAMES THE ROAD. This named the fault and
                 // stopped, leaving the operator to work out whether a
                 // ledger written by an older build is expected to refuse
@@ -540,7 +559,7 @@ fn main() {
                 refuse_boot(
                     &tag,
                     &format!(
-                        "the ledger at {state_path} did not restore -- the magic, section and \
+                        "the ledger at {state_path} did not reconstruct -- the magic, section and \
                          byte are named above. This court's memory is NOT dropped and nothing is \
                          written over it. This build reads MYC7; a ledger written by an older \
                          build is EXPECTED to refuse, and §10's road for that is a recut onto a fresh genesis, \

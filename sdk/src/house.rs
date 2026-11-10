@@ -22,6 +22,15 @@
 //! (`found_domain`, `reserve`, `reserve_reading`) and the seat acts
 //! (`seat_post`, `list_seats`, `read_mail`).
 //!
+//! **READ-MAIL is a held read with no time bound** (78.146 as amended,
+//! ruled 2026-10-17). A read whose box holds nothing past its cursor is
+//! answered at the court's next event: a seat post filed on the relay, or
+//! the keeper signing its next TUniversal reading. The hold reads no clock,
+//! so on a quiet relay it can stand for any length of time. A caller sets
+//! no read timeout on a READ-MAIL, or treats a timeout as "nothing yet" and
+//! asks again. A read asked again while one is held answers the earlier
+//! one, so asking again never holds two. `Session` sets no read timeout.
+//!
 //! | Group | Items |
 //! |---|---|
 //! | The Concordance | [`ConcordanceClause`], [`Fixture`], [`Object`], [`sign_concordance`], [`reconstruct_fixture`], [`Signing`], [`SigningRefusal`], modes 7 and 8; the alignment reading, [`Alignment`], [`ClauseReading`], mode 9 |
@@ -189,7 +198,7 @@ pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_t
 /// the answer carries the court's signed section over its head, which the
 /// retriever checks with [`verify_retrieved`].
 pub use mycelium::anastome::dialogue::retrieve::{
-    decode_retrieve_reply, encode_retrieve, verify_retrieved, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
+    decode_retrieve_reply, encode_retrieve, verify_retrieved, Placed, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply, SignedRetrieve,
 };
 
 /// A UNIVERSE'S LEDGER AND MAP (`ACT_DOMAIN` kinds 12–15, 78.154): an entry

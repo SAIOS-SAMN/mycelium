@@ -66,19 +66,9 @@ fn element_record_round_trips_and_refuses_old_magic() {
     let mut p = 0;
     let back = Element::from_bytes(&b, &mut p).unwrap();
     assert_eq!(back.address(), w.address());
-    // THE BOUND IS THE CANONICAL GEN3 RECORD'S, not GEN2's (54.7 B6/B7).
-    // It stood at 600, which was the pre-B6 layout: the address did not
-    // lead the record and a sentence still wrote a description field. B6
-    // put the address first and purged the description, and the round trip
-    // has measured 1047 bytes at every commit since — including at the
-    // commit that introduced it. The assertion was checking a retired
-    // schema and failing on the live one, which is a stale expectation and
-    // not a size regression.
-    //
-    // The bound still bounds: what it says is that a WORD is a short tape —
-    // kilobytes, not the megabytes a form's address runs to (Z4c) — so it
-    // catches the failure it exists for, a word that starts carrying a
-    // form's coordinates.
+    // THE BOUND IS THE CANONICAL GEN3 RECORD'S (54.7 B6/B7): a word is a short
+    // tape — kilobytes, not the megabytes a form's address runs to (Z4c) — so it
+    // catches a word that starts carrying a form's coordinates.
     assert!(b.len() < 2048, "a word is a short tape, got {}", b.len());
     for magic in [Element::GEN2_MAGIC, Element::PRE_WHOLE_MAGIC] {
         let mut old = b.clone();
@@ -260,13 +250,12 @@ fn snapshot_writes_myt3_and_refuses_older_layouts() {
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
     assert_eq!(&snap[..4], b"MYT3");
-    let mut k2 = Court::new();
-    assert!(k2.restore(&snap));
+    let k2 = Court::new().reconstruct(&snap).expect("reconstructs").into_object();
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
     for magic in [b"MYT2", b"MYT1", b"MYC7", b"MYC6"] {
         let mut old = snap.clone();
         old[..4].copy_from_slice(magic);
-        assert!(!Court::new().restore(&old), "an old file is refused");
+        assert!(Court::new().reconstruct(&old).is_err(), "an old file is refused");
     }
 }
 

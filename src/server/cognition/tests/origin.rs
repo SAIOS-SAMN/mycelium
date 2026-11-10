@@ -54,8 +54,7 @@ fn record_origin_seals_once_never_edited() {
     assert_eq!(k.record_origin(&origin(9).sign(&domain())), Founded::AlreadyOriginated, "once");
     assert_eq!(k.record_origin(&origin(8).sign(&domain())), Founded::AlreadyOriginated, "never an edit");
     assert_eq!(k.origin_of(&d), Some(held), "unchanged");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let mut booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     assert_eq!(booted.origin_of(&d), Some(held), "the origin survives a restart");
     assert_eq!(booted.record_origin(&origin(8).sign(&domain())), Founded::AlreadyOriginated, "and still once");
 }

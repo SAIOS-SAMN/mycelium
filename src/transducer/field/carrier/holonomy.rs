@@ -5,7 +5,8 @@
 //! named plane in degrees with its winding, and its order.
 
 use super::refusal::{FieldRefusal, Residue};
-use super::turning::{Meeting, Turning};
+use super::rotor::shared;
+use super::turning::{Meeting, Turning, TurningPlane};
 use forms::coordinate::Key;
 use num_traits::Zero;
 
@@ -38,25 +39,41 @@ impl Motion {
 
     /// THIS MOTION, THEN `other`: each arriving turning composed with the
     /// held turning on its plane, or held beside the others where its plane
-    /// is disjoint from every held plane. Refused `NotExact` naming the two
-    /// planes where an arriving plane shares one unit with a held plane and
-    /// is not it (the two do not commute, and their product turns on a
-    /// plane this carrier holds no exact angle for), and `Mismatched` where
-    /// two planes' signatures disagree.
+    /// is disjoint from every held plane. An arriving turning on a plane
+    /// that shares one unit with one held plane composes with it by the law
+    /// of fixture 11b (`rotor::shared`): the two motions' product `R₁R₂`,
+    /// its rate read back and its one plane read, held as one turning on
+    /// that plane (disjoint from every other held plane, since the arriving
+    /// plane is), or as none. Refused `NotExact` with `IrrationalMotion`
+    /// where either motion is not rational (its angle no whole number of
+    /// quarter turns); with `Uncommuted` naming the two planes where the
+    /// arriving plane shares a unit with more than one held plane, or
+    /// either turning carries a winding; and `Mismatched` where two planes'
+    /// signatures disagree.
     pub fn then(&self, other: &Motion) -> Result<Motion, FieldRefusal> {
         let mut held = self.turnings.clone();
-        for arriving in &other.turnings {
+        for arriving in other.turnings.iter().filter(|t| !t.degrees().is_zero()) {
             let mut joined = None;
+            let mut sharing = None;
             for (i, h) in held.iter().enumerate() {
                 match h.plane().meeting(arriving.plane())? {
                     Meeting::Along | Meeting::Against => joined = Some((i, h.then(arriving)?)),
                     Meeting::Disjoint => {}
-                    Meeting::Sharing => {
-                        return Err(FieldRefusal::NotExact {
-                            residue: Residue::Uncommuted { held: h.plane().key().clone(), arriving: arriving.plane().key().clone() },
-                        })
-                    }
+                    Meeting::Sharing => match sharing {
+                        None => sharing = Some(i),
+                        Some(_) => {
+                            return Err(FieldRefusal::NotExact {
+                                residue: Residue::Uncommuted { held: h.plane().key().clone(), arriving: arriving.plane().key().clone() },
+                            })
+                        }
+                    },
                 }
+            }
+            if let Some(i) = sharing {
+                let h = held.remove(i);
+                let candidates: Vec<TurningPlane> = [Some(h.plane().clone()), Some(arriving.plane().clone()), h.plane().between(arriving.plane())].into_iter().flatten().collect();
+                held.extend(shared(&h, arriving, &candidates)?);
+                continue;
             }
             match joined.and_then(|(i, t)| held.get_mut(i).map(|slot| (slot, t))) {
                 Some((slot, t)) => *slot = t,

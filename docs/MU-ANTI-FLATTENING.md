@@ -185,7 +185,7 @@ it (ROADMAP track 25, phase X0):
 | A digest compared to admit an object (clause 13) | The bare `[u8; 32]` compared at admission is typed by its sense (`court::admission::digest`): `Locator` (address), `Predecessor` (link: the digest a record names the record before it by) and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Locator::locates`, `Predecessor::continues` (with `forks` for two records at one place and `cites` for a citation), and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==` (`address_has_no_equality`, `predecessor_has_no_equality`, `commitment_has_no_equality`); the claim `commitment_binds_only_a_reconstructed_object` | **Built** at the receipt path's admission sites and on the record fields (`Parent::hash`, `KStepReceipt::chain_hash`, `Root::hash`, `Admitted::Equivocation` as `Predecessor`; `SignedPrefix::prev_receipt_hash` as `Commitment`), so the records themselves have no `==`; `Cite::Root`'s hash is a `Predecessor`, so `Cite` has no `==` and is compared by `Cite::restates` (`cite_has_no_equality`); a stratum's root is a `Locator` at its source, `StratumDigest::root` (`stratum_digest_has_no_equality`) (ROADMAP track 25, X0) |
 | Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private field, and only the law's reconstruction builds it (`Reconstructed::receipt`, `Reconstructed::receipts`). Each `admit_*` of the receipt path takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws (`reconstructed_is_built_only_by_the_laws`); one that admits a claimed fold at the vertex (`vertex_admits_only_a_reconstructed_fold`) | **Built** for the receipt path, `ReceiptChain::admit`, and the vertex's `admit_uplink`, `admit_chained` and `admit_domain` (`Reconstructed::fold`, `Reconstructed::domain`); the crossing's content is reconstructed with X2 |
 | A common grid past the sensor (clause 12) | The refinement onto a common grid is removed (the transduction replaced it in v0.3.0 T2). A site's lift has one constructor, `Turn::of(r, h)`, held as the fraction, never reduced: `Turn` (`transducer::family::transduce`) has private fields, so no reader writes a turn by its index and period or takes one apart into a grid index. A turn is read back on a period only by landing it there (`Turn::lands`, exact or `OffSite`), and as a motion it composes by addition with its winding kept beside its phase, never reduced mod 1 (`Turn::plus`, `Turn::winding`, `Turn::phase`; LAW-FIELD amendment (c)). | The `compile_fail` doc tests `turn_has_one_constructor` (a turn written by its fields; a field read); the transduction's claims (track 25, X5) | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)) |
-| Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts` | **Specified** |
+| Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<Court>` checked against its receipts, never a replayed one: `Court::reconstruct(self, &[u8])`, whose `self` holds the line and eras the snapshot is read against, and which refuses by name (`RestoreRefusal`). The in-place `restore -> bool` is removed. | The restore claim `restore_reconstructs_and_checks_receipts` | **Built** (ruled on [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28), 2026-11-06, option (a); `Reconstructed::court`) |
 
 The register `gate/src/drift.rs` lists each guard that is built: the
 regression, its ruling, the guarding type, and the claim that proves it
@@ -198,14 +198,15 @@ constructor, `Turn::of(r, h)`, proved by the `compile_fail` claim
 `turn_has_one_constructor`. The refinement itself (`CommonRefinement`)
 is deleted, so a `compile_fail` test naming it would only prove a
 deletion, and the guard is the turn's constructor instead. The guard of
-clause 14 is not in the register, since it has neither a guarding type
-nor a claim in the tree: `Court::restore` returns `bool` and not a
-`Reconstructed<State>`, and the claim
-`restore_reconstructs_and_checks_receipts` is not written. It enters the
-register with the phase that builds its type and claim. A report of changed document sentences that put a typed
-term (reconstruction, rebuild, replay, resend, digest, hash, lattice,
-grid) beside an admission verb (admit, verify, accept, check) is **open**:
-it would only report and never refuse, and reading which documents
-changed needs a base commit the gate does not hold. Contributors who
+clause 14 is in the register: a restore returns a `Reconstructed<Court>`
+(`Court::reconstruct`), proved by `restore_reconstructs_and_checks_receipts`.
+Admitting a claim in place of its reconstruction, the entry a mutation
+audit once carried, is covered by the `compile_fail` claims
+`reconstructed_is_built_only_by_the_laws` and
+`vertex_admits_only_a_reconstructed_fold` (ruled on #28). A report of
+changed document sentences that put a typed term beside an admission
+verb is **retired** (ruled on #28, 2026-11-06): a report that never
+refuses and that no reader acts on is theatre, and the gate's heading
+and link checks guard document sentences. Contributors who
 work with AI coding agents point them at [`AGENTS.md`](../AGENTS.md),
 which states these guards as working rules.

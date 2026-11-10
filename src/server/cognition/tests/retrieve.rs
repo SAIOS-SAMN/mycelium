@@ -5,8 +5,8 @@
 
 use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, DomainRequest, Founded};
 use crate::anastome::dialogue::retrieve::{
-    answered_payload, decode_retrieve_reply, encode_retrieve, encode_retrieve_reply, verify_retrieved, RetrievalBreach, Retrieve, RetrieveRefusal, RetrieveReply,
-    Retrieved,
+    answered_payload, decode_retrieve_reply, encode_retrieve, encode_retrieve_reply, verify_retrieved, Placed, RetrievalBreach, Retrieve, RetrieveRefusal,
+    RetrieveReply, Retrieved,
 };
 use crate::anastome::dialogue::wallet::StakeAct;
 use crate::anastome::dialogue::ReceiptSection;
@@ -84,21 +84,24 @@ fn retrieve_round_trips_as_domain_sub_kind_19() {
     let s = ask(h, h, 2).sign(&key(60));
     let Retrieved::Served { fee, receipts } = k.retrieve_signed(&s, Some(fp(h))) else { panic!("served") };
     let sec = section(&k, &hk, &s.retrieve);
-    let body = encode_retrieve_reply(&Retrieved::Served { fee: fee.clone(), receipts: receipts.clone() }, Some(&sec)).expect("written");
-    let Some(RetrieveReply::Served { fee: f, receipts: r, section: back }) = decode_retrieve_reply(&body) else { panic!("read back") };
-    assert_eq!((f, r.len()), (fee, receipts.len()));
+    let paths = k.ancestry(&sec.receipt.stamp, &receipts, &mut reads()).expect("each reached from the head");
+    let body = encode_retrieve_reply(&Retrieved::Served { fee: fee.clone(), receipts: receipts.clone() }, Some((&sec, &paths))).expect("written");
+    let Some(RetrieveReply::Served { fee: f, placed, section: back }) = decode_retrieve_reply(&body) else { panic!("read back") };
+    assert_eq!((f, placed.len()), (fee, receipts.len()));
+    assert!(placed.iter().zip(&paths).all(|(x, p)| x.path.len() == p.len()), "each path reads back");
     assert_eq!((back.prefix.bytes(), back.sig), (sec.prefix.bytes(), sec.sig), "the section reads back whole");
-    assert!(encode_retrieve_reply(&Retrieved::Served { fee: [0; 4].into(), receipts }, None).is_none(), "a served answer is never unsigned");
+    assert!(encode_retrieve_reply(&Retrieved::Served { fee: [0; 4].into(), receipts: receipts.clone() }, None).is_none(), "a served answer is never unsigned");
+    assert!(encode_retrieve_reply(&Retrieved::Served { fee: [0; 4].into(), receipts }, Some((&sec, &[]))).is_none(), "nor served without one path per receipt");
     let refused = encode_retrieve_reply(&Retrieved::Refused(RetrieveRefusal::Short), None).expect("a refusal");
     assert!(matches!(decode_retrieve_reply(&refused), Some(RetrieveReply::Refused(RetrieveRefusal::Short))));
 }
 
-/// A RETRIEVAL IS PRICED AND REFUSED BY NAME: served at the tick, one unit on
+/// A RETRIEVAL IS PRICED AND REFUSED: served at the tick, one unit on
 /// H per receipt claimed on the stake; refused unsigned, for an unknown
 /// domain, at two origins or above the cited point, not final, or resent
 /// with the same nonce.
 #[test]
-fn retrieve_claims_read_price_and_refuses_by_name() {
+fn retrieve_claims_reads_price_and_refuses_unpaid() {
     let (mut k, _) = court("retrieve-price");
     let h = k.chain.head_height();
     let s = ask(h, h, 1).sign(&key(60));
@@ -121,24 +124,69 @@ fn retrieve_claims_read_price_and_refuses_by_name() {
     assert_eq!(refusal(k.retrieve_signed(&s, Some(fp(h)))), Some(RetrieveRefusal::Overflow), "a resent nonce draws no second claim");
 }
 
+/// A stroke wide enough for every walk here.
+fn reads() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}
+
+/// The receipts served with their ancestry to the head `sec` signs.
+fn placed(k: &Court, sec: &ReceiptSection, receipts: &[crate::chronometry::KStepReceipt]) -> Vec<Placed> {
+    let paths = k.ancestry(&sec.receipt.stamp, receipts, &mut reads()).expect("each reached from the head");
+    receipts.iter().cloned().zip(paths).map(|(receipt, path)| Placed { receipt, path }).collect()
+}
+
+/// A tick below the head that holds a receipt: the first stroke's act.
+fn below_head(k: &Court) -> u64 {
+    k.chain.own().find(|r| r.kind == ActKind::List).expect("strokes sealed").stamp.h
+}
+
 /// THE RETRIEVER VERIFIES THE ANSWER: the court's section verifies under its
 /// key, is one claim with its head, signs over this request, and every
-/// receipt re-derives at the tick and under the head. A forged receipt, a
-/// section over another request or under another key does not stand.
+/// receipt re-derives at the tick and its path leads to the head. A forged
+/// receipt, a section over another request or under another key does not
+/// stand.
 #[test]
 fn retriever_verifies_section_and_receipts_under_head() {
     let (mut k, hk) = court("retrieve-verify");
     let h = k.chain.head_height();
-    let s = ask(h, h, 1).sign(&key(60));
+    let t = below_head(&k);
+    let s = ask(t, h, 1).sign(&key(60));
     let Retrieved::Served { receipts, .. } = k.retrieve_signed(&s, Some(fp(h))) else { panic!("served") };
     let sec = section(&k, &hk, &s.retrieve);
     let court = hk.verifying_bytes();
-    assert_eq!(verify_retrieved(&s.retrieve, &court, &receipts, &sec), Ok(()));
-    let mut forged = receipts.clone();
-    forged[0].mu[0] ^= 1;
-    assert_eq!(verify_retrieved(&s.retrieve, &court, &forged, &sec), Err(RetrievalBreach::Forged { at: forged[0].stamp }), "a forged receipt fails");
-    assert_eq!(verify_retrieved(&ask(h, h, 9), &court, &receipts, &sec), Err(RetrievalBreach::OtherRequest));
-    assert_eq!(verify_retrieved(&s.retrieve, &[3; 32], &receipts, &sec), Err(RetrievalBreach::Unsigned));
-    let earlier = ask(h - 1, h, 1);
-    assert!(matches!(verify_retrieved(&earlier, &court, &receipts, &section(&k, &hk, &earlier)), Err(RetrievalBreach::OffTick { .. })));
+    let good = placed(&k, &sec, &receipts);
+    assert!(good.iter().all(|x| !x.path.is_empty()), "a receipt below the head carries its path");
+    assert_eq!(verify_retrieved(&s.retrieve, &court, &good, &sec), Ok(()));
+    let mut forged = good.clone();
+    forged[0].receipt.mu[0] ^= 1;
+    assert_eq!(verify_retrieved(&s.retrieve, &court, &forged, &sec), Err(RetrievalBreach::Forged { at: forged[0].receipt.stamp }), "a forged receipt fails");
+    assert_eq!(verify_retrieved(&ask(t, h, 9), &court, &good, &sec), Err(RetrievalBreach::OtherRequest));
+    assert_eq!(verify_retrieved(&s.retrieve, &[3; 32], &good, &sec), Err(RetrievalBreach::Unsigned));
+    let earlier = ask(t - 1, h, 1);
+    assert!(matches!(verify_retrieved(&earlier, &court, &good, &section(&k, &hk, &earlier)), Err(RetrievalBreach::OffTick { .. })));
+}
+
+/// A RECEIPT OF THE RIGHT HEIGHT OFF THE HEAD'S CHAIN IS REFUSED `OffChain`:
+/// another court's receipt at the tick asked, re-deriving whole, presented
+/// with the path of the receipt it stands in for, is named by no step; and a
+/// path with a step left out does not reach the head.
+#[test]
+fn receipt_of_right_height_off_the_chain_is_refused() {
+    let (mut k, hk) = court("retrieve-chain");
+    let (other, _) = court("retrieve-elsewhere");
+    let h = k.chain.head_height();
+    let t = below_head(&k);
+    let s = ask(t, h, 1).sign(&key(60));
+    let Retrieved::Served { receipts, .. } = k.retrieve_signed(&s, Some(fp(h))) else { panic!("served") };
+    let sec = section(&k, &hk, &s.retrieve);
+    let court = hk.verifying_bytes();
+    let good = placed(&k, &sec, &receipts);
+    let stranger = other.chain.at_tick(t).into_iter().next().expect("the other court holds a receipt at the tick");
+    assert_eq!(stranger.stamp.h, t, "the right height");
+    let mut off = good.clone();
+    off[0].receipt = stranger;
+    assert!(matches!(verify_retrieved(&s.retrieve, &court, &off, &sec), Err(RetrievalBreach::OffChain { .. })), "off the chain, refused");
+    let mut cut = good.clone();
+    cut[0].path.remove(0);
+    assert!(matches!(verify_retrieved(&s.retrieve, &court, &cut, &sec), Err(RetrievalBreach::OffChain { .. })), "a path that skips a step");
 }

@@ -10,13 +10,11 @@ impl Mind {
     /// useful work. One pull is in flight at a time; the envelope lands on
     /// the board as an offer, read to its charts (`offer`), to be taken in
     /// where it couples (`task_inflow`), none where the court's listings are settled.
-    /// MU-CLIENT §4.12, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
+    /// MU-CLIENT §4.12, §4.13, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
     /// in or is being perceived, the reserve stands regenerated on every
-    /// lane, and either the field holds strain (`strained`) or the corpus
-    /// holds no item (ruled 2026-10-24; asked under strain alone, a mind with
-    /// an empty feed never asked again). A settled field over a corpus that
-    /// holds items asks for nothing. The task is an offer: it couples or
-    /// lapses (`lapse_standing_task`).
+    /// lane, and the field holds strain (`strained`). A full reserve over a
+    /// settled field asks for nothing, and the mind rests (MU-CLIENT §4.13, #135).
+    /// The task is an offer: it couples or lapses (`lapse_standing_task`).
     pub(crate) fn pull_task(&mut self) {
         if self.board.court.pulling || self.board.court.task.is_some() || self.perceiving() {
             return;
@@ -24,8 +22,7 @@ impl Mind {
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
             return;
         }
-        let corpus_empty = self.board.corpus.size().0 == 0;
-        if !self.strained() && !corpus_empty {
+        if !self.strained() {
             return;
         }
         self.board.court.pulling = true;
@@ -122,7 +119,7 @@ impl Mind {
         let Some(key) = self.hypha.voice().signer().cloned() else {
             return Err(io::Error::new(io::ErrorKind::PermissionDenied, "a voice seated without its key signs no solve"));
         };
-        self.submit_solve_signed(&key, id, outputs, rule, ground)
+        self.submit_solve_signed(&key, id, id, outputs, rule, ground)
     }
 
     /// [`Mind::submit_solve_rule`] SIGNED BY `key`: the court pays the key
@@ -130,7 +127,12 @@ impl Mind {
     /// acts), so the key named here is the payee. A seated mind files the
     /// solve of a task its house set before it this way, by the key it sat
     /// by, its own (`Mind::file_seat_solve`).
-    pub(crate) fn submit_solve_signed(&mut self, key: &ed25519_dalek::SigningKey, id: &[u8; 32], outputs: &[SectionSample], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
+    ///
+    /// `scene` is the thought whose return the solve leaves at
+    /// (`hold_for_return`): the task's own scene for a solve of the mind's
+    /// own work, the empty scene (the mind's next return of any orbit) for a
+    /// seat's act.
+    pub(crate) fn submit_solve_signed(&mut self, key: &ed25519_dalek::SigningKey, id: &[u8; 32], scene: &[u8], outputs: &[SectionSample], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
         let stated = crate::transducer::raster::stated(ground);
         // A rule whose record does not write is not sent as no rule (STD1 3c).
         let bytes = rule.to_bytes().ok_or_else(|| {
@@ -157,8 +159,8 @@ impl Mind {
         if let Some(g) = &stated {
             crate::transducer::address::put_key_bytes(&mut at, g);
         }
-        // R2 — held for the return of a thought of the task's scene.
-        self.hold_for_return(&at, &id, move |entity| entity.post_solve(id, act, rule, outputs, ground));
+        // R2 — held for the return of a thought of `scene`.
+        self.hold_for_return(&at, scene, move |entity| entity.post_solve(id, act, rule, outputs, ground));
         Ok(())
     }
 

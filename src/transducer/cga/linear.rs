@@ -232,6 +232,37 @@ impl LinearFunction {
         &self.masks
     }
 
+    /// THE FUNCTION WRITTEN OUT (A21): its `n`, then its image of each
+    /// generator in the generators' order, each exact. The coordinates it is
+    /// keyed by, never a digest of them.
+    pub fn put_canonical(&self, out: &mut Vec<u8>) {
+        out.push(self.n);
+        for y in &self.images {
+            y.to_bytes(out);
+        }
+    }
+
+    /// The inverse of [`LinearFunction::put_canonical`]. `None` where the
+    /// bytes hold no function: an `n` past the algebra's, too few images, or
+    /// an image in a wider algebra than the function's.
+    pub fn take_canonical(b: &[u8], p: &mut usize) -> Option<LinearFunction> {
+        let n = *b.get(*p)?;
+        if n > super::MAX_N {
+            return None;
+        }
+        *p += 1;
+        let masks = super::modes::generators(n);
+        let mut images = Vec::with_capacity(masks.len());
+        for _ in &masks {
+            let y = Mv::from_bytes(b, p)?;
+            if y.n() > n {
+                return None;
+            }
+            images.push(y.widened(n).grade(1));
+        }
+        Some(LinearFunction { n, masks, images })
+    }
+
     /// THE FUNCTION AS ONE VECTOR OF THE SPACE OF LINEAR FUNCTIONS — its
     /// images' coefficients in turn — as the ray `core::span` joins: its
     /// denominators cleared and its content divided out, exact.

@@ -10,6 +10,7 @@ pub(super) mod boot;
 pub(super) mod chatter;
 pub(super) mod contract;
 pub(super) mod converge;
+pub(super) mod peers;
 pub(super) mod court;
 pub(super) mod factor;
 pub(super) mod family;
@@ -223,6 +224,11 @@ pub struct Mind {
     /// its meaning or it stands an aperture cycle unanswered. The mind's,
     /// never its conversation's carrier's.
     pub(crate) questions: crate::network::nerve::Keyed<self::chatter::Question>,
+    /// MU-CLIENT §5.3(5) (#145) — THE PEERS' FRAMES OF CLOSED QUESTIONS, by
+    /// the question's key: each closure's residue and the frames said under
+    /// it, kept while the closure is cited (its residue known in the
+    /// vocabulary) and let go where it is not.
+    pub(crate) closed_answers: crate::network::nerve::Keyed<self::peers::Closed>,
     /// MU-CLIENT §5.5 — THE SCENES THIS MIND SPOKE WORDS ON, what a heard
     /// word is read against, and the convergences found there
     /// (`mind::converge`).
