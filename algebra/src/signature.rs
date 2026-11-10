@@ -82,6 +82,11 @@ impl Clifford {
         self.value.is_zero()
     }
 
+    /// The underlying multivector under its signature.
+    pub fn multivector(&self) -> &Mv {
+        &self.value
+    }
+
     /// THE TWO SIGNATURES READ ON THE GENERATORS BOTH ALGEBRAS HOLD: the
     /// generators negative in one and positive in the other, refused
     /// `Mismatched` with them where there are any.
