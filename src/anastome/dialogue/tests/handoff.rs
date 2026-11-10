@@ -7,6 +7,27 @@ use crate::anastome::dialogue::universe::{Geometry, Metric};
 use crate::anastome::dialogue::uplink::{decode_uplink, decode_uplink_reply, encode_uplink, encode_uplink_reply, SideRefusal, TierFold, Uplinked};
 use crate::chronometry::Stamp;
 
+/// A handoff filed: a universe's act (a mouth, a conversion out) with its
+/// crossing (X1), a key's own act as it was.
+fn filed(h: Handoff, key: &ed25519_dalek::SigningKey) -> SignedHandoff {
+    match h.crosses() {
+        true => h.sign_crossed(crate::anastome::dialogue::crossing_record::still(), key).expect("signs"),
+        false => h.sign(key),
+    }
+}
+
+fn wire(h: &SignedHandoff) -> Vec<u8> {
+    encode_handoff(h).expect("encodes")
+}
+
+fn fold_wire(f: &crate::anastome::dialogue::uplink::SignedFold) -> Vec<u8> {
+    encode_uplink(f).expect("encodes")
+}
+
+fn crossed(f: TierFold, key: &ed25519_dalek::SigningKey) -> crate::anastome::dialogue::uplink::SignedFold {
+    f.sign_crossed(crate::anastome::dialogue::crossing_record::still(), key).expect("signs")
+}
+
 /// Every handoff act and every answer read back whole, and a fold's handoff
 /// sides are signed and written after its children.
 #[test]
@@ -23,8 +44,8 @@ fn handoff_round_trips_with_answers() {
     assert_eq!(offer.conserves(), Ok(()));
     let id = offer.citation();
     for h in [Handoff::Offer(Box::new(offer)), Handoff::Accept { id }, Handoff::Refuse { id }, Handoff::Expire { id }] {
-        let signed = h.sign(&key);
-        let mut asked = encode_handoff(&signed);
+        let signed = filed(h, &key);
+        let mut asked = wire(&signed);
         assert_eq!(decode_handoff_request(&asked), Some(HandoffRequest::Signed(signed)));
         asked.push(0);
         assert_eq!(decode_handoff_request(&asked), None, "a byte left over is no act");
@@ -56,11 +77,11 @@ fn handoff_round_trips_with_answers() {
     };
     let crossing = TierFold { handoffs: vec![(id, Side::Out)], ..plain.clone() };
     assert_ne!(plain.signed_bytes(), crossing.signed_bytes(), "the sides are signed");
-    let signed = crossing.sign(&tier);
-    let bytes = encode_uplink(&signed);
+    let signed = crossed(crossing, &tier);
+    let bytes = fold_wire(&signed);
     assert_eq!(decode_uplink(&bytes), Some(signed));
-    let lone = plain.sign(&tier);
-    let mut padded = encode_uplink(&lone);
+    let lone = crossed(plain, &tier);
+    let mut padded = fold_wire(&lone);
     padded.extend_from_slice(&[0, 0]);
     assert_eq!(decode_uplink(&padded), None, "an empty block is not the one writing");
     let refused = Uplinked::HandoffRefused { index: 2, why: SideRefusal::Consumed };
@@ -92,8 +113,9 @@ fn mouth_round_trips_with_orbits() {
     assert_ne!(tariffed.citation(), Mouth { tariff: None, ..tariffed.clone() }.citation(), "the tariff is in the id");
     let changed = Tariff { split: vec![([1u8; 32], (1, 2)), ([5u8; 32], (1, 2))], ..tariff };
     assert_ne!(tariffed.citation(), Mouth { tariff: Some(changed), ..tariffed.clone() }.citation(), "a new split is a new mouth");
-    let signed = Handoff::Mouth(Box::new(tariffed.clone())).sign(&key);
-    assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+    let signed = filed(Handoff::Mouth(Box::new(tariffed.clone())), &key);
+    assert_eq!(decode_handoff_request(&wire(&signed)), Some(HandoffRequest::Signed(signed)));
+    assert_eq!(encode_handoff(&Handoff::Mouth(Box::new(tariffed.clone())).sign(&key)), None, "a mouth on the wire carries its crossing");
     // 78.134 — a tube is its own kind, with or without its tariff; its tube
     // in its id; the tube read and its reading back whole.
     let tube = Tube { mass: (3, 2), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((5, 3)), supersedes: Some([7u8; 32]), core: false };
@@ -105,15 +127,15 @@ fn mouth_round_trips_with_orbits() {
     assert_ne!(spaced.citation(), tubed.citation(), "the space is in the id");
     let spaced_core = Mouth { tube: Some(Tube { from_space: torus, core: true, ..tube.clone() }), ..tubed.clone() };
     for m in [tubed.clone(), Mouth { tariff: None, ..tubed.clone() }, spaced, spaced_core] {
-        let signed = Handoff::Mouth(Box::new(m)).sign(&key);
-        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+        let signed = filed(Handoff::Mouth(Box::new(m)), &key);
+        assert_eq!(decode_handoff_request(&wire(&signed)), Some(HandoffRequest::Signed(signed)));
     }
     assert_eq!(decode_handoff_request(&encode_tube_read([3u8; 32])), Some(HandoffRequest::TubeRead([3u8; 32])));
     // 78.135 — the throat's bank acts, read back whole.
     for h in [Handoff::Feed { mouth: [3u8; 32], mu_s: 9, seq: 2 }, Handoff::Draw { mouth: [3u8; 32], mu_s: 1, seq: 3 }] {
         assert_eq!(h.citation(), [3u8; 32], "a bank act names its mouth");
-        let signed = h.sign(&key);
-        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+        let signed = filed(h, &key);
+        assert_eq!(decode_handoff_request(&wire(&signed)), Some(HandoffRequest::Signed(signed)));
     }
     let reading = TubeReading {
         from_place: crate::transducer::cga::hyperboloid_pole(),
@@ -129,8 +151,8 @@ fn mouth_round_trips_with_orbits() {
     let traverse = Handoff::Traverse { offer: Box::new(offer.clone()), mouth: mouth.citation() };
     assert_eq!(traverse.citation(), offer.citation(), "a traversal is the handoff its offer is");
     for h in [Handoff::Mouth(Box::new(mouth.clone())), Handoff::Close { id: mouth.citation() }, traverse] {
-        let signed = h.sign(&key);
-        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+        let signed = filed(h, &key);
+        assert_eq!(decode_handoff_request(&wire(&signed)), Some(HandoffRequest::Signed(signed)));
     }
     assert_eq!(decode_handoff_request(&encode_orbits_read()), Some(HandoffRequest::Orbits));
     let orbits = vec![MouthOrbit { mouth: mouth.citation(), holonomy: one.clone(), tethered: true }, MouthOrbit { mouth: [6u8; 32], holonomy: one, tethered: false }];
@@ -171,8 +193,8 @@ fn encode_handoff_round_trips_conversions_and_reserve() {
     let inn = ConvertIn { holder: [2u8; 32], tier: [1u8; 32], identity: [3u8; 32], g: 7, mu: crate::economy::Mu::counts([3, 0, 1, 0]).part(2).expect("halves"), nonce: [9u8; 32] };
     assert_ne!(out.citation(), inn.citation());
     for h in [Handoff::ConvertOut(Box::new(out)), Handoff::ConvertIn(Box::new(inn))] {
-        let signed = h.sign(&key);
-        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+        let signed = filed(h, &key);
+        assert_eq!(decode_handoff_request(&wire(&signed)), Some(HandoffRequest::Signed(signed)));
     }
     for r in [HandoffRefusal::NotReserve, HandoffRefusal::ReserveShort, HandoffRefusal::Inexact, HandoffRefusal::HolderShort] {
         assert_eq!(decode_handoff_reply(&encode_handoff_reply(&Handed::Refused(r))), Some(Handed::Refused(r)));

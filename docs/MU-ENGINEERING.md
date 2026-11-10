@@ -137,8 +137,10 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   ignores) steps the minor; a change that moves the layout of an existing
   act or reply steps the major. Either may ride a 0.x minor release. v0.3.0
   writes every μ field as four exact rational lanes (`economy::Mu`), which
-  moves the layout of every act and reply carrying μ: `WIRE_VERSION` is
-  `0x0200` (wire v2.0).
+  moves the layout of every act and reply carrying μ: wire v2.0. v0.5.0
+  carries the crossing record (X1, MU-HOSTING §5a.10) in the signed bytes
+  of the seven universe acts, which moves their layouts: `WIRE_VERSION` is
+  `0x0300` (wire v3.0).
 
 ## 5. Physics and time
 

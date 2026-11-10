@@ -17,6 +17,7 @@ use crate::anastome::dialogue::wallet::{StakeAct, StakeRefusal};
 use crate::chronometry::tuniversal::{Origin, TPoint};
 use crate::court::admission::{Boundary, UniverseAct};
 use super::fixtures::close_through;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use crate::server::cognition::Court;
 use ed25519_dalek::{Signer, SigningKey};
 
@@ -67,7 +68,7 @@ fn founded() -> (Court, [u8; 32], [u8; 32]) {
     };
     fund(&mut k, verifying(&reserve(4)), [1, 0, 0, 0]);
     let id = m.citation();
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))), Handed::Sealed { .. }));
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(4))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }));
     let keeper = verifying(&reserve(4));
     (k, id, keeper)
@@ -92,7 +93,7 @@ fn bytes_of(n: u64) -> [u8; 32] {
 }
 
 fn map(k: &mut Court, d: u8, h: u64, record: MapRecord) -> Mapped {
-    k.map(&MapAct { domain: domain(d), point: fp(h), record, nonce: bytes_of(h) }.sign(&reserve(d)), Some(fp(h)))
+    k.map(&MapAct { domain: domain(d), point: fp(h), record, nonce: bytes_of(h) }.signed(&reserve(d)), Some(fp(h)))
 }
 
 fn mouth(id: [u8; 32], side: u8, freshness: u64) -> MapRecord {
@@ -108,7 +109,7 @@ fn throat(id: [u8; 32], span: (u64, u64), keeper: [u8; 32]) -> MapRecord {
 fn commit(k: &mut Court, d: u8, u: u64, h: u64, fin: u64, applied: Vec<([u8; 32], u64)>) -> Ledgered {
     let parent = k.atlas.head(&domain(d)).map_or([0; 32], |e| e.hash);
     let e = LedgerEntry { domain: domain(d), u, commitment: bytes_of(u), events: [0; 32], point: fp(h), parent, applied, nonce: [0; 32] };
-    k.ledger(&e.sign(&reserve(d)), Some(fp(fin)))
+    k.ledger(&e.signed(&reserve(d)), Some(fp(fin)))
 }
 
 fn stake(k: &mut Court, staker: &SigningKey, mu: [u64; 4], unstake: bool, nonce: u8) -> Result<[u64; 4], StakeRefusal> {
@@ -298,24 +299,24 @@ fn traverse_refuses_one_sided_or_unequal_declarations() {
 fn ledger_chains_refuses_forks_and_reads_dilation() {
     let (mut k, _, _) = founded();
     let entry = |u: u64, h: u64, parent: [u8; 32]| LedgerEntry { domain: domain(4), u, commitment: [1; 32], events: [2; 32], point: fp(h), parent, applied: Vec::new(), nonce: [0; 32] };
-    assert_eq!(k.ledger(&entry(1, 10, [3; 32]).sign(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::Parent), "a first entry names no parent");
-    let Ledgered::Sealed { entry: first, point, .. } = k.ledger(&entry(10, 10, [0; 32]).sign(&reserve(4)), Some(fp(10))) else { panic!("the first") };
+    assert_eq!(k.ledger(&entry(1, 10, [3; 32]).signed(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::Parent), "a first entry names no parent");
+    let Ledgered::Sealed { entry: first, point, .. } = k.ledger(&entry(10, 10, [0; 32]).signed(&reserve(4)), Some(fp(10))) else { panic!("the first") };
     assert_eq!(point, fp(10), "sealed at the court's final point");
-    assert_eq!(k.ledger(&entry(11, 10, [0; 32]).sign(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::Parent), "a fork");
-    assert_eq!(k.ledger(&entry(10, 10, first).sign(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::NotAbove));
-    assert_eq!(k.ledger(&entry(9, 10, first).sign(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::NotAbove));
-    assert_eq!(k.ledger(&entry(12, 13, first).sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "above the court's point");
-    assert_eq!(k.ledger(&entry(12, 12, first).sign(&reserve(4)), None), Ledgered::Refused(LedgerRefusal::NotFinal), "no final point read");
-    assert_eq!(k.ledger(&entry(12, 9, first).sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::Behind));
+    assert_eq!(k.ledger(&entry(11, 10, [0; 32]).signed(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::Parent), "a fork");
+    assert_eq!(k.ledger(&entry(10, 10, first).signed(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::NotAbove));
+    assert_eq!(k.ledger(&entry(9, 10, first).signed(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::NotAbove));
+    assert_eq!(k.ledger(&entry(12, 13, first).signed(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "above the court's point");
+    assert_eq!(k.ledger(&entry(12, 12, first).signed(&reserve(4)), None), Ledgered::Refused(LedgerRefusal::NotFinal), "no final point read");
+    assert_eq!(k.ledger(&entry(12, 9, first).signed(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::Behind));
     let other_lanes = TPoint { lanes: [1, 1, 1, 1].into(), ..fp(10) };
     let forged = LedgerEntry { point: other_lanes, ..entry(12, 10, first) };
-    assert_eq!(k.ledger(&forged.sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "a point at a held tick that is not the point held");
-    assert_eq!(k.ledger(&entry(12, 12, first).sign(&key(4)), Some(fp(12))), Ledgered::Boundary(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: domain(4) }), "the founder is not the reserve");
-    assert_eq!(k.ledger(&entry(12, 12, first).sign(&key(77)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::Unsigned));
+    assert_eq!(k.ledger(&forged.signed(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "a point at a held tick that is not the point held");
+    assert_eq!(k.ledger(&entry(12, 12, first).signed(&key(4)), Some(fp(12))), Ledgered::Boundary(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: domain(4) }), "the founder is not the reserve");
+    assert_eq!(k.ledger(&entry(12, 12, first).signed(&key(77)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::Unsigned));
     let stranger = LedgerEntry { domain: [77; 32], ..entry(1, 10, [0; 32]) };
-    assert_eq!(k.ledger(&stranger.sign(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::UnknownDomain));
-    let Ledgered::Sealed { entry: second, .. } = k.ledger(&entry(13, 25, first).sign(&reserve(4)), Some(fp(25))) else { panic!("the second") };
-    assert!(matches!(k.ledger(&entry(19, 25, second).sign(&reserve(4)), Some(fp(25))), Ledgered::Sealed { .. }), "h held: dilation unmeasured");
+    assert_eq!(k.ledger(&stranger.signed(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::UnknownDomain));
+    let Ledgered::Sealed { entry: second, .. } = k.ledger(&entry(13, 25, first).signed(&reserve(4)), Some(fp(25))) else { panic!("the second") };
+    assert!(matches!(k.ledger(&entry(19, 25, second).signed(&reserve(4)), Some(fp(25))), Ledgered::Sealed { .. }), "h held: dilation unmeasured");
     assert_eq!(k.dilations(&domain(4)), vec![(10, None), (13, Some((1, 5))), (19, None)], "Δu/Δh = 3/15, reduced; Δh = 0 unmeasured");
     let page = k.ledger_page(&domain(4), 10);
     assert_eq!(page.entries.iter().map(|e| e.entry.u).collect::<Vec<_>>(), vec![13, 19]);
@@ -344,10 +345,10 @@ fn settle_solve_pays_from_recycled_pool_before_mint() {
         handoffs: Vec::new(),
         transitions: Vec::new(),
     };
-    assert_eq!(k.hear_uplink(&tax([-3, 1, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Source { lane: 1 }), "the tax only leaves");
-    assert_eq!(k.hear_uplink(&tax([-4, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Short));
+    assert_eq!(k.hear_uplink(&tax([-3, 1, -2, 0], 1).signed(&reserve(4))), Uplinked::Tax(TaxRefusal::Source { lane: 1 }), "the tax only leaves");
+    assert_eq!(k.hear_uplink(&tax([-4, 0, -2, 0], 1).signed(&reserve(4))), Uplinked::Tax(TaxRefusal::Short));
     let minted_before = k.treasury.minted();
-    assert!(matches!(k.hear_uplink(&tax([-3, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Admitted { .. }));
+    assert!(matches!(k.hear_uplink(&tax([-3, 0, -2, 0], 1).signed(&reserve(4))), Uplinked::Admitted { .. }));
     assert_eq!(k.treasury.recycled(), [3, 0, 2, 0], "the dissipation returned to the hypha");
     assert_eq!(k.treasury.balance_mu(&tier), [0; 4], "paid from the reserve");
     assert_eq!(k.treasury.minted(), minted_before, "a transfer, never a mint");
@@ -410,7 +411,7 @@ fn slide(x: i64, y: i64) -> Mv {
 /// Domain 4's universe a flat torus of periods 30 and 20.
 fn torus_for_4(k: &mut Court) {
     let space = Geometry::Torus { periods: vec![(30, 1), (20, 1)], metric: Metric::L1 };
-    assert!(matches!(k.state(&Statement { domain: domain(4), stated: Stated::Geometry(space) }.sign(&reserve(4))), Founded::Stated { .. }));
+    assert!(matches!(k.state(&Statement { domain: domain(4), stated: Stated::Geometry(space) }.signed(&reserve(4))), Founded::Stated { .. }));
 }
 
 /// A local throat of domain 4 by the builder line `keeper`, its ends
@@ -442,7 +443,7 @@ fn map_local_throat_reads_ends_exactly() {
         let record = MapRecord::LocalThroat { throat: [42; 32], keeper: line, frames: (off, slide(5, 4)), freshness: 3 };
         assert_eq!(map(&mut k, 4, 10, record), Mapped::Refused(MapRefusal::Unplaced), "no motion of the torus");
     }
-    let founder = MapAct { domain: domain(4), point: fp(10), record: local(line, 3), nonce: [1; 32] }.sign(&key(4));
+    let founder = MapAct { domain: domain(4), point: fp(10), record: local(line, 3), nonce: [1; 32] }.signed(&key(4));
     assert_eq!(k.map(&founder, Some(fp(10))), Mapped::Boundary(Boundary::NotThroughCore { act: UniverseAct::Map, domain: domain(4) }));
     let Mapped::Sealed { record, .. } = map(&mut k, 4, 10, local(line, 3)) else { panic!("mapped") };
     let mut material = domain(4).to_vec();

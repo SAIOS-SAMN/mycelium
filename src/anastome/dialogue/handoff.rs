@@ -20,6 +20,7 @@
 //!   offer; IN by the receiver once accepted, or by the sender once
 //!   returned. Each side once; a second is a double-spend, refused.
 
+use super::crossing_record::{crossed, Crossing};
 use super::uplink::{put_nets, take_nets, Net};
 use crate::chronometry::Stamp;
 
@@ -595,11 +596,30 @@ impl Handoff {
         out
     }
 
+    /// Signed by the filer, as a key's own act: no crossing.
     pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedHandoff {
         use ed25519_dalek::Signer;
         let who = key.verifying_key().to_bytes();
         let sig = key.sign(&self.signed_bytes(&who)).to_bytes();
-        SignedHandoff { who, handoff: self, sig }
+        SignedHandoff { who, handoff: self, crossing: None, sig }
+    }
+
+    /// X1 (#160) — A UNIVERSE'S ACT (a mouth, a conversion out) signed by
+    /// its reserve with the crossing it carries through the universal core
+    /// tube ([`SignedHandoff::signed_bytes`]). `None` where a turn of the
+    /// record cannot be written.
+    pub fn sign_crossed(self, crossing: Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedHandoff> {
+        use ed25519_dalek::Signer;
+        let who = key.verifying_key().to_bytes();
+        let sig = key.sign(&crossed(self.signed_bytes(&who), &crossing)?).to_bytes();
+        Some(SignedHandoff { who, handoff: self, crossing: Some(Box::new(crossing)), sig })
+    }
+
+    /// WHETHER THE HANDOFF IS A UNIVERSE'S ACT, which crosses the universal
+    /// core tube and carries a crossing on the wire: a mouth or a
+    /// conversion out (Concordance 6.2a; `UniverseAct`).
+    pub fn crosses(&self) -> bool {
+        matches!(self, Handoff::Mouth(_) | Handoff::ConvertOut(_))
     }
 }
 
@@ -607,7 +627,22 @@ impl Handoff {
 pub struct SignedHandoff {
     pub who: [u8; 32],
     pub handoff: Handoff,
+    /// X1 (#160) — the crossing a universe's act carries (a mouth, a
+    /// conversion out); `None` for a key's own handoff.
+    pub crossing: Option<Box<Crossing>>,
     pub sig: [u8; 64],
+}
+
+impl SignedHandoff {
+    /// THE BYTES THE SIGNATURE IS OVER: the handoff's own, then, where it
+    /// carries one, its crossing written out whole.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        let own = self.handoff.signed_bytes(&self.who);
+        match &self.crossing {
+            Some(c) => crossed(own, c),
+            None => Some(own),
+        }
+    }
 }
 
 /// WHERE A HANDOFF STANDS.
@@ -710,13 +745,19 @@ pub fn decode_orbits_reply(b: &[u8]) -> Option<Vec<MouthOrbit>> {
     (p == b.len()).then_some(orbits)
 }
 
-/// `[ACT_HANDOFF][kind][who 32][body][sig 64]`.
-pub fn encode_handoff(h: &SignedHandoff) -> Vec<u8> {
+/// `[ACT_HANDOFF][kind][who 32][body][crossing][sig 64]`, the crossing
+/// written exactly for a universe's act (X1, #160; [`Handoff::crosses`]).
+/// `None` where such an act carries none, or a turn of it cannot be
+/// written.
+pub fn encode_handoff(h: &SignedHandoff) -> Option<Vec<u8>> {
     let mut out = vec![super::ACT_HANDOFF, h.handoff.kind()];
     out.extend_from_slice(&h.who);
     h.handoff.put_body(&mut out);
+    if h.handoff.crosses() {
+        h.crossing.as_ref()?.put(&mut out)?;
+    }
     out.extend_from_slice(&h.sig);
-    out
+    Some(out)
 }
 
 /// `[ACT_HANDOFF][4][id 32]`.
@@ -785,9 +826,13 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
                 }
                 _ => return None,
             };
+            let crossing = match handoff.crosses() {
+                true => Some(Box::new(Crossing::take(b, &mut p).ok()?)),
+                false => None,
+            };
             let sig: [u8; 64] = b.get(p..p + 64)?.try_into().ok()?;
             p += 64;
-            HandoffRequest::Signed(SignedHandoff { who, handoff, sig })
+            HandoffRequest::Signed(SignedHandoff { who, handoff, crossing, sig })
         }
     };
     (p == b.len()).then_some(request)

@@ -9,6 +9,7 @@ use crate::anastome::dialogue::challenge::{line_head, Challenge, ChallengeRefusa
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, Net, TierFold, Uplinked};
 use super::fixtures::close_through;
 use crate::chronometry::{Cite, Stamp};
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use crate::server::cognition::Court;
 use crate::transducer::cech::coefficient::Coefficient;
 use ed25519_dalek::SigningKey;
@@ -103,7 +104,7 @@ fn sealed(k: &mut Court, f: TierFold, by: &SigningKey) -> FoldAt {
     let mut prefix = [5u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
     let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-    match k.hear_uplink(&carrier.sign(&reserve())) {
+    match k.hear_uplink(&carrier.signed(&reserve())) {
         Uplinked::Chained { at, .. } => FoldAt { stamp: at, path: vec![0] },
         other => panic!("carried: {other:?}"),
     }
@@ -315,7 +316,7 @@ fn challenge_returns_child_netting_of_falsified_parent() {
         let mut prefix = [6u8; 32];
         prefix[0] = nonce;
         let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-        k.hear_uplink(&carrier.sign(&reserve()))
+        k.hear_uplink(&carrier.signed(&reserve()))
     };
     assert!(matches!(refile(&mut k, 1), Uplinked::ChildRefused { .. }), "consumed by P");
     let reply = k.challenge(&evidence(&lie, &lie_at, lying_line).sign(&challenger()));
@@ -550,7 +551,7 @@ fn finality_grandfathers_pre_line_fold() {
     let (_, p, _) = tiers();
     let mut k = founded();
     let rf = TierFold { tier: verifying(&reserve()), ..a_fold() };
-    let Uplinked::Admitted { at, .. } = k.hear_uplink(&rf.clone().sign(&reserve())) else { panic!("the reserve's own") };
+    let Uplinked::Admitted { at, .. } = k.hear_uplink(&rf.clone().signed(&reserve())) else { panic!("the reserve's own") };
     let r_at = FoldAt::sealed(at);
     // As sealed before 2(c): admitted, held by its coordinates, never recorded.
     k.ledgers.records.remove(&r_at.key());

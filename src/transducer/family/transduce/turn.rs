@@ -140,6 +140,32 @@ impl Turn {
         usize::try_from(n / d).map_err(|_| TransductionRefusal::OffSite { turn: *self, period })
     }
 
+    /// X1 (#160, ruled 2026-11-06) — THE TURN WRITTEN: `r` then `h`, each an
+    /// unsigned count (u64 LE), so the turn `r/h` is the exact rational
+    /// they give, never reduced; then its winding `K = ⌊r/h⌋` beside it
+    /// (u64 LE). `None` for a period of 0, which holds no turn.
+    pub fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        let k = u64::try_from(self.winding()?).ok()?;
+        for x in [u64::try_from(self.index).ok()?, u64::try_from(self.period).ok()?, k] {
+            out.extend_from_slice(&x.to_le_bytes());
+        }
+        Some(())
+    }
+
+    /// The turn read back, through [`Turn::of`] alone: `None` where the
+    /// period is 0, a count passes the machine word, or the winding written
+    /// beside it is not the turn's own.
+    pub fn take(b: &[u8], p: &mut usize) -> Option<Turn> {
+        let mut word = || -> Option<u64> {
+            let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+            Some(v)
+        };
+        let (r, h, k) = (word()?, word()?, word()?);
+        let t = Turn::of(usize::try_from(r).ok()?, usize::try_from(h).ok()?);
+        (u64::try_from(t.winding()?).ok()? == k).then_some(t)
+    }
+
     /// The turn's exact value as a rational, for the share of a frame
     /// (O1). Never an operand of identity.
     pub fn value(&self) -> crate::core::Q {

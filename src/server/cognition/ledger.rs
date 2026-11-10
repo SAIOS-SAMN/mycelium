@@ -864,7 +864,8 @@ impl Court {
     fn plan_carried(&self, line: &SignedFold, c: &crate::anastome::dialogue::uplink::ChildNet, path: &[u16], domain: [u8; 32], plan: &mut Plan, gauge: &mut Gauge<Rates>, top: u32) -> Result<(), Uplinked> {
         let refuse = |why| Uplinked::ChildRefused { index: top, why };
         let fold = &line.fold;
-        if !crate::court::identity::verify(&fold.tier, &fold.signed_bytes(), &line.sig) {
+        let Some(bytes) = line.signed_bytes() else { return Err(refuse(ChildRefusal::Unsigned)) };
+        if !crate::court::identity::verify(&fold.tier, &bytes, &line.sig) {
             return Err(refuse(ChildRefusal::Unsigned));
         }
         if self.tier_domain.get(&fold.tier) != Some(&domain) {

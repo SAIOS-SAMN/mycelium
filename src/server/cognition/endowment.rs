@@ -28,7 +28,7 @@
 //! stock is declared anywhere.
 
 use super::Court;
-use crate::anastome::dialogue::endowment::{nuclei_hold, put_nuclei, take_manifest, EndowmentReading, GrantRead, GrantRefusal, Granted, Nuclei, SignedManifest, KIND_MANIFEST};
+use crate::anastome::dialogue::endowment::{nuclei_hold, put_manifest_body, take_manifest, EndowmentReading, GrantRead, GrantRefusal, Granted, Nuclei, SignedManifest, KIND_MANIFEST};
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::court::admission::Locator;
 use crate::economy::Mu;
@@ -49,10 +49,7 @@ pub(crate) struct HeldGrant {
 
 impl HeldGrant {
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
-        let m = &self.manifest.manifest;
-        put_nuclei(out, &m.nuclei)?;
-        out.extend_from_slice(&m.nonce);
-        out.extend_from_slice(&self.manifest.sig);
+        put_manifest_body(out, &self.manifest)?;
         self.mu.put(out);
         out.push(u8::from(self.founding));
         self.at.put_canonical(out);
@@ -167,7 +164,7 @@ impl Court {
         if self.origins.get(&m.domain).is_none() {
             return refuse(GrantRefusal::NotAUniverse);
         }
-        let Some(bytes) = m.signed_bytes() else { return refuse(GrantRefusal::Malformed) };
+        let Some(bytes) = s.signed_bytes() else { return refuse(GrantRefusal::Malformed) };
         // Track 24 B4 — a universe's act, admitted only from its sitting
         // reserve: another key of the domain, or a domain with no reserve,
         // is no event through its vertex.
@@ -183,6 +180,9 @@ impl Court {
         };
         if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Manifest, m.domain) {
             return Granted::Boundary(why);
+        }
+        if let Err(why) = s.crossing.verify() {
+            return Granted::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Manifest, domain: m.domain, why }));
         }
         if !nuclei_hold(&m.nuclei) {
             return refuse(GrantRefusal::Malformed);

@@ -268,11 +268,12 @@ impl Statement {
         out
     }
 
-    /// Signed by the domain's sitting reserve.
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedStatement {
+    /// Signed by the domain's sitting reserve, with the crossing it carries
+    /// (X1, #160). `None` where a turn of the record cannot be written.
+    pub fn sign(self, crossing: super::crossing_record::Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedStatement> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedStatement { statement: self, sig }
+        let sig = key.sign(&super::crossing_record::crossed(self.signed_bytes(), &crossing)?).to_bytes();
+        Some(SignedStatement { statement: self, crossing: Box::new(crossing), sig })
     }
 
     pub(super) fn take(kind: u8, domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<Statement> {
@@ -303,18 +304,30 @@ impl Statement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedStatement {
     pub statement: Statement,
+    /// X1 (#160) — the crossing the statement carries.
+    pub crossing: Box<super::crossing_record::Crossing>,
     pub sig: [u8; 64],
 }
 
-/// `[ACT_DOMAIN][domain 32][0x80 0x00][8 | 9 | 10][body][sig 64]`.
-pub fn encode_statement(s: &SignedStatement) -> Vec<u8> {
+impl SignedStatement {
+    /// THE BYTES THE SIGNATURE IS OVER: the statement's own, then its
+    /// crossing written out whole.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        super::crossing_record::crossed(self.statement.signed_bytes(), &self.crossing)
+    }
+}
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][8 | 9 | 10][body][crossing][sig 64]`.
+/// `None` where a turn of the record cannot be written.
+pub fn encode_statement(s: &SignedStatement) -> Option<Vec<u8>> {
     let mut out = vec![super::ACT_DOMAIN];
     out.extend_from_slice(&s.statement.domain);
     out.extend_from_slice(&SUB_KIND);
     out.push(s.statement.stated.kind());
     s.statement.stated.put_body(&mut out);
+    s.crossing.put(&mut out)?;
     out.extend_from_slice(&s.sig);
-    out
+    Some(out)
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][11]`.

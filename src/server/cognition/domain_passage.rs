@@ -624,6 +624,9 @@ impl Court {
                 if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Mouth, dx) {
                     return Handed::Boundary(why);
                 }
+                if let Err(why) = crate::anastome::dialogue::crossing_record::verify_carried(h.crossing.as_deref()) {
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Mouth, domain: dx, why }));
+                }
                 // 78.136 — THE LINES BUILD, THE RESERVE KEEPS (as ruled):
                 // the offerer is any tier of its
                 // domain — a builder LINE building a road, or the reserve;

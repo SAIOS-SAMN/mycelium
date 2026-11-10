@@ -382,6 +382,9 @@ impl Court {
                 if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::ConversionOut, domain) {
                     return Handed::Boundary(why);
                 }
+                if let Err(why) = crate::anastome::dialogue::crossing_record::verify_carried(h.crossing.as_deref()) {
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::ConversionOut, domain, why }));
+                }
                 // 78.139 — the reserve unit is the reserve's basket: none
                 // converted until it is stated.
                 if !self.basket_stated_for(&c.tier) {

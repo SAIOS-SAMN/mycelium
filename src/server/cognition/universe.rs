@@ -115,7 +115,8 @@ impl Court {
         }
         // Track 24 B4 — only from the sitting reserve: another key of the
         // domain, or a domain with no reserve, is `NotThroughCore`.
-        let reserve = match self.reserve_signed(&st.domain, &st.signed_bytes(), &s.sig) {
+        let Some(bytes) = s.signed_bytes() else { return Founded::Unsigned };
+        let reserve = match self.reserve_signed(&st.domain, &bytes, &s.sig) {
             Ok(r) => r,
             Err(true) => {
                 return Founded::Boundary(self.at_tube(crate::court::admission::Boundary::NotThroughCore {
@@ -127,6 +128,9 @@ impl Court {
         };
         if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Statement, st.domain) {
             return Founded::Boundary(why);
+        }
+        if let Err(why) = s.crossing.verify() {
+            return Founded::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Statement, domain: st.domain, why }));
         }
         let mut u = self.universe_of(&st.domain);
         let body = match &st.stated {

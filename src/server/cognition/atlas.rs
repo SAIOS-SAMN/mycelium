@@ -366,13 +366,17 @@ impl Court {
         if self.domains.get(&e.domain).is_none() {
             return refuse(R::UnknownDomain);
         }
-        let reserve = match self.reserve_signed(&e.domain, &e.signed_bytes(), &s.sig) {
+        let Some(bytes) = s.signed_bytes() else { return refuse(R::Unsigned) };
+        let reserve = match self.reserve_signed(&e.domain, &bytes, &s.sig) {
             Ok(r) => r,
             Err(true) => return Ledgered::Boundary(self.at_tube(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: e.domain })),
             Err(false) => return refuse(R::Unsigned),
         };
         if let Err(why) = self.signatory(UniverseAct::Anchor, e.domain, reads) {
             return Ledgered::Boundary(why);
+        }
+        if let Err(why) = s.crossing.verify() {
+            return Ledgered::Boundary(self.at_tube(Boundary::Crossing { act: UniverseAct::Anchor, domain: e.domain, why }));
         }
         if !self.final_in_view(&e.point, fin.as_ref()) {
             return refuse(R::NotFinal);
@@ -517,13 +521,17 @@ impl Court {
         if self.domains.get(&a.domain).is_none() {
             return refuse(R::UnknownDomain);
         }
-        let reserve = match self.reserve_signed(&a.domain, &a.signed_bytes(), &s.sig) {
+        let Some(bytes) = s.signed_bytes() else { return refuse(R::Unsigned) };
+        let reserve = match self.reserve_signed(&a.domain, &bytes, &s.sig) {
             Ok(r) => r,
             Err(true) => return Mapped::Boundary(self.at_tube(Boundary::NotThroughCore { act: UniverseAct::Map, domain: a.domain })),
             Err(false) => return refuse(R::Unsigned),
         };
         if let Err(why) = self.signatory_now(UniverseAct::Map, a.domain) {
             return Mapped::Boundary(why);
+        }
+        if let Err(why) = s.crossing.verify() {
+            return Mapped::Boundary(self.at_tube(Boundary::Crossing { act: UniverseAct::Map, domain: a.domain, why }));
         }
         if !self.final_in_view(&a.point, fin.as_ref()) {
             return refuse(R::NotFinal);
