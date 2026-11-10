@@ -183,6 +183,33 @@ fn paid_verdict_carries_the_modes_paid() {
     }
 }
 
+/// 78.174 §1 item 9 (operator, 2026-11-05); MU-ENGINEERING §9.3 — A MODE'S
+/// AMOUNT IS ITS SHARE OF THE ENCLOSURE, NEVER THE MASS: the clause's slide,
+/// carrying a body of mass `m` across an enclosure of measure `M = 18`
+/// (periods 3×6 at rank 2), holds its modes at `m/18` of the slide's own
+/// amounts, the share of the enclosure its work covers, and never at `m`.
+#[test]
+fn closure_mode_amount_is_its_share_of_the_enclosure() {
+    let form = carried_by_clause();
+    let family = carried_on_ground();
+    let read = crate::transducer::family::form_deflation_read(&form, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());
+    let [(x, y)] = family.as_slice() else { panic!("one pair") };
+    let m = crate::transducer::raster::on_ground_of(&family, || crate::transducer::family::deflation::pair_mass(x, y))
+        .expect("one ground")
+        .expect("the pair carried mass");
+    let enclosure = crate::transducer::family::transduce::Enclosure::of(y.sample());
+    let measure = enclosure.measure().expect("enclosure has measure");
+    assert_eq!(measure, 18, "the output sample's enclosure measure at rank 2 is 18 (3×6)");
+    let share = crate::core::Q::new(m.into(), (measure as i64).into());
+    let two = crate::core::Q::from_integer(2.into());
+    let motion = crate::transducer::cga::translator_at(&[crate::core::Q::from_integer(0.into()), two]);
+    let need = crate::transducer::cga::modes_need(&motion).expect("a slide has modes");
+    let mut stroke = crate::physics::Physics::default().stroke_n(need);
+    let expected = crate::economy::modes::Modes::of_motion(&motion, &share, &mut stroke).expect("the slide's modes read");
+    assert!(!expected.is_empty(), "the slide moves T");
+    assert_eq!(read.modes.print(), expected.print(), "the closure's modes at the share m/18 = {share}, never at the mass {m}");
+}
+
 /// A rule that does not carry a withheld pair is REFUSED by the reconstruction,
 /// with its reason and kind — the coordinate the voice learns from.
 #[test]
