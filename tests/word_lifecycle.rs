@@ -66,19 +66,9 @@ fn element_record_round_trips_and_refuses_old_magic() {
     let mut p = 0;
     let back = Element::from_bytes(&b, &mut p).unwrap();
     assert_eq!(back.address(), w.address());
-    // THE BOUND IS THE CANONICAL GEN3 RECORD'S, not GEN2's (54.7 B6/B7).
-    // It stood at 600, which was the pre-B6 layout: the address did not
-    // lead the record and a sentence still wrote a description field. B6
-    // put the address first and purged the description, and the round trip
-    // has measured 1047 bytes at every commit since — including at the
-    // commit that introduced it. The assertion was checking a retired
-    // schema and failing on the live one, which is a stale expectation and
-    // not a size regression.
-    //
-    // The bound still bounds: what it says is that a WORD is a short tape —
-    // kilobytes, not the megabytes a form's address runs to (Z4c) — so it
-    // catches the failure it exists for, a word that starts carrying a
-    // form's coordinates.
+    // THE BOUND IS THE CANONICAL GEN3 RECORD'S (54.7 B6/B7): a word is a short
+    // tape — kilobytes, not the megabytes a form's address runs to (Z4c) — so it
+    // catches a word that starts carrying a form's coordinates.
     assert!(b.len() < 2048, "a word is a short tape, got {}", b.len());
     for magic in [Element::GEN2_MAGIC, Element::PRE_WHOLE_MAGIC] {
         let mut old = b.clone();

@@ -16,9 +16,7 @@ fn turn_90() -> Word {
 ///
 /// `ClassVector::class_key` writes the conjugacy invariants first, and
 /// `Rotor::class_key` writes exactly those with the same tag and the same
-/// sign byte. Two commits keyed a carrier by one and read it with the
-/// other, and both found nothing, because both used an EXACT read where
-/// the second is the first's depth-one projection.
+/// sign byte, where the second is the first's depth-one projection.
 ///
 /// The schema parses the boundary out of the bytes the writer wrote, so
 /// this is a fact about the two writers and not about a length anyone

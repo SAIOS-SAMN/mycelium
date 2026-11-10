@@ -1964,7 +1964,7 @@ Each phase is one commit:
      denominator is its extent.
    - Claims: `task_round_trips_samples_of_rank_n`,
      `extent_past_its_field_is_refused_never_widened`,
-     `symbol_bytes_overflow_is_refused_by_name`.
+     `symbol_bytes_refuses_overflow`.
    - **Built**, inside v0.3.0's break; `WIRE_VERSION` stays `0x0200`
      (no tag carries it yet: v0.3.0-rc.2 is `0x0104`), and the solve act
      is signed as `mycelium solve v3`.
@@ -2267,7 +2267,7 @@ Each phase is one commit:
       - Claims: the five above, `rank_one_task_is_perceived`,
         `no_axis_is_privileged_in_perception`,
         `bodies_connect_by_shared_cell_of_grade_n_minus_one`,
-        `rank_beyond_the_alphabet_is_refused_by_name`.
+        `perspective_refuses_rank_beyond_alphabet`.
       - No task, word or chart address changes.
     - **Open** (the next phase):
       - the word, chart and rule-language machinery's rank-2 carrier
@@ -2358,7 +2358,7 @@ Each phase is one commit:
       symbol set refuses a test input of another width by name
       (`SymbolSet::of_family` returns `SymbolRefusal::Width`). Claims
       `section_site_is_the_sample_coordinate_restricted_by_the_perspective`,
-      `test_input_of_another_width_refuses_the_family_set_by_name`. No
+      `symbol_set_refuses_differing_test_width`. No
       wire, task, word or chart address change.
     - **Stage 2b, the planar tuples held as `SectionSite`** (branch
       `s4d2b-section-tuples`):

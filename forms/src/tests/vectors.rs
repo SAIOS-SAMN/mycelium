@@ -151,11 +151,11 @@ fn unopened_lane_is_refused() {
     assert_eq!(order, [Lane::S, Lane::G, Lane::T, Lane::H, w]);
 }
 
-/// THE LANE SET'S OTHER REFUSALS, each by name: a base lane missing, a lane
-/// twice, an H component keyed by one axis, a key twice or one plane in
-/// both orientations, a generator of one axis, an unwritable axis.
+/// THE LANE SET'S OTHER REFUSALS: a base lane missing, a lane twice, an H
+/// component keyed by one axis, a key twice or one plane in both
+/// orientations, a generator of one axis, an unwritable axis.
 #[test]
-fn lane_set_refuses_by_name() {
+fn lane_set_refuses_invalid_lane() {
     let zero = |k: Key| Vector::one(k, q(0, 1));
     let (s, g, t, h) = (zero(on('S', 1)), zero(on('G', 1)), zero(on('T', 1)), zero(turning(2, 3)));
     let ruled = Openings::ruled();
