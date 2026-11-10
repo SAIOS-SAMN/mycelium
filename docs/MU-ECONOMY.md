@@ -606,6 +606,23 @@ nets before it co-signs. A fold that does not conserve is refused
 `REFUSE_FOLD_INEXACT` and writes nothing. Heights continue across a fold,
 and install receipts survive it.
 
+**Built** (`economy::fold::FoldedIssuance`). The epoch rows carry only the
+balances' nets. What the folded rows issued and burned is kept beside them
+as the fold's checkpoint, gross and by source. Each source is the row's own
+coordinate `[kind tag, arm byte]`: genesis, mints, transfers and burns by
+the proof each carried, and slashes. So every reading stays the same across
+a fold: issued and burned, each apart from the other; the earned supply,
+apart from genesis (§6); and what each proof paid and burned (§0). A fold
+that would move issued or burned refuses `REFUSE_FOLD_INEXACT`. The
+checkpoint is persisted with the carriers (the `folded` trie). Claims:
+`economy::tests::fold` (`fold_keeps_what_each_proof_paid`,
+`fold_keeps_genesis_apart_from_the_earned`,
+`fold_keeps_issued_and_burned_each`,
+`second_fold_reads_the_first_folds_issuance_once`,
+`checkpoint_source_at_no_coordinate_is_refused`,
+`restored_fold_keeps_its_issuance`). Owed: a witness re-derives the nets it
+co-signs, not the checkpoint, which no fold receipt signs yet.
+
 ## 7. Metabolism and money
 
 The reserve is tempo: it depletes per lane on every stroke a client spends

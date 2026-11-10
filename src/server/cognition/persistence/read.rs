@@ -349,7 +349,7 @@ impl Court {
                 ],
             )?;
             at.set(crate::economy::persist::STAKES_TRIE);
-            let (stakes, balances, held) = crate::economy::Treasury::take_tries(b, pos)?;
+            let (stakes, balances, held, folded) = crate::economy::Treasury::take_tries(b, pos)?;
             at.set(ERAS_TRIE);
             let eras = take_trie(
                 b,
@@ -385,7 +385,7 @@ impl Court {
                 Some(book) => court.windows = book,
                 None => court.read_v4_windows(),
             }
-            court.treasury = crate::economy::Treasury::from_parts(stakes, balances, held, entries);
+            court.treasury = crate::economy::Treasury::from_parts(stakes, balances, held, folded, entries);
             court.settlements_cold = settled;
             court.dialect_chain = dialect;
 
