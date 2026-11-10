@@ -262,10 +262,10 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    (§0): two minds or two orbits reaching one vertex by two derivations,
    one meaning and two proofs (§5.2; 13.10), the face between them a
    `Rewrite` (MU-ANASTOME §4.1). **Built:** the court's `Presentation`
-   and `offer_rewrite`; convergence K1–K2 (§5.5); the mind proposing a
-   `Retire` where a ruled word decomposes over the rest without itself
-   (`Mind::propose_rewrites`, #146). **Owed:** the mind proposing the
-   other Rewrite kinds (§5.4); the language's state as one reading
+   and `offer_rewrite`; convergence K1–K2 (§5.5); the mind proposing
+   `Retire`, `Refine`, `AxisOpen`, `Translation`, and `Reanchor`
+   (`Mind::propose_rewrites`, `refine_of`, `axis_open_of`, `translation_of`,
+   `reanchor_of`, #146). **Owed:** the language's state as one reading
    (MU-ANASTOME §7).
 9. **Amendment by experience.** A constructor experience does not renew
    is re-derived from the residue left, and the amended constructor is
@@ -1481,7 +1481,8 @@ retirement naming it and citing the forms that compose it is asserted
 once (`Mind::propose_rewrites`, `client/sdk/mind/rewrite.rs`). The mind
 retires nothing of its own on the proposal; the court decides on its own
 reduction. The mind proposing the other kinds from its own readings, beyond
-the `Torse` and `Condense` its contemplation mints, is owed (§7.1).
+the `Torse` and `Condense` its contemplation mints, is built (`refine_of`,
+`axis_open_of`, `translation_of`, `reanchor_of`, #146).
 
 **The other kinds, by the readings that carry them** (ruled 2026-11-06,
 #146, under the operator's delegation;
@@ -1764,6 +1765,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
 | **the hypha's acts as perception** (#136): each hypha's line read on the hypha carrier from the mind's attachment to its signed head, a page admitted only as a chain ending on the signed receipt; each `Return`, `RankStep` and `Reconnect` taken in as its frame, flux on the mind's lanes on that hypha's well, pressing the mind's beat with the deficit | §3.1, §1a(7) | `client/sdk/hypha_acts.rs` (`Session::read_acts_of`, `chained`, `Attachment`, `Mind::read_hypha_acts`, `Mind::pressing`); `mind/think.rs` (the beat); claims `hypha_act_reaches_the_mind_as_flux_on_its_lanes`, `act_kind_carries_no_meaning_beyond_its_coordinate` |
+| **mind proposing rewrites** (#146; MU-CLIENT §5.4, ruling 5 in 78.180): the mind proposing Retire, Refine (OpenAxis), AxisOpen (holonomy rotor of novel residue), Translation (Placement across chord overlaps), and Reanchor (re-gauging moving spatial coordinates while preserving class invariance), asserted once and never duplicated | §5.4, §1a(8) | `client/sdk/mind/rewrite.rs` (`Mind::propose_rewrites`, `refine_of`, `axis_open_of`, `translation_of`, `reanchor_of`, `propose_rewrite`); tests in `client/sdk/tests/rewrite.rs` |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
@@ -1824,14 +1826,12 @@ then the backlog. Each item names its issue.
    5. peer records from receipts (§5.3(5); #145): built as ruled for
       answers and vantages; the HOLDs' deviation per lane and the court's
       `Attest` folded in are owed;
-   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): `Retire`
-      built (`mind/rewrite.rs`). The other kinds are ruled (2026-11-06;
-      78.180 ruling 5): `Refine` from `PivotBy::OpenAxis`, `AxisOpen` from
-      a Novel verdict's persistent residue through germination's Extend,
-      `Translation` from `PivotBy::Placement`, `Reanchor` only where a
-      conjugation moves an anchor coordinate on S, and the Hue pivot no
-      Rewrite (§5.4). Owed: their build, and the witness of a court's
-      `Ruling(Retired)` citing a mind's proposal on a running network;
+   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): **Built**
+      (`mind/rewrite.rs`): `Retire`, `Refine` from `PivotBy::OpenAxis`,
+      `AxisOpen` from novel residue, `Translation` from `PivotBy::Placement`,
+      `Reanchor` on coordinate re-gauge, and deduplication via `propose_rewrite`.
+      Owed: the witness of a court's `Ruling(Retired)` citing a mind's
+      proposal on a running network;
    7. seat play from the mind's own orbits (§6; #147): the seat's series
       lifted into the field and the call a relay carrying its certificate
       on the mind are built; the escaping-orbit play, and so a call that
