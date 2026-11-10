@@ -38,9 +38,9 @@ xylarium pin it. The table below is kept as the record of what it closed.
 | Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break, N4's `ListingField`→`ListingCoherence` and `Coord::Shell`→`Coord::Cells` ruled and built); #55 done |
 | rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | Done: `v0.3.0` tagged on rc.3's commit; both peers' KERNEL conformance reads passed; netstratum and xylarium pinned |
 
-**1a. In progress: v0.4.0.** A new break, in which word, chart and task
-addresses, act layouts and signing domains may change (CHANGELOG ›
-Unreleased, held in `changes/`). Merged so far, each with its PR:
+**1a. Release candidate: v0.4.0-rc.1** (2026-11-10; the scope frozen). The
+break in which word, chart and task addresses, act layouts and signing
+domains changed (CHANGELOG › 0.4.0-rc.1). What it holds, each with its PR:
 - Track 26 S4b–S4d: rank-`n` perception, transduction as factorisation,
   the hypha serving any rank and the claim of factorisation (#80); the
   word machinery on `SectionSample`/`SectionSite`, `family::Grid` retired,
@@ -96,7 +96,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25, [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) | Drafted for v0.5.0 (#178, #181); the writing of X1's parts waits on #160 |
 | Documentation audit: bounded documents, status out of prose | — | Open |
 
-**1b. Next, v0.5.0: the economy as motions.** The release's headline,
+**1b. Next, v0.5.0: the economy as motions** (drafts #178, #181, #189, opened onto rc.1). The release's headline,
 ruled 2026-11-05 and specified in
 [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md); §9 there lists the present
 implementation each item replaces. A wire and persisted-layout change,
@@ -1468,7 +1468,7 @@ adjudicated reading (B2). Each phase is one commit:
      lanes, open lanes by ruled opening, the caller's intervals, the
      re-origin across a throat and dilation invariance), with fixtures
      1–16 in `forms/src/tests/`. The clause register serves v3 (a wire
-     change to the coordinate's writing, `changes/coordinate-v3.md`).
+     change to the coordinate's writing; CHANGELOG 0.4.0-rc.1, *FORMS-COORDINATE v3*).
      Next: rewire `chronometry::tuniversal::TPoint` as the form's
      one-component non-negative case (claimed today by writing and
      order), and the ruled act that opens a lane. Open: the

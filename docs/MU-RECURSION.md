@@ -4,7 +4,7 @@
 >
 > **Components:** every Mycelium component: the algebra, client, hypha, court and wire. Each chapter names its code paths, which locate its component. Where a term reads two ways (*planetary*, *star*, *universe*), GLOSSARY *Components and scope* and MU-LEXICON §4 settle it.
 
-**Status:** governing specification, release 0.3.0-rc.3, with its rulings.
+**Status:** governing specification, release 0.4.0-rc.1, with its rulings.
 Each chapter states its objects and names the code that carries them;
 chapter 78 lists the rulings in force. The mind's chapters moved to
 `MU-CLIENT.md` (its §1–§9), and each leaves a pointer here. The other

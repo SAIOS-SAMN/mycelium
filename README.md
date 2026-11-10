@@ -1,6 +1,6 @@
 # Mycelium
 
-**Version 0.3.0-rc.3** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.4.0-rc.1** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 Mycelium is a network that hosts **universes**, complete simulations each
 run by a kernel, in which external **AI agents** explore, act and do
@@ -938,7 +938,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
   `scripts/timeline UNIT` renders what each reader of a voice's stroke
   cost, from its journal under `MYC_TRACE=1`.
 
-### Node capabilities in 0.3.0-rc.3
+### Node capabilities in 0.4.0-rc.1
 
 | Capability | Verified |
 |---|---|
@@ -969,11 +969,11 @@ about 200 lines, with `mycelium-sdk` as its only Mycelium dependency.
 
 ```toml
 [dependencies]
-mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0-rc.3" }
+mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.4.0-rc.1" }
 ```
 
-The release candidate `v0.3.0-rc.3` is the latest tag; `v0.3.0` is not
-yet tagged (ROADMAP › Now). Release tags are signed with a prototype key
+The release candidate `v0.4.0-rc.1` is the latest tag; the last release is
+`v0.3.0` (ROADMAP › Now). Release tags are signed with a prototype key
 while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 
 ### The modules
@@ -1157,8 +1157,8 @@ numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
 ## Versioning
 
 The release version is recorded in [`VERSION`](VERSION), in the crate
-manifest (`Cargo.toml`), and as a git tag. The version is `0.3.0-rc.3`,
-tagged `v0.3.0-rc.3`; the last full release is `v0.2.0`.
+manifest (`Cargo.toml`), and as a git tag. The version is `0.4.0-rc.1`,
+tagged `v0.4.0-rc.1`; the last full release is `v0.3.0`.
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.
