@@ -6,7 +6,7 @@ use crate::client::sdk::*;
 impl Mind {
     /// HOLD A CHAIN AS THE FORM IT IS (50.6 seam 1): a demand this mind has
     /// not closed is held as an idea — the pair form of the scene the chain
-    /// describes, its painted sites before against its painted sites after in one frame —
+    /// describes, its painted sites before against its painted sites after in one manifold enclosure —
     /// never as a bare chain minted into a word. An idea is a form; its
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
@@ -30,9 +30,9 @@ impl Mind {
         self.hold_perceived_from(p.form, &p.frames, (&[][..], &p.pair), &[], family, &mut budget);
     }
 
-    /// N4 — HOLD A PERCEPTION with the frames it was perceived from, so the
+    /// N4 — HOLD A PERCEPTION with the pair bodies it was perceived from, so the
     /// thoughts it forms with the perceptions it meets are the transitions
-    /// between the perceptions' bodies. The draw is `hold_form`'s, one reading of it.
+    /// between the perceptions' bodies across the manifold. The draw is `hold_form`'s, one reading of it.
     /// `family` is the task the perception was seen in (78.56 III: its
     /// thoughts wind only within it); empty where none is named.
     pub(crate) fn hold_perceived(

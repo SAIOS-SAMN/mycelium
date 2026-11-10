@@ -16,18 +16,22 @@
 //! percept itself is read at any rank.
 
 use super::{factorisations, Enclosed, Factored, Ground, TransductionRefusal};
+use crate::transducer::manifold::Manifold;
 use crate::transducer::perspective::Perspective;
 use crate::transducer::sample::Sample;
 
-/// ONE PAIR PERCEIVED: its two frames lifted, and its factorisations.
+/// ONE PAIR PERCEIVED: its input and output lifted into enclosures and manifolds,
+/// and its factorisations.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PairFactored {
     pub input: Enclosed,
     pub output: Enclosed,
     pub factored: Factored,
+    pub input_manifold: Manifold,
+    pub output_manifold: Manifold,
 }
 
-/// A TASK PERCEIVED AT ITS OWN RANK.
+/// A TASK PERCEIVED AT ITS OWN RANK (MU-SENSING §1, §3; MU-CLIENT §4.1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskPercept {
     /// The perspective the samples were read under: the default of the
@@ -38,8 +42,10 @@ pub struct TaskPercept {
     pub ground: Ground<Vec<u8>>,
     /// Each train pair, lifted and factored.
     pub train: Vec<PairFactored>,
-    /// Each test input, lifted.
+    /// Each test input, lifted into an enclosure.
     pub tests: Vec<Enclosed>,
+    /// Each test input, lifted into a manifold carrier.
+    pub test_manifolds: Vec<Manifold>,
     /// HOW EACH AXIS WAS TAKEN APART (MU-SENSING §3.6): per axis, the
     /// factorings every pair admits, those some pair refuses, and whether
     /// one collapsed the vortex. A coordinate of the percept, so speech
@@ -73,13 +79,20 @@ impl TaskPercept {
         let mut pairs = Vec::with_capacity(train.len());
         for (pair, (x, y)) in train.iter().enumerate() {
             let factored = factorisations(x, y, budget).map_err(|why| PerceptRefusal::Pair { pair, why })?;
-            pairs.push(PairFactored { input: Enclosed::of(x), output: Enclosed::of(y), factored });
+            pairs.push(PairFactored {
+                input: Enclosed::of(x),
+                output: Enclosed::of(y),
+                factored,
+                input_manifold: x.lift(),
+                output_manifold: y.lift(),
+            });
         }
         Ok(TaskPercept {
             perspective: Perspective::of_sample(rank),
             ground: Ground::of(train),
             train: pairs,
             tests: tests.iter().map(Enclosed::of).collect(),
+            test_manifolds: tests.iter().map(Sample::lift).collect(),
             nesting: super::nesting_of(train),
         })
     }
@@ -107,5 +120,20 @@ impl TaskPercept {
     /// them read. A dimension past it is unread (MU-SENSING §5).
     pub fn rank(&self) -> usize {
         self.perspective.rank()
+    }
+
+    /// Depth perception: the manifold carrier of training pair `pair`, (input, output).
+    pub fn pair_manifold(&self, pair: usize) -> Option<(&Manifold, &Manifold)> {
+        self.train.get(pair).map(|p| (&p.input_manifold, &p.output_manifold))
+    }
+
+    /// Depth perception: the manifold carrier of test input `test`.
+    pub fn test_manifold(&self, test: usize) -> Option<&Manifold> {
+        self.test_manifolds.get(test)
+    }
+
+    /// Depth perception: the manifold carrier of each training pair.
+    pub fn train_manifolds(&self) -> impl Iterator<Item = (&Manifold, &Manifold)> {
+        self.train.iter().map(|p| (&p.input_manifold, &p.output_manifold))
     }
 }
