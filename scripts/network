@@ -7,7 +7,8 @@
 # rendezvous; a kernel's house founding a domain and a mind seated in it
 # (MU-CLIENT §6); the SDK client as the worker whose solves the courts pay,
 # asked of two courts under one key; the observer's frames
-# (scripts/observer), the timeline of a mind's journal (scripts/timeline)
+# (scripts/observer), the timeline of the worker's journal and of a mind's
+# (scripts/timeline)
 # and the POW++ reading over the courts (`mycelium-server --console
 # --proofs`, MU-ECONOMY §0, §3.4, §5.3).
 #
@@ -223,7 +224,9 @@ say "7. the SDK client works $WORK tasks on each hypha in turn, under one key"
 # a second mint of one point, which the POW++ reading names (§3.4).
 if [ -x "$EX" ]; then
   for h in "${HYPHAE[@]}"; do
-    "$EX" "$DIR/worker" "127.0.0.1:$(port "$h")" "$WORK" > "$DIR/worker-$h.txt" 2>&1
+    # MYC_TRACE: each reader of the worker's stroke writes its trace line,
+    # the journal the timeline renders (as in scripts/quickstart).
+    MYC_TRACE=1 "$EX" "$DIR/worker" "127.0.0.1:$(port "$h")" "$WORK" > "$DIR/worker-$h.txt" 2>&1
     echo "worker on $h: exit $?, $(grep -c 'solved: first' "$DIR/worker-$h.txt") first closures, $(grep -c 'solved: ' "$DIR/worker-$h.txt") solves"
   done
 else
@@ -234,8 +237,11 @@ say "8. the first frame: observer, POW++ reading, minds' now, nodes"
 frame 0
 sed -n '/^### proofs/,/^proofs exit/p' "$DIR/frames/0.txt" | grep -E 'POW\+\+|paid S:G:T:H|equivocation|no closure' | head -n 20
 
-say "9. the timeline of m1's journal (scripts/timeline)"
-if [ -f "$DIR/m1.log" ]; then scripts/timeline "$DIR/m1.log" > "$DIR/frames/timeline-0.txt" 2>&1; echo "timeline exit $? ($DIR/frames/timeline-0.txt)"; fi
+say "9. the timeline of the worker's journal on hypha a (scripts/timeline)"
+# A sovereign mind asks for a task only under strain (MU-CLIENT §4.13), so
+# an idle mind's journal may hold no trace line yet; the worker's always
+# does where it extracted a family. m1's timeline is rendered in each frame.
+if [ -f "$DIR/worker-a.txt" ]; then scripts/timeline "$DIR/worker-a.txt" > "$DIR/frames/timeline-worker.txt" 2>&1; echo "timeline exit $? ($DIR/frames/timeline-worker.txt)"; fi
 
 say "the network is running"
 cat <<EOF
