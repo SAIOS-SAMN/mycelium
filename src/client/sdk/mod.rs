@@ -43,6 +43,7 @@ pub use session::*;
 pub use signed_receipts::{Holding, SignedReceipts};
 pub use assertion::*;
 pub use voice::*;
+pub use crate::transducer::field::carrier::Cohesion;
 pub use working_atlas::*;
 
 use crate::anastome::dialogue;
