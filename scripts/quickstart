@@ -10,8 +10,8 @@
 # fails, the run exits 1. The network keeps running until Ctrl-C, then every
 # process stops; the homes stay in DIR for inspection.
 #
-# The definition of done (AGENTS.md) requires this run for a change to the
-# wire or the mesh.
+# AGENTS.md › Checks requires this run for a change to the wire or the
+# mesh; CI does not run it.
 #
 # Usage: scripts/quickstart [DIR] [BASE_PORT] [TASKS]
 #   DIR        where the homes are written (default: $TMPDIR/mycelium-quickstart,
