@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # TIMELINE — D1's renderer: what each reader of one voice's stroke cost,
 # in order, from the journal and not from a model of it. Run by
-# hand and by scripts/quickstart, owned by the repository.
+# hand, by scripts/quickstart and by scripts/network (over its worker's
+# journal, and its first mind's in each frame), owned by the repository.
 #
 # Usage: scripts/timeline UNIT [SINCE] [FAMILY]
 #        UNIT    a systemd --user unit (mycelium-client@4) or a file of

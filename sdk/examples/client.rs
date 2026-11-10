@@ -140,7 +140,13 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
             Err(why) => Outcome::NoRule(why),
             Ok((outputs, tape)) => match claim(session, key, &envelope.id, &outputs, &tape, stated(&ground).as_deref())? {
                 Ok(o) => o,
-                Err(d) => return Ok(vec![(named, Outcome::Deferred(d))]),
+                // Nothing was ruled on this claim. The claims of this task
+                // already judged stand, a closure among them paid, so they
+                // are answered with it; no further claim is sent.
+                Err(d) => {
+                    outcomes.push((named, Outcome::Deferred(d)));
+                    return Ok(outcomes);
+                }
             },
         };
         outcomes.push((named, outcome));
