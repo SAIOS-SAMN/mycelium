@@ -99,7 +99,7 @@ pub fn cited(text: &str) -> Vec<Cited> {
     out
 }
 
-/// THE CHANGELOG FRAGMENTS (AGENTS.md, *Definition of done*): every file
+/// THE CHANGELOG FRAGMENTS (AGENTS.md, *Checks*): every file
 /// under `dir` is a markdown file (`.md`) holding one entry, opened by its
 /// `### ` heading with a title. A hit per file that is not. Returns the
 /// count of fragments read.

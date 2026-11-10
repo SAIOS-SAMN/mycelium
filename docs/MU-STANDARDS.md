@@ -318,14 +318,14 @@ action.
 3.9 **Running the tests.** While working, a change runs the suites of
 the modules it touches by filter (`cargo test --release -- <module path
 filter>`). A change is done only under the two commands of
-[AGENTS › Definition of done](../AGENTS.md#definition-of-done), which
+[AGENTS › Checks](../AGENTS.md#checks), which
 also names the corpus the decoder's tests read.
 
 ## 4. The gate
 
 4.1 **The gate is tests.** The gate is the workspace crate `gate/`, read
 by its tests alone, run by `cargo test --release --workspace` with every
-other test ([AGENTS › Definition of done](../AGENTS.md#definition-of-done)).
+other test ([AGENTS › Checks](../AGENTS.md#checks)).
 Each check reads the repository's source tree as a test of its own
 (`gate/src/tests/tree.rs`), so a red check never hides another, and each
 check's refusals are proved on fixture trees beside it
@@ -370,7 +370,7 @@ adjudicated reading). The gate holds two readings:
      `removed`, `was`). The CHANGELOG is history and is not read;
    - *the changelog fragments* (`documents.rs`): every file under
      `changes/` is a non-empty markdown entry opened by its `### `
-     heading ([AGENTS › Definition of done](../AGENTS.md#definition-of-done)).
+     heading ([AGENTS › Checks](../AGENTS.md#checks)).
 2. **The warning reading**: `cargo clippy --release --workspace
    --all-targets -- -D warnings`, the first command of the definition of
    done, over every workspace member (`mycelium`, `algebra`, `forms`,
@@ -455,7 +455,7 @@ commit that says what was wrong. Published history is not rewritten.
 ## 6. Verification
 
 6.1 **Before a commit.** Run the two commands of
-[AGENTS › Definition of done](../AGENTS.md#definition-of-done). Quote
+[AGENTS › Checks](../AGENTS.md#checks). Quote
 clippy's result and the `test result` lines in the message. "Lint clean"
 alone is not green.
 

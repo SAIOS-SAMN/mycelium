@@ -1,11 +1,13 @@
 # AI-GENERATED CONTENT — see DISCLAIMER.md.
 #
-# Conformance Verification (AGENTS.md, Definition of Done), run on every
-# pull request and on every push to main: builds all workspace crates and test
-# binaries once, runs clippy over every member and target with warnings denied,
-# and executes the workspace test suite with the cached ARC-AGI-2 corpus.
+# CLIPPY AND TESTS (AGENTS.md, Checks), run on every pull request and on
+# every push to main: builds all workspace crates and test binaries once,
+# runs clippy over every member and target with warnings denied, and runs
+# the workspace's tests with the cached ARC-AGI-2 corpus. Named for the two
+# commands it runs and nothing more: the quickstart, the changelog fragment
+# and a network contract's approval are not read here.
 
-name: Conformance Verification
+name: clippy and tests
 
 on:
   pull_request:
