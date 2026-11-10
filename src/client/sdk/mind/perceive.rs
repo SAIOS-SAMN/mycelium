@@ -316,6 +316,9 @@ pub(crate) struct Hearing {
     /// family read where the evidence was), by key; none where it named no
     /// scene that read.
     charts: Vec<Vec<u8>>,
+    /// 78.177 — the evidence the rings carried, where it read true: what a
+    /// question raised on them bears.
+    evidence: Option<crate::client::sdk::chatter::Evidence>,
 }
 
 /// A SOLVE TO BE READ BEFORE IT IS SENT (`Mind::solve_task`'s home check),
@@ -608,11 +611,18 @@ impl Mind {
     /// A hearing with the charts its evidence scene's bodies stand on — what
     /// a field in its ground state hears it by (`hearing_couples`).
     pub(crate) fn perceive_hearing_on(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident, charts: Vec<Vec<u8>>) {
+        self.perceive_evidenced(speaker, said, words, evident, charts, None);
+    }
+
+    /// 78.177 — a hearing with the evidence it carried, where that evidence
+    /// read true on its scene: a question raised on it bears the evidence.
+    pub(crate) fn perceive_evidenced(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident, charts: Vec<Vec<u8>>, evidence: Option<crate::client::sdk::chatter::Evidence>) {
         let mut key = speaker.to_vec();
         crate::transducer::address::put_key_bytes(&mut key, &said);
         // Said again, it is heard in this traversal, in the place of the first.
         self.board.hearings_crossed.remove(&key);
-        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident, charts });
+        let evidence = evidence.filter(|_| evident == super::converge::Evident::True);
+        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident, charts, evidence });
         self.hear_next();
     }
 
@@ -657,7 +667,7 @@ impl Mind {
             (None, Some(b)) => self.board.hearings_crossed.remove(&b),
             (None, None) => None,
         };
-        let Some(Hearing { speaker, said, words, evident, .. }) = taken else { return };
+        let Some(Hearing { speaker, said, words, evident, evidence, .. }) = taken else { return };
         self.board.hearing = true;
         let (mut field, from) = crate::transducer::mind::scratch_here();
         let mut remembered = self.remembered.clone();
@@ -676,7 +686,7 @@ impl Mind {
                     let mut budget = entity.physics.stroke();
                     entity.land_admission(a, &mut budget);
                 }
-                entity.understand_read(speaker, said, reads, before, evident);
+                entity.understand_read(speaker, said, reads, before, evident, evidence);
                 entity.hear_next();
             },
         );

@@ -161,6 +161,27 @@ fn attest_agreements_converges_words_with_one_section() {
     assert!(a.converged.is_empty(), "a word the attesting mind did not construct converges with nothing");
 }
 
+/// K3 (78.177 §4a) — THE INSTALL READS THE MINDS WHOSE WORDS CONVERGED. Once
+/// the speaker's `Attest` is sealed on the hearer's 180° turn (K2), the
+/// turn's converging minds are the speaker alone, at its own slide's share
+/// of the frame; before the convergence is sealed, and for the one-column
+/// slide of another section, none.
+#[test]
+fn install_reads_the_minds_whose_words_converged() {
+    crate::transducer::raster::stand_on(0);
+    let (speaker, hearer) = (key(1), key(2));
+    let speaker_vk = speaker.verifying_key().to_bytes();
+    let hearer_vk = hearer.verifying_key().to_bytes();
+    let (spoken, heard_turn, wrong) = (slide(0, 2), turn_180(1, 4), slide(0, 1));
+    let mut court = court_with(&[(&spoken, speaker_vk), (&heard_turn, hearer_vk), (&wrong, hearer_vk)]);
+    assert!(court.converging_minds(heard_turn.address().as_bytes(), &heard_turn).is_empty(), "no convergence sealed yet");
+    let _ = court.attest_agreements(&speech(speaker_vk, &spoken, hold(&hearer, spoken.address().as_bytes())));
+    let converged = court.converging_minds(heard_turn.address().as_bytes(), &heard_turn);
+    let share = crate::transducer::family::local::word_local(&spoken, &family()).mu;
+    assert_eq!(converged, vec![(speaker_vk, share)], "the speaker, at its own word's share of the frame");
+    assert!(court.converging_minds(wrong.address().as_bytes(), &wrong).is_empty(), "another section converges with nothing");
+}
+
 /// MU-CLIENT §5.6 (E3) — THE UNION'S ATTESTATION PAYS. A word the court holds
 /// on its docket with a claim in escrow for its speaker: the hearer's HOLD
 /// joins the hearer to the claim beside the speaker, so the install pays both;

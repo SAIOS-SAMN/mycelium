@@ -84,6 +84,11 @@ pub(crate) struct Question {
     pub(super) residue: crate::transducer::cga::Mv,
     factors: Option<Vec<crate::transducer::cga::Mv>>,
     at: u64,
+    /// 78.177 (ruled 2026-11-06) — THE EVIDENCE OF THE HEARD WORD THE
+    /// QUESTION WAS RAISED ON, where that word carried its evidence and it
+    /// read true on its scene: what makes the question one a court can
+    /// measure (E1). A question with none stays the conversation's.
+    pub(super) evidence: Option<chatter::Evidence>,
     /// MU-CLIENT §5.3(5) (#145) — THE PEERS' VERIFIED FRAMES said under this
     /// question's coordinates: the receipts a peer record is folded from,
     /// held while the question is and lapsing with it.
@@ -668,7 +673,7 @@ impl Mind {
             return None;
         }
         let at = self.own_k();
-        self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at, frames: Vec::new() });
+        self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at, evidence: None, frames: Vec::new() });
         crate::observe::note_mind(|m| m.asks[0] += 1);
         Some(residue)
     }
@@ -773,7 +778,11 @@ impl Mind {
     /// MU-CLIENT §5.5 — `evident` is what the word's evidence read on its
     /// scene: a word refuted there, or a scene not read, is understood and
     /// never HELD.
-    pub(crate) fn understand_read(&mut self, speaker: [u8; 32], said: Vec<u8>, reads: Vec<RingRead>, before: Option<usize>, evident: super::converge::Evident) {
+    ///
+    /// 78.177 — `evidence` is the word's evidence where it read true: a
+    /// question raised here bears it, and only such a question can be
+    /// listed at a court (`Mind::listed_question`).
+    pub(crate) fn understand_read(&mut self, speaker: [u8; 32], said: Vec<u8>, reads: Vec<RingRead>, before: Option<usize>, evident: super::converge::Evident, evidence: Option<chatter::Evidence>) {
         use crate::transducer::sentence::hearing::Seat;
         let mut key = speaker.to_vec();
         key.extend_from_slice(&said);
@@ -803,7 +812,17 @@ impl Mind {
                 // A residue already asked about waits on that question: held,
                 // not asked again.
                 (Some(_), false) if familiar || answering => match self.question(&speaker, &said, &w.vertex, &ring) {
-                    Some(asks) => (None, Some(asks), Vec::new(), 1),
+                    Some(asks) => {
+                        if let Some(ev) = evidence.as_ref().filter(|_| evident == super::converge::Evident::True) {
+                            let mut at = speaker.to_vec();
+                            at.extend_from_slice(&question_key(&said, &w.vertex));
+                            self.bear_evidence(&at, ev.clone());
+                            // 78.177 — listed at the court, riding the
+                            // mind's own closed sentence on the scene.
+                            let _ = self.list_question(&at);
+                        }
+                        (None, Some(asks), Vec::new(), 1)
+                    }
                     None => (None, None, Vec::new(), 3),
                 },
                 // A new sound and no word: noise not yet signal — LISTENED

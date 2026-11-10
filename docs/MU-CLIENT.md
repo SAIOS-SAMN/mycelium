@@ -1536,9 +1536,14 @@ held; a true word beside one of the hearer's own, another vertex with the
 same section, is a convergence. On the court's side (K1–K2): an
 attestation is sealed only on a word true on its scene, read on the
 court's own copy (`attest_agreements`), and a convergence is sealed once,
-as the speaker's `Attest`. Whether a verified convergence is the second
-vantage an install waits on (47.3), or is paid a share, waits on a ruling
-(K3, §7.1).
+as the speaker's `Attest`. *Ruled 2026-11-06 (78.177 §4a(1)), K3:* a
+verified convergence is paid a POWC share out of the install's mint,
+never added to it. It is not a 47.3 second vantage: consilience (courts
+re-deriving) and convergence (minds meeting) stay named apart (37.7). It
+is paid from the install's composition premium, after the base and use
+shares; several converging minds split it by their share of the frame;
+where no premium is left it is held as a claim, never minted (78.177
+§4a(5); `economy/converged.rs`, `Court::converging_minds`).
 
 ### 5.6 POW++: the proof of the work
 
@@ -1759,6 +1764,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **the cross-chamber bracket read** (#148; CB1, 78.26(2)): each pair of a sentence's chambers meeting at a body, the commutator of each pair of their actions exact, held by a chamber or an enclosure wrapping both, or lost; the pairs unread named; counted on the pivot tally once per fresh reading of the cells; a lost bracket a demand on the docket (`Cite::Bracket`), no enclosure formed without a witness, answered by the cell a witness certifies (ruled on #148) | §4.9 | `t/cech/bracket.rs` (`cross_brackets`, `CrossBracket`, `Bracketed`, `CrossUnread`, `answering_cell`); `t/family/comprehend.rs` (`pivot_cells`, `chambers_of`); `t/sentence/pivot/cells.rs` (`PivotCells.brackets`, `PivotTally::add_brackets`); `t/field/plan.rs` (`docket_brackets`, `answer_brackets`); `chronometry/receipt.rs` (`Cite::Bracket`) |
 | **the algebra held per class** (#143): each circuit's curvature the mind takes in heard in its class, the holonomy rotor's conjugacy invariants written out; the class's algebra closed with only what lies outside its span, that part read per axis by its coset; two minds file one word in two frames under one class, each on its own planes, the conjugating element carrying one basis into the other's span; a court's field holds none | §3.2, §4.2, §4.11 | `t/cech/class_algebra.rs` (`ClassAlgebras::hear`, `class_of`, `HeardInClass`); `t/cech/orbit.rs` (`Field.classes`); `t/family/pairing.rs` (`mark_flux`); claims `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`, `two_minds_align_on_the_class_each_reading_it_on_its_own_planes` |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
+| **a held question carried to a court** (#144, 78.177): a question raised on a heard word whose evidence read true bears that evidence and is listed as the word's bodies on its scene; one without evidence reaches no court; riding the asker's own closed sentence on the scene; a listed demand closed by another mind's cited form pays the closer POWC, by its own speaker nothing; K3, a verified convergence paid from the install's composition premium by share of the frame, held as a claim where none is left | §5.5, §5.6 | `mind/listed.rs` (`heard_bodies`, `with_question`, `Mind::bear_evidence`, `Mind::listed_question`, `Mind::question_sentence`, `Mind::list_question`); `mind/converge.rs` (`Scenes::host_on`); `server/cognition/book/demand.rs` (`settle_demand`, `pay_convergence`); `server/cognition/book/converged.rs` (`Court::converging_minds`); `economy/converged.rs` (`Treasury::pay_converging`); claims `question_without_evidence_reaches_no_court`, `question_rides_the_askers_own_closed_sentence_on_the_scene`, `held_question_closed_by_another_mind_pays_the_closer`, `a_mind_closing_its_own_listed_question_is_paid_nothing`, `demand_closed_by_another_minds_cited_form_pays_the_closer`, `install_reads_the_minds_whose_words_converged`, `verified_convergence_is_paid_from_the_composition_premium`, `converging_minds_split_the_premium_by_their_share_of_the_frame`, `convergence_with_no_premium_left_is_held_as_a_claim` |
 | **peer records from receipts** (#145): a peer's verified Say under a question's coordinates held with that question and lapsing with it, a closed question's frames kept while the closure is cited; the record folded per peer key from the frames, each answer taken or inexact by the residue's conjugacy invariants, with its vantages; a class the peer answered inexactly not asked of it again | §5.3(5) | `mind/peers.rs` (`Mind::peer_record`, `Mind::addressed`, `read_frame`); `mind/chatter.rs` (`FieldWork::Answered`, `Mind::question`); claims `peer_record_folds_answer_frames_by_the_residue_class`, `peer_inexact_on_a_class_is_not_asked_it_again`, `peer_frames_lapse_with_the_question` |
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
@@ -1814,13 +1820,19 @@ then the backlog. Each item names its issue.
       `two_minds_align_on_the_class_each_reading_it_on_its_own_planes`);
    3. amendment held beside, the amended constructor separated by
       commutator (§4.10, §1a(9); within #135);
-   4. POWC on a held question closed by another mind: an evidence path
-      for the conversation's questions, E2's guard, and convergence K3 on
-      its ruling (§5.5, §5.6; #144). The path is proposed, unruled, in
-      [proposal 78.177](proposals/78.177-conversation-to-court.md): the
-      asker lists the evidenced question as a demand vertex and the closer
-      probes it (existing acts; `pay_convergence`), with K3's two readings
-      and four points for ruling;
+   4. POWC on a held question closed by another mind (§5.5, §5.6; #144),
+      ruled in [proposal 78.177](proposals/78.177-conversation-to-court.md)
+      §4a. Built: a question raised on a heard word whose evidence read
+      true bears it (`Mind::bear_evidence`); it is listed as that word's
+      bodies on its scene, `Source` demands (`mind/listed.rs`,
+      `Mind::listed_question`); a question with none lists nothing; E2's
+      guard, a listed demand closed by another mind's cited form paying
+      the closer and by its own speaker paying nothing
+      (`server/cognition/tests/demand_pay.rs`); the question listed on
+      `ACT_SPEECH` riding the asker's own closed sentence on the scene
+      (`Mind::question_sentence`, `Mind::list_question`); K3 paid from
+      the composition premium (`economy/converged.rs`). Owed: the closer
+      asserting the closed twist under the family (§4a(4));
    5. peer records from receipts (§5.3(5); #145): built as ruled for
       answers and vantages; the HOLDs' deviation per lane and the court's
       `Attest` folded in are owed;
