@@ -271,8 +271,14 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    held beside the one it amends, separated by their commutator: the
    identity retires the old by derivability, anything else is a
    distinction both keep (§4.10). The court's history is corrected only
-   forward. **Owed:** amendment held beside, and the claim
-   `mind_revises_a_perception_on_a_court_ruling_by_amendment` (#135).
+   forward. **Built:** `amend_constructor`,
+   `revise_perception_by_amendment`, `Amendment::HeldBeside`
+   (`mind/amend.rs`); the five sovereign mind claims
+   `mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`,
+   `mind_declines_a_scene_its_field_does_not_bind`,
+   `mind_acts_at_its_returns`,
+   `mind_revises_a_perception_on_a_court_ruling_by_amendment`
+   (`tests/track10.rs`; #135).
 
 **Why this is fluid intelligence.** Fluid intelligence meets the novel by
 forming the structure a new residue needs. The mind does it by
@@ -1770,6 +1776,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
 | **the hypha's acts as perception** (#136): each hypha's line read on the hypha carrier from the mind's attachment to its signed head, a page admitted only as a chain ending on the signed receipt; each `Return`, `RankStep` and `Reconnect` taken in as its frame, flux on the mind's lanes on that hypha's well, pressing the mind's beat with the deficit | §3.1, §1a(7) | `client/sdk/hypha_acts.rs` (`Session::read_acts_of`, `chained`, `Attachment`, `Mind::read_hypha_acts`, `Mind::pressing`); `mind/think.rs` (the beat); claims `hypha_act_reaches_the_mind_as_flux_on_its_lanes`, `act_kind_carries_no_meaning_beyond_its_coordinate` |
 | **mind proposing rewrites** (#146; MU-CLIENT §5.4, ruling 5 in 78.180): the mind proposing Retire, Refine (OpenAxis), AxisOpen (holonomy rotor of novel residue), Translation (Placement across chord overlaps), and Reanchor (re-gauging moving spatial coordinates while preserving class invariance), asserted once and never duplicated | §5.4, §1a(8) | `client/sdk/mind/rewrite.rs` (`Mind::propose_rewrites`, `refine_of`, `axis_open_of`, `translation_of`, `reanchor_of`, `propose_rewrite`); tests in `client/sdk/tests/rewrite.rs` |
+| **amendment held beside & Track 10 claims** (#135): unrenewed constructor re-derived from residue, entered beside original at conjugate grade, separated by commutator $g_1 g_2 \tilde{g}_1 \tilde{g}_2$; the five sovereign mind claims verified | §4.10, §4.12, §7.1 | `mind/amend.rs` (`evaluate_amendment`, `Mind::amend_constructor`, `Mind::revise_perception_by_amendment`, `Amendment`); `tests/track10.rs` (`mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`, `mind_declines_a_scene_its_field_does_not_bind`, `mind_acts_at_its_returns`, `mind_revises_a_perception_on_a_court_ruling_by_amendment`) |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
@@ -1805,12 +1812,7 @@ then the backlog. Each item names its issue.
    7. S9c, the vortex's monodromy between charts, and a mind's stated
       holonomy, precession and monodromy reconstructed by a court (a wire
       change).
-2. **Track 10's five claims** (#135), after S9, shown on a live run:
-   `mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`,
-   `mind_declines_a_scene_its_field_does_not_bind`,
-   `mind_acts_at_its_returns`,
-   `mind_revises_a_perception_on_a_court_ruling_by_amendment`; with the
-   defect #135 names, a task pulled because the corpus is empty (§4.13).
+2. *(built, #135: **Track 10's five claims** and **amendment held beside**; see **Built**)*;
 3. **The backlog:**
    1. *(built, #136: the hypha's acts as flux on the mind's lanes; see
       **Built**)*;
@@ -1818,8 +1820,8 @@ then the backlog. Each item names its issue.
       §4.2, §1a(4); #143; `cech::class_algebra`, claims
       `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`,
       `two_minds_align_on_the_class_each_reading_it_on_its_own_planes`);
-   3. amendment held beside, the amended constructor separated by
-      commutator (§4.10, §1a(9); within #135);
+   3. *(built, #135: amendment held beside, the amended constructor separated by
+      commutator; see **Built**)*;
    4. POWC on a held question closed by another mind (§5.5, §5.6; #144),
       ruled in [proposal 78.177](proposals/78.177-conversation-to-court.md)
       §4a. Built: a question raised on a heard word whose evidence read
