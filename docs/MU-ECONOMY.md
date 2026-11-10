@@ -528,6 +528,20 @@ organ that took it (47.3). A payout is never proven by a stored balance.
 A re-traversal reads the cone between the payment and its closure. A
 folded prefix is read at its checkpoint (§6.1).
 
+**Read today** (`mycelium-server --console --proofs`,
+`src/bin/mycelium-server/proofs.rs`): a reading over the running mesh,
+never stored. Per payment on each court's journal that carries a proof:
+the proof, the payee, the amount per lane and the act it stands at; the
+words that act names; the level read off them (§12's pay by level: a
+named sentence, named words, or unread, since no served reading tells a
+letter from a word or names a conjugate class); and each other court's
+reading of the same act at its stamp, the same act and words read off its
+own copy (the same point) or a residue naming what differs. It also names
+every task paid as a first closure more than once as an equivocation of
+the advance (§3.4). The re-traversal of this section through the release
+and its verifications to the closure's reconstruction needs the payment
+to cite its causes, which is v0.5.0's (§9).
+
 ### 5.4 Between courts: the Note
 
 A transfer between voices homed at different courts is the xSEPTUM Note

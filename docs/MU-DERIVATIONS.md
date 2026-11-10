@@ -2316,8 +2316,7 @@ withheld footprint stands, none is chosen by key. `truncate(32)` and both
 
 **Wiring (ruled 2026-11-06, #158; the follow-up ruled under the
 operator's delegation, [78.180](proposals/78.180-delegated-rulings-2026-11-06.md)
-ruling 4).** `derive_pi` is still `#[cfg(test)]`. What binds it in
-production:
+ruling 4).** What binds `derive_pi` in production:
 - **The act.** π* is bound at a rule's judgement against a family (A9),
   with no new act. It is derived on every judgement, metered, and never
   held. It is not served as a reply of its own: the judgement's ruling
@@ -2339,8 +2338,33 @@ production:
 
 Derived from "description is language, solution is inverse" (the
 footprint is read from the description) and "clients think, hyphas
-verify" (the withheld pairs are the court's own). Owed: the wiring itself
-(#158).
+verify" (the withheld pairs are the court's own).
+
+**Built** (#158). The withheld pairs are fixed by
+coordinate when a task is registered (`TaskRegistry::post` records each
+withheld output's place `[split, pair, member]`; `withheld` serves exactly
+those pairs), and the court binds them with the task's family at boot
+(`Court::bind_task_withheld`), so no judgement chooses them. A word's
+footprint is the support of its description, deduced by speaking the word
+onto a pair's input: the sites its speech changes
+(`transducer::family::footprint::footprint_of`). The A9 judgement is the
+solve's (`Court::judge_task_solve_on_stroke`): where the rule is `Solved`
+on the bound withheld pairs, `court::verdict::bind_pi` binds π* with
+`derive_pi` over the rule's footprints on the family and on each withheld
+pair whose change its footprint covers, metered by a stroke; a withheld
+pair whose change the footprint misses is named `Unbound` with the sites
+it missed and judges nothing, and where no withheld pair binds, the rule
+stays ⊤. The rule docketed carries the common set bound
+(`Element::with_anchor`, no longer test-only), its address unmoved. The
+element record writes a superposition of two or more terms under anchor
+tag `2` with its count; one term keeps tag `1`. Tests:
+`server::tests::registry::withheld_pairs_are_fixed_by_coordinate_at_registration`,
+`transducer::family::tests::footprint` (`footprint_is_the_sites_the_words_speech_changes`,
+`footprint_misses_a_change_the_word_does_not_speak`),
+`court::verdict::tests::selection` (`bind_pi_binds_common_set_over_deduced_footprints`,
+`word_missing_a_withheld_change_is_not_bound_on_that_pair`),
+`server::cognition::tests::solve::judged_rule_carries_its_anchor_on_registered_withheld_pairs`,
+`transducer::element::tests::record::record_carries_superposed_anchor_whole`.
 
 **Site.** `src/transducer/anchor/derive.rs:182` (in
 `derive_carrying_all`):
