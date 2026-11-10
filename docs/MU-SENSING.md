@@ -538,6 +538,27 @@ bubble (a thought bubble), renamed 2026-11-02.
   (§3.1). The phases' common scale is a gauge, so there is no unit norm
   and no sum of squares (law 11). What the sample holds curves the field
   into wells around its attractors.
+- **Depth perception: observation rank vs. manifold thinking.** Depth
+  perception is the invariant property of the mind (client and server)
+  that perceives an intake as an observation of $x$ dimensions (any rank
+  $n$ data source, ARC-AGI-2 sample, raster, or world state), while
+  thinking across curved, fibred manifolds ($S^1$ period windings,
+  interval charts with boundary, $Cl(n+1, 1)$, covering atlases, and
+  holonomy loops) without dimensional collapse, flat-frame compaction, or
+  loss of winding classes:
+  - **Observation.** The sensor observes at native rank $n$ without
+    flattening or padding. The sample's extents form its enclosure
+    (`Enclosure`), whose open-dimensional measure is $\prod_{i=1}^n e_i$.
+  - **Thinking.** The mind lifts the observation into an open-dimensional
+    manifold (`SampleManifold`, `Lifted`). Periodic phases lift to circles
+    $S^1$ keeping their winding class in $\mathbb{Z}$; non-periodic phases
+    lift to interval charts with held boundary; nested axes form
+    fibrations.
+  - **The anti-flattening guard.** Models frequently suffer from 2D
+    compaction, reflexively reducing open-dimensional manifolds to flat
+    planar "frames". In this system, dimensions never collapse: a sample
+    is a manifold, its extent is its enclosure, and work is measured
+    against the enclosure's open-dimensional measure, never a 2D frame.
 - **Nesting is a fibration.** The field is read as base and fibre:
   "base the class, fibre the gauge" (MU-RECURSION 25.12). An axis taken
   apart (§3.6) adds a level, a field within the field, which gives a
