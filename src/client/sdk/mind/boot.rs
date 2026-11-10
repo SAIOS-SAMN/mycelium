@@ -94,6 +94,7 @@ impl Mind {
             comprehending: crate::network::nerve::Keyed::new(),
             comprehended_after: Vec::new(),
             genome_persisted: None,
+            amendments: Vec::new(),
             sealed: crate::network::nerve::Keyed::new(),
             contractions: crate::network::nerve::Keyed::new(),
             contracted: Vec::new(),
