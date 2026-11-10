@@ -16,7 +16,7 @@
   `SymbolRefusal::Width`, never read as an empty set, and the erasure act
   is then unstated.
 - Claims `section_site_is_the_sample_coordinate_restricted_by_the_perspective`
-  and `test_input_of_another_width_refuses_the_family_set_by_name`. No
+  and `symbol_set_refuses_differing_test_width`. No
   wire, task, word or chart address changes; `scripts/check` is green,
   2090 tests passing. Open: the section's planar tuples (`SectionLink`,
   the painted triple, the chart's coordinate pairs).

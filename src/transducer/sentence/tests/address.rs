@@ -410,19 +410,11 @@ fn from_element_form_round_trips_nerve() {
 /// 1.5 AND 1.7 — A CITATION IS THE CITED FORM'S ADDRESS, WRITTEN WHOLE,
 /// AND WHAT IS CHECKED IS THAT IT RE-DERIVES.
 ///
-/// This test asserted, for four commits, that the tape held a cited
-/// address exactly ONCE — a reading of where bytes sit, defending a
-/// tape-local table of addresses named by ordinal. 1.5 is titled
-/// "byte-exactness is not identity" and says what is checked "is never
-/// byte exactness; it is the mathematics adding up"; rule 15 says a
-/// position is not a coordinate. The table and the byte count are gone and
-/// the version is spent.
-///
-/// What remains is the property that was always the right one: identity is
-/// not shortened, so the citing form's KEY carries the cited form's whole
-/// address, and a NESTED citation — a form gluing a form that glues a form
-/// — decodes to the address it cited and re-mints to the same address,
-/// which is A21 §4's decode property at the one kind the engine is made of.
+/// Identity is not shortened, so the citing form's KEY carries the cited
+/// form's whole address, and a NESTED citation — a form gluing a form that
+/// glues a form — decodes to the address it cited and re-mints to the same
+/// address, which is A21 §4's decode property at the one kind the engine is
+/// made of.
 ///
 /// The repetition a tape can carry — one word gluing one form at many
 /// vertices — is real and is not the encoder's to shorten: 53.4's

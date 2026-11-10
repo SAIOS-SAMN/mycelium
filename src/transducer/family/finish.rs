@@ -73,7 +73,8 @@ pub fn extraction_spend(family: &[(SectionSample, SectionSample)], frames: &supe
             n = next;
         }
     }
-    for (ins, outs) in frames {
+    for pair in frames {
+        let (ins, outs) = (&pair.input, &pair.output);
         // Euler's bound on the contacts of the frame pair's bodies (above).
         let bodies = ins.len() + outs.len();
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the contacts of resident frames times a fixed candidate bound cannot pass a 64-bit usize")]

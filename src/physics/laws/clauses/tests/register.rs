@@ -37,11 +37,12 @@ fn register_equals_forms_law_versions() {
         [
             ("FORMS-PASSAGE".to_string(), forms::passage::LAW_VERSION),
             ("FORMS-COORDINATE".to_string(), forms::coordinate::LAW_VERSION),
-            ("FORMS-COUPLING".to_string(), forms::coupling::LAW_VERSION)
+            ("FORMS-COUPLING".to_string(), forms::coupling::LAW_VERSION),
+            ("FORMS-TURNING".to_string(), forms::turning::LAW_VERSION)
         ]
     );
     let standings: Vec<Standing> = held.iter().map(|r| r.clause.standing).collect();
-    assert_eq!(standings, [Standing::Network, Standing::Kernel, Standing::Kernel]);
+    assert_eq!(standings, [Standing::Network, Standing::Kernel, Standing::Kernel, Standing::Kernel]);
     for r in &held {
         assert!(!r.clause.fixtures.is_empty(), "{}", r.clause.id.law);
         assert_eq!(r.reached.len(), r.clause.fixtures.len(), "{}", r.clause.id.law);

@@ -9,7 +9,7 @@
   `TaskRegistry::post` records each withheld output's place
   `[split, pair, member]` (`withheld_at`), and `withheld` serves exactly the
   pairs at those coordinates. The court binds them with the family at boot
-  (`Court::bind_task_withheld`), and the door no longer hands withheld
+  (`Court::bind_task_withheld`), and the server's control path no longer hands withheld
   pairs to a judgement: `Court::judge_task_solve_on_stroke(rule, task)`
   reads the pairs bound for the task.
 - A word's footprint is deduced, never declared:
@@ -24,7 +24,7 @@
 - `Element::with_anchor` is no longer test-only and binds the whole set;
   `Element::anchor` answers the terms. Where a solve is `Solved`, the rule
   docketed and paid carries the common set bound; a refused binding leaves
-  it ⊤ and the door logs why.
+  it ⊤ and the control path logs why.
 - Claims: `withheld_pairs_are_fixed_by_coordinate_at_registration`,
   `footprint_is_the_sites_the_words_speech_changes`,
   `footprint_misses_a_change_the_word_does_not_speak`,

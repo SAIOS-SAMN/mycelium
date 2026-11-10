@@ -138,15 +138,20 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         };
         files.sort();
         let mut tasked = 0usize;
+        let mut unmeasured = 0usize;
         for f in &files {
             let Ok(bytes) = std::fs::read(f) else { continue };
-            // Track 26 S4c: a posted task of any rank is posted whole; the
-            // planar cover is read on the alphabet's section where the
-            // samples are on it.
+            // Track 26 S4c: a posted task of any rank is posted whole. Since
+            // S4 its cover is read on the samples at their own rank; a pair
+            // whose record does not read is held as residue, counted here
+            // and said below, never aligned at a corner (ruled on #32).
             let Ok(task) = mycelium::anastome::dialogue::decode_posted_samples(&bytes) else { continue };
-            if let Some(fam) = task.section().ok().and_then(|t| mycelium::transducer::family::magnitude::family_cover(&t.train)) {
-                cover_measured = true;
-                mycelium::transducer::family::magnitude::cover_join(&mut cover, &fam);
+            if let Some(fam) = mycelium::transducer::family::magnitude::family_cover(&task.train) {
+                unmeasured += fam.residue().len();
+                if let Some(bond) = fam.bond() {
+                    cover_measured = true;
+                    mycelium::transducer::family::magnitude::cover_join(&mut cover, &bond);
+                }
             }
             let Ok(mut reg) = registry.lock() else { continue };
             reg.post(task);
@@ -169,7 +174,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
             }
         };
         eprintln!(
-            "[{tag}] corpus registered: {tasked} tasks from {} ({unsolved} unsolved, {restored} settled states restored; intake continues under stroke budget)",
+            "[{tag}] corpus registered: {tasked} tasks from {} ({unsolved} unsolved, {restored} settled states restored, {unmeasured} train pairs held as residue of the bond; intake continues under stroke budget)",
             corpus_dir.display(),
         );
     }

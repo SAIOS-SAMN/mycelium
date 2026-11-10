@@ -169,7 +169,7 @@ impl Mind {
                     }
                     let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
                     let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.byte(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
-                    StrokeOutcome::add(&mut outcome.uttered, &mag);
+                    StrokeOutcome::add(&mut outcome.asserted, &mag);
                     self.ask(
                         move |s| s.probe(&target, std::slice::from_ref(&cite)),
                         move |entity, reading| {
@@ -210,7 +210,7 @@ impl Mind {
         if !self.couples(&envelope.id, &offer.charts) {
             return;
         }
-        let mag = super::family::family_magnitude(&envelope.train);
+        let mag = super::family::family_magnitude(&envelope.train).lanes();
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             return;
         }

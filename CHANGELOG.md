@@ -219,7 +219,7 @@ These open v0.4.0.
   transducer's chain carriers move to rank `n` (S4).
 - Claims: `task_round_trips_samples_of_rank_n`,
   `extent_past_its_field_is_refused_never_widened`,
-  `symbol_bytes_overflow_is_refused_by_name`,
+  `symbol_bytes_refuses_overflow`,
   `task_identity_writes_rank_and_width`,
   `speech_states_its_ground_and_court_reconstructs_under_it`,
   `family_using_symbol_ten_reads_its_colour_word`.

@@ -187,7 +187,7 @@ let mut b = entity.stroke();
 entity.withhold_form(rule.form.clone(), &family, &rems, mag, &mut b);
 assert!(entity.dialect_len() >= 1, "the withheld form stands, dialect {}", entity.dialect_len());
 assert!(entity.ideas_len() >= 1, "and is held as an idea");
-assert_eq!(entity.uttered_n(), 0, "nothing is asserted for a remainder, taught_up {}", entity.uttered_n());
+assert_eq!(entity.asserted_n(), 0, "nothing is asserted for a remainder, taught_up {}", entity.asserted_n());
 for r in rems.iter().filter(|r| !r.is_empty()) {
     let chain = chain_word(r);
     assert!(entity.language.working_word(chain.address().as_bytes()).is_none(), "a remainder never stands as a word");

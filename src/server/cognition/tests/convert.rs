@@ -97,8 +97,7 @@ fn designate_reserve_redesignates_at_reserve_fold() {
     assert!(matches!(k.designate_reserve(&succession), Founded::Reserved { now: false, .. }), "pending, signed by the sitting reserve");
     assert_eq!(k.reserve_of(&verifying(&domain())), Some(verifying(&x())), "never mid-era");
     assert_eq!(k.reserve_reading(&verifying(&domain())).pending, Some(verifying(&x2())), "the pending redesignation, read");
-    let mut booted = Court::new();
-    assert!(booted.restore(&k.snapshot()), "restores");
+    let mut booted = Court::new().reconstruct(&k.snapshot()).expect("reconstructs").into_object();
     super::boundary::calibrate(&mut booted);
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x())));
     assert!(matches!(booted.hear_uplink(&fold(1, Vec::new(), Vec::new()).sign(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");

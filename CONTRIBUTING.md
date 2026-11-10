@@ -57,7 +57,7 @@ Part I.
    under `changes/` ([AGENTS › Definition of done](AGENTS.md#definition-of-done)),
    and the template filled in. The
    [Definition of done](AGENTS.md#definition-of-done) holds; CI's
-   `definition of done / clippy and tests` runs it on every pull request.
+   `Conformance Verification / clippy and tests` runs it on every pull request.
 4. **Review and merge.** A review reads the code against the
    specification and cites the section it holds the code to; a maintainer
    merges once conversations are resolved. History on `main` is never

@@ -43,7 +43,7 @@ impl Court {
     /// THE SOLVE ON A REGISTERED TASK, ON THE ACT'S ONE STROKE (#158): the
     /// rule reconstructed on the withheld pairs this court bound for `task`
     /// at registration ([`Court::judge_solve_on_stroke`]), never on pairs the
-    /// asker or the door hands in. Where it is `Solved`, π* is bound at the
+    /// asker or the act hands in. Where it is `Solved`, π* is bound at the
     /// same judgement (`bind_pi`): the rule's footprints on the task's
     /// family and on the withheld pairs, the common set judged over the
     /// pairs whose change the rule's footprint covers, metered on a stroke

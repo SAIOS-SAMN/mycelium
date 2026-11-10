@@ -51,6 +51,7 @@ pub use court::fold::Proposal;
 pub use court::syllabus::{Asker, PageEnd, ServedPage};
 pub use court::selection::TaskJudgement;
 pub use court::task::{stated_ground, stated_ground_of, SolveVerdict, StatedGroundRefusal};
+pub use persistence::RestoreRefusal;
 pub use state::Court;
 pub use published::{PublishCost, Published};
 pub use market::prepare_intake;

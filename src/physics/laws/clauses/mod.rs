@@ -12,6 +12,7 @@ pub mod fixtures;
 pub mod history;
 pub mod register;
 pub mod signing;
+pub mod turning;
 pub mod writing;
 
 pub use alignment::{read_alignment, Alignment, AlignmentRefusal, ClauseAlignment, ClauseReading, KernelAlignment, SigningEvent};
@@ -19,6 +20,7 @@ pub use coupling::{CouplingFixture, CouplingObject, Term};
 pub use history::{history, HistoricalSigning, Mechanism};
 pub use register::{reconstruct, register, ConcordanceClause, ConcordanceClauseId, Fixture, Object, RegisterRefusal, Registered, Standing, CLAUSES};
 pub use signing::{admit, admit_bytes, judge, Admitted, Assent, Choice, SignedClause, Signing, SigningRefusal, Verdict};
+pub use turning::TurningFixture;
 
 #[cfg(test)]
 mod tests;

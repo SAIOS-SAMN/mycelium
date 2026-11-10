@@ -2314,7 +2314,33 @@ withheld footprint stands, none is chosen by key. `truncate(32)` and both
 (`derive_pi_keeps_every_term_reconstructing_withheld`,
 `derive_pi_refuses_spent_token_whole`). The text below is the derivation as specified.
 
-**In production** (ruled 2026-11-06, #158). The withheld pairs are fixed by
+**Wiring (ruled 2026-11-06, #158; the follow-up ruled under the
+operator's delegation, [78.180](proposals/78.180-delegated-rulings-2026-11-06.md)
+ruling 4).** What binds `derive_pi` in production:
+- **The act.** π* is bound at a rule's judgement against a family (A9),
+  with no new act. It is derived on every judgement, metered, and never
+  held. It is not served as a reply of its own: the judgement's ruling
+  cites it.
+- **The evidence** comes from the corpus the court registered. A mind's
+  posted evidence never supplies a withheld pair.
+- **The withheld pairs** are the pairs of the registered task that the
+  court fixed as withheld when the task was posted. They are recorded by
+  their coordinates at registration and never chosen at the judgement, so
+  the court cannot select them to suit a word. A proposer never sees them.
+- **A word's footprint** is the support of the word's description: the
+  sites where the word's chart carries a change between input and output.
+  It is deduced from the word itself and never declared. A word whose
+  footprint misses a withheld pair's change is not bound on that pair.
+- **The anchor.** A word's anchor is the family it was derived from, which
+  is its citation. `Element::with_anchor` is wired out of `cfg(test)` so
+  that every judged word carries its anchor. `derive_pi` then binds the
+  common set at the A9 judgement.
+
+Derived from "description is language, solution is inverse" (the
+footprint is read from the description) and "clients think, hyphas
+verify" (the withheld pairs are the court's own).
+
+**Built** (#158). The withheld pairs are fixed by
 coordinate when a task is registered (`TaskRegistry::post` records each
 withheld output's place `[split, pair, member]`; `withheld` serves exactly
 those pairs), and the court binds them with the task's family at boot
