@@ -131,7 +131,7 @@ fn speak_refuses_sealed_tape_before_wire() {
     entity.speak(std::slice::from_ref(&e), move |_, codes| *into.borrow_mut() = Some(codes));
     let codes = heard.borrow_mut().take().expect("heard at once: no frame went on the wire").expect("no frame is built for a sealed tape");
     assert_eq!(codes, vec![SPEECH_REFUSED], "refused by the mind itself");
-    assert!(!entity.uttered(e.address().as_bytes()), "never filed as asserted");
+    assert!(!entity.asserted(e.address().as_bytes()), "never filed as asserted");
     assert_eq!(entity.dialect_len(), 0, "a sealed sentence does not stand");
 }
 

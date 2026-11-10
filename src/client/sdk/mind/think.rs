@@ -113,7 +113,7 @@ impl Mind {
         // transcribed and stood now, and said at the mind's return.
         // MU-CLIENT §5.4 (E1) — each under the scene that taught it.
         for word in taught {
-            let _ = self.speak_word_on(&word, train, family);
+            let _ = self.assert_word_on(&word, train, family);
         }
         if let Some(sentence) = open {
             self.speak_with(std::slice::from_ref(&sentence), train, family, |_, _| {});
@@ -981,7 +981,7 @@ impl Mind {
         for e in spoken {
             // A REWRITE THE PIVOT MINTED (Torse, Condense; MU-CLIENT §5.4, S3)
             // is a proposal to the court, spoken as `Retire` is — never a
-            // word for `speak_word`, which says nothing that is not a
+            // word for `assert_word`, which says nothing that is not a
             // connection or an opened axis and so dropped every one of them
             // unheard.
             if e.is_rewrite() {
@@ -991,7 +991,7 @@ impl Mind {
                 }
                 continue;
             }
-            if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
+            if let Ok(Assertion::Admitted) = self.assert_word(&e) { n += 1 }
         }
         n
     }
@@ -1073,7 +1073,7 @@ impl Mind {
         // with it: 24.3's "nothing is asserted twice" needs the receipt only
         // while the word stands.
         for a in &dropped {
-            self.forget_utterance(a);
+            self.forget_assertion(a);
         }
         // DOOR 1 (25): the addresses the dialect just dropped have lapsed
         // from the working atlas, so the wells standing at them and the

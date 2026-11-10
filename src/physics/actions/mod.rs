@@ -142,18 +142,17 @@ pub enum Action {
     // Sealed by nothing since the voices' chains retired (78.49).
     Section,
     Stood,
-    Uttered,
     Learned,
 }
 
-/// Every action, in coordinate order. 0x0A and 0x0F stand unassigned (0x0F
-/// was the retired genesis page, 2026-09-29) and RESERVED (78.126): the wire's
-/// bytes below the court's range are spent, so the next act is a sub-kind
-/// under an existing one, never a new byte. 78.145's seat relay is one
-/// exception, at 0x53 past the court's acts, by the wire the kernels agreed;
-/// 78.152b's keeper tick the other, at 0x23 among the courts' exchanges, by
-/// ruling (2026-10-09).
-pub const ACTIONS: [Action; 57] = [
+/// Every action, in coordinate order. 0x0A, 0x0F and 0x4B stand unassigned
+/// (0x0F was the retired genesis page; 0x4B retired with row L19,
+/// MU-RECURSION 1.9) and RESERVED (78.126): the wire's bytes below the court's
+/// range are spent, so the next act is a sub-kind under an existing one,
+/// never a new byte. 78.145's seat relay is one exception, at 0x53 past the
+/// court's acts, by the wire the kernels agreed; 78.152b's keeper tick the
+/// other, at 0x23 among the courts' exchanges, by ruling (2026-10-09).
+pub const ACTIONS: [Action; 56] = [
     Action::Percept,
     Action::Gossip,
     Action::Demand,
@@ -202,7 +201,6 @@ pub const ACTIONS: [Action; 57] = [
     Action::Lapse,
     Action::Adopted,
     Action::Stood,
-    Action::Uttered,
     Action::Learned,
     Action::Settled,
     Action::Refused,
@@ -269,7 +267,6 @@ impl Action {
             Action::Lapse => 0x48,
             Action::Adopted => 0x49,
             Action::Stood => 0x4A,
-            Action::Uttered => 0x4B,
             Action::Learned => 0x4C,
             Action::Settled => 0x4D,
             Action::Refused => 0x4E,
@@ -298,7 +295,6 @@ impl Action {
             | Action::Docket
             | Action::Section
             | Action::Stood
-            | Action::Uttered
             | Action::Learned
             // 2026-10-11 — a mind proposes an optimization as a Retire
             // rewrite it speaks (MU-CLIENT §5.4, S3); the two bids retire.
@@ -454,7 +450,6 @@ impl Action {
             Action::Reconnect => b"reconnect",
             Action::Section => b"section",
             Action::Stood => b"stood",
-            Action::Uttered => b"uttered",
             Action::Learned => b"learned",
             Action::Seat => b"seat",
         }

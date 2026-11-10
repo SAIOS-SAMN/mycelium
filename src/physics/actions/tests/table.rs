@@ -13,16 +13,16 @@ fn action_of_round_trips_each_byte() {
             assert_ne!(a.byte(), b.byte(), "one coordinate each");
             assert_ne!(a, b, "the table names each action once");
         }
-        assert_eq!(a.on_wire(), a.kind() != Kind::Court && !matches!(a, Action::Section | Action::Stood | Action::Uttered | Action::Learned));
+        assert_eq!(a.on_wire(), a.kind() != Kind::Court && !matches!(a, Action::Section | Action::Stood | Action::Learned));
     }
     // 0x3F is the challenge's (78.125), 0x07 the handoff's (78.126), 0x53
-    // the seat relay's (78.145); 0x0A and 0x0F are reserved.
+    // the seat relay's (78.145); 0x0A, 0x0F and 0x4B are reserved.
     assert_eq!(Action::of_wire(0x53), Some(Action::Seat), "the relay is asked on the wire");
     assert_eq!(Action::of_wire(0x23), Some(Action::Tick), "a keeper's ring is pushed on the wire (78.152b)");
     assert!(!Action::Tick.sealed(), "and seals nothing");
     // A claim of factorisation is a claim kind under the solve (78.126;
     // track 26 S4c), never a byte of its own.
-    for unassigned in [0x0Au8, 0x0F, 0x18, 0x54, 0xFF] {
+    for unassigned in [0x0Au8, 0x0F, 0x18, 0x4B, 0x54, 0xFF] {
         assert_eq!(Action::of(unassigned), None);
     }
     assert_eq!(Action::of_wire(Action::Orbit.byte()), None, "a court act is never asked for");
