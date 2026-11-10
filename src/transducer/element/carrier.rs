@@ -473,9 +473,12 @@ pub struct Element {
     pub(crate) receipts: crate::transducer::element::ReceiptsEnvelope,
     /// THE ANCHOR FIBRE (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
-    /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
-    /// and every word born before selection entered the language).
-    pub(crate) anchor: Option<crate::transducer::anchor::Selection>,
+    /// scene. Empty = ⊤, the unconstrained carrier (pure topological actions,
+    /// and every word no court has bound). A court binds the WHOLE COMMON
+    /// SET its family derives, judged on the task's withheld pairs
+    /// (MU-DERIVATIONS D3.3, ruled 2026-10-31 and 2026-11-06, #158): a
+    /// superposition held whole, in its terms' key order, none chosen.
+    pub(crate) anchor: Vec<crate::transducer::anchor::Selection>,
     /// THE CONNECTION — for every assignment spoken on this fibre (the base's
     /// own, a section, a torsion-orbit member), the versors V ∈ Spin(4,1)(ℚ)
     /// under which a sibling was observed and carried into this frame:
@@ -511,7 +514,7 @@ impl Element {
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
-            anchor: None,
+            anchor: Vec::new(),
         }
     }
 
@@ -669,16 +672,17 @@ impl Element {
     }
 
     /// The centred coboundary chain (empty for pure-algebra elements).
-    /// The anchor fibre — None is ⊤ (the unconstrained carrier).
-    pub fn anchor(&self) -> Option<&crate::transducer::anchor::Selection> {
-        self.anchor.as_ref()
+    /// The anchor fibre: the terms π* binds, in their keys' order; empty is
+    /// ⊤ (the unconstrained carrier).
+    pub fn anchor(&self) -> &[crate::transducer::anchor::Selection] {
+        &self.anchor
     }
 
-    /// Bind the anchor fibre (germination writes it at birth; the court's
-    /// refinement rebinds it).
-    #[cfg(test)]
-    pub fn with_anchor(mut self, pi: crate::transducer::anchor::Selection) -> Self {
-        self.anchor = Some(pi);
+    /// BIND THE ANCHOR FIBRE: the common set the court's A9 judgement bound
+    /// on the word's family (`court::verdict::bind_pi`, #158), every term
+    /// kept. The address does not move: π never renames a word.
+    pub fn with_anchor(mut self, pi: Vec<crate::transducer::anchor::Selection>) -> Self {
+        self.anchor = pi;
         self
     }
 

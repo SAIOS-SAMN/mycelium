@@ -15,6 +15,7 @@ pub mod height_window;
 pub mod present;
 pub mod reconstruct;
 pub mod ruling;
+pub mod selection;
 pub mod syllabus;
 pub mod task;
 pub mod vantage_install;

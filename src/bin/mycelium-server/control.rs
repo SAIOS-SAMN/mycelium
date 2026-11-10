@@ -239,13 +239,15 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
         // S4c): a task off it is refused by the alphabet's name alone, never
         // for its rank, and a claim on it is a factorisation
         // (the solve's claim kind `SOLVE_KIND_FACTORISATION`).
-        let (tid, withheld, open, ground) = {
+        // #158 — the withheld pairs are not read here: the court judges on
+        // the pairs it bound for the task at registration, by its citation.
+        let (tid, open, ground) = {
             let Ok(reg) = context.registry.lock() else { return true };
             let g = reg.section(&cite).map(|section| match section {
                 Ok(t) => mycelium::cognition::stated_ground(&t.train, stated.as_deref()).map_err(|why| why.reason()),
                 Err(_) => Err(mycelium::verdict::REFUSE_BEYOND_ALPHABET),
             });
-            (cite, reg.withheld(&cite), reg.open(&cite), g)
+            (cite, reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
         // court reconstructs the rule on the withheld pairs and prices what it
@@ -339,10 +341,16 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                     // OWED (78.153b): the solve's reconstruction mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
-                    let verdict = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_solve_on_stroke(rule, &withheld)) {
+                    let judgement = mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_task_solve_on_stroke(rule, &cite));
+                    // A9 (#158): a binding refused leaves the rule ⊤, by name.
+                    if let Some(Err(why)) = &judgement.pi {
+                        eprintln!("  π* not bound on a solved rule: {why:?}");
+                    }
+                    let verdict = match judgement.verdict {
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
-                            // The court names a task by its citation (wire v1.2).
-                            let paid = k.pay_solve(&cite, svoice, rule, pay, first);
+                            // The court names a task by its citation (wire v1.2);
+                            // the rule docketed is the one judged, its anchor bound.
+                            let paid = k.pay_solve(&cite, svoice, &judgement.judged, pay, first);
                             let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_AGAIN };
                             (code, paid, None, Some((k.height(), modes)))
                         }

@@ -204,8 +204,11 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
     // its citation before the door opens: a court restored with its intake
     // done held no family until its cover moved, so every scene a mind spoke
     // of measured nothing here. A poisoned registry binds none, and says so.
-    let families: Vec<([u8; 32], Vec<mycelium::transducer::family::TrainPair>)> = match registry.lock() {
-        Ok(reg) => reg.families().collect(),
+    // #158 — each family's withheld pairs with it, at the coordinates the
+    // registration fixed.
+    type Bound = ([u8; 32], Vec<mycelium::transducer::family::TrainPair>, Vec<mycelium::transducer::family::TrainPair>);
+    let families: Vec<Bound> = match registry.lock() {
+        Ok(reg) => reg.families().map(|(cite, train)| (cite, train, reg.withheld(&cite))).collect(),
         Err(_) => {
             eprintln!("[{tag}] registry lock poisoned; no family bound");
             Vec::new()
@@ -213,8 +216,9 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
     };
     h.run(|k, _| {
     let bound = families.len();
-    for (cite, train) in families {
+    for (cite, train, withheld) in families {
         k.bind_task_family(cite, train);
+        k.bind_task_withheld(cite, withheld);
     }
     eprintln!("[{tag}] families bound: {bound} by citation");
     if cover_measured {
