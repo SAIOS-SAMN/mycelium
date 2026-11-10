@@ -121,4 +121,21 @@ impl Mind {
         let Some((family, _)) = self.scenes.evidence(&ev.scene) else { return Vec::new() };
         heard_bodies(&word, &family)
     }
+
+    /// 78.177 §4a(4) — THE CLOSER ASSERTS THE CLOSED TWIST UNDER THE FAMILY:
+    /// where a held closed form reproduces a listed demand's bodies, the
+    /// closer asserts the closed twist under the demand's family (E1);
+    /// the asker, the listing's speaker, is paid nothing.
+    pub(crate) fn assert_closed_twist(&mut self, word: &Element, links: &[SectionLink]) -> bool {
+        let Some((_, before, after)) = crate::transducer::family::scene_at_of_chain(links) else {
+            return false;
+        };
+        let family = vec![(before, after)];
+        let scene = match self.scenes.scene_of_family(&family) {
+            Some(s) => s,
+            None => Vec::new(),
+        };
+        let _ = self.assert_word_on(word, &family, &scene);
+        true
+    }
 }
