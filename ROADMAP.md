@@ -1541,13 +1541,12 @@ for each phase:
    (MU-STANDARDS 3.1). Include the `compile_fail` doc tests that prove a
    wrong structure does not compile.
 4. Build the phase, and hold it to
-   [AGENTS › Definition of done](AGENTS.md#definition-of-done) before the
-   pull request.
+   [AGENTS › Checks](AGENTS.md#checks) before the pull request.
 5. Register each guard the phase builds in `gate/src/drift.rs`
    (regression, ruling, guarding type, claim); the gate refuses an entry
    whose type or claim is missing.
-6. Open the pull request from the template; CI's `check` runs the
-   definition of done on it. A
+6. Open the pull request from the template; CI's `clippy and tests`
+   runs the two commands on it. A
    phase that changes the wire or the ledger layout says so under
    *Network contract*.
 
@@ -1717,7 +1716,7 @@ hypha holds tasks as families of samples and knows no source.
 
 **How to build a phase:** as in track 25 (a branch; the specification read
 whole; the claims first; the
-[Definition of done](AGENTS.md#definition-of-done); one commit; a pull
+[Checks](AGENTS.md#checks); one commit; a pull
 request that names #32).
 
 Each phase is one commit:
