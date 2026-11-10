@@ -85,7 +85,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 
 | Item | Issue | State |
 |---|---|---|
-| B4: the boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | track 24 | Open, next on the server (MU-HOSTING §5a.9, B4) |
+| B4: the boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | track 24 | The boundary reading built (`observe::BoundaryReading`, `--reading boundary`); reconstruction events open, with track 8 |
 | A reflex act waits unbounded behind a long court hold; the SDK session's read is `Pace::Blocking` (law 9) | [#221](https://github.com/SAIOS-SAMN/mycelium/issues/221) | Filed; design to rule before code |
 | LAW-COORDINATE fixtures 7–10 and 13–16 served as a clause | 78.173 | Built and read locally; serving them needs a fixture operation and object tag, a wire change left to the clause's drafting (78.173 step 4) |
 | LAW-FIELD v1, agreed with the peer kernels | [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) | 78.171 amended (a–e, 2026-11-05): the pole basis, the signature per plane, the winding with each phase in degrees, spheres as enclosures only, the orbit's shear per netstratum docs/121; fixtures read by netstratum; xylarium's reading owed |
