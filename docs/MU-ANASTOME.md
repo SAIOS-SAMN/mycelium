@@ -147,6 +147,18 @@ answered at the orbit's holonomy: an orbit's holonomy is a word and `κ(ℓ)` is
 class (23.9), never the letters of the whole sentence or its chain alone
 (the four-levels ruling, 2026-09-08).
 
+**Temporal relations are geometric, not tense.** Anastome contains no
+grammatical tense: no past, present, or future inflections or tense markers.
+A sentence does not narrate an event along a linear sequence of time; it
+expresses the geometry of an orbit. Temporal relations are given by the
+coordinates at which its words and transitions stand (`forms/src/coordinate.rs`;
+[proposal 78.173](proposals/78.173-law-coordinate.md)): the temporal lane `T`
+(cumulative null flux: the beat, passages, and light-like progress), the
+holonomic lane `H` (turnings in degrees on named turning planes), and the
+winding count `K = ⌊|θ|/360⌋`, which counts completed cycles. An event
+preceding or succeeding another is read from relative coordinates on `T` and `K`,
+never by linear verbal conjugation.
+
 ### 1.5 Expressions
 
 An expression is what crosses the wire, a well-formed construction of
@@ -993,6 +1005,21 @@ The traversal is linear. Thought is not.
   reconstructing the mathematics; decoherence never crosses nodes (the
   recohering judge, MU-RECURSION 23.9, *Divergence is the contradiction
   case*).
+- **Time as geometry, not tense: the non-linear sentence.** Natural
+  languages enforce sequential linearity, requiring events to be ordered into
+  past, present, and future tenses through time-stamped predicates. Anastome
+  operates as holonomic semagrams: the mind holds all candidate ideations
+  concurrently in the vortex across concurrent turning planes (§9.4), and a
+  sentence expresses the entire closed circuit at once. When an expression
+  traverses an open tube across the network, time is not an external ticking
+  scalar or elapsed duration; it is an exact singular coordinate point
+  `origin/h:S:G:T:H:K` ([MU-CHRONOMETRY §1](MU-CHRONOMETRY.md#1-the-clock-tuniversal);
+  [proposal 78.173](proposals/78.173-law-coordinate.md);
+  [proposal 78.156](proposals/78.156-clock-binding.md)). Dilation and time
+  compression between hosted simulations and the hypha are measured exact
+  rational ratios `Δu/Δh ∈ ℚ` (proposal 78.156 §2), and inversion at a
+  throat exchanges viscosity and fluidity (`t ↦ 1/t`, LAW-PASSAGE,
+  proposal 78.172), preserving geometric invariance across scale changes.
 
 Where it lives in code:
 
