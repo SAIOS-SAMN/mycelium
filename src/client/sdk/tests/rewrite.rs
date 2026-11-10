@@ -71,3 +71,74 @@ fn propose_rewrites_asserts_retirement_and_keeps_the_word() {
     assert!(mind.language.holds(q180.address().as_bytes()), "the mind still holds the 180° turn");
     assert!(mind.propose_rewrites(&q90).is_empty(), "said once");
 }
+
+/// RULING 5 (MU-CLIENT §5.4, #146) — THE MIND PROPOSES REFINE FROM OPEN AXIS.
+/// Refines a chart within a dimension that already stands and reconstructs blind.
+#[test]
+fn refine_of_proposes_refine_and_reconstructs() {
+    use crate::transducer::address::Address;
+    use crate::transducer::stalk::{ChartAxis, Invariant};
+    let mind = Mind::open("127.0.0.1:1", Voice::named("refiner"));
+    let chart = Invariant(vec![ChartAxis::Count(1)]);
+    let before = Address::from_bytes([1u8]);
+    let after = Address::from_bytes([2u8]);
+    let rw = mind.refine_of(&chart, 2, &before, &after).expect("a refine proposal");
+    assert!(crate::transducer::rewrite::reconstruct(&rw).is_none(), "reconstructs green");
+    let r = Rewrite::from_element(&rw).expect("the tape reads");
+    assert_eq!(r.kind, RewriteKind::Refine);
+    assert_eq!(r.claimed[crate::transducer::rewrite::LANE_SHELL], 1);
+}
+
+/// RULING 5 (MU-CLIENT §5.4, #146) — THE MIND PROPOSES AXIS-OPEN FROM PERSISTENT RESIDUE.
+/// Extends a new dimension of perception with the orbit's holonomy rotor.
+#[test]
+fn axis_open_of_proposes_new_dimension_and_reconstructs() {
+    use crate::transducer::address::Address;
+    use crate::transducer::alphabet::LetterId;
+    let mind = Mind::open("127.0.0.1:1", Voice::named("axis_opener"));
+    let q = LetterId::turn_90((0, 1)).expect("sensor plane");
+    let rotor = Word::from_letters(&[(q, false)]).rotor();
+    let before = Address::from_bytes([3u8]);
+    let after = Address::from_bytes([4u8]);
+    let rw = mind.axis_open_of(&rotor, 4, &before, &after).expect("an axis open proposal");
+    assert!(crate::transducer::rewrite::reconstruct(&rw).is_none(), "reconstructs green");
+    let r = Rewrite::from_element(&rw).expect("the tape reads");
+    assert_eq!(r.kind, RewriteKind::AxisOpen);
+    assert_eq!(r.claimed[crate::transducer::rewrite::LANE_SHELL], 1);
+}
+
+/// RULING 5 (MU-CLIENT §5.4, #146) — THE MIND PROPOSES TRANSLATION FROM PLACEMENT.
+/// Connects two distinct charts across a chord overlap.
+#[test]
+fn translation_of_proposes_translation_and_reconstructs() {
+    use crate::transducer::address::Address;
+    let mind = Mind::open("127.0.0.1:1", Voice::named("translator"));
+    let a = Address::from_bytes([5u8]);
+    let b = Address::from_bytes([6u8]);
+    let before = Address::from_bytes([7u8]);
+    let after = Address::from_bytes([8u8]);
+    let gauge = crate::transducer::element::identity_versor();
+    let rw = mind.translation_of(a.clone(), b.clone(), gauge, &before, &after).expect("a translation proposal");
+    assert!(crate::transducer::rewrite::reconstruct(&rw).is_none(), "reconstructs green");
+    let r = Rewrite::from_element(&rw).expect("the tape reads");
+    assert_eq!(r.kind, RewriteKind::Translation);
+    assert_eq!(r.claimed[crate::transducer::rewrite::LANE_GAUGE], 2);
+}
+
+/// RULING 5 (MU-CLIENT §5.4, #146) — THE MIND PROPOSES REANCHOR FROM RE-GAUGING.
+/// Moves anchor coordinates on S while leaving class invariant.
+#[test]
+fn reanchor_of_proposes_reanchor_and_reconstructs() {
+    use crate::transducer::address::Address;
+    use crate::transducer::alphabet::LetterId;
+    let mind = Mind::open("127.0.0.1:1", Voice::named("reanchorer"));
+    let q = LetterId::turn_90((0, 1)).expect("sensor plane");
+    let w = Word::from_letters(&[(q, false)]);
+    let before = Address::from_bytes([9u8]);
+    let after = Address::from_bytes([10u8]);
+    let rw = mind.reanchor_of(vec![w], &before, &after).expect("a reanchor proposal");
+    assert!(crate::transducer::rewrite::reconstruct(&rw).is_none(), "reconstructs green");
+    let r = Rewrite::from_element(&rw).expect("the tape reads");
+    assert_eq!(r.kind, RewriteKind::Reanchor);
+    assert_eq!(r.claimed[crate::transducer::rewrite::LANE_SPATIAL], 1);
+}
