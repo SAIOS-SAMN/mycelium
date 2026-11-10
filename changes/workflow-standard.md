@@ -1,9 +1,9 @@
-### Done is two cargo commands; the gate is workspace tests (workflow standard)
+### Two cargo commands check every change; the gate is workspace tests (workflow standard)
 - Coordinator ruling: every developer is an AI agent and no person is in
-  the loop; a change is done when `cargo clippy --release --workspace
-  --all-targets -- -D warnings` and `cargo test --release --workspace`
-  pass, and a change to the wire or the mesh also runs
-  `scripts/quickstart` (AGENTS.md, *Definition of done*).
+  the loop; every change is checked by `cargo clippy --release
+  --workspace --all-targets -- -D warnings` and `cargo test --release
+  --workspace`, and a change to the wire or the mesh also runs
+  `scripts/quickstart` (AGENTS.md, *Checks*).
 - The gate moves from `xtask/` (removed) into the workspace member
   `gate/`, read by its tests alone: the reading bound, the Euclidean
   vocabulary, the numbers gate (its N6 inventory written by
