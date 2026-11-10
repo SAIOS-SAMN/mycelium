@@ -182,7 +182,12 @@ Ed25519 and verified on admission. The track adds:
   network-contract change;
 - address discovery beyond the provisioned `peers`;
 - signed re-provisioning of a node's `bind` and `peers` after first boot;
-- deployment tooling for hosts beyond one machine.
+- deployment tooling for hosts beyond one machine. On one machine,
+  `scripts/network` (AGENTS.md) stands the whole network up: three
+  hyphae from a genesis allocation, sovereign minds inside Noise
+  chattering at one rendezvous, a house with a seated mind, each node in
+  a capped systemd user scope, with the observer's frames and the POW++
+  reading (`mycelium-server --console --proofs`) written as it serves.
 
 ## 6. Ledger evolution
 
