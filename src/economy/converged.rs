@@ -44,8 +44,12 @@ pub fn converged_parts(premium: &Mu, converged: &[([u8; 32], Mu)]) -> Vec<([u8; 
                     false => s.clone(),
                 }
             });
-            // Every factor is non-negative, so every lane is.
-            let part = Mu::of(lanes).unwrap_or_else(|_| Mu::zero());
+            // Every factor is a non-negative lane, so every lane is, and
+            // no lane is refused (as `forfeit::forfeit` reads its lanes).
+            let part = match Mu::of(lanes) {
+                Ok(m) => m,
+                Err(_) => Mu::zero(),
+            };
             (*mind, part)
         })
         .collect()
