@@ -270,4 +270,10 @@ impl Sample {
             Site::new(axes)
         })
     }
+
+    /// LIFTS THE OBSERVATION INTO THE MANIFOLD (78.179 §1; MU-SENSING §3.1):
+    /// one factor per phase, replacing legacy bounds and envelopes.
+    pub fn lift(&self) -> super::manifold::Manifold {
+        super::manifold::Manifold::lift_from(self)
+    }
 }
