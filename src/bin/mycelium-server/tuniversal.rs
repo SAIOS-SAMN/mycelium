@@ -1,7 +1,8 @@
 // 78.152 TU-7 — THIS DOOR'S TUNIVERSAL SHELF: one per process, beside the
 // 78.151 published reading and outside the court. The keepers' quorum raises
-// its final point; every frame read at the door is heard on it; every reply
-// the door writes carries its final point.
+// its final point; every expression read at the door is heard on it; every
+// reply the door writes carries its final point inside the expression
+// (`express`, `hear`), never on the envelope.
 //
 //! THE KEEPERS (TU-1..4) are held here too, under the keepers' own lock, never
 //! nested with the court's: the court's tick is read under the court by the
@@ -96,14 +97,26 @@ pub(crate) fn shelf() -> &'static TShelf {
     &SHELF
 }
 
-/// A frame read at the door, with the point its speaker carried.
-pub(crate) fn heard_at_door(point: Option<TPoint>) {
-    SHELF.heard_at_door(point);
-}
-
 /// The final point every reply of this door carries.
 pub(crate) fn final_point() -> Option<TPoint> {
     SHELF.final_point()
+}
+
+/// THIS DOOR'S EXPRESSION OF `act` (TU-7; MU-ENGINEERING §9.1): the act and
+/// the door's final point, `None` before it holds one. Every reply the door
+/// writes and every act a court asks a peer is written so. `None` where the
+/// act passes the wire's budget.
+pub(crate) fn express(act: &[u8]) -> Option<Vec<u8>> {
+    mycelium::anastome::dialogue::write_act(act, final_point().as_ref())
+}
+
+/// THE ACT AN EXPRESSION READ AT THIS DOOR CARRIES, its speaker's point
+/// heard on the shelf (held apart as heard, never as final). `None` where
+/// the bytes are no expression.
+pub(crate) fn hear(expression: Vec<u8>) -> Option<Vec<u8>> {
+    let e = mycelium::anastome::dialogue::Expression::read(expression)?;
+    SHELF.heard_at_door(e.point);
+    Some(e.act)
 }
 
 /// The origin this court adopted, as a point's origin; `None` before it.

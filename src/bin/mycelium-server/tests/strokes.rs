@@ -33,29 +33,19 @@ fn tell_peer_within_refuses_silent_peer_within_budget() {
 /// is not refused.
 #[test]
 fn tell_peer_within_reads_reply_and_counts_strokes() {
-    use std::io::{Read, Write};
+    use std::io::Write;
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();
     let echo = vec![0x21u8, 7, 8, 9];
     let reply_body = echo.clone();
     let responder = std::thread::spawn(move || {
         let (mut s, _) = listener.accept().expect("accept");
-        let mut head = [0u8; 5];
-        s.read_exact(&mut head).expect("head");
-        let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-        let mut body = vec![0u8; len];
-        s.read_exact(&mut body).expect("body");
-        // Read as a door reads a frame (78.152 TU-7): where the lane byte
-        // says the frame carries the sender's final point, the point leaves
-        // the body. The sender's door is the process's one shelf, which a
-        // sibling test may have advanced; the act is the body either way.
-        let (_, pointed) = mycelium::network::wire::read_lane(head[0]).expect("a lane");
-        let (body, _point) = mycelium::network::wire::split_point(body, pointed).expect("a frame's body and its point");
-        let frame = mycelium::network::wire::Delimited {
-            lane: mycelium::network::wire::Lane::Spatial,
-            body: reply_body,
-        };
-        s.write_all(&frame.encode().expect("encode")).expect("write");
+        // Read as a door reads an expression (78.152 TU-7): the sender's
+        // final point leaves the act. The sender's door is the process's one
+        // shelf, which a sibling test may have advanced; the act is the same
+        // either way.
+        let body = super::read_act(&mut s).expect("an expression");
+        s.write_all(&super::reply_bytes(&reply_body)).expect("write");
         body
     });
 

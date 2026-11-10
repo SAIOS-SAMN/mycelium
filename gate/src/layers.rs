@@ -46,39 +46,10 @@ pub struct Exception {
 }
 
 /// THE EXCEPTIONS, kept short so their growth is visible. Each is a known
-/// violation of MU-ENGINEERING §9, removed by the release it names.
-pub const EXCEPTIONS: &[Exception] = &[
-    Exception {
-        file: "src/network/wire.rs",
-        name: "Lane",
-        until: "v0.5.0",
-        why: "the frame's lane byte: the envelope labels meaning; removed in the breaking wire release",
-    },
-    Exception {
-        file: "src/bin/mycelium-server/transport.rs",
-        name: "Lane",
-        until: "v0.5.0",
-        why: "the door writes the lane byte on a refusal; removed with the lane byte",
-    },
-    Exception {
-        file: "src/network/wire.rs",
-        name: "TPoint",
-        until: "v0.5.0",
-        why: "the pointed frame's trailer (78.152 TU-7): the point read rides the envelope, not the expression; moved with the lane byte",
-    },
-    Exception {
-        file: "src/network/noise.rs",
-        name: "TPoint",
-        until: "v0.5.0",
-        why: "the channel carries the pointed frame's trailer; moved with the lane byte",
-    },
-    Exception {
-        file: "src/bin/mycelium-server/transport.rs",
-        name: "TPoint",
-        until: "v0.5.0",
-        why: "the door bounds a read by the point's trailer; moved with the lane byte",
-    },
-];
+/// violation of MU-ENGINEERING §9, removed by the release it names. Empty
+/// since the v0.5.0 recut retired the lane byte and moved the TUniversal
+/// point into the expression.
+pub const EXCEPTIONS: &[Exception] = &[];
 
 fn flatten(stream: proc_macro2::TokenStream, out: &mut Vec<proc_macro2::Ident>) {
     for t in stream {

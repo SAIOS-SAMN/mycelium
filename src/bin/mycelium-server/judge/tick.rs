@@ -19,5 +19,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         Ok(_) => TICK_HEARD,
         Err(_) => TICK_REFUSED,
     };
-    answer(stream, Delimited { lane: frame.lane, body: vec![ack] });
+    answer(stream, Delimited { body: vec![ack] });
 }

@@ -55,7 +55,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         },
         Err(lanes) => dialogue::encode_deferral(dialogue::PENDING_CODE, &lanes),
     };
-    let reply = Delimited { lane: frame.lane, body };
+    let reply = Delimited { body };
     answer(stream, reply);
     // The voice is answered first; the offers leave after, from this act.
     crate::offer::offer(court, &context.mesh, offers);

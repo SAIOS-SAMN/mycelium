@@ -79,7 +79,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: Delimited, context: &Context) {
             eprintln!("  court refuse action {}: {why} (count={c})", String::from_utf8_lossy(action.name()));
         }
         let body = dialogue::encode_outcome(outcome_code(&Outcome::Refused(why)), 0, &[0; 4]);
-        answer(stream, Delimited { lane: frame.lane, body });
+        answer(stream, Delimited { body });
         return;
     }
     match action {

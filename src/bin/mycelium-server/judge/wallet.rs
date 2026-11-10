@@ -26,7 +26,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         if !crate::persist::durable(&context.court, &context.state_path) {
             return;
         }
-        answer(stream, Delimited { lane: frame.lane, body });
+        answer(stream, Delimited { body });
         return;
     }
     if let Some(s) = decode_stake(&frame.body) {
@@ -39,11 +39,11 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         if !crate::persist::durable(&context.court, &context.state_path) {
             return;
         }
-        answer(stream, Delimited { lane: frame.lane, body });
+        answer(stream, Delimited { body });
         return;
     }
     let Some(who) = decode_wallet(&frame.body) else { return };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     let Some(a) = context.published.take().wallet(&who) else { return };
-    answer(stream, Delimited { lane: frame.lane, body: encode_wallet_reply(&a) });
+    answer(stream, Delimited { body: encode_wallet_reply(&a) });
 }

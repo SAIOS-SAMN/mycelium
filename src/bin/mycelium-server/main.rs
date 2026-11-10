@@ -939,7 +939,7 @@ fn main() {
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Delimited { lane: frame.lane, body });
+                answer(&mut stream, Delimited { body });
             }
         });
     }
@@ -1009,7 +1009,7 @@ fn main() {
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Delimited { lane: frame.lane, body });
+                answer(&mut stream, Delimited { body });
             }
         });
     }
@@ -1037,7 +1037,7 @@ fn main() {
                 continue;
             };
             let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-            crate::transport::defer_unread(job.stream, &mesh, Delimited { lane: mycelium::network::wire::Lane::Spatial, body });
+            crate::transport::defer_unread(job.stream, &mesh, Delimited { body });
         }
     }
 }

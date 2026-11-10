@@ -32,7 +32,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         Ok(mut h) => h.run(|k, _| k.why(ask)),
         Err(_) => return,
     };
-    answer(stream, Delimited { lane: frame.lane, body: encode_why_reply(why.as_ref()) });
+    answer(stream, Delimited { body: encode_why_reply(why.as_ref()) });
 }
 
 /// A WHY THAT REACHED A FULL DOOR, taken without the court: served off the
@@ -46,7 +46,7 @@ pub(crate) fn serve_left(stream: &mut Channel, frame: &Delimited, context: &Cont
         Err(_) => None,
     };
     if let Some(body) = answered {
-        answer(stream, Delimited { lane: frame.lane, body });
+        answer(stream, Delimited { body });
         return true;
     }
     if let Ok(mut left) = LEFT.lock() {
@@ -54,7 +54,7 @@ pub(crate) fn serve_left(stream: &mut Channel, frame: &Delimited, context: &Cont
     }
     if let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) {
         let body = mycelium::anastome::dialogue::encode_deferral(mycelium::anastome::dialogue::PENDING_CODE, &deficit);
-        answer(stream, Delimited { lane: frame.lane, body });
+        answer(stream, Delimited { body });
     }
     true
 }

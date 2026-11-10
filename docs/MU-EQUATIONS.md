@@ -1619,8 +1619,8 @@ deficit, yield surface, read price, verification share) reads the capacity
 its `Physics` holds. A stroke budget reads its work's own need where one
 exists in closed form (`modes_need`, `need`, `need_of`), the capacity's
 spend otherwise (MU-DERIVATIONS D2.5 lists those owed). A settlement goes
-cold when its challenge window closes; the pointed-connection book and the
-nerve's queue are bounded by `M_proc`. The ratio `8` reads the fixed frame
+cold when its challenge window closes; the nerve's queue is bounded by
+`M_proc`. The ratio `8` reads the fixed frame
 axis, which ROADMAP track 26 S4 removes; it is an open dependency
 (MU-DERIVATIONS D2.5 O3).
 
