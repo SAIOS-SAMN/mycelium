@@ -176,3 +176,16 @@ fn stroke_floor_reads_slack_where_hz_unpublished() {
     assert_eq!(stroke_floor_of(None, None), Err(Uncalibrated::StrokeFloor));
     assert_eq!(stroke_floor_of(None, Some(0)), Err(Uncalibrated::StrokeFloor), "a zero slack is no floor");
 }
+
+/// Issue #234 — IDLE BACKOFF: back off consecutive idle cycles up to the
+/// aperture bound, starting at one scheduler floor.
+#[test]
+fn idle_backoff_backs_off_up_to_aperture() {
+    let floor = crate::physics::stroke_floor();
+    assert_eq!(crate::physics::idle_backoff(0), floor, "0 consecutive idle cycles parks 1 floor");
+    assert_eq!(crate::physics::idle_backoff(1), floor * 2, "1 consecutive idle cycle parks 2 floors");
+    assert_eq!(crate::physics::idle_backoff(2), floor * 4, "2 consecutive idle cycles parks 4 floors");
+    let max = crate::physics::idle_backoff(100);
+    assert_eq!(max, crate::physics::idle_backoff(10), "idle park caps at aperture shift");
+    assert_eq!(max, floor * crate::physics::aperture_cycle(), "capped backoff is aperture_cycle floors");
+}
