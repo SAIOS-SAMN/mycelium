@@ -24,7 +24,7 @@ use crate::transducer::element::measure_lanes;
 #[derive(Default)]
 pub(crate) struct CourtPace {
     last_lang: Option<(usize, usize, usize)>,
-    last_height: u64,
+    pub(crate) last_height: u64,
     last_quoted_height: u64,
     pub(crate) last_pressure: [u64; 4],
     pub(crate) dwell_remaining: [u64; 4],
@@ -50,6 +50,11 @@ pub(crate) struct CourtPace {
     /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`),
     /// on the alphabet's section (`TaskEnvelope::section`, track 26 S5).
     pub(crate) task: Option<(crate::anastome::dialogue::TaskSection, super::offer::Offer)>,
+    /// The court height at which the registry returned an empty task envelope.
+    /// When the registry holds no task, a settled mind rests and does not
+    /// poll the court again until the court's height advances or the field
+    /// holds strain (MU-CLIENT §4.13, #135, #246).
+    pub(crate) task_exhausted: Option<u64>,
     pub(crate) syncing: bool,
     pub(crate) schooling: bool,
     pub(crate) solving: crate::network::nerve::Keyed<()>,
@@ -145,11 +150,11 @@ impl Mind {
             pace.last_lang = Some(lang);
             pace.last_quoted_height = pace.last_height;
             self.quote();
-            if crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty()
-                && (self.language.genome_len() == 0 || self.language.atlas_is_empty())
-            {
-                self.pull_syllabus();
-            }
+        }
+        if crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty()
+            && (self.language.genome_len() == 0 || self.language.atlas_is_empty())
+        {
+            self.pull_syllabus();
         }
     }
 
@@ -288,7 +293,11 @@ impl Mind {
             return;
         }
         let pace = &self.board.court;
-        let due = !pace.synced || pace.last_height > pace.last_synced_height || pace.dwell_elapsed();
+        let due = !pace.synced
+            || self.language.atlas_is_empty()
+            || self.language.genome_len() == 0
+            || pace.last_height > pace.last_synced_height
+            || pace.dwell_elapsed();
         if !due {
             return;
         }

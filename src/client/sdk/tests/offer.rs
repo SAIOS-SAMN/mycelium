@@ -387,12 +387,12 @@ fn lapses_at_the_next_final(mind: &mut Mind) {
     assert_eq!(mind.board.tasks.get(&id).and_then(|t| t.stop), Some(Stop::Lapsed), "kept as let go uncoupled");
 }
 
-/// A MIND ASKS FOR A TASK ONLY UNDER TENSION (MU-CLIENT §4.13, #135). A mind
-/// settled, its corpus empty and its reserve full, asks for nothing and rests;
-/// only when the field holds strain does the mind ask the court for a task.
-/// A task standing on the board is never asked past.
+/// A SETTLED MIND WHOSE CORPUS HOLDS NO ITEM ASKS (ruled 2026-10-24, Issue #246);
+/// ONCE EXHAUSTED AT THE COURT'S HEIGHT, IT ASKS FOR NOTHING AND RESTS UNTIL
+/// STRAINED (MU-CLIENT §4.13, #135). With an item placed on its corpus, the same
+/// settled mind asks for nothing. A task standing on the board is never asked past.
 #[test]
-fn pull_task_asks_only_under_strain() {
+fn pull_task_asks_only_under_strain_or_unexhausted_empty_corpus() {
     crate::transducer::raster::stand_on(0);
     let mut vacuum = Mind::open("127.0.0.1:1", Voice::named("vacuum"));
     let mut field = std::mem::take(&mut vacuum.field);
@@ -403,8 +403,17 @@ fn pull_task_asks_only_under_strain() {
     });
     vacuum.field = field;
     assert!(!settled && vacuum.board.corpus.size().0 == 0, "settled, the corpus empty");
-    assert!(!asked, "a settled mind asks for nothing even with an empty corpus");
+    assert!(asked, "the corpus empty and registry not exhausted: it asks");
 
+    // Once the registry returns empty at the current height, a settled mind rests.
+    vacuum.board.court.pulling = false;
+    vacuum.board.court.task_exhausted = Some(0);
+    let mut field = std::mem::take(&mut vacuum.field);
+    field.think(|| vacuum.pull_task());
+    vacuum.field = field;
+    assert!(!vacuum.board.court.pulling, "a settled mind whose registry is exhausted rests and asks for nothing");
+
+    // Under strain, the mind asks even when the registry had been exhausted.
     vacuum.board.open_residues.insert(vec![1, 2, 3], vec![link(0, 0, 1, 2)]);
     let mut field = std::mem::take(&mut vacuum.field);
     field.think(|| vacuum.pull_task());
