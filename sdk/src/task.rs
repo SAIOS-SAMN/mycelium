@@ -6,11 +6,11 @@
 //! Tasks and solves.
 //!
 //! [`encode_task_request`] asks the court for a task; the reply is a
-//! [`TaskEnvelope`] ([`decode_task_envelope`]): the train pairs to study and
+//! [`TaskFamily`] ([`decode_task`]): the train pairs to study and
 //! the test inputs to answer, never the answers, each a [`Sample`] of any
-//! rank at its source's symbol width (track 26 S5). A client perceives the
+//! rank at its source's symbol width (track 26 S5; 78.179 §3). A client perceives the
 //! samples at any rank; one whose rule seam spells words takes
-//! [`TaskEnvelope::section`] ([`TaskSection`]), the alphabet's section,
+//! [`TaskFamily::section`] ([`TaskSection`]), the alphabet's section,
 //! refused by name ([`SectionRefusal`]) for a sample of another rank or
 //! width (track 26 S4b).
 //! [`encode_solve_with_rule`] writes the outputs, as samples
@@ -26,8 +26,8 @@
 pub use mycelium::anastome::dialogue::{encode_task_by_citation, encode_task_request};
 
 /// A registered task as the registry hands it over, its writer and its
-/// reader, and the envelope read on the alphabet's section.
-pub use mycelium::anastome::dialogue::{decode_task_envelope, encode_task_envelope, TaskEnvelope, TaskSection};
+/// reader, and the task family read on the alphabet's section (78.179 §3).
+pub use mycelium::anastome::dialogue::{decode_task, encode_task, TaskFamily, TaskSection};
 
 /// Why a sample is off the alphabet's section: its rank, or its width.
 pub use mycelium::transducer::sentence::SectionRefusal;

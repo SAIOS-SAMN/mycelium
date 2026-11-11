@@ -106,10 +106,40 @@ pub struct OpenNumber {
 const SOAK_STROKE: &str = "Open: an instrument's stroke is the need of what it reads (78.111, the D3.1 pattern), read off the \
                            family it extracts; until each instrument sizes its own, the soak strokes under one chosen size";
 
-/// UNDEFINED PHYSICS, NAMED: each number the tree still declares where a
-/// reading belongs, with what it decides, the sections that govern it and
-/// what will derive it (MU-DERIVATIONS D1.4).
-pub const OPEN_PHYSICS: [OpenNumber; 17] = [
+/// UNDEFINED PHYSICS, NAMED: each physical invariant the tree still
+/// declares where a reading belongs, with what it decides, the sections
+/// that govern it and what will derive it (MU-DERIVATIONS D1.4). Only
+/// `OpenKind::Physics` stands here (78.182 item 20); an engineering or
+/// protocol number stands in [`OPEN_ENGINEERING`].
+pub const OPEN_PHYSICS: [OpenNumber; 2] = [
+    OpenNumber {
+        name: "THROAT_LEVEL_BITS",
+        value: "64",
+        site: "src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS",
+        governs: Governs::Admission,
+        doc: "MU-RECURSION 78.134, 78.162 (5); MU-CONCORDANCE 2.6; MU-DERIVATIONS D1.2",
+        derivation: "the 2^-64 grid a throat's cosh horizon is enclosed on (78.134): an approximation; the throat is a Cl(4,1) \
+                     round carried by its bank's modes, fit by meet, and the grid retires with it",
+        kind: OpenKind::Physics,
+    },
+    OpenNumber {
+        name: "CANDIDATES_PER_PAIR",
+        value: "8",
+        site: "src/transducer/blade/carry.rs::CANDIDATES_PER_PAIR",
+        governs: Governs::Reading,
+        doc: "MU-RECURSION 65.5; MU-DERIVATIONS §9",
+        derivation: "two parities × the fourth harmonic's four 90° turns of a transition (65.5); EXACT once a test reads both \
+                     factors off the transition's held groups",
+        kind: OpenKind::Physics,
+    },
+];
+
+/// THE SIBLING REGISTER (D1.4 O2, 78.182 item 20): each engineering or
+/// protocol number the tree declares where a reading belongs (memory,
+/// cost, liveness, the soak's instruments, the wire's sizes), named until
+/// derived, read by the numbers gate as `OPEN_PHYSICS` is. Retired by
+/// MU-STANDARDS or the wire contract, never by a law amendment.
+pub const OPEN_ENGINEERING: [OpenNumber; 15] = [
     OpenNumber {
         name: "POOL_DIVISOR",
         value: "2",
@@ -120,16 +150,6 @@ pub const OPEN_PHYSICS: [OpenNumber; 17] = [
                      under it, exact over ℚ, ceiled to threads), the readers the cores less W and the court thread, each \
                      queue W deep; derived once the off-lock strokes are metered beside `physics::spent_here`",
         kind: OpenKind::Engineering,
-    },
-    OpenNumber {
-        name: "THROAT_LEVEL_BITS",
-        value: "64",
-        site: "src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS",
-        governs: Governs::Admission,
-        doc: "MU-RECURSION 78.134, 78.162 (5); MU-CONCORDANCE 2.6; MU-DERIVATIONS D1.2",
-        derivation: "the 2^-64 grid a throat's cosh horizon is enclosed on (78.134): an approximation; the throat is a Cl(4,1) \
-                     round carried by its bank's modes, fit by meet, and the grid retires with it",
-        kind: OpenKind::Physics,
     },
     OpenNumber {
         name: "BODY_BUDGET",
@@ -152,16 +172,6 @@ pub const OPEN_PHYSICS: [OpenNumber; 17] = [
         derivation: "Open (D1.4 O2): a cost and memory layout keyed by the first byte of a party's key; derived as shards per \
                      the published account count's growth, or kept as an engineering layout by ruling",
         kind: OpenKind::Engineering,
-    },
-    OpenNumber {
-        name: "CANDIDATES_PER_PAIR",
-        value: "8",
-        site: "src/transducer/blade/carry.rs::CANDIDATES_PER_PAIR",
-        governs: Governs::Reading,
-        doc: "MU-RECURSION 65.5; MU-DERIVATIONS §9",
-        derivation: "two parities × the fourth harmonic's four 90° turns of a transition (65.5); EXACT once a test reads both \
-                     factors off the transition's held groups",
-        kind: OpenKind::Physics,
     },
     OpenNumber {
         name: "N",

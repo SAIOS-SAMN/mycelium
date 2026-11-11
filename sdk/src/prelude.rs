@@ -11,7 +11,7 @@ pub use crate::voice::{SigningKey, Voice, VoiceKey};
 pub use crate::session::{Session, TPoint};
 
 /// The task envelope and the verdict codes.
-pub use crate::task::{TaskEnvelope, SOLVE_AGAIN, SOLVE_BOUNTY, SOLVE_NOTHING, SOLVE_UNREAD};
+pub use crate::task::{TaskFamily, SOLVE_AGAIN, SOLVE_BOUNTY, SOLVE_NOTHING, SOLVE_UNREAD};
 
 /// An amount of μ read exactly per lane: one non-negative rational on each
 /// of S, G, T and H. Built today; it retires in v0.5.0, when every amount

@@ -1994,7 +1994,8 @@ LAW_VERSION       = 5
 
 The founding principles admit no constant: a number in the physics is read
 off the field or the geometry, or it is named in `OPEN_PHYSICS` with what
-will derive it (MU-DERIVATIONS D1.4 lists every entry). The challenge
+will derive it (MU-DERIVATIONS D1.4 lists every entry). An engineering or
+protocol number is named in its sibling, `OPEN_ENGINEERING` (D1.4 O2). The challenge
 window is derived (law version 5, 2026-10-31): a window opened at `h₀`
 closes at the height of the first sealed `Cite::Window` whose reach is at
 or above `h₀`, the reach being the least height every other keeper's signed
@@ -2005,7 +2006,7 @@ enclosure on a declared grid; the throat is a `Cl(4,1)` round carried by
 its bank's modes, fit by meet, and the grid retires with it.
 
 Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
-`src/physics/axioms/founding.rs::OPEN_PHYSICS`;
+`src/physics/axioms/founding.rs::OPEN_PHYSICS`, `OPEN_ENGINEERING`;
 `src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
 `src/server/cognition/window.rs::window_close`;
 `src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS`.

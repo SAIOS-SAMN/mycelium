@@ -493,7 +493,7 @@ impl Court {
         // It decoded the whole form to read its vertices; a citation is a
         // 1-simplex of the nerve and a vertex's generators are its
         // presentation, and both ride `Element.receipts`.
-        let cites = after.receipts().cited_addresses();
+        let cites = after.stalk().cited_addresses();
         // The candidates, by keyed read: every form that cites an address
         // this one cites. Two forms over one bundle are where a
         // redundancy can be, and nowhere else is read.
@@ -583,7 +583,7 @@ impl Court {
         // Road (d), B3). The two halves of the question are deliberately in
         // two carriers: the rotor is the vertex's key and the citations are
         // its presentation, which the key excludes (`form_vertex_key_ignores_citations_and_certificates`).
-        let env = candidate.receipts();
+        let env = candidate.stalk();
         let mut any = false;
         for (_, v) in f.vertices.scoped() {
             let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {

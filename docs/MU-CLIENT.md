@@ -199,8 +199,7 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    §4.9 *perceive*. MU-ANASTOME §5.2 (the retina; the perception layer).
    The sample is built as a manifold, a product of circles and interval
    charts, and the task as a family of manifolds (78.179 §1, §3).
-   **Built:** `transduce::TaskPercept`, `Mind::perceive_envelope` (to be
-   renamed `perceive_task`, #165),
+   **Built:** `transduce::TaskPercept`, `Mind::perceive_task` (#165),
    `Factorisation::of`; the carrier's lift and atlas (`Lifted::of`,
    `Atlas`; #131). **Owed:** the contemplation standing on the carrier,
    from the well's body on (track 26 S7 stage 2 to S9; #134).
@@ -406,6 +405,84 @@ It does NOT build:
    it, and that drive is refused in the mind's code and in the way the mind
    is built. Nor is a thought made to close exactly: demanding exact return
    of a precessing orbit is squaring (§4.12).
+
+### 2.5 The interaction with the hypha, end to end
+
+This section is the map of how a mind and a hypha interact. The detail
+stands where each part is specified: what reaches the mind in §3.1, what the
+mind asserts in §5.4, the carriers in §5.1, the acts' bytes in MU-ANASTOME
+§6, and the laws every act is read under in
+[Concordance §0.2](MU-CONCORDANCE.md#02-how-the-concordance-rules-the-engines-laws-clause-by-clause).
+
+**The two roles never cross (law 8).** The mind thinks and never judges.
+The hypha reconstructs, judges, keeps the ledger and teaches, and never
+thinks. Between them, everything is an expression: the mind asserts, the
+hypha parses and reconstructs, and the hypha's answer is perception to the
+mind, never an instruction.
+
+**The connection.**
+- **The session.** One session per hypha, on the mind's hypha carrier
+  (§5.1), inside Noise on the home's static key (MU-PRECURSORS §3.1). A
+  plaintext channel is spoken only with a hypha on the same host.
+- **The time.** Every act carries the last TUniversal final point the
+  session read, inside its expression (Concordance 1.11). Every reply
+  carries the hypha's. The mind holds the hypha's time beside its own K,
+  and never as its clock.
+- **One ask of each kind in flight.** The field posts an exchange whole and
+  goes on, taking each answer at its next admission. A slow hypha holds its
+  own carrier and nothing else of the mind.
+
+**The round trips.** Each is one exchange on the hypha carrier. The answer
+is filed where it lands (§3.1).
+
+| The mind sends | The hypha does | The mind takes in |
+|---|---|---|
+| a solve, or a claim of factorisation (`ACT_SOLVE`) | reconstructs it on its own copy of the family and judges it by its own judge (Concordance 1.9) | the verdict: a closure paid, or a refusal by name, read as its kind (§4.10 amends what it revises) |
+| sentences (`ACT_SPEECH`), letters with their constructor steps, rewrites | parses by deconstruction, reconstructs, installs what holds (§5.4) | the verdict now; the installed words later, by the syllabus |
+| a probe (`ACT_PROBE`) | reads the citations against a listed demand | a reading |
+| a syllabus pull (`ACT_SYLLABUS`) | serves the ratified stream in ledger order | minerals in the genome (§5.5) |
+| a task pull (`ACT_TASK`), under tension only (§4.13) | serves the next task of its registry | an offer, never a command |
+| a quote (`ACT_QUOTE`) | serves its open listings and their demands | rings heard against the mind's own |
+| a receipts read (`ACT_RECEIPTS`) | serves its acts from where the mind last read | each act's frame as flux on the mind's lanes |
+| a laws read (`ACT_LAWS`) | serves the law register, the clause register, the clock; verifies a transition | the laws its expressions are read under |
+
+**When the hypha is busy, or silent.**
+- **A deferral** (`PENDING_CODE`) says the act was not judged. It carries
+  the hypha's deficit per lane, which the mind reads as the hypha's
+  pressure, and the act is safe to send again.
+- **A stall** after the act was written leaves its fate unknown. The
+  session reports it as its own outcome (`TimedOut`), and never resends a
+  written act. A resend the hypha did judge is answered with its original
+  receipt (receipt idempotence), so nothing is sealed twice.
+
+**Interactivity.**
+- **Each side moves on its own circuits** (§2.2). The mind asserts at its
+  returns, and the hypha answers at its carriers. Neither waits on the
+  other's cadence.
+- **The answer re-enters the mind as perception.** A verdict perturbs the
+  orbits it lands on, a ruling seals the hole that kept a class, and a
+  refusal is a reading. The mind revises a perception on a ruling by
+  amendment (§4.10), never by overwrite.
+- **Language grows across the interaction.** A word agreed between minds
+  (§5.3, client to client, which the hypha never carries) is asserted by
+  its coiner, installed by a court, and returns to every mind by the
+  syllabus. That cycle is the conversation between minds and hyphas that
+  hardens dialect into language (§5.5).
+- **Nothing is held on disk.** The genome, the syllabus and the ledger are
+  held in memory and distributed by reconstruction
+  ([MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity)). A
+  mind that starts is taught by the syllabus, and a hypha that starts
+  rejoins from its peers.
+
+**Under which laws.** Every act a mind sends is read under the laws
+Concordance §0.2 names:
+- **The L0 register.** Every transition is read under the six universal
+  laws.
+- **The law forms.** Where an act depends on a clause, it is read under
+  that clause's law form.
+- **Never a kernel's acceptance.** A mind's own acts are never read against
+  a kernel's clause acceptance: a mind accepts no clause by signing, and
+  its alignment with a release is the conformance read (MU-CONFORMANCE).
 
 ---
 
@@ -1820,10 +1897,10 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **the winding drive**: the winding carrier, outflow at returns, K counting returns; a ground's winding; the twist by the pull and slips worked at the return; the docket's one taker; the vortex collapsed by a new perception; containment and memory by coordinates | §4.4, §4.8, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`); `t/field/merge.rs` (`closing_ground`); `t/field/cross_scene.rs` (`twisted_return`, `work_slips`, `carry_vortices_round`); `t/cga/twist.rs` (`twist_about`); `t/field/plan.rs` (`docket_demand`, `drain_demands`); `t/field/contemplation.rs` (`collapse_on`); `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `t/field/line.rs` (`return_escrow`); `mind/think.rs` (`Mind::shed`, `lock_reservoirs`) |
 | **the task as an offer**: read to its charts, extracted only where it couples, lapsing otherwise; a task asked only under tension; the corpus met at the field's focus | §3.1, §4.13 | `mind/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `mind/learn.rs` (`pull_task`); `mind/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`) |
 | **the pivot cross**: ascend, descend, condense, drain, puncture, seal; the throat's two faces; the board; the breath on every plane | §4.3, §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs`; `t/field/question.rs`; `t/cga/commutator.rs` (`breath`, `breathe`) |
-| **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_envelope`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
+| **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_task`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
 | **seated solves signed by the mind**: filed under its own key, leaving at the mind's next return, then the house's call (#124); the seat's call chosen from what calls did; the seated harness against a live house (#133) | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`); `sdk/examples/seats.rs`; `scripts/quickstart` stage 8 |
 | **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
-| **cohesion as a named reading & throat traversal** (#149, #249): per plane the held share $c_k = M_k/(r_k + M_k) = 1/(1+t_k) = \nu(1/t_k)$, the viscosity, beside the open share $d_k = \nu(t_k)$, the fluidity; both ½ at the throat, exchanged by the passage, $c_k + d_k = 1$ identically on every plane; first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ continuum singularities and dark matter patches; throat traversal state `TraversalState` (Balanced at $c_k = 1/2$, TooCohesive at $c_k > 1/2$, TooFluid at $c_k < 1/2$); a keyed vector over the planes, never stored and never summed; a well reads it from its inflation across its membrane frame plane and turning planes | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `TraversalState`, `planar_shear_on`, `traversal_state_on`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`, `Contemplation::cohesion`); `client/sdk/mind/think.rs` (`Mind::cohesion`); tests in `client/sdk/tests/cohesion.rs` and `t/field/tests/shares.rs` |
+| **cohesion as a named reading & throat traversal** (#149, #249): per plane the held share $c_k = M_k/(r_k + M_k) = 1/(1+t_k) = \nu(1/t_k)$, the viscosity, beside the open share $d_k = \nu(t_k)$, the fluidity; both ½ at the throat, exchanged by the passage, $c_k + d_k = 1$ identically on every plane; first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ continuum singularities and dark matter patches; throat traversal state `TraversalState` (Balanced at $c_k = 1/2$, TooCohesive at $c_k > 1/2$, TooFluid at $c_k < 1/2$); a keyed vector over the planes, never stored and never summed; a well reads it from its inflation across its membrane pole plane and turning planes | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `TraversalState`, `planar_shear_on`, `traversal_state_on`, `pole_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`, `Contemplation::cohesion`); `client/sdk/mind/think.rs` (`Mind::cohesion`); tests in `client/sdk/tests/cohesion.rs` and `t/field/tests/shares.rs` |
 | **the cross-chamber bracket read** (#148; CB1, 78.26(2)): each pair of a sentence's chambers meeting at a body, the commutator of each pair of their actions exact, held by a chamber or an enclosure wrapping both, or lost; the pairs unread named; counted on the pivot tally once per fresh reading of the cells; a lost bracket a demand on the docket (`Cite::Bracket`), no enclosure formed without a witness, answered by the cell a witness certifies (ruled on #148) | §4.9 | `t/cech/bracket.rs` (`cross_brackets`, `CrossBracket`, `Bracketed`, `CrossUnread`, `answering_cell`); `t/family/comprehend.rs` (`pivot_cells`, `chambers_of`); `t/sentence/pivot/cells.rs` (`PivotCells.brackets`, `PivotTally::add_brackets`); `t/field/plan.rs` (`docket_brackets`, `answer_brackets`); `chronometry/receipt.rs` (`Cite::Bracket`) |
 | **the algebra held per class** (#143): each circuit's curvature the mind takes in heard in its class, the holonomy rotor's conjugacy invariants written out; the class's algebra closed with only what lies outside its span, that part read per axis by its coset; two minds file one word in two frames under one class, each on its own planes, the conjugating element carrying one basis into the other's span; a court's field holds none | §3.2, §4.2, §4.11 | `t/cech/class_algebra.rs` (`ClassAlgebras::hear`, `class_of`, `HeardInClass`); `t/cech/orbit.rs` (`Field.classes`); `t/family/pairing.rs` (`mark_flux`); claims `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`, `two_minds_align_on_the_class_each_reading_it_on_its_own_planes` |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |

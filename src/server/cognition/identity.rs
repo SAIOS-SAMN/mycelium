@@ -193,7 +193,7 @@ impl Court {
     /// g̃`, 78.166 1c) and the cite is one this court holds. `None` for any
     /// word that is not a conjugate of a held word.
     pub(crate) fn conjugate_of(&self, word: &Element) -> Option<crate::transducer::address::Address> {
-        let env = word.receipts();
+        let env = word.stalk();
         let cite = env.derivations.iter().find(|d| d.conjugator.is_some())?;
         let [(form, _, _)] = cite.generators.as_slice() else { return None };
         crate::transducer::family::Crystal::by_address(self, form.as_bytes()).map(|_| form.clone())

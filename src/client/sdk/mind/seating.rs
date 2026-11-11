@@ -653,9 +653,9 @@ impl Mind {
             }
             // Track 26 S4b: perceived at its own rank, then the alphabet's
             // section for the word path; a task off it stops perceived and
-            // is answered (`perceive_envelope`).
-            let Some(envelope) = dialogue::decode_task_envelope(&body) else { return unread(entity) };
-            let Some(env) = entity.perceive_envelope(&envelope, super::perceive::SceneKind::Task) else {
+            // is answered (`perceive_task`).
+            let Some(envelope) = dialogue::decode_task(&body) else { return unread(entity) };
+            let Some(env) = entity.perceive_task(&envelope, super::perceive::SceneKind::Task) else {
                 entity.with_body_seat(at, |seat| {
                     let _ = seat.unpulled.remove(&id);
                     seat.answered.insert(id, ());

@@ -249,9 +249,9 @@ fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection, gro
     }
 }
 
-fn task_by_citation(session: &Speaker, voice: &[u8; 32], envelope: &d::TaskEnvelope) -> Result<String, String> {
+fn task_by_citation(session: &Speaker, voice: &[u8; 32], envelope: &d::TaskFamily) -> Result<String, String> {
     let reply = session.speak(d::encode_task_by_citation(voice, &envelope.id))?;
-    let again = d::decode_task_envelope(&reply).ok_or_else(|| format!("{} bytes that do not decode as an envelope", reply.len()))?;
+    let again = d::decode_task(&reply).ok_or_else(|| format!("{} bytes that do not decode as an envelope", reply.len()))?;
     if again.id != envelope.id || again.train != envelope.train || again.tests != envelope.tests {
         return Err("the task asked by its citation is not the task given".to_string());
     }
@@ -273,7 +273,7 @@ fn mind_loop(session: &Speaker, key: &SigningKey, report: &mut Report) {
         report.unread("task", "the registry gave no task (an empty envelope: no work)");
         return report.unread("solve", "no task to solve");
     }
-    let Some(envelope) = d::decode_task_envelope(&reply) else {
+    let Some(envelope) = d::decode_task(&reply) else {
         report.fail("task", format!("{} bytes that do not decode as an envelope", reply.len()));
         return report.unread("solve", "no task to solve");
     };

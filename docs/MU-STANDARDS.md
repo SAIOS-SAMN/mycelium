@@ -516,7 +516,8 @@ its object; a new subsection is opened only for a new object.
 
 ## 10. Persisted layouts
 
-A change to a persisted layout (a snapshot, a line, a genome) gets a new
+The mesh is held in memory (`MU-ENGINEERING.md` §8, ruled 2026-11-11), and
+these layouts retire as that is built (#273). Until then: a change to a persisted layout (a snapshot, a line, a genome) gets a new
 layout tag. The superseded tag is refused by name, and no migration or
 reader for it is written: the tree holds no reader for `MYC7`, `MYT1`,
 `GEN4`, `GEN5` or `GEN6`. Keys, the mesh record and the corpus manifests

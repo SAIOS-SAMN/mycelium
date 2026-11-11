@@ -43,8 +43,8 @@
 //! in: the throat sphere's inversion `H²/R` squares `H` (MU-RECURSION law
 //! 11) and names the carried reach only at the throat. Every refusal names
 //! what it read: a pole that is not one generator at coefficient one
-//! (`NotUnit`), a pole of the other sign (`WrongSign`), a frame state off
-//! the plane (`NotFrame`), a riding state of both parities
+//! (`NotUnit`), a pole of the other sign (`WrongSign`), a passage state off
+//! the pole plane (`NotOnPolePlane`), a riding state of both parities
 //! (`MixedParity`), a share of no whole (`NoWhole`) or outside `[0, 1]`
 //! (`NotShare`), and two signatures that disagree (`Mismatched`). Every
 //! reach, hold and flux is a [`Q`], so a float is unwritable.
@@ -85,9 +85,9 @@ pub enum PassageRefusal {
     /// A pole whose generator squares to the other sign, read from the
     /// negative mask: `e₊` named negative, or `e₋` named positive.
     WrongSign { generator: usize },
-    /// A frame state that is not on the plane: the blade masks it holds off
+    /// A passage state that is not on the pole plane: the blade masks it holds off
     /// the plane's two units (none for the zero, which holds no state).
-    NotFrame { blades: Vec<usize> },
+    NotOnPolePlane { blades: Vec<usize> },
     /// A riding state holding both parities: the degrees it holds,
     /// ascending, each once.
     MixedParity { degrees: Vec<u32> },
@@ -117,19 +117,22 @@ fn generator_of(unit: &Clifford) -> Result<usize, PassageRefusal> {
     }
 }
 
-/// A FRAME STATE READ: the enclosure's hold `H` (the closed count `A`) and
+/// A PASSAGE STATE READ: the enclosure's hold `H` (the closed count `A`) and
 /// the body's reach `R` (the open count `Q`), the state `H·n_Z + R·n_Q`.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Frame {
+pub struct PassageState {
     pub hold: Q,
     pub reach: Q,
 }
 
-/// WHERE A FRAME STATE STANDS ON ITS PLANE, read from the state.
+/// The passage state, formerly `Frame` (78.182 item 12, #239).
+pub type Frame = PassageState;
+
+/// WHERE A PASSAGE STATE STANDS ON ITS POLE PLANE, read from the state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Place {
     /// `H = R`: the span is zero, the fixed sphere of the swap. A passage
-    /// here writes nothing on `T`. The zero frame, which holds no state,
+    /// here writes nothing on `T`. The zero passage state, which holds no state,
     /// reads here.
     Throat,
     /// `H = 0` or `R = 0`: a null state, wholly at one pole. The swap
@@ -148,7 +151,7 @@ pub enum Pole {
     Open,
 }
 
-impl Frame {
+impl PassageState {
     /// THE WHOLE `H + R`, the coefficient on `e₊`; a passage keeps it.
     pub fn whole(&self) -> Q {
         &self.hold + &self.reach
@@ -237,25 +240,25 @@ impl Poles {
         self.blade(self.positive, Q::one())
     }
 
-    /// THE FRAME STATE `H·n_Z + R·n_Q = (H + R)·e₊ + (H − R)·e₋`.
-    pub fn state(&self, frame: &Frame) -> Result<Clifford, PassageRefusal> {
-        self.blade(self.positive, frame.whole())?.sum(&self.blade(self.negative, frame.span())?).map_err(PassageRefusal::Mismatched)
+    /// THE PASSAGE STATE `H·n_Z + R·n_Q = (H + R)·e₊ + (H − R)·e₋`.
+    pub fn state(&self, passage: &PassageState) -> Result<Clifford, PassageRefusal> {
+        self.blade(self.positive, passage.whole())?.sum(&self.blade(self.negative, passage.span())?).map_err(PassageRefusal::Mismatched)
     }
 
-    /// THE FRAME STATE `x` READ: its hold and reach, from the whole on `e₊`
+    /// THE PASSAGE STATE `x` READ: its hold and reach, from the whole on `e₊`
     /// and the span on `e₋`. Refused `Mismatched` where `x`'s signature
-    /// disagrees with the plane's, and `NotFrame` with the blades it holds
+    /// disagrees with the plane's, and `NotOnPolePlane` with the blades it holds
     /// off the plane (none for the zero).
-    pub fn read(&self, x: &Clifford) -> Result<Frame, PassageRefusal> {
+    pub fn read(&self, x: &Clifford) -> Result<PassageState, PassageRefusal> {
         self.blade(0, Q::zero())?.sum(x).map_err(PassageRefusal::Mismatched)?;
         let blades: Vec<usize> = x.terms().map(|(m, _)| m).filter(|m| *m != self.positive && *m != self.negative).collect();
         match (blades.is_empty(), x.is_zero()) {
             (true, false) => {
                 let (whole, span) = (coefficient(x, self.positive), coefficient(x, self.negative));
                 let half = algebra::multivector::half();
-                Ok(Frame { hold: (&whole + &span) * &half, reach: (whole - span) * half })
+                Ok(PassageState { hold: (&whole + &span) * &half, reach: (whole - span) * half })
             }
-            _ => Err(PassageRefusal::NotFrame { blades }),
+            _ => Err(PassageRefusal::NotOnPolePlane { blades }),
         }
     }
 

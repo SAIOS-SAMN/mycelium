@@ -357,7 +357,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_pair() {
     // geometry, so `form_vertex_key_ignores_citations_and_certificates` keeps it out of the key.
     // ONE CERTIFICATE, and the slice pattern says so rather than taking the
     // first of several (rule 15).
-    let [cert] = e.receipts().certificates.as_slice() else {
+    let [cert] = e.stalk().certificates.as_slice() else {
         panic!("one certificate, on the word that made it")
     };
     // AT1: the face's word is derived through the pivot's factors, so the

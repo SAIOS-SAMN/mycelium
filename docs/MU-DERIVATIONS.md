@@ -774,6 +774,11 @@ carrying 292 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
 ### D1.4 The register and its gate — every underived number named until derived
 
 **Status.** **Built** (2026-10-31, the live-readings ruling, §0.5).
+O2 **ruled and built** (operator, 2026-11-11; 78.182 item 20): the
+register is two items, `OPEN_PHYSICS`, which keeps only the physical
+invariants (`OpenKind::Physics`), and its sibling `OPEN_ENGINEERING`, which
+holds the engineering and protocol numbers; the numbers gate reads both
+alike, and `open_physics_holds_physical_invariants_only` holds the split.
 `physics::axioms::{OpenNumber, Governs, OpenKind}` carry the register;
 `OPEN_PHYSICS` is `[OpenNumber; N]`. The numbers gate is
 `gate/src/numbers.rs` (N1–N5 enforced by the gate test
@@ -3356,7 +3361,27 @@ the naming.
 
 ### D4.8 Certified mathematics: `P_SERIES_CAP`, `w ≥ 14_000`, Poisson `w + 256`, guard bits, `stop_at`
 
-**Status.** **Built** for (a)–(c) and for (e) where a test asked it
+**Status.** O1 **ruled and built** (operator, 2026-11-11; 78.182 item
+24): an `Encl`'s width is strictly positive, and a zero-width enclosure is
+a point and is refused. A certified real is `Certified::{Exact(Q),
+Enclosed(Encl)}`; `Encl::new` refuses `lo ≥ hi`, the fields are private,
+and `Encl::exact` is retired. Every function takes and returns
+`Certified`, reads a point argument at its own `*_point` path, and answers
+`Exact` where the value is rational (`exp 0`, `ln 1`, `sin 0`, `cos 0`,
+`sqrt` of a rational square, `lnΓ 1`, `lnΓ 2`, `F(0)`, `powq` at a rational
+power); bounds that meet after an operation are `Exact`. The ruling
+settles what a point is, not a width bound: (e)'s absolute guards for
+`ln2`, `pi`, `sin_cos`, `tan`, `powq`, `lgamma` and `planck` stay open as
+derivations. Tests: `encl_refuses_zero_width`,
+`special_argument_answers_exact`,
+`irrational_value_is_enclosed_with_positive_width`, and the module's
+`compile_fail` doc test. O2 **ruled and built** (operator, 2026-11-11;
+78.182 item 25): `gamma_p`, `gamma_p_terms`, `erf`, `poisson_quantile`, `Quantile` and
+`SeriesRefusal` are retired. They had no caller, and they are continuous
+approximations outside the exact kernel. What follows records them as
+they were built.
+
+**Status as built.** **Built** for (a)–(c) and for (e) where a test asked it
 (2026-10-31, the live-readings ruling). (a): `gamma_p_terms` is the exact
 bound `max(0, ⌈2x − a⌉ − 1) + w₂ − 8`; `gamma_p` and `erf` take `&mut
 Budget`, refuse `SeriesRefusal::Unmetered { needed }` before a term where
@@ -3375,7 +3400,8 @@ integer or half-integer is exact through factorials
 Not built: (d) the width-relative stop (the `stop_at` margin stands, and
 (a)'s bound is for it), and (e)'s fixed-point guards for `ln2`, `pi`,
 `sin_cos`, `tan`, `powq`, `lgamma` and `planck` (O1, the width contract,
-open). Tests (`core::tests::certified`): `gamma_p_terms_equal_closed_form`,
+ruled 2026-11-11 as positive width, which leaves these guards open as
+derivations). Tests (`core::tests::certified`): `gamma_p_terms_equal_closed_form`,
 `gamma_p_refuses_short_budget_up_front`, `gamma_p_width_is_within_grid_at_large_x`,
 `erf_tail_branch_is_derived_without_cap` (`erf 101` at `w = 14 600`),
 `poisson_quantile_answers_sector_on_spent_budget`,
@@ -3580,7 +3606,8 @@ the term count, each bounded by the series' ratio):
   - **O1, the width contract of `Encl`:** absolute `≤ c·2^{-w}`, or
     "rounded outward to the grid" only. (a)–(e) are derived for the
     absolute contract; under the weaker contract only the termination
-    parts (a)–(d) bind.
+    parts (a)–(d) bind. **Ruled and built** (78.182 item 24): the width is
+    strictly positive and a point is `Certified::Exact`, never an `Encl`.
   - **O2, whether `gamma_p`, `erf` and `poisson_quantile` are to have
     callers at all.** Without one, a smaller step is to delete the caps
     and the functions' `+40` guards in favour of (a)/(c) when a caller
@@ -3650,16 +3677,16 @@ Each line names its entry and the reading or ruling that decides it.
 10. **D1.4 O1** — where FORMAT ends for envelope reservations: decided by
     comparing each with its codec's written header length.
 11. **D1.4 O2** — whether engineering numbers join `OPEN_PHYSICS` or a
-    sibling register: a ruling. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 20).
+    sibling register: a ruling. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 20): the sibling, `OPEN_ENGINEERING`; **Built**.
 12. **D2.1 O1** — the strain on the bond, defect `D` or exposure `X`:
     decided by the distribution of `D_l / X_l` over falsified folds on the
-    soak. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 21).
+    soak. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 21): the exposure `X`, with the bond's admission gate `B_l ≥ X_l` (#237); **Built**.
 13. **D2.2 O1** — whether a default keeps the half bounty: decided by the
     count of defaults whose tier later published a line that
     reconstructs.
 14. **D2.3 O1** — the at-rest term `κ_l` (1, 0, or a measured cost): a
     ruling on MU-ECONOMY §7.1, informed by the share of map fees drawn at
-    `y = 0`. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 22).
+    `y = 0`. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 22): `κ_l = 1`, as built since 2026-10-31 (`economy::read_price`); **Built**.
 15. **D2.3 O2** — the units inside the yield surface (read apart, or one
     event = one reserve unit): decided by `e_l` against `d_l` on strained
     lanes.
@@ -3707,15 +3734,15 @@ Each line names its entry and the reading or ruling that decides it.
 26. **D4.2 O1** — a cursor on the evidence pull: decided by whether any
     kernel pulls evidence.
 27. **D4.3 O1** — whether `0 × 0` is a grid the dialogue needs: a ruling
-    on the empty test input. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 23).
+    on the empty test input. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 23): the least sample has one site on every axis; an empty axis is refused at intake, `SampleRefusal::EmptyAxis { axis }`, and no axis `NoAxis` (track 26 S5, `Sample::new`); **Built**.
 28. **D4.4 O1** — the producer's maximal depth for `Selection` and `Pred`:
     decided by instrumenting `depth()` on every minted term.
 29. **D4.5 O1** — the off-lock share of a worker's act: decided by
     metering off-lock strokes beside `physics::spent_here`.
 30. **D4.8 O1** — the width contract of `Encl` (absolute or outward
-    rounding only): a ruling on 78.130's promise. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 24).
+    rounding only): a ruling on 78.130's promise. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 24): positive width, a point refused; **Built** (`Certified::{Exact, Enclosed}`).
 31. **D4.8 O2** — whether `gamma_p`, `erf` and `poisson_quantile` keep a
-    place without a caller: a ruling naming a consumer, or deferral. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 25).
+    place without a caller: a ruling naming a consumer, or deferral. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 25): retired; **Built**.
 32. **D4.8 O3** — the exact Stirling least-term derivation of `X₀`: a
     derivation, closed by its proof.
 

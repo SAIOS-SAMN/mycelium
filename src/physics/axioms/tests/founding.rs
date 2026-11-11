@@ -98,11 +98,12 @@ fn geo_carries_k_generators_to_grade_k_blade() {
 
 /// NO CONSTANT: every number the tree still declares where a reading belongs
 /// is named at one site of the tree, with its value, its governing sections
-/// and what derives it; no two entries name one site. The numbers gate
-/// (`gate::numbers`, N5) reads each site's item and its initializer.
+/// and what derives it; no two entries name one site, across both
+/// registers. The numbers gate (`gate::numbers`, N5) reads each site's item
+/// and its initializer.
 #[test]
 fn open_physics_entries_resolve_to_sites() {
-    let register = crate::physics::axioms::OPEN_PHYSICS;
+    let register: Vec<_> = crate::physics::axioms::OPEN_PHYSICS.iter().chain(&crate::physics::axioms::OPEN_ENGINEERING).collect();
     for (i, n) in register.iter().enumerate() {
         let (file, item) = n.site.split_once(".rs::").expect("a site is a file and an item");
         assert!(file.starts_with("src/"), "{} sits in the tree", n.site);
@@ -110,4 +111,14 @@ fn open_physics_entries_resolve_to_sites() {
         assert!(!n.value.is_empty() && !n.doc.is_empty() && !n.derivation.is_empty(), "{} is whole", n.site);
         assert!(register[i + 1..].iter().all(|m| m.site != n.site), "{} is named once", n.site);
     }
+}
+
+/// D1.4 O2 (78.182 item 20) — THE PHYSICS REGISTER KEEPS ONLY THE PHYSICAL
+/// INVARIANTS: every entry of `OPEN_PHYSICS` is retired by a law amendment,
+/// and every engineering or protocol number stands in its sibling.
+#[test]
+fn open_physics_holds_physical_invariants_only() {
+    use crate::physics::axioms::{OpenKind, OPEN_ENGINEERING, OPEN_PHYSICS};
+    assert!(OPEN_PHYSICS.iter().all(|n| n.kind == OpenKind::Physics), "a physical invariant, each");
+    assert!(OPEN_ENGINEERING.iter().all(|n| n.kind != OpenKind::Physics), "no physical invariant in the sibling");
 }

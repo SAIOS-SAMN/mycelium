@@ -61,7 +61,7 @@ pub use receipts::*;
 pub use root::*;
 pub use samples::{
     decode_posted_samples, decode_samples, encode_posted_samples, encode_samples, push_sample, read_sample, section_of,
-    spoken_outputs, PostedTask, SampleWire, TaskEnvelope, TaskSection,
+    spoken_outputs, PostedTask, SampleWire, TaskFamily, TaskSection,
 };
 pub use speech::*;
 pub use syllabus::*;

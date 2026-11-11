@@ -163,7 +163,7 @@ fn face_rederives(
 #[cfg(test)]
 pub fn derivations_compose_at(
     f: &Form,
-    env: &crate::transducer::element::ReceiptsEnvelope,
+    env: &crate::transducer::element::WordStalk,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
 ) -> Option<Refusal> {
     let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
@@ -178,7 +178,7 @@ pub fn derivations_compose_at(
 /// per citation.
 pub(crate) fn derivations_compose<'r>(
     f: &Form,
-    env: &crate::transducer::element::ReceiptsEnvelope,
+    env: &crate::transducer::element::WordStalk,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
     meter: &mut Meter<'_>,
     from: usize,
@@ -461,7 +461,7 @@ fn reconstruct_on_ground<'r>(
     // The court states it instead. The cover is the SPOKEN word's, since
     // that is where a received sentence carries it, and the site is the
     // vertex's own key contribution — a coordinate, never an index.
-    let cover = &spoken.receipts().nerve;
+    let cover = &spoken.stalk().nerve;
     // 78.153 — THE EDGES BY HOST, filed once per stroke (linear in the
     // cover, as the decode above is in the tape): each port below is then a
     // keyed read, where it walked the whole cover per Glued vertex.
@@ -549,7 +549,7 @@ fn reconstruct_on_ground<'r>(
     // now means the eviction changes this reader not at all.
     stage!(Stage::Citations, |from| {
     let mut out: Step = Ok(());
-    for (i, edge) in spoken.receipts().nerve.iter().enumerate().skip(from) {
+    for (i, edge) in spoken.stalk().nerve.iter().enumerate().skip(from) {
         if !budget.spend() {
             out = Err(Halt::Spent(i));
             break;
@@ -612,7 +612,7 @@ fn reconstruct_on_ground<'r>(
     // mechanism at two levels.
     stage!(Stage::Derivations, |from| derivations_compose(
         f,
-        spoken.receipts(),
+        spoken.stalk(),
         resolve,
         &mut Meter::Stroke(&mut *budget),
         from
@@ -721,7 +721,7 @@ fn reconstruct_after_perceiving(
     // THE OVERLAPS A CERTIFICATE NAMES, by coordinates: the only
     // producers of a face's content the vertices do not derive (A20, AT1).
     let mut named: Keyed<(), crate::network::nerve::coord::Overlap> = Keyed::new();
-    for cert in &spoken.receipts().certificates {
+    for cert in &spoken.stalk().certificates {
         named.put(cert.by.face(), ());
     }
     stage!(Stage::Faces, |from| {
@@ -967,7 +967,7 @@ fn reconstruct_after_perceiving(
     });
     stage!(Stage::Certificates, |from| reconstruct_certificates_from(
         traversed,
-        &spoken.receipts().certificates,
+        &spoken.stalk().certificates,
         &by_chord,
         &mut Meter::Stroke(&mut *budget),
         from

@@ -180,7 +180,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     let [tape] = act.sentences.as_slice() else { panic!("one word") };
     let mut p = 0usize;
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
-    let [cite] = spoken.receipts().derivations.as_slice() else { panic!("one derivation") };
+    let [cite] = spoken.stalk().derivations.as_slice() else { panic!("one derivation") };
     assert!(
         matches!(cite.generators.as_slice(), [(form, _, 2)] if *form == slide.address()),
         "the remainder spoken as the ruled slide at exponent 2: {:?}",
@@ -224,7 +224,7 @@ fn compose_or_construct_speaks_conjugate_as_transported_word() {
     let mut p = 0usize;
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads, its conjugator with it");
     let f = crate::transducer::sentence::from_element_form(&spoken).expect("a form");
-    let env = spoken.receipts();
+    let env = spoken.stalk();
     let [cite] = env.derivations.as_slice() else { panic!("one derivation") };
     assert!(matches!(cite.generators.as_slice(), [(form, _, 1)] if *form == letter.address()), "citing the held letter once");
     assert!(cite.conjugator.is_some(), "with the conjugator that carries it");
@@ -276,7 +276,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
     let f = crate::transducer::sentence::from_element_form(&spoken).expect("a form");
     assert!(f.faces.is_empty(), "a word, not a sentence");
-    let env = spoken.receipts();
+    let env = spoken.stalk();
     let [cite] = env.derivations.as_slice() else { panic!("one derivation: {:?}", env.derivations) };
     assert!(
         matches!(cite.generators.as_slice(), [(form, _, 2)] if *form == slide.address()),
