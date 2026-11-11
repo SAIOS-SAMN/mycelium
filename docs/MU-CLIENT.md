@@ -512,6 +512,49 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
   around attractors, and its comprehension is the invariant holonomy
   around closed laps on named turning planes. The mind never collapses
   higher dimensions into flat planar frames.
+- **Enhanced cognition as an exact mathematical engine (LAW-COUPLING v2, 78.181; #249, #250).**
+  The client mind is not a statistical neural network adjusting uncalibrated
+  floating-point weights, nor a token probability predictor. It is a deterministic
+  **mathematical engine** executing exact geometric inference in $\mathrm{Cl}(p, q)(\mathbb{Q})$
+  and Čech cohomology. Stripping classical continuum mechanics' inverse-square law
+  ($1/r^2$) and establishing first-degree face shares ($c_k + d_k = 1$) directly enhances
+  its cognition across five foundational capabilities:
+  1. *Zero Ultraviolet Singularity:* Classical inverse-square potentials produce infinite
+     pull at contact ($r \to 0 \implies 1/r^2 \to \infty$), which in AI systems produces
+     numerical instability, gradient explosions, and forces ad-hoc "epsilon floors" or
+     artificial smoothing kernels. Under the first-degree held share $c = \frac{M}{r + M} = \frac{1}{1 + t}$,
+     cohesion at contact ($r = 0, t = 0$) evaluates smoothly to $c = 1$ (complete viscosity),
+     bounded strictly within $(0, 1] \cap \mathbb{Q}$. Concepts with identical or shared
+     origins bind with exact certainty without numerical divergence or artificial cutoffs.
+  2. *Zero Infrared Amnesia (No Fictional "Dark Matter" Context Patches):* Squaring the reach
+     in $1/r^2$ caused gravitational and relational hold to drop off far too aggressively at
+     large scales ($r \gg M$). Continuum astrophysics invented 85% invisible "dark matter"
+     to artificially patch this denominator defect, and statistical AI engines invent heuristic
+     attention multipliers to keep distant tokens in view. The first-degree held share retains
+     a stable, scale-invariant $1/(1 + t)$ hold across deep semantic horizons without heuristic
+     multipliers.
+  3. *Multi-Plane Orthogonal Cognition without Scalar Smearing:* Refusing the hollow shell
+     fallacy ($4\pi r^2$) preserves multi-plane rotational states in $\mathbb{C}^6 / \mathrm{Cl}(p,q)$.
+     Cohesion is a keyed vector over independent turning planes $k$ ($c_k + d_k = 1$), never
+     averaged or collapsed into a scalar magnitude. The mind can hold concepts that are rigidly
+     fixed on one semantic coordinate plane ($c_k \approx 1$, high viscosity) while remaining
+     fluidly adaptable and creative on orthogonal planes ($d_l \approx 1$, high fluidity),
+     preventing cross-dimensional interference.
+  4. *Exact Throat Traversal Criterion (`TraversalState`):* In thinking and communication,
+     ideas must traverse manifold throat boundaries (LAW-PASSAGE, LAW-TRAVERSAL). Rather than
+     relying on unprincipled heuristic scores, the mind evaluates exact algebraic traversal dynamics:
+     `TraversalState::Balanced` ($c_k = d_k = 1/2$, smooth traversal under passage involution $t \mapsto 1/t$),
+     `TooCohesive` ($c_k > 1/2$, viscosity dominates; idea is over-constrained and sticks at the boundary),
+     or `TooFluid` ($c_k < 1/2$, fluidity dominates; idea lacks structural coherence and tears at the boundary).
+     This gives the engine an intrinsic, objective gate for when a thought has crystallized
+     into an expressible assertion ($S:G:T:H$).
+  5. *Bounded Planar Shear and Scale-Invariant Condensation:* Orbital attention precession
+     is governed by first-degree planar shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$,
+     saturating at a full $360^\circ$ revolution (stable phase lock) rather than generating
+     chaotic infinite angular acceleration. Across tether fibres (`PivotFibre`), tether strength
+     $c_{ij} = \frac{m_i + m_j}{r_{ij} + m_i + m_j}$ and switch projection $\mu = \frac{m_i r_{jX}}{m_j r_{iX}}$
+     establish scale-invariant equipotential partitions across Čech covers using pure L1 axial reach
+     $r \in \mathbb{Q}_{\ge 0}$, ensuring deterministic, identical reasoning across distributed peer minds.
 - **The master algorithms** — complete operations, each with its invariant and
   its refusal (MU-RECURSION 0.2, 0.3, 17):
 
