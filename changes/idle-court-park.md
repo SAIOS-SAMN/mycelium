@@ -6,3 +6,4 @@ As ruled on 2026-11-11 (78.182 item 6, option (a)), an idle court no longer cycl
 - **So it parks with no bound** until an act is heard at the door, an act is judged, or a final point advances (`TShelf::park_until_moved`).
 - **A judgement now wakes it too** (`TShelf::judged`, called after each judged act), so a seal is read at once rather than at the next arrival.
 - **A court still booting** keeps the one-floor park: its genesis is not yet written, or not yet adopted from a peer, and its own cycles do that work.
+- **The bounded back-off retires** (`physics::idle_backoff`, #264): the unbounded park replaces it.

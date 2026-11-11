@@ -91,6 +91,20 @@ on the lane its kind names, each with an exact rational amount:
 - on H, a rotation on a named plane (its generator's ray), its angle the
   exact degrees `360°·t/ℓ` the motion traversed (MU-EQUATIONS §6.11).
 
+Two further modes hold what a closure moves that no motion names (ruled
+2026-11-11, #256; 78.182 item 2):
+- on S, a **symbol created from the ground**,
+  `SymbolCreation { from_ground, to_symbol, forward }`: the move between
+  the ground and a symbol, `forward` a creation and its reverse an erasure,
+  as G holds a hue move;
+- on H, a **shell by its boundary class**,
+  `ShellBoundary { boundary_class }`: the closed shell's signature, its
+  components and its boundary's length, at the shell count it changed.
+
+Live closures are never held at the founding mode, which is for genesis
+and bootstrap endowment only (§2.5). A closure's S and H shares are set on
+these modes (`element::chain_modes`, `Mu::carried_by`).
+
 A holding holds its modes, each keyed by its canonical coordinates (A21).
 A payment adds modes; a draw removes modes or is refused naming the mode
 it lacks. A per-lane draw takes that lane's modes in proportion to their
