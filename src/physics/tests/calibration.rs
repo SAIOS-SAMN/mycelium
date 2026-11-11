@@ -187,5 +187,5 @@ fn idle_backoff_backs_off_up_to_aperture() {
     assert_eq!(crate::physics::idle_backoff(2), floor * 4, "2 consecutive idle cycles parks 4 floors");
     let max = crate::physics::idle_backoff(100);
     assert_eq!(max, crate::physics::idle_backoff(10), "idle park caps at aperture shift");
-    assert_eq!(max, floor * (crate::physics::aperture_cycle() as u32), "capped backoff is aperture_cycle floors");
+    assert_eq!(max, floor * crate::physics::aperture_cycle(), "capped backoff is aperture_cycle floors");
 }
