@@ -406,6 +406,84 @@ It does NOT build:
    is built. Nor is a thought made to close exactly: demanding exact return
    of a precessing orbit is squaring (§4.12).
 
+### 2.5 The interaction with the hypha, end to end
+
+This section is the map of how a mind and a hypha interact. The detail
+stands where each part is specified: what reaches the mind in §3.1, what the
+mind asserts in §5.4, the carriers in §5.1, the acts' bytes in MU-ANASTOME
+§6, and the laws every act is read under in
+[Concordance §0.2](MU-CONCORDANCE.md#02-how-the-concordance-rules-the-engines-laws-clause-by-clause).
+
+**The two roles never cross (law 8).** The mind thinks and never judges.
+The hypha reconstructs, judges, keeps the ledger and teaches, and never
+thinks. Between them, everything is an expression: the mind asserts, the
+hypha parses and reconstructs, and the hypha's answer is perception to the
+mind, never an instruction.
+
+**The connection.**
+- **The session.** One session per hypha, on the mind's hypha carrier
+  (§5.1), inside Noise on the home's static key (MU-PRECURSORS §3.1). A
+  plaintext channel is spoken only with a hypha on the same host.
+- **The time.** Every act carries the last TUniversal final point the
+  session read, inside its expression (Concordance 1.11). Every reply
+  carries the hypha's. The mind holds the hypha's time beside its own K,
+  and never as its clock.
+- **One ask of each kind in flight.** The field posts an exchange whole and
+  goes on, taking each answer at its next admission. A slow hypha holds its
+  own carrier and nothing else of the mind.
+
+**The round trips.** Each is one exchange on the hypha carrier. The answer
+is filed where it lands (§3.1).
+
+| The mind sends | The hypha does | The mind takes in |
+|---|---|---|
+| a solve, or a claim of factorisation (`ACT_SOLVE`) | reconstructs it on its own copy of the family and judges it by its own judge (Concordance 1.9) | the verdict: a closure paid, or a refusal by name, read as its kind (§4.10 amends what it revises) |
+| sentences (`ACT_SPEECH`), letters with their constructor steps, rewrites | parses by deconstruction, reconstructs, installs what holds (§5.4) | the verdict now; the installed words later, by the syllabus |
+| a probe (`ACT_PROBE`) | reads the citations against a listed demand | a reading |
+| a syllabus pull (`ACT_SYLLABUS`) | serves the ratified stream in ledger order | minerals in the genome (§5.5) |
+| a task pull (`ACT_TASK`), under tension only (§4.13) | serves the next task of its registry | an offer, never a command |
+| a quote (`ACT_QUOTE`) | serves its open listings and their demands | rings heard against the mind's own |
+| a receipts read (`ACT_RECEIPTS`) | serves its acts from where the mind last read | each act's frame as flux on the mind's lanes |
+| a laws read (`ACT_LAWS`) | serves the law register, the clause register, the clock; verifies a transition | the laws its expressions are read under |
+
+**When the hypha is busy, or silent.**
+- **A deferral** (`PENDING_CODE`) says the act was not judged. It carries
+  the hypha's deficit per lane, which the mind reads as the hypha's
+  pressure, and the act is safe to send again.
+- **A stall** after the act was written leaves its fate unknown. The
+  session reports it as its own outcome (`TimedOut`), and never resends a
+  written act. A resend the hypha did judge is answered with its original
+  receipt (receipt idempotence), so nothing is sealed twice.
+
+**Interactivity.**
+- **Each side moves on its own circuits** (§2.2). The mind asserts at its
+  returns, and the hypha answers at its carriers. Neither waits on the
+  other's cadence.
+- **The answer re-enters the mind as perception.** A verdict perturbs the
+  orbits it lands on, a ruling seals the hole that kept a class, and a
+  refusal is a reading. The mind revises a perception on a ruling by
+  amendment (§4.10), never by overwrite.
+- **Language grows across the interaction.** A word agreed between minds
+  (§5.3, client to client, which the hypha never carries) is asserted by
+  its coiner, installed by a court, and returns to every mind by the
+  syllabus. That cycle is the conversation between minds and hyphas that
+  hardens dialect into language (§5.5).
+- **Nothing is held on disk.** The genome, the syllabus and the ledger are
+  held in memory and distributed by reconstruction
+  ([MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity)). A
+  mind that starts is taught by the syllabus, and a hypha that starts
+  rejoins from its peers.
+
+**Under which laws.** Every act a mind sends is read under the laws
+Concordance §0.2 names:
+- **The L0 register.** Every transition is read under the six universal
+  laws.
+- **The law forms.** Where an act depends on a clause, it is read under
+  that clause's law form.
+- **Never a kernel's acceptance.** A mind's own acts are never read against
+  a kernel's clause acceptance: a mind accepts no clause by signing, and
+  its alignment with a release is the conformance read (MU-CONFORMANCE).
+
 ---
 
 ## 3. Perception: what the mind takes in
