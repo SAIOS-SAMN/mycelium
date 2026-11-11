@@ -142,6 +142,40 @@ fn seated_mind_solve_paid_to_its_own_key() {
     assert!(k.treasury.balance_mu(&house).is_zero(), "the house is paid nothing for the seat's solve");
 }
 
+/// MU-CLIENT §4.4(4), §7.1 R2, Concordance 6.2a — A SEATED MIND'S SOLVE AND
+/// SPOKEN WORD LEAVE ON THE WINDING THAT CLOSED THE SCENE, EVEN WHEN THE
+/// SCENE'S MOTION CLOSES NO FINITE-ORDER ORBIT IN THE FIELD. A pure
+/// translation closes no rotation orbit in `Field::take_returns`, yet solving
+/// the task before the seat closes its perception (`Contemplation::release_scene`),
+/// so the winding's return step counts the closed scene, advances K, and
+/// posts both the court solve (held under the mind's own return) and the
+/// spoken rule (held under the task's scene).
+#[test]
+fn solve_before_releases_scene_so_wind_posts_solve_and_word() {
+    let (addr, solves) = solve_court();
+    let seat_key = ed25519_dalek::SigningKey::from_bytes(&[9; 32]);
+    let house = ed25519_dalek::SigningKey::from_bytes(&[21; 32]).verifying_key().to_bytes();
+    let own = seat_key.verifying_key().to_bytes();
+    let mut mind = Mind::open(&addr, Voice::from_key(seat_key.clone()));
+    mind.sit(house, None, crate::client::sdk::mind::seating::Sitting::Seats(vec![1]), seat_key.clone());
+    let [first, second] = super::fixtures::two_hours_of_a_slide();
+    let tests = vec![first.0.clone()];
+    let task = [0x22; 32];
+    mind.solve_before_first_seat(&task, vec![first, second], tests);
+    let stop = mind.board.tasks.get(&task).and_then(|t| t.stop);
+    assert_eq!(stop, Some(crate::client::sdk::mind::perceive::Stop::Sent), "the task before the seat is solved: {stop:?}");
+    assert_eq!(mind.held_for_returns(), 2, "the court solve and the spoken word stand held before the return step");
+    let stop = std::sync::atomic::AtomicBool::new(false);
+    let wound = mind.wind(&stop);
+    assert!(wound.returns >= 1, "the closed scene is counted as a return of the winding");
+    assert!(mind.own_k() >= 1, "K advances by the closed scene's return");
+    assert_eq!(mind.held_for_returns(), 0, "neither the court solve nor the spoken word remains stranded in at_return");
+    let act = solves.recv().expect("the court receives the seated mind's solve on that winding");
+    assert_eq!(act.task, task);
+    assert_eq!(act.voice, own);
+    assert!(act.signed);
+}
+
 /// THE DECLINATION (ruled 2026-10-23): a seat whose reading
 /// stops short of a solve calls fn 2 with the task's citation and its stop's
 /// code, and the call travels whole through the codec the house reads — a

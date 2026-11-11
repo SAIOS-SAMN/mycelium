@@ -919,7 +919,10 @@ impl Mind {
                 let stop = match refused {
                     true => Stop::RefusedBefore,
                     false => match self.submit_solve_rule(&id, &j.outputs, &rule, &j.ground) {
-                        Ok(()) => Stop::Sent,
+                        Ok(()) => {
+                            self.contemplation.release_scene(&id);
+                            Stop::Sent
+                        }
                         Err(_) => Stop::Unsubmitted,
                     },
                 };

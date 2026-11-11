@@ -75,6 +75,15 @@ impl Contemplation {
         self.truncate(&touched);
     }
 
+    /// A SCENE'S PERCEPTION CLOSED WITHOUT A REMAINING THOUGHT: its scene
+    /// return is recorded so the winding's return step counts it and releases
+    /// the scene's held outflow.
+    pub(crate) fn release_scene(&mut self, scene: &[u8]) {
+        if !scene.is_empty() {
+            self.released_scenes.push(scene.to_vec());
+        }
+    }
+
     /// A LINE THE FIELD LET GO THAT IS A THOUGHT'S OWN, read by why: a
     /// grounded thought whose orbit RETURNED winds on (§4.4(2)); every other
     /// release lets the thought go. Answers whether `line` was a thought's.
