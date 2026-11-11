@@ -30,6 +30,14 @@ type Q = BigRational;
 /// added: `0x10` for S through `0x13` for H, apart from every lane byte.
 pub const FOUNDING: u8 = 0x10;
 
+/// FORMAT: the symbol creation mode's leading byte (S), apart from every lane
+/// byte and every founding byte.
+pub const SYMBOL_CREATION: u8 = 0x20;
+
+/// FORMAT: the shell boundary mode's leading byte (H), apart from every lane
+/// byte and every founding byte.
+pub const SHELL_BOUNDARY: u8 = 0x21;
+
 /// THE LANES, by place (law 5): S, G, T, H.
 pub const S: u8 = 0;
 pub const G: u8 = 1;
@@ -56,6 +64,16 @@ pub enum Mode {
     /// THE FOUNDING MODE of a lane: the lane's identity motion, at which
     /// value no motion of the network made is held (MU-ECONOMY §2.5).
     Founding { lane: u8 },
+    /// S — A SYMBOL CREATED FROM THE GROUND (ruled 2026-11-11, #256): the
+    /// move between the ground `from_ground` and the symbol `to_symbol`, on
+    /// its side — `forward` a creation (ground to symbol), its reverse the
+    /// erasure (symbol to ground) — as G holds a hue move. Its amount is the
+    /// share of the enclosure the move covers.
+    SymbolCreation { from_ground: u8, to_symbol: u8, forward: bool },
+    /// H — A CLOSED SHELL BY ITS BOUNDARY CLASS (ruled 2026-11-11, #256): the
+    /// shell's topological signature, its components (β₀) and its boundary
+    /// cochain's length. Its amount is the shell count it changed.
+    ShellBoundary { boundary_class: (u64, u64) },
 }
 
 impl Mode {
@@ -67,6 +85,8 @@ impl Mode {
             Mode::Flux { .. } => T,
             Mode::Turn { .. } => H,
             Mode::Founding { lane } => *lane,
+            Mode::SymbolCreation { .. } => S,
+            Mode::ShellBoundary { .. } => H,
         }
     }
 
@@ -82,6 +102,9 @@ impl Mode {
     pub fn key(&self) -> Option<Vec<u8>> {
         if let Mode::Founding { lane } = self {
             return (*lane <= H).then(|| vec![FOUNDING + lane]);
+        }
+        if let Some(own) = self.put_own() {
+            return Some(own);
         }
         let mut k = vec![self.lane()];
         let ray = |k: &mut Vec<u8>, r: &Mv| -> Option<()> {
@@ -111,16 +134,35 @@ impl Mode {
             Mode::Turn { ray: r } => {
                 ray(&mut k, r)?;
             }
-            Mode::Founding { .. } => {}
+            Mode::Founding { .. } | Mode::SymbolCreation { .. } | Mode::ShellBoundary { .. } => {}
         }
         Some(k)
     }
 
     /// The mode written on the wire: the lane, then the mode's own fields
     /// (rays whole, by `Mv::to_bytes`).
+    /// The writing of a mode with a byte of its own (#256): its tag, then its
+    /// fields; one writing serves as its key and on the wire.
+    fn put_own(&self) -> Option<Vec<u8>> {
+        match self {
+            Mode::SymbolCreation { from_ground, to_symbol, forward } => Some(vec![SYMBOL_CREATION, *from_ground, *to_symbol, u8::from(*forward)]),
+            Mode::ShellBoundary { boundary_class: (components, boundary) } => {
+                let mut out = vec![SHELL_BOUNDARY];
+                out.extend_from_slice(&components.to_le_bytes());
+                out.extend_from_slice(&boundary.to_le_bytes());
+                Some(out)
+            }
+            _ => None,
+        }
+    }
+
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         if let Mode::Founding { lane } = self {
             out.push(FOUNDING + (*lane <= H).then_some(*lane)?);
+            return Some(());
+        }
+        if let Some(own) = self.put_own() {
+            out.extend_from_slice(&own);
             return Some(());
         }
         out.push(self.lane());
@@ -145,7 +187,7 @@ impl Mode {
             Mode::Turn { ray } => {
                 ray.to_bytes(out);
             }
-            Mode::Founding { .. } => {}
+            Mode::Founding { .. } | Mode::SymbolCreation { .. } | Mode::ShellBoundary { .. } => {}
         }
         Some(())
     }
@@ -185,6 +227,13 @@ impl Mode {
             }
             H => Mode::Turn { ray: Mv::from_bytes(b, p)? },
             f if (FOUNDING..=FOUNDING + H).contains(&f) => Mode::Founding { lane: f - FOUNDING },
+            SYMBOL_CREATION => Mode::SymbolCreation { from_ground: byte(p)?, to_symbol: byte(p)?, forward: side(p)? },
+            SHELL_BOUNDARY => {
+                let components = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                let boundary = u64::from_le_bytes(b.get(*p + 8..*p + 16)?.try_into().ok()?);
+                *p += 16;
+                Mode::ShellBoundary { boundary_class: (components, boundary) }
+            }
             _ => return None,
         })
     }
@@ -455,6 +504,11 @@ impl Modes {
             Mode::Hue(GaugeMode::Move(x, y)) => format!("G move {x}→{y} ×{a}"),
             Mode::Flux { forward, .. } => format!("T flux {} {a}", if *forward { "+" } else { "−" }),
             Mode::Turn { .. } => format!("H turn {a} of 360°"),
+            Mode::SymbolCreation { from_ground, to_symbol, forward } => match forward {
+                true => format!("S create {from_ground}→{to_symbol} ×{a}"),
+                false => format!("S erase {to_symbol}→{from_ground} ×{a}"),
+            },
+            Mode::ShellBoundary { boundary_class: (c, b) } => format!("H shell β₀={c} ∂={b} ×{a}"),
             Mode::Founding { lane } => match ["S", "G", "T", "H"].get(usize::from(*lane)) {
                 Some(l) => format!("{l} founding ×{a}"),
                 None => format!("lane {lane} founding ×{a}"),

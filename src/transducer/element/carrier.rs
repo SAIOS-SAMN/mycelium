@@ -1052,6 +1052,49 @@ pub fn measure_lanes(chain: &[crate::transducer::sentence::SectionLink]) -> [u64
     [spatial, gauge, 0, shell]
 }
 
+/// THE MODES A CHAIN'S S AND H MOVE (ruled 2026-11-11, #256), read as
+/// [`measure_lanes`] reads their counts: each link between the ground and a
+/// symbol a `SymbolCreation` on S — forward from the ground to the symbol,
+/// its reverse an erasure — counted per move; and the shell the chain
+/// changes a `ShellBoundary` on H, keyed by the after state's signature
+/// (components, boundary length), at the shell count. The amounts give the
+/// modes' proportions; a closure's lane share is set on them
+/// (`Mu::carried_by`).
+pub fn chain_modes(chain: &[crate::transducer::sentence::SectionLink]) -> crate::economy::modes::Modes {
+    use crate::economy::modes::{Mode, Modes};
+    let ground = crate::transducer::raster::ground();
+    let mut out = Modes::new();
+    let mut before_pos: Vec<crate::transducer::spelled::SectionSite> = Vec::new();
+    let mut after_pos: Vec<crate::transducer::spelled::SectionSite> = Vec::new();
+    let one = crate::core::Q::from_integer(1.into());
+    for l in chain {
+        let (b, a) = l.transition();
+        let (painted_b, painted_a) = (!ground.holds(&b), !ground.holds(&a));
+        if painted_b {
+            before_pos.push(l.site);
+        }
+        if painted_a {
+            after_pos.push(l.site);
+        }
+        match (painted_b, painted_a) {
+            (false, true) => {
+                out.add_mode(Mode::SymbolCreation { from_ground: b, to_symbol: a, forward: true }, one.clone());
+            }
+            (true, false) => {
+                out.add_mode(Mode::SymbolCreation { from_ground: a, to_symbol: b, forward: false }, one.clone());
+            }
+            _ => {}
+        }
+    }
+    let sb = crate::transducer::candidates::signature(&before_pos, &[]);
+    let sa = crate::transducer::candidates::signature(&after_pos, &[]);
+    let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
+    if shell > 0 {
+        out.add_mode(Mode::ShellBoundary { boundary_class: (sa.components, sa.boundary) }, crate::core::Q::from_integer(shell.into()));
+    }
+    out
+}
+
 /// [`measure_lanes`] OF SUPPORT THAT VANISHED AND APPEARED, read without a
 /// symbol written for the absence: each site of `vanished` a link from a
 /// body to nothing and each of `appeared` from nothing to a body, so each is
