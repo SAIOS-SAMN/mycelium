@@ -211,3 +211,32 @@ fn draw_lanes_reads_an_ask_per_lane_all_or_none() {
     assert_eq!(drawn.amount_of(&Mode::Founding { lane: H }), Some(&q(1, 2)));
     assert_eq!(held.amount_of(&Mode::Founding { lane: G }), Some(&q(3, 1)));
 }
+
+/// #256 (ruled 2026-11-11) — S'S CREATION AND H'S SHELL HAVE MODES OF THEIR
+/// OWN: a symbol created from the ground and its erasure are two sides of one
+/// move on S, a shell is keyed by its boundary class on H; each is apart from
+/// the lane's founding mode and from every motion's mode, and each is carried
+/// whole on the wire.
+#[test]
+fn symbol_creation_and_shell_boundary_are_modes_of_their_own() {
+    use crate::economy::modes::{Mode, S};
+    let create = Mode::SymbolCreation { from_ground: 0, to_symbol: 4, forward: true };
+    let erase = Mode::SymbolCreation { from_ground: 0, to_symbol: 4, forward: false };
+    let shell = Mode::ShellBoundary { boundary_class: (2, 12) };
+    assert_eq!((create.lane(), shell.lane()), (S, H));
+    let mut held = Modes::new();
+    held.add_mode(create.clone(), q(3, 1));
+    held.add_mode(erase.clone(), q(1, 1));
+    held.add_mode(shell.clone(), q(2, 1));
+    held.add(&Modes::founding(S, q(5, 1)).expect("S"));
+    held.add(&Modes::founding(H, q(7, 1)).expect("H"));
+    assert_eq!(held.on_lane(S).count(), 3, "creation, erasure and the founding mode, three on S");
+    assert_eq!(held.amount_of(&create), Some(&q(3, 1)));
+    assert_eq!(held.amount_of(&erase), Some(&q(1, 1)), "the reverse move is its own mode");
+    assert_eq!(held.amount_of(&shell), Some(&q(2, 1)));
+    assert!(held.amount_of(&Mode::ShellBoundary { boundary_class: (2, 13) }).is_none(), "another boundary class is another mode");
+    let mut wire = Vec::new();
+    held.put(&mut wire).expect("written");
+    let mut p = 0;
+    assert_eq!(Modes::take_from(&wire, &mut p), Some(held), "read back whole");
+}

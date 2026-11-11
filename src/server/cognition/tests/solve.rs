@@ -210,7 +210,15 @@ fn closure_mode_amount_is_its_share_of_the_enclosure() {
     let mut stroke = crate::physics::Physics::default().stroke_n(need);
     let expected = crate::economy::modes::Modes::of_motion(&motion, &share, &mut stroke).expect("the slide's modes read");
     assert!(!expected.is_empty(), "the slide moves T");
-    assert_eq!(read.modes.print(), expected.print(), "the closure's modes at the share m/18 = {share}, never at the mass {m}");
+    use crate::economy::modes::Mode;
+    let mut motion_modes = crate::economy::modes::Modes::new();
+    for (m, a) in read.modes.modes().filter(|(m, _)| !matches!(m, Mode::SymbolCreation { .. } | Mode::ShellBoundary { .. })) {
+        motion_modes.add_mode(m.clone(), a.clone());
+    }
+    assert_eq!(motion_modes.print(), expected.print(), "the closure's motion modes at the share m/18 = {share}, never at the mass {m}");
+    // #256: what the slide created and erased on S, and the shell it moved
+    // on H, are held at their own modes beside them.
+    assert!(read.modes.modes().any(|(m, _)| matches!(m, Mode::SymbolCreation { .. })), "S at its creation modes: {}", read.modes.print());
 }
 
 /// A rule that does not carry a withheld pair is REFUSED by the reconstruction,
