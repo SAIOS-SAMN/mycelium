@@ -520,6 +520,13 @@ pub struct Court {
     /// domain made, summed exact per lane — what its next growth grant moves.
     /// Taken whole when a grant seals; persisted (`LEAF_CLOSED`).
     pub(crate) closed_since_grant: crate::network::nerve::Keyed<crate::economy::Mu>,
+    /// MU-ECONOMY §3.4, §11.4 F2b — THE CLOSURE POINTS IN THIS COURT'S CONES:
+    /// each point (a task's citation and its closing rule's address, written
+    /// out) a first closure sealed, on this court's line or on a line it
+    /// admitted, with the stamp of the receipt that sealed it first here. A
+    /// point held is closed: a later closure of it, at this court or any
+    /// other, is judged again. Kept across folds; persisted (`LEAF_POINTS`).
+    pub(crate) points: crate::network::nerve::Keyed<crate::chronometry::Stamp>,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
     /// bounded; never persisted. 78.146: on its own lock, so a door serves a
@@ -1073,6 +1080,7 @@ impl Court {
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
                 self.chain.admit(r.clone());
+                self.note_points(r);
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and

@@ -198,6 +198,7 @@ impl Court {
             atlas,
             grants,
             closed_since_grant,
+            points,
             seats,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
@@ -252,6 +253,8 @@ impl Court {
         c.count("grants", grants.scoped().map(|(_, g)| g.len()).sum());
         // 78.155c — the universes with closures awaiting a growth grant.
         c.count("closed_since_grant", closed_since_grant.len());
+        // §3.4 — the closure points in this court's cones.
+        c.count("points", points.len());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

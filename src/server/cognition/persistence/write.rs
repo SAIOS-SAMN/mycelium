@@ -231,6 +231,10 @@ impl Court {
         // 78.125 (law version 5) — the window book, always: its presence is
         // what tells a version-5 home from a version-4 one.
         leaves.push((LEAF_WINDOWS, self.windows.put()));
+        // §3.4 — the closure points in this court's cones, where any is held.
+        if !self.points.is_empty() {
+            leaves.push((LEAF_POINTS, super::super::points::put_points(&self.points)));
+        }
         nodes.insert(self.chain.signer(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }
