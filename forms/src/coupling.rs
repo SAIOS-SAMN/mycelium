@@ -61,7 +61,7 @@
 //! conservation: light made = received + drained, every bell. Light is
 //! received on a body's unlocked face, `1 − δ` on the continuum and `δ` on
 //! the vacuum, `δ = H/(r + H)` the carry or pinch share
-//! (`forms::passage::Frame::share`); the rest drains. A ledger that does
+//! (`forms::passage::PassageState::share`); the rest drains. A ledger that does
 //! not balance is refused `Unbalanced`, with its residue.
 //!
 //! EXACT. Every reading is exact over ℚ: no float, no trigonometric value,

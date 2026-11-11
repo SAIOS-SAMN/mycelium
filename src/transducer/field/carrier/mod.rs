@@ -38,7 +38,7 @@ pub use lift::{Lifted, LiftedBody, Nested, Point};
 pub use motions::{FieldMotion, Generator, Unit};
 pub use refusal::{FieldRefusal, Residue};
 pub use rotor::{LocalOrbit, Rotor, RotorPrecession, RotorTransition};
-pub use shares::{frame_plane, Cohesion, TraversalState};
+pub use shares::{frame_plane, pole_plane, Cohesion, TraversalState};
 pub use statement::{admit, admit_well, reconstruct, reconstruct_well, StatementRefusal};
 pub use transitions::{motion_of, transitions_of, PairTransition};
 pub use turning::{FramePlanes, Meeting, Turning, TurningPlane};

@@ -448,7 +448,7 @@ commute by the same reading, and where they share one the order is
 content (MU-CLIENT §4.5, the locality theorem, 78.99(3)).
 
 A turning stands on a plane of two axes of one sign: `e₊ₖe₊ₗ` a turning of
-the continuum, `e₋ₖe₋ₗ` a turning of the vacuum; a frame plane or a mixed
+the continuum, `e₋ₖe₋ₗ` a turning of the vacuum; a pole plane or a mixed
 pair is a boost, never a turning (GLOSSARY *Lane vector*; proposal 78.173
 v4, `NotTurningPlane`). So in `Cl(p, q)` the most turnings that run
 concurrently is `⌊p/2⌋` in the continuum plus `⌊q/2⌋` in the vacuum.
@@ -1030,7 +1030,7 @@ Where it lives in code:
 | The vortex, collapsed by a deciding word at its conjugacy stratum | `Contemplation::collapse_on` (`src/transducer/field/contemplation.rs`) | **Built** |
 | Cocycles on a cover: a cell filled where every triangle closes, otherwise obstructed by that triangle's holonomy | `src/transducer/cech/cover.rs` (78.123 A) | **Built**; the sensory verdict at the eye (24.4) **Specified** |
 | Contemplation's gate: relations admitted as thoughts only where the fill decides | `Contemplation::gate` (`src/transducer/field/cross_scene.rs`, A.10.1) | **Built** |
-| Cohesion as a named reading of the held field, multi-plane shares $c_k + d_k = 1$, throat traversal state (`Balanced`, `TooCohesive`, `TooFluid`), and first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ fallacies | `forms::coupling::held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`; `field::carrier::Cohesion` (`src/transducer/field/carrier/shares.rs`), `WellBody::cohesion` (`src/transducer/field/carrier/holding.rs`), `Well::cohesion` (`src/transducer/field/shares.rs`), reading across membrane frame plane and turning planes; claims in `src/transducer/field/tests/shares.rs` and `src/client/sdk/tests/cohesion.rs` | **Built** (#149, #249) |
+| Cohesion as a named reading of the held field, multi-plane shares $c_k + d_k = 1$, throat traversal state (`Balanced`, `TooCohesive`, `TooFluid`), and first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ fallacies | `forms::coupling::held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`; `field::carrier::Cohesion` (`src/transducer/field/carrier/shares.rs`), `WellBody::cohesion` (`src/transducer/field/carrier/holding.rs`), `Well::cohesion` (`src/transducer/field/shares.rs`), reading across membrane pole plane and turning planes; claims in `src/transducer/field/tests/shares.rs` and `src/client/sdk/tests/cohesion.rs` | **Built** (#149, #249) |
 
 ### 9.5 The mind asserts sentences as expressions
 

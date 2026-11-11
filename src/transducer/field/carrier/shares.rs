@@ -23,7 +23,7 @@
 use super::refusal::FieldRefusal;
 use crate::core::Q;
 use forms::coordinate::{Axis, FormRefusal, Key, Plane, Square, Vector};
-use forms::passage::Frame;
+use forms::passage::PassageState;
 use num_traits::One;
 
 /// THE COHESION OF A HELD WHOLE (the viscosity; MU-ANASTOME §9.4): one
@@ -41,7 +41,7 @@ impl Cohesion {
     /// `NotTurningPlane` with the coordinate form's refusal for a key of
     /// one axis or of two axes that hold no frame, or a plane named twice;
     /// and `Passage` where a frame holds no share.
-    pub fn of(frames: &[(Key, Frame)]) -> Result<Cohesion, FieldRefusal> {
+    pub fn of(frames: &[(Key, PassageState)]) -> Result<Cohesion, FieldRefusal> {
         let mut components = Vec::with_capacity(frames.len());
         for (key, frame) in frames {
             match key.plane() {
@@ -108,10 +108,16 @@ pub enum TraversalState {
     TooFluid,
 }
 
-/// FRAME PLANE `k`'S KEY, its own two units `e₊ₖe₋ₖ` (`e_+k-k`), where the
-/// carrier's frame states stand. Refused `NotTurningPlane` with the
-/// coordinate form's refusal where `k` is 0.
-pub fn frame_plane(k: u32) -> Result<Key, FieldRefusal> {
+/// POLE PLANE `k`'S KEY, its own two units `e₊ₖe₋ₖ` (`e_+k-k`), where the
+/// carrier's passage states stand. Refused `NotTurningPlane` with the
+/// coordinate form's refusal where `k` is 0 (78.182 item 12, #239).
+pub fn pole_plane(k: u32) -> Result<Key, FieldRefusal> {
     let unit = |square| Axis::unit(square, k).map_err(FieldRefusal::NotTurningPlane);
     Key::generator(unit(Square::Positive)?, unit(Square::Negative)?).map_err(FieldRefusal::NotTurningPlane)
+}
+
+/// Formerly `frame_plane` (78.182 item 12, #239).
+#[inline]
+pub fn frame_plane(k: u32) -> Result<Key, FieldRefusal> {
+    pole_plane(k)
 }

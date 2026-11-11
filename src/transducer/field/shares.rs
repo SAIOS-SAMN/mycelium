@@ -12,7 +12,7 @@
 //! let _ = well.cohesion;
 //! ```
 
-use super::carrier::{frame_plane, whole_turn, Cohesion, FieldRefusal};
+use super::carrier::{pole_plane, whole_turn, Cohesion, FieldRefusal};
 use super::{Contemplation, Well};
 use crate::core::Q;
 use num_traits::{One, Signed, Zero};
@@ -21,7 +21,7 @@ impl Well {
     /// THE WELL'S COHESION, PER PLANE (the viscosity; #149, #249): its inflation's
     /// gauge ([`Well::inflation`]: `H` the charts its cover closed, `R` its
     /// sections' charts still open) read as the held share `H/(H + R) = 1/(1 + t)`
-    /// on its membrane's frame plane and every turning plane of its bound orbit
+    /// on its membrane's pole plane and every turning plane of its bound orbit
     /// and local orbits. On each plane, the first-degree orbital shear is
     /// `Δθ_k = 360° · c_k = 360° / (1 + t_k)`. At the throat both shares are `½`;
     /// at the closed pole (nothing open) the cohesion is 1. Refused as the
@@ -29,7 +29,7 @@ impl Well {
     pub fn cohesion(&self) -> Result<Cohesion, FieldRefusal> {
         let inflation = self.inflation()?;
         let body = self.body()?;
-        let mut frames = vec![(frame_plane(body.membrane().plane())?, inflation.gauge)];
+        let mut frames = vec![(pole_plane(body.membrane().plane())?, inflation.gauge)];
         for (_, local_orbit) in &self.orbits {
             if let Ok(rot) = local_orbit.holonomy() {
                 if let Ok(planes) = rot.planes() {
@@ -38,7 +38,7 @@ impl Well {
                         let c_k = if c_k.is_zero() && !frac.is_zero() { Q::one() } else { c_k };
                         let h_k = c_k.clone();
                         let r_k = Q::one() - &c_k;
-                        let f = forms::passage::Frame { hold: h_k, reach: r_k };
+                        let f = forms::passage::PassageState { hold: h_k, reach: r_k };
                         if !frames.iter().any(|(existing, _)| existing == &k) {
                             frames.push((k, f));
                         }
@@ -54,7 +54,7 @@ impl Well {
                 let h_k = c_k.clone();
                 let r_k = Q::one() - &c_k;
                 let key = t.plane().key().clone();
-                let f = forms::passage::Frame { hold: h_k, reach: r_k };
+                let f = forms::passage::PassageState { hold: h_k, reach: r_k };
                 if !frames.iter().any(|(existing, _)| existing == &key) {
                     frames.push((key, f));
                 }
@@ -78,7 +78,7 @@ impl Contemplation {
                     if let Some(c_k) = c.on(p) {
                         let h_k = c_k.clone();
                         let r_k = Q::one() - c_k;
-                        let f = forms::passage::Frame { hold: h_k, reach: r_k };
+                        let f = forms::passage::PassageState { hold: h_k, reach: r_k };
                         frames.push((p.clone(), f));
                     }
                 }

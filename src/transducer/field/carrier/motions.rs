@@ -19,7 +19,7 @@ use super::turning::{FramePlanes, Meeting, Turning, TurningPlane};
 use crate::core::Q;
 use crate::transducer::cga::Clifford;
 use forms::coordinate::{Axis, Key, Square, DEGREES_PER_TURN};
-use forms::passage::{Frame, Poles};
+use forms::passage::{PassageState, Poles};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, Signed};
@@ -318,7 +318,7 @@ impl FieldMotion {
             }
         }
         let half = algebra::multivector::half();
-        poles.state(&Frame { hold: (&whole + &span) * &half, reach: (whole - span) * half }).map_err(FieldRefusal::Passage)
+        poles.state(&PassageState { hold: (&whole + &span) * &half, reach: (whole - span) * half }).map_err(FieldRefusal::Passage)
     }
 
     /// A POINT CARRIED (78.171 §2, a point): each phase a vector at its angle

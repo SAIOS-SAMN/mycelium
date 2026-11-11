@@ -8,12 +8,12 @@
 use super::super::*;
 use super::fixtures::{degrees, frame, plane, revolution_turning, three_charts, turning};
 use forms::coordinate::Square;
-use forms::passage::{Frame, Place, Pole};
+use forms::passage::{PassageState, Place, Pole};
 use num_bigint::BigInt;
 
 /// A frame state `H·n_Z + R·n_Q` on `membrane`'s plane.
 fn state(membrane: &Membrane, hold: (i64, i64), reach: (i64, i64)) -> crate::transducer::cga::Clifford {
-    let f = Frame { hold: degrees(hold.0, hold.1), reach: degrees(reach.0, reach.1) };
+    let f = PassageState { hold: degrees(hold.0, hold.1), reach: degrees(reach.0, reach.1) };
     membrane.poles().state(&f).expect("a frame state")
 }
 
@@ -105,7 +105,7 @@ fn inversion_in_the_membrane_needs_no_infinity() {
     assert_eq!(stand(&infinity, m.poles(), Labels::Standard, None), Err(FieldRefusal::Unenclosed { pole: Pole::Open }));
     assert_eq!(stand(&infinity, m.poles(), Labels::Standard, Some(m)), Ok(Place::Pole(Pole::Open)), "lawful inside");
     let read = |x: Result<crate::transducer::cga::Clifford, FieldRefusal>| m.poles().read(&x.expect("carried")).expect("on the plane");
-    let frame_of = |hold: (i64, i64), reach: (i64, i64)| Frame { hold: degrees(hold.0, hold.1), reach: degrees(reach.0, reach.1) };
+    let frame_of = |hold: (i64, i64), reach: (i64, i64)| PassageState { hold: degrees(hold.0, hold.1), reach: degrees(reach.0, reach.1) };
     let inverted = m.invert(&infinity).expect("on the plane");
     assert_eq!(read(Ok(inverted.clone())), frame_of((4, 5), (0, 1)), "the origin pole, 4/5·n_Z");
     assert_eq!(stand(&inverted, m.poles(), Labels::Standard, None), Ok(Place::Pole(Pole::Closed)), "standing anywhere");
