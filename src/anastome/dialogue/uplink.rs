@@ -572,7 +572,7 @@ pub fn decode_uplink(b: &[u8]) -> Option<SignedFold> {
 }
 
 /// 78.123 B — WHY A CHILD WAS NOT NETTED.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChildRefusal {
     /// Its stamp names no admitted fold on this court's line.
     NotOnLine,
@@ -594,6 +594,11 @@ pub enum ChildRefusal {
     /// 78.138 — a carried line's fold over its line's current head: an empty
     /// span claiming nets.
     Repeated,
+    /// #237 (ruled 2026-11-11, 78.182 item 1) — a carried line whose tier's
+    /// bond does not cover the line's exposure on a lane, `B_l < X_l`: the
+    /// first such lane, the bond's whole there and the exposure there, the
+    /// same exposure the slash reads.
+    Underbonded { lane: usize, bond: Box<crate::core::Q>, exposure: Box<crate::core::Q> },
 }
 
 /// WHAT THE COURT ANSWERED.
@@ -737,9 +742,14 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
                 ChildRefusal::Unbonded => (5, 0),
                 ChildRefusal::Broken => (6, 0),
                 ChildRefusal::Repeated => (7, 0),
+                ChildRefusal::Underbonded { lane, .. } => (8, *lane),
             };
             out.push(code);
             out.extend_from_slice(&lane.to_le_bytes()[..1]);
+            if let ChildRefusal::Underbonded { bond, exposure, .. } = why {
+                crate::transducer::alphabet::put_q(&mut out, bond);
+                crate::transducer::alphabet::put_q(&mut out, exposure);
+            }
         }
         Uplinked::HandoffRefused { index, why } => {
             out.push(7);
@@ -867,6 +877,11 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
                 5 => ChildRefusal::Unbonded,
                 6 => ChildRefusal::Broken,
                 7 => ChildRefusal::Repeated,
+                8 => {
+                    let bond = crate::transducer::alphabet::take_q(b, &mut p)?;
+                    let exposure = crate::transducer::alphabet::take_q(b, &mut p)?;
+                    ChildRefusal::Underbonded { lane, bond: Box::new(bond), exposure: Box::new(exposure) }
+                }
                 _ => return None,
             };
             Uplinked::ChildRefused { index, why }

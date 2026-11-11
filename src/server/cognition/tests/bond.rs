@@ -159,3 +159,33 @@ fn challenge_slashes_bond_against_exposure_and_withdrawal_waits() {
     assert!(k.treasury.audit().is_ok(), "both equations hold through the forfeit");
     assert_eq!(k.bond(&bond(None, 3).sign(&reserve())), Founded::Unbonded);
 }
+
+/// #237 (ruled 2026-11-11) — A CARRIED LINE IS ADMITTED ONLY WHILE ITS BOND
+/// COVERS ITS EXPOSURE ON EVERY LANE, `B_l ≥ X_l`, the exposure the slash
+/// reads of its fold: under it the line is refused `Underbonded`, naming the
+/// first lane short with the bond and the exposure there; topped up to it,
+/// the same line is carried.
+#[test]
+fn carried_line_is_refused_underbonded_until_its_bond_covers_its_exposure() {
+    let mut k = founded();
+    let (f, _) = lying_fold();
+    let x = crate::server::cognition::challenge::exposure_of_nets(&f.rows, &f.declared).lanes();
+    let lane = (0..4).find(|&l| x[l] > crate::core::Q::from_integer(1.into())).expect("the fold moves more than one unit on a lane");
+    let mut one = [0u64; 4];
+    one[lane] = 1;
+    assert!(bonded(k.bond(&bond(Some(one), 1).sign(&reserve()))).is_some(), "one unit posted");
+    let short = (0..4).find(|&l| crate::core::Q::from_integer(one[l].into()) < x[l]).expect("a lane short");
+    let refused = carry(&mut k, f.clone(), 8);
+    assert_eq!(
+        refused,
+        Err(Uplinked::ChildRefused {
+            index: 0,
+            why: crate::anastome::dialogue::uplink::ChildRefusal::Underbonded { lane: short, bond: Box::new(crate::core::Q::from_integer(one[short].into())), exposure: Box::new(x[short].clone()) }
+        }),
+        "one unit of bond never backs the fold's rows"
+    );
+    let cover: [u64; 4] = std::array::from_fn(|l| u64::try_from(x[l].to_integer()).expect("a whole exposure"));
+    let top: [u64; 4] = std::array::from_fn(|l| cover[l].checked_sub(one[l]).expect("the exposure is at least the unit posted on its lane"));
+    assert!(bonded(k.bond(&bond(Some(top), 2).sign(&reserve()))).is_some(), "topped up to the exposure");
+    assert!(carry(&mut k, f, 9).is_ok(), "covered on every lane, the line is carried");
+}

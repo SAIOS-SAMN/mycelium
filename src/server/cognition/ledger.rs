@@ -871,8 +871,17 @@ impl Court {
         if self.tier_domain.get(&fold.tier) != Some(&domain) {
             return Err(refuse(ChildRefusal::ForeignDomain));
         }
-        if self.bond_of(&fold.tier).is_zero() {
+        let bond = self.bond_of(&fold.tier);
+        if bond.is_zero() {
             return Err(refuse(ChildRefusal::Unbonded));
+        }
+        // #237 (ruled 2026-11-11) — THE BOND COVERS THE LINE'S EXPOSURE on
+        // every lane, `B_l ≥ X_l`, the exposure the slash would read of this
+        // fold: one unit of bond never backs unbounded rows.
+        let exposure = super::challenge::exposure_of_nets(&fold.rows, &fold.declared);
+        let (b, x) = (bond.lanes(), exposure.lanes());
+        if let Some(lane) = (0..4).find(|&l| b[l] < x[l]) {
+            return Err(refuse(ChildRefusal::Underbonded { lane, bond: Box::new(b[lane].clone()), exposure: Box::new(x[lane].clone()) }));
         }
         if fold.rows != c.rows || fold.declared != c.declared {
             return Err(refuse(ChildRefusal::Mismatched));
