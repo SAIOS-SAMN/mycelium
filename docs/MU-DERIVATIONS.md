@@ -3635,7 +3635,7 @@ Each line names its entry and the reading or ruling that decides it.
    cited as folds are.
 5. **D1.2 O1** — which modes carry a sphere or flat face (conformal,
    per-lane isometry, or curved only): decided by the maintainer's
-   amendment text for Concordance 2.6.
+   amendment text for Concordance 2.6. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 18).
 6. **D1.2 O2** — the seed round (committed in the offer, or
    face-intrinsic): decided by whether any face has a seed fixed by its
    geometry.
@@ -3646,20 +3646,20 @@ Each line names its entry and the reading or ruling that decides it.
    register `BODY_BUDGET`): decided by a typed `MAX_WIRE` table per act
    kind.
 9. **D1.3 O2** — whether the plain TCP transport stays: a ruling on
-   MU-PRECURSORS' one-host development path.
+   MU-PRECURSORS' one-host development path. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 19).
 10. **D1.4 O1** — where FORMAT ends for envelope reservations: decided by
     comparing each with its codec's written header length.
 11. **D1.4 O2** — whether engineering numbers join `OPEN_PHYSICS` or a
-    sibling register: a ruling.
+    sibling register: a ruling. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 20).
 12. **D2.1 O1** — the strain on the bond, defect `D` or exposure `X`:
     decided by the distribution of `D_l / X_l` over falsified folds on the
-    soak.
+    soak. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 21).
 13. **D2.2 O1** — whether a default keeps the half bounty: decided by the
     count of defaults whose tier later published a line that
     reconstructs.
 14. **D2.3 O1** — the at-rest term `κ_l` (1, 0, or a measured cost): a
     ruling on MU-ECONOMY §7.1, informed by the share of map fees drawn at
-    `y = 0`.
+    `y = 0`. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 22).
 15. **D2.3 O2** — the units inside the yield surface (read apart, or one
     event = one reserve unit): decided by `e_l` against `d_l` on strained
     lanes.
@@ -3707,15 +3707,15 @@ Each line names its entry and the reading or ruling that decides it.
 26. **D4.2 O1** — a cursor on the evidence pull: decided by whether any
     kernel pulls evidence.
 27. **D4.3 O1** — whether `0 × 0` is a grid the dialogue needs: a ruling
-    on the empty test input.
+    on the empty test input. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 23).
 28. **D4.4 O1** — the producer's maximal depth for `Selection` and `Pred`:
     decided by instrumenting `depth()` on every minted term.
 29. **D4.5 O1** — the off-lock share of a worker's act: decided by
     metering off-lock strokes beside `physics::spent_here`.
 30. **D4.8 O1** — the width contract of `Encl` (absolute or outward
-    rounding only): a ruling on 78.130's promise.
+    rounding only): a ruling on 78.130's promise. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 24).
 31. **D4.8 O2** — whether `gamma_p`, `erf` and `poisson_quantile` keep a
-    place without a caller: a ruling naming a consumer, or deferral.
+    place without a caller: a ruling naming a consumer, or deferral. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 25).
 32. **D4.8 O3** — the exact Stirling least-term derivation of `X₀`: a
     derivation, closed by its proof.
 
