@@ -1048,6 +1048,7 @@ impl Contemplation {
             // the ring.
             stage: super::carrier::WellStage::thought(),
             orbit: None,
+            orbits: Vec::new(),
             spores: super::cross_scene::Spores::default(),
             family: Vec::new(),
             moved_k: self.now_k,

@@ -2207,16 +2207,15 @@ Each phase is one commit:
         and the pole swap (`forms::passage::Poles::swap`) and the
         inversion in the membrane, the boost on a frame plane, the
         re-period; `NotExact` for a motion not carried.
-     6. S9a: `cech::orbit::Field`'s orbits attached to wells as their
-        local orbits; shear and precession per revolution in the
-        contemplation, resonance read and an unbound path refused there;
-        the court's pressure on the well it faces.
-     7. S9b: axiomatic gravity, the drag on the orthogonal class
-        (disjoint turning planes, `Meeting::Disjoint`).
-     8. S9c: the vortex's monodromy read between charts, and a mind's
+     6. Built: S9a: `cech::orbit::Field`'s orbits attached to wells as their
+        local orbits (`Well.orbits: Vec<(Vec<u8>, LocalOrbit)>`, `Contemplation::attach_orbits`, `Contemplation::sync_field`);
+        `carrier::Rotor` holds its residual rate `B` and signed revolution count `K` per canonical invariant plane, `Turning::winding` is signed, and `LocalOrbit` reads shear and precession per revolution in admission order (single-line orbits kept awaiting their second line and refusing `NotRevolution { at: 1 }`, resonance read with kept `K` and flat paths refused `Unbound`);
+        the court's pressure on the well it faces (`court_pressure_deforms_the_well_it_faces`).
+     7. Built (PR #233): S9b: axiomatic gravity, the drag on the orthogonal class
+        (disjoint turning planes, `Meeting::Disjoint`, `carrier::gravity`).
+     8. Built (PR #236): S9c: the vortex's monodromy read between charts, and a mind's
         stated holonomy, precession and monodromy reconstructed by a
-        court on the wire (a wire change, stated as a Network contract;
-        track 10's claims follow).
+        court on the wire (`carrier::statement`, `carrier::tests::monodromy`).
 9. **S8, the field's motions as one exact group:**
    - rotate (a rotor by turns, cyclotomic);
    - flip (a reflection, or an inversion in the membrane);
@@ -2270,6 +2269,7 @@ Each phase is one commit:
     - Reflective claims: `holonomy_stated_by_a_mind_reconstructed_by_a_court`,
       `precession_stated_by_a_mind_reconstructed_by_a_court`,
       `vortex_stated_with_its_monodromy_reconstructed_by_a_court`.
+    - **Built** (S9a, S9b in PR #233, S9c in PR #236): `carrier::gravity` reads axiomatic gravity (`only_disjoint_plane_orbits_change_rate_under_axiomatic_gravity`, `axiomatic_gravity_shears_the_orthogonal_class`); `cech::orbit::Orbit` keeps its threading lines and their admission increments in admission order, `carrier::Rotor` holds its residual generator `B` and signed revolution count `K` per invariant plane (`Turning::winding` signed in the plane's orientation), and `Contemplation::attach_orbits` attaches `LocalOrbit`s to `Well.orbits` (`court_pressure_deforms_the_well_it_faces`); `carrier::statement` and `carrier::tests::monodromy` read the vortex's monodromy between charts and verify court reconstruction of stated holonomy, precession and monodromy (`vortex_monodromy_read_between_charts`, `holonomy_stated_by_a_mind_reconstructed_by_a_court`, `precession_stated_by_a_mind_reconstructed_by_a_court`, `vortex_stated_with_its_monodromy_reconstructed_by_a_court`).
 11. **S4b (v0.4.0), rank n and transduction as factorisation**
     (MU-SENSING §3.9): the rest of S4 (`GRID_AXES`, `FRAME_AXIS`,
     `PLANE_ROW`/`PLANE_COL`, the rank-2 raster and `Link`), so tasks of

@@ -350,6 +350,7 @@ impl Contemplation {
             stage: super::carrier::WellStage::perceived(),
             // No orbit is held yet: the well is flat (S9a attaches them).
             orbit: None,
+            orbits: Vec::new(),
             spores,
             family: family.to_vec(),
             moved_k: self.now_k,
