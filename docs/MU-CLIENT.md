@@ -1286,11 +1286,13 @@ The bounds, each a reading of the physics (§7.1 lists where each stands):
   docket cover names or the mind's language speaks on (`Mind::couples`);
   only a coupled offer is extracted, and an uncoupled one lapses
   (`lapse_offers`, `lapse_standing_task`). The mind asks for a task
-  (`pull_task`) only under TENSION: an open question, a demand on its plan,
-  a ringing orbit, or a reservoir that neither re-formed nor condensed
-  (`Mind::strained`). A full reserve over a settled field asks for nothing,
-  and the mind rests; a pull because the corpus is empty is a defect
-  (#135).
+  (`pull_task`) under TENSION (an open question, a demand on its plan,
+  a ringing orbit, or a reservoir that neither re-formed nor condensed,
+  `Mind::strained`) or when its corpus holds no item and the court's registry
+  is not exhausted at the current height (ruled 2026-10-24, #246). A full
+  reserve over a settled field with an exhausted registry asks for nothing,
+  and the mind rests; a continuous pull against an exhausted registry without
+  height progression is a defect (#135).
 - **The corpus is met where the mind's orbits stand.** Every feed family
   and open question is placed once on the corpus at its own coordinates
   (`focus::Corpus`). The focus is the field's own motion
