@@ -774,6 +774,11 @@ carrying 292 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
 ### D1.4 The register and its gate — every underived number named until derived
 
 **Status.** **Built** (2026-10-31, the live-readings ruling, §0.5).
+O2 **ruled and built** (operator, 2026-11-11; 78.182 item 20): the
+register is two items, `OPEN_PHYSICS`, which keeps only the physical
+invariants (`OpenKind::Physics`), and its sibling `OPEN_ENGINEERING`, which
+holds the engineering and protocol numbers; the numbers gate reads both
+alike, and `open_physics_holds_physical_invariants_only` holds the split.
 `physics::axioms::{OpenNumber, Governs, OpenKind}` carry the register;
 `OPEN_PHYSICS` is `[OpenNumber; N]`. The numbers gate is
 `gate/src/numbers.rs` (N1–N5 enforced by the gate test
@@ -3656,7 +3661,7 @@ Each line names its entry and the reading or ruling that decides it.
 10. **D1.4 O1** — where FORMAT ends for envelope reservations: decided by
     comparing each with its codec's written header length.
 11. **D1.4 O2** — whether engineering numbers join `OPEN_PHYSICS` or a
-    sibling register: a ruling. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 20).
+    sibling register: a ruling. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 20): the sibling, `OPEN_ENGINEERING`; **Built**.
 12. **D2.1 O1** — the strain on the bond, defect `D` or exposure `X`:
     decided by the distribution of `D_l / X_l` over falsified folds on the
     soak. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 21).
