@@ -271,29 +271,35 @@ fn form_deflation_read_on_ground(
         // the output frame.
         mu.step(&crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())));
         if gated {
+            // 78.174 §1 item 9 (operator, 2026-11-05); MU-ENGINEERING §9.3:
+            // A MODE'S AMOUNT IS ITS SHARE OF THE ENCLOSURE, never the mass
+            // carried. A hue map's modes are read at the pair's G share, the
+            // share of the enclosure recoloured (a recolour pays G by its
+            // share), whether or not the pair carried mass: a recolour moves
+            // no site, so it carries none, and is still the hue map's work.
+            let hue_share = crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())).lane(1).clone();
+            if num_traits::Signed::is_positive(&hue_share) {
+                for (_, gauge) in &moved {
+                    if let Some(gs) = crate::economy::modes::Modes::of_gauge(gauge, &hue_share) {
+                        modes.add(&gs);
+                    }
+                }
+            }
             // The pair's own work: the links its before side demanded moved
-            // (𝒮), the mass the rule's motions carried on it.
+            // (𝒮), the mass the rule's motions carried on it. A motion's
+            // modes are read at the share of the output enclosure the
+            // carried mass covers (its measure at rank n).
             if let Some(m) = pair_mass(x, y).ok().flatten() {
                 carried_mass = carried_mass.and_then(|c| c.checked_add(m));
-                // 78.174 §1 item 9 (operator, 2026-11-05); MU-ENGINEERING §9.3:
-                // A MODE'S AMOUNT IS ITS SHARE OF THE ENCLOSURE, never the mass
-                // carried. A motion's modes are read at the share of the output
-                // enclosure the carried mass covers (its measure at rank n);
-                // a hue map's at the pair's G share, the share of the enclosure
-                // recoloured (a recolour pays G by its share).
                 let enclosure_share = crate::transducer::family::transduce::share_of_enclosure([m, 0, 0, 0], Some(y.sample())).lane(0).clone();
-                let hue_share = crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())).lane(1).clone();
                 mass_share += &enclosure_share;
-                for (motion, gauge) in &moved {
+                for (motion, _) in &moved {
                     // D2.5 — the stroke is the need of the modes it reads
                     // (`cga::modes_need`, D3.1); a motion with no need reads
                     // no modes.
                     let need = crate::transducer::cga::modes_need(motion);
                     if let Some(ms) = need.and_then(|n| crate::economy::modes::Modes::of_motion(motion, &enclosure_share, &mut crate::physics::Physics::default().stroke_n(n))) {
                         modes.add(&ms);
-                    }
-                    if let Some(gs) = crate::economy::modes::Modes::of_gauge(gauge, &hue_share) {
-                        modes.add(&gs);
                     }
                 }
             }
