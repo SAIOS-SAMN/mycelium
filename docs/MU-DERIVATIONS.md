@@ -3664,13 +3664,13 @@ Each line names its entry and the reading or ruling that decides it.
     sibling register: a ruling. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 20): the sibling, `OPEN_ENGINEERING`; **Built**.
 12. **D2.1 O1** — the strain on the bond, defect `D` or exposure `X`:
     decided by the distribution of `D_l / X_l` over falsified folds on the
-    soak. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 21).
+    soak. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 21): the exposure `X`, with the bond's admission gate `B_l ≥ X_l` (#237); **Built**.
 13. **D2.2 O1** — whether a default keeps the half bounty: decided by the
     count of defaults whose tier later published a line that
     reconstructs.
 14. **D2.3 O1** — the at-rest term `κ_l` (1, 0, or a measured cost): a
     ruling on MU-ECONOMY §7.1, informed by the share of map fees drawn at
-    `y = 0`. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 22).
+    `y = 0`. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 22): `κ_l = 1`, as built since 2026-10-31 (`economy::read_price`); **Built**.
 15. **D2.3 O2** — the units inside the yield surface (read apart, or one
     event = one reserve unit): decided by `e_l` against `d_l` on strained
     lanes.
@@ -3718,7 +3718,7 @@ Each line names its entry and the reading or ruling that decides it.
 26. **D4.2 O1** — a cursor on the evidence pull: decided by whether any
     kernel pulls evidence.
 27. **D4.3 O1** — whether `0 × 0` is a grid the dialogue needs: a ruling
-    on the empty test input. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 23).
+    on the empty test input. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 23): the least sample has one site on every axis; an empty axis is refused at intake, `SampleRefusal::EmptyAxis { axis }`, and no axis `NoAxis` (track 26 S5, `Sample::new`); **Built**.
 28. **D4.4 O1** — the producer's maximal depth for `Selection` and `Pred`:
     decided by instrumenting `depth()` on every minted term.
 29. **D4.5 O1** — the off-lock share of a worker's act: decided by
