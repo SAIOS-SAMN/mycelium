@@ -9,10 +9,11 @@ use super::reading::TickReading;
 /// The record's magic.
 pub const MAGIC: &[u8; 4] = b"MYKR";
 
-/// The record's layout version: 2 carries the reading's lanes in the
-/// rational lane codec (ruled 2026-11-01); a version-1 record is refused.
+/// The record's layout version: 3 carries the reading's lanes as a holding
+/// of modes (MU-ECONOMY §9); 2 carried them as one rational per lane and 1
+/// as counts, each refused.
 /// FORMAT: the keeper record's layout version.
-pub const VERSION: u16 = 2;
+pub const VERSION: u16 = 3;
 
 /// THE LAST SIGNED READING, at the origin it was signed at, with its hash
 /// (the citation its successor names as parent).

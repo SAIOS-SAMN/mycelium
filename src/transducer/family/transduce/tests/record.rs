@@ -143,7 +143,7 @@ fn lane_shares_equal_chain_counts_over_frame() {
         let mu = share_of_enclosure(counts, Some(&y));
         assert_eq!(t.lane_shares(&ground()), [mu.lane(0).clone(), mu.lane(1).clone()], "{x:?} → {y:?}");
         assert_eq!(t.lane_shares(&ground())[0].clone() + t.lane_shares(&ground())[1].clone(), t.share());
-        assert_eq!(mu.lane(3), &crate::core::Q::from_integer(counts[3].into()), "H, the shell count, stands as it is");
+        assert_eq!(mu.lane(3), crate::core::Q::from_integer(counts[3].into()), "H, the shell count, stands as it is");
     }
     let x = sample_by(&[29, 29], |_| 1);
     let y = sample_by(&[30, 30], |t| if t == [1, 2] { 5 } else { 1 });

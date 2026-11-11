@@ -192,3 +192,22 @@ fn draw_lane_is_proportional_exact_and_refused_whole() {
     assert_eq!(back.draw_lane(H, &whole).expect("whole lane").on_lane(H).count(), 2);
     assert_eq!(back.on_lane(H).count(), 0, "a whole lane drawn leaves none of its modes");
 }
+
+/// §12 item 8 — AN ASK IS READ AGAINST THE HOLDING MODE BY MODE: per lane,
+/// in proportion, all lanes or none; a lane short refuses the whole ask and
+/// leaves the holding as it was.
+#[test]
+fn draw_lanes_reads_an_ask_per_lane_all_or_none() {
+    let mut held = Modes::founding(G, q(4, 1)).expect("G");
+    held.add(&Modes::founding(H, q(2, 1)).expect("H"));
+    let before = held.clone();
+    let ask = crate::economy::Mu::of([q(0, 1), q(1, 1), q(0, 1), q(3, 1)]).expect("an ask");
+    let short = held.draw_lanes(&ask).expect_err("H holds 2");
+    assert_eq!((short.mode.lane(), short.held.clone(), short.asked.clone()), (H, q(2, 1), q(3, 1)));
+    assert_eq!(held, before, "a refused ask moves nothing");
+    let ask = crate::economy::Mu::of([q(0, 1), q(1, 1), q(0, 1), q(1, 2)]).expect("an ask");
+    let drawn = held.draw_lanes(&ask).expect("both lanes hold it");
+    assert_eq!(drawn.amount_of(&Mode::Founding { lane: G }), Some(&q(1, 1)));
+    assert_eq!(drawn.amount_of(&Mode::Founding { lane: H }), Some(&q(1, 2)));
+    assert_eq!(held.amount_of(&Mode::Founding { lane: G }), Some(&q(3, 1)));
+}

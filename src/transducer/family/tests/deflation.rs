@@ -383,9 +383,9 @@ fn deflation_reads_mu_as_share_of_each_frame() {
     assert!(read.remainders.iter().all(Vec::is_empty), "the slide closes both pairs: {:?}", read.remainders);
     let q = |n: u64, d: u64| crate::core::Q::new(n.into(), d.into());
     assert_eq!(read.pay[0], 8, "the measure counts eight sites on S");
-    assert_eq!(read.mu.lane(0), &q(5, 3), "μ on S: 4 of 4 and 4 of 6 sites");
+    assert_eq!(read.mu.lane(0), q(5, 3), "μ on S: 4 of 4 and 4 of 6 sites");
     let t = crate::transducer::sentence::presentation::LANE_T;
     assert!(read.pay[t] > 0, "the slide carries a flux");
-    assert_eq!(read.mu.lane(t), &(q(read.pay[t], 1) * q(5, 24)), "𝒯: the flux over the carried mass, as the frames' share of it");
-    assert_eq!(read.mu.lane(3), &q(read.pay[3], 1), "H stands as its count");
+    assert_eq!(read.mu.lane(t), (q(read.pay[t], 1) * q(5, 24)), "𝒯: the flux over the carried mass, as the frames' share of it");
+    assert_eq!(read.mu.lane(3), q(read.pay[3], 1), "H stands as its count");
 }

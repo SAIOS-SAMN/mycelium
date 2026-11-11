@@ -293,7 +293,7 @@ impl Court {
         let units = u64::try_from(read.len()).map_err(|_| Unretrieved::Overflow)?;
         let price = self.read_price().ok_or(Unretrieved::Overflow)?;
         // One unit of information per receipt, on H, at the read price.
-        let fee = Mu::counts([0, 0, 0, units]).on_lanes(|l| l == 3).scaled(price.lane(3)).ok_or(Unretrieved::Overflow)?;
+        let fee = Mu::counts([0, 0, 0, units]).on_lanes(|l| l == 3).scaled(&price.lane(3)).ok_or(Unretrieved::Overflow)?;
         if !fee.shortfall(&self.staked(&staker)).is_zero() {
             return Err(Unretrieved::Short);
         }

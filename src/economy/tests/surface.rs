@@ -38,7 +38,7 @@ fn read_price_is_two_at_full_deficit() {
     let price = crate::economy::read_price(&[496, 0, 1, 248], 496).expect("a reserve");
     assert_eq!(price, crate::economy::Mu::of([q(2, 1), q(1, 1), q(497, 496), q(3, 2)]).expect("non-negative"));
     let thirds = crate::economy::read_price(&[1, 0, 0, 0], 3).expect("a reserve");
-    assert_eq!(thirds.lane(0), &q(4, 3));
+    assert_eq!(thirds.lane(0), q(4, 3));
     assert_eq!(crate::economy::read_price(&[0; 4], 0), None, "no reserve, no price");
 }
 
