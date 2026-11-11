@@ -97,8 +97,9 @@ it lacks. A per-lane draw takes that lane's modes in proportion to their
 amounts, and never another lane's (§2.5). Nothing is projected to a count (MU-RECURSION 78.162). The carrier
 is `economy::modes::Modes` (`src/economy/modes.rs`): add, a draw refused
 naming the mode short (`Short`), the modes of a motion
-(`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), and the
-canonical codec. `economy::Mu`, four scalars with one per lane, is the
+(`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), the founding
+mode of a lane (`Mode::Founding`, `Modes::founding`; §2.5), the per-lane
+draw in proportion (`Modes::draw_lane`; §2.5), and the canonical codec. `economy::Mu`, four scalars with one per lane, is the
 projection this paragraph forbids. It is built today and retired in
 v0.5.0 (§9).
 
