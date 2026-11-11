@@ -464,6 +464,13 @@ pub enum Cite {
         bracket: Box<crate::transducer::cga::LinearFunction>,
         cover: Option<Vec<Vec<u8>>>,
     },
+    /// MU-ECONOMY §3.4, §11.4 F2b — A CLOSURE AS ITS POINT: the task's
+    /// citation and the closing rule's address, written out, sealed on the
+    /// act that settles a first closure. Every court back-fills the receipt,
+    /// so the point is in the cones of every court that holds it, and a
+    /// court that holds it judges a later closure of it again (one closure,
+    /// one point).
+    Closure { task: Vec<u8>, rule: Vec<u8> },
 }
 
 impl Cite {
@@ -503,7 +510,8 @@ impl Cite {
             | Cite::Origin { .. }
             | Cite::Stated { .. }
             | Cite::Window { .. }
-            | Cite::Signing { .. } => None,
+            | Cite::Signing { .. }
+            | Cite::Closure { .. } => None,
         }
     }
 
@@ -524,7 +532,8 @@ impl Cite {
             | Cite::Origin { .. }
             | Cite::Stated { .. }
             | Cite::Window { .. }
-            | Cite::Signing { .. } => None,
+            | Cite::Signing { .. }
+            | Cite::Closure { .. } => None,
         }
     }
 
@@ -659,9 +668,15 @@ impl Cite {
                     | Cite::Stated { .. }
                     | Cite::Window { .. }
                     | Cite::Signing { .. }
-                    | Cite::Bracket { .. } => {}
+                    | Cite::Bracket { .. }
+                    | Cite::Closure { .. } => {}
                 }
                 put_cover(&mut rec, cover)?;
+            }
+            Cite::Closure { task, rule } => {
+                rec.push(18);
+                crate::transducer::address::put_bytes(&mut rec, task)?;
+                crate::transducer::address::put_bytes(&mut rec, rule)?;
             }
             Cite::Bracket { chambers, bracket, cover } => {
                 rec.push(17);
@@ -747,6 +762,11 @@ impl Cite {
                 let tier: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
                 *p += 64;
                 Some(Cite::Reserve { domain, tier })
+            }
+            18 => {
+                let task = crate::transducer::address::take_bytes(b, p)?;
+                let rule = crate::transducer::address::take_bytes(b, p)?;
+                Some(Cite::Closure { task, rule })
             }
             11 => {
                 let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;

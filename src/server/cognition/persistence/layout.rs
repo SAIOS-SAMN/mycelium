@@ -74,6 +74,10 @@ pub const LEAF_CLOSED: u8 = 11;
 /// version 4, whose windows close by version 4.
 /// FORMAT: court-tree leaf position for the window book.
 pub const LEAF_WINDOWS: u8 = 12;
+/// MU-ECONOMY §3.4, §11.4 F2b — the closure points in this court's cones, each
+/// with the stamp that sealed it first here; absent where none is held.
+/// FORMAT: court-tree leaf position for closure points.
+pub const LEAF_POINTS: u8 = 13;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

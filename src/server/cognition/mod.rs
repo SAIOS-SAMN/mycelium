@@ -33,6 +33,7 @@ mod reach;
 mod reads;
 pub use reads::HELD_KINDS;
 mod persistence;
+mod points;
 mod reduce;
 mod room;
 pub mod seat;

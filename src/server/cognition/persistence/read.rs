@@ -126,7 +126,7 @@ impl Court {
                 b,
                 pos,
                 COURT_TRIE,
-                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED, LEAF_WINDOWS],
+                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED, LEAF_WINDOWS, LEAF_POINTS],
             )?;
             let nodes: Vec<(Vec<u8>, crate::trie_tape::Leaves)> =
                 court_trie.scoped().map(|(k, l)| (k, l.clone())).collect();
@@ -210,6 +210,10 @@ impl Court {
                 for (domain, closed) in whole(v, super::super::endowment::take_closed)? {
                     court.closed_since_grant.insert(domain, closed);
                 }
+            }
+            // §3.4 — the closure points in this court's cones; absent where none.
+            if let Some(v) = leaf(leaves, LEAF_POINTS) {
+                court.points = whole(v, super::super::points::take_points)?;
             }
             if let Some(v) = leaf(leaves, LEAF_ATLAS) {
                 court.atlas = whole(v, super::super::atlas::Atlas::take)?;

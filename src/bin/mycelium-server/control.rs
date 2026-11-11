@@ -350,6 +350,9 @@ pub(crate) fn serve_control(s: &mut Channel, delimited: &Delimited, context: &Co
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
                             // The court names a task by its citation (wire v1.2);
                             // the rule docketed is the one judged, its anchor bound.
+                            // MU-ECONOMY §3.4, F2b — the point decides, not this
+                            // book alone: a point the court's cones hold is closed.
+                            let first = first && k.point_held(&cite, judgement.judged.address().as_bytes()).is_none();
                             let paid = k.pay_solve(&cite, svoice, &judgement.judged, pay, first);
                             let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_AGAIN };
                             (code, paid, None, Some((k.height(), modes)))

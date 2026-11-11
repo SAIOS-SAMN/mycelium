@@ -199,6 +199,8 @@ impl Court {
     /// (65.5).
     fn read_reached(&mut self, r: &KStepReceipt, budget: &mut crate::physics::Budget) {
         self.note_attestor(r);
+        // §3.4 — a back-filled seal is read once its signature reaches it.
+        self.note_points(r);
         self.alias_admitting(r, budget);
         self.settle_own_attestation(r);
         if r.kind == crate::chronometry::ActKind::Fold {

@@ -408,3 +408,73 @@ fn judged_rule_carries_its_anchor_on_registered_withheld_pairs() {
     assert_eq!(judged.judged.anchor(), bound.terms.as_slice(), "the judged rule carries the common set");
     assert_eq!(judged.judged.address(), rule.address(), "π never renames");
 }
+
+/// MU-ECONOMY §3.4, §11.4 F2b — ONE CLOSURE, ONE POINT. The first closure's
+/// settling act seals the point (`Cite::Closure`: the task's citation and the
+/// rule's address); a court whose cones hold the point judges a later
+/// closure of it again and mints nothing, though its own registry calls it
+/// first — whether the point was sealed here or on a peer's line it holds.
+/// The points survive a restart.
+#[test]
+fn pay_solve_judges_again_after_peer_first_closure() {
+    let rule = rule_over(&carried());
+    let (task, voice, other) = ([5u8; 32], [9u8; 32], [8u8; 32]);
+    let mut a = Court::new();
+    let SolveVerdict::Solved { pay, .. } = a.judge_solve(&rule, &carried()) else { panic!("solved") };
+    assert_eq!(a.pay_solve(&task, voice, &rule, pay.clone(), true), pay, "the first closure is paid");
+    let sealed = a.chain.head().expect("the settling act");
+    let point = crate::chronometry::Cite::Closure { task: task.to_vec(), rule: rule.address().as_bytes().to_vec() };
+    assert!(sealed.cites.iter().any(|c| c.restates(&point)), "the settling act carries the point");
+    assert_eq!(a.pay_solve(&task, other, &rule, pay.clone(), true), [0; 4], "the registry's first, the point's again");
+    assert!(a.treasury.balance_mu(&other).is_zero());
+    // A peer that holds a's receipt holds the point.
+    let mut b = Court::new();
+    b.note_points(&sealed);
+    assert_eq!(b.point_held(&task, rule.address().as_bytes()), Some(sealed.stamp), "held at the stamp that sealed it");
+    assert_eq!(b.pay_solve(&task, other, &rule, pay.clone(), true), [0; 4], "closed network-wide: judged again at b");
+    assert!(b.treasury.balance_mu(&other).is_zero(), "and the advance is never minted twice");
+    // Another task's point is open.
+    let open = [6u8; 32];
+    assert_eq!(b.point_held(&open, rule.address().as_bytes()), None);
+    // Held across a restart.
+    let booted = Court::new().reconstruct(&a.snapshot()).expect("reconstructs").into_object();
+    assert_eq!(booted.point_held(&task, rule.address().as_bytes()), Some(sealed.stamp), "the point survives the snapshot");
+}
+
+/// The closure's citation is written out and read back whole.
+#[test]
+fn closure_cite_round_trips() {
+    let c = crate::chronometry::Cite::Closure { task: vec![3; 32], rule: vec![1, 2, 3, 4] };
+    let mut out = Vec::new();
+    c.put_canonical(&mut out).expect("written");
+    let mut p = 0;
+    let back = crate::chronometry::Cite::take_canonical(&out, &mut p).expect("read");
+    assert!(back.restates(&c) && p == out.len());
+}
+
+/// MU-ECONOMY §3.4, 45.3 — TWO SEALS OF ONE POINT ARE HELD AS A RESIDUE:
+/// courts a and b each close one point before holding the other's seal; on
+/// admission each holds both, concurrent, in the order held — never divided
+/// and never ordered by arrival. The first held still decides; a seal met
+/// again is held once; the residue survives a restart.
+#[test]
+fn concurrent_closures_of_one_point_are_held_as_a_residue() {
+    let rule = rule_over(&carried());
+    let task = [5u8; 32];
+    let mut a = Court::new();
+    let mut b = Court::new();
+    a.bind_identity([1; 32]);
+    b.bind_identity([2; 32]);
+    let SolveVerdict::Solved { pay, .. } = a.judge_solve(&rule, &carried()) else { panic!("solved") };
+    assert_eq!(a.pay_solve(&task, [9; 32], &rule, pay.clone(), true), pay);
+    assert_eq!(b.pay_solve(&task, [9; 32], &rule, pay.clone(), true), pay, "b closes it before holding a's seal");
+    let (sa, sb) = (a.chain.head().expect("a's seal"), b.chain.head().expect("b's seal"));
+    a.note_points(&sb);
+    a.note_points(&sb);
+    let residue = a.concurrent_points();
+    assert_eq!(residue.len(), 1, "one point sealed twice");
+    assert_eq!(residue[0].1, vec![sa.stamp, sb.stamp], "both seals, in the order held, once each");
+    assert_eq!(a.point_held(&task, rule.address().as_bytes()), Some(sa.stamp), "the first held still decides");
+    let booted = Court::new().reconstruct(&a.snapshot()).expect("reconstructs").into_object();
+    assert_eq!(booted.concurrent_points(), residue, "the residue survives the snapshot");
+}
