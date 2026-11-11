@@ -251,6 +251,9 @@ fn check_home(home: &Path) -> ! {
                 // What this build writes of that state must read back: the
                 // restore reshapes the line (a peer's folded line leaves),
                 // so the next persist is not what was just read.
+                // §3.4 — the closure points in this court's cones, and the
+                // concurrent residues among them.
+                println!("  points: {} closure points held, {} concurrent", scratch.points_held(), scratch.concurrent_points().len());
                 let (again, line) = (scratch.snapshot(), scratch.line_image());
                 drop(scratch);
                 let mut back = Court::new();

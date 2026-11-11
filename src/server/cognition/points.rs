@@ -73,6 +73,11 @@ impl Court {
         self.points.get(&point_key(task, rule)).and_then(|s| s.split_first().map(|(f, _)| *f))
     }
 
+    /// How many closure points this court's cones hold.
+    pub fn points_held(&self) -> usize {
+        self.points.len()
+    }
+
     /// THE CONCURRENT RESIDUES (MU-ECONOMY §3.4): every point sealed more
     /// than once in this court's cones, with all its seals, in the order
     /// held. A reading; nothing is divided and nothing is burned on it.
