@@ -286,7 +286,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
     // The two halves of this test are the two carriers: the ADDRESS cannot
     // tell the minds apart, and the ENVELOPE must.
     let cites = |e: &crate::transducer::element::Element| -> Vec<crate::transducer::address::Address> {
-        e.receipts()
+        e.stalk()
             .derivations
             .iter()
             .flat_map(|d| d.generators.iter().map(|(form, _, _)| form.clone()))

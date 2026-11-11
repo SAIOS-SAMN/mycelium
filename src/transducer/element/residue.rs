@@ -504,16 +504,16 @@ pub fn derived_colour_word(first: &Element, after: &Element) -> Option<Element> 
         residue: crate::transducer::alphabet::Word::identity(),
         conjugator: None,
     };
-    word.set_receipts(super::ReceiptsEnvelope { derivations: vec![derivation], ..Default::default() });
+    word.set_stalk(super::WordStalk { derivations: vec![derivation], ..Default::default() });
     Some(word)
 }
 
 impl Element {
     /// The two ruled words a derived colour word cites (`first`, `after`),
-    /// read off its receipts envelope; `None` for a word that cites none.
+    /// read off its stalk; `None` for a word that cites none.
     pub fn colour_citation(&self) -> Option<(crate::transducer::address::Address, crate::transducer::address::Address)> {
         let own = self.address();
-        let d = self.receipts().derivations.iter().find(|d| d.vertex == own)?;
+        let d = self.stalk().derivations.iter().find(|d| d.vertex == own)?;
         match d.generators.as_slice() {
             [(first, _, 1), (after, _, 1)] => Some((first.clone(), after.clone())),
             _ => None,

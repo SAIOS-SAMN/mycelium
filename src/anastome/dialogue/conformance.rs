@@ -192,10 +192,10 @@ const FACTORED: &[&str] = &["admitted, or the residue of the residues (unclaimed
 /// THE MIND PROFILE: the MUST acts of the client loop first, then every MAY
 /// act the reference mind and the SDK's readings speak.
 const MIND: &[ActRequirement] = &[
-    must(ACT_TASK, None, "task", "decode_task_envelope", TASK),
+    must(ACT_TASK, None, "task", "decode_task", TASK),
     must(ACT_SOLVE, Some(SOLVE_KIND_OUTPUTS), "solve", "decode_solve_verdict", SOLVE),
     must(ACT_LAWS, Some(MODE_REGISTER), "laws register", "decode_register_reply", REGISTER),
-    may(ACT_TASK, None, "task by citation", "decode_task_envelope", TASK),
+    may(ACT_TASK, None, "task by citation", "decode_task", TASK),
     may(ACT_LAWS, Some(MODE_LEXICON), "laws lexicon", "decode_lexicon_reply", LEXICON),
     may(ACT_LAWS, Some(MODE_CLOCK), "laws clock", "decode_clock_reply", CLOCK),
     may(ACT_LAWS, Some(MODE_PARAMETERS), "laws parameters", "decode_parameters_reply", PARAMETERS),
@@ -233,9 +233,9 @@ const KERNEL: &[ActRequirement] = &[
     must(ACT_DOMAIN, None, "domain founding", "decode_domain_reply", FOUNDED),
     must(ACT_DOMAIN, None, "domain manifest", "decode_grant_reply", &["granted μ S:G:T:H, founding, stamp and receipt, or the refusal by name"]),
     must(ACT_DOMAIN, None, "domain universe", "decode_universe_reading", &["originated", "geometry", "parent", "basket"]),
-    may(ACT_TASK, None, "task", "decode_task_envelope", TASK),
+    may(ACT_TASK, None, "task", "decode_task", TASK),
     may(ACT_SOLVE, Some(SOLVE_KIND_OUTPUTS), "solve", "decode_solve_verdict", SOLVE),
-    may(ACT_TASK, None, "task by citation", "decode_task_envelope", TASK),
+    may(ACT_TASK, None, "task by citation", "decode_task", TASK),
     may(ACT_SOLVE, Some(SOLVE_KIND_FACTORISATION), "solve factorisation", "decode_factor_verdict", FACTORED),
     may(ACT_LAWS, Some(MODE_BATCH), "laws batch", "decode_batch_reply", &["verdicts, one per transition in order"]),
     may(ACT_LAWS, Some(MODE_LEXICON), "laws lexicon", "decode_lexicon_reply", LEXICON),

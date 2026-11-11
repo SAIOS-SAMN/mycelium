@@ -275,7 +275,7 @@ impl MindLanguage {
         // 54.7 B5a — THE CITATIONS ARE THE COVER'S, not the vertices'. A
         // `Glued` vertex states a boundary — a rank, a depth, a placement, a
         // φ — and WHICH form it mates with is `Form::cover`, filled from
-        // the expression's `ReceiptsEnvelope` by `from_element_form`. Read
+        // the expression's `WordStalk` by `from_element_form`. Read
         // off the vertices after the eviction, every citation would resolve
         // at nothing and the mind would call a sentence it cannot read
         // `Admitted`.

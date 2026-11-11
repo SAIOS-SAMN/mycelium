@@ -301,7 +301,7 @@ learning it: the reply is signed by the home and the payee returns it in
   unchanged.
 - Voices (**Specified**, ROADMAP track 1): new `client::identity::VoiceGroup`, a FROST group key over
   Ed25519 (RFC 9591, the `frost-ed25519` crate), shares held by the mind's
-  eyes and persisted beside the genome (`<kernel>.shares`, 0600). The voice
+  eyes and kept beside the voice's key (`<kernel>.shares`, 0600), as identity is (MU-ENGINEERING §8 item 6). The voice
   id is the group verifying key, so a signature names its voice with no
   registry. Per-chart keys are independent keys certified by a manifest
   receipt (MU-RECURSION 46.2), never tweaks of the group key.

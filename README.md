@@ -926,7 +926,9 @@ as `peers`, copy the corpus manifests (step 4), and start without
   `dispatched`, `boundary` (refusals at a universe's core tube), `clock`,
   `memory`, `replication`, `agreements` and others.
   `--at HOST:PORT` reads another hypha.
-- **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP. `--check`
+- **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP, which is the
+  built state. As ruled, the mesh is held in memory and a restart rejoins
+  from its peers ([MU-ENGINEERING §8](docs/MU-ENGINEERING.md#8-holding-and-continuity), #273). `--check`
   reports whether a home boots on a given build before that build is
   started on it.
 - **Recut.** Adopting a new ledger layout means re-founding a network on
@@ -983,7 +985,7 @@ while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 | `voice` | `Voice`, the voice key (`VoiceKey`, `load_or_mint`), `SigningKey`, the mesh record of a voice home (`load_or_migrate_voice`) |
 | crate root | `WIRE_VERSION` (`0x0300`, wire v3.0: the crossing record in the signed bytes of the seven universe acts; every expression carries it, and a reader refuses another major by name, `Unheard::Version`), `ACT_TABLE` (every act the SDK may send), the solve's claim kinds, and the deferral's `PENDING_CODE` and `encode_deferral` |
 | `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint`; the deferral a hypha with a full worker pool answers every act with, which every client MUST recognise and retry: `read_deferral` (`Deferral { deficit }`), `deferral_of` on a `speak` refusal ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) §5); the reference mind, `Mind::open` and `Mind::open_persistent` |
-| `task` | Task request and envelope, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskEnvelope`; `TaskEnvelope::section` for the alphabet's section, `TaskSection`); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places each at its position); `decode_solve_verdict` and the `SOLVE_*` codes |
+| `task` | Task request and family, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskFamily`; `TaskFamily::section` for the alphabet's section, `TaskSection`); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places each at its position); `decode_solve_verdict` and the `SOLVE_*` codes |
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
 | `wallet` | The wallet read, a reading of the holding's coordinate on the one multi-dimensional ledger: `Mu`, an amount of μ read exactly per lane (retiring in v0.5.0 for `Modes`), and `MuRefusal`; stake and unstake; lease open, reply and close |
@@ -1006,25 +1008,25 @@ use mycelium_sdk::task;
 let (voice, key) = mycelium_sdk::voice::load_or_mint("voice.key");
 // 2. Session: one hypha's address.
 let session = Session::open("127.0.0.1:7610", voice);
-// 3. Work: the task envelope carries train pairs and test inputs; the test
+// 3. Work: the task family carries train pairs and test inputs; the test
 //    outputs stay with the court. An empty reply means no work is available.
 let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()))?;
-let samples = task::decode_task_envelope(&reply).ok_or("no task")?;
-//    The envelope's samples may be of any rank; the rule seam reads the
+let samples = task::decode_task(&reply).ok_or("no task")?;
+//    The family's samples may be of any rank; the rule seam reads the
 //    alphabet's section, and a task off it is refused by name.
-let envelope = samples.section().map_err(|_| "off the alphabet's section")?;
+let section = samples.section().map_err(|_| "off the alphabet's section")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
 //    can reconstruct, and spoken on each test input.
 let mut budget = Physics::default().stroke_n(1 << 20);
-let rule = extract_rule(&envelope.train, &mut budget).ok_or("no rule")?;
-let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0)?;
-let outputs: Vec<_> = envelope.tests.iter()
+let rule = extract_rule(&section.train, &mut budget).ok_or("no rule")?;
+let element = mint_sentence_why(&rule, &section.train, &NoCrystal, 0)?;
+let outputs: Vec<_> = section.tests.iter()
     .map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.sample()))
     .collect::<Option<_>>().ok_or("rule does not speak a test")?;
 // 5. Solve: the outputs, as samples at their places, and the rule's tape,
 //    signed by the voice the court pays.
 let outputs = task::spoken_outputs(&outputs).map_err(|_| "an output is no sample")?;
-let solve = task::encode_solve_with_rule(&key, &envelope.id, &outputs,
+let solve = task::encode_solve_with_rule(&key, &section.id, &outputs,
                                          Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
 let verdict = session.speak(solve)?;
 let (code, paid, refusal, modes) = task::decode_solve_verdict(&verdict).ok_or("verdict")?;

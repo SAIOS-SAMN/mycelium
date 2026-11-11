@@ -65,9 +65,9 @@ fn deep(member: d::samples::Member) -> Result<mycelium::transducer::sample::Samp
 
 fn task() -> Result<String, String> {
     same("the task request", d::decode_task_request(&d::encode_task_request(&voice())), voice())?;
-    let sent = d::TaskEnvelope::of_section(CITATION, &train()?, &tests()?).map_err(|e| format!("the section samples are no samples at their places: {e:?}"))?;
-    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
-    let envelope = d::decode_task_envelope(&bytes).ok_or("the envelope did not decode")?;
+    let sent = d::TaskFamily::of_section(CITATION, &train()?, &tests()?).map_err(|e| format!("the section samples are no samples at their places: {e:?}"))?;
+    let bytes = d::encode_task(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
+    let envelope = d::decode_task(&bytes).ok_or("the envelope did not decode")?;
     same("the envelope's citation", Some(envelope.id), CITATION)?;
     same("the envelope's train pairs", Some(envelope.train.clone()), sent.train.clone())?;
     same("the envelope's tests", Some(envelope.tests.clone()), sent.tests)?;
@@ -75,8 +75,8 @@ fn task() -> Result<String, String> {
     same("the envelope's train pairs on the section", Some(read.train), train()?)?;
     same("the envelope's tests on the section", Some(read.tests), tests()?)?;
     let deep = vec![deep(d::samples::Member::Input)?];
-    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &deep).map_err(|e| format!("the rank-3 envelope does not encode: {e:?}"))?;
-    let envelope = d::decode_task_envelope(&bytes).ok_or("the rank-3 envelope did not decode")?;
+    let bytes = d::encode_task(&CITATION, &sent.train, &deep).map_err(|e| format!("the rank-3 envelope does not encode: {e:?}"))?;
+    let envelope = d::decode_task(&bytes).ok_or("the rank-3 envelope did not decode")?;
     same("the rank-3 test input at width 2", Some(envelope.tests), deep)?;
     Ok("request and envelope decode to the samples sent, of rank 2 and 3".to_string())
 }
@@ -523,7 +523,7 @@ fn observe_query() -> Result<String, String> {
 fn reply_reads(act: &str, reply: &[u8]) -> Option<bool> {
     use d::{endowment, universe};
     Some(match act {
-        "task" => d::decode_task_envelope(reply).is_some(),
+        "task" => d::decode_task(reply).is_some(),
         "solve" => d::decode_solve_verdict(reply).is_some(),
         "laws register" => laws::decode_register_reply(reply).is_some(),
         "laws statement" => d::conformance::decode_statement_reply(reply).is_some(),

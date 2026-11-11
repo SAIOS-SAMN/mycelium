@@ -712,7 +712,7 @@ impl Court {
         let Some(w) = self.installed_word(address).filter(|w| w.is_sentence()) else { return mag };
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut held = [0u64; 4];
-        for c in w.receipts().cited_addresses() {
+        for c in w.stalk().cited_addresses() {
             if c.as_bytes() == address || seen.contains(c.as_bytes()) {
                 continue;
             }
