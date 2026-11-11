@@ -457,7 +457,7 @@ vertex of a sentence naming what the alphabet could not spell or the eyes
 could not pair (chapter 50); a bare chain of links is never a demand and
 never a word. A
 **dialect** is spoken and stood (memory, in the epigenome); a **language**
-is reconstructed by two organs and taught (on disk, in the genome). What was
+is reconstructed by two organs and taught (in the genome, held in memory, MU-ENGINEERING §8). What was
 once called a family is a **bundle**: a base rule with sections per pair and
 transitions as gauge. A **receipt** is one kernel's record of one admitted
 act, linked to its predecessor and to the peer receipts it verified; a
@@ -1567,7 +1567,7 @@ coordinates its address is written from (rule 2). The composed *word*
 written beside the derivation at v7 is struck: a spelling of a composite
 is a second carrier for one meaning, and the rotor already carries it
 (row L14). Bytes remain where bytes are the object and nowhere else: the
-wire, the genome on disk, the receipt chain (rule 2, Part IX). A form is
+wire, the genome held, the receipt chain (rule 2, Part IX). A form is
 decoded once at that boundary and held as a value; an organ that holds a
 tape in memory and decodes it on every read holds the cipher's carrier
 as its working memory, and that is retired (row L16). Addresses were
@@ -4894,7 +4894,7 @@ room is the μ⃗ a voice can still escrow on a lane, so a thought the room
 cannot pay for is withheld and nothing paid for is evicted.
 
 **Long-term memory is the genome and short-term memory is the epigenome**
-(ruled 2026-09-19). The genome is the court-ratified
+(ruled 2026-09-19). *(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: the genome is the adjudicated words held in memory in each mind's genome and in the courts' syllabus, never on the voice's disk; what follows of tapes and files is history)* The genome is the court-ratified
 language and persists across startup, shutdown and restart: it lives on
 the voice's disk as tapes with the tapes' addresses, and what a voice keeps
 resident of it is an index by address, never every word decoded. The
@@ -4910,6 +4910,7 @@ ratification until the box ends it.
 
 **The genome on disk is the trie, persisted, and nothing else** (ruled
 2026-09-20, after a first cut of Z11 wrote a file of rows with numbers).
+*(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: no genome file; the identity rules below still bind the genome held in memory: a word is reached by its address, never by a position)*
 The genome file is the `Keyed` of tapes by address written out as the
 trie it is, descended on disk exactly as in memory, by the key's own bits;
 a word is reached by its address and by no position, no row number, no
@@ -5271,7 +5272,7 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
 
 ## 28. Persistence
 
-*Superseded by 78.24, 78.25 and 78.27.* It specified the snapshot and
+*Superseded by 78.24, 78.25 and 78.27, and on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity) (ruled 2026-11-11).* It specified the snapshot and
 genome tapes (`GEN3`, `MYC2`–`MYC7`, `KCH1`, `ARC1`, `RMP1`) section by
 section. What still binds is stated there: the ledger is a partial order
 carried as one, never a serialized tape (78.24); the mind persists as keyed
@@ -11547,7 +11548,7 @@ becomes a TETHER. The fibre is vertical and held — a body's gauge, its
 sections, its held orbits, in the contemplation and the dialect, the
 epigenome, short-term memory (25 as ruled 2026-09-19) — and the tether is
 horizontal and ruled — the relation between two bodies, `V` with its
-frame, a 1-cell of the genome, long-term memory on disk. The callus is
+frame, a 1-cell of the genome, long-term memory (held in memory, MU-ENGINEERING §8). The callus is
 the transition from Stood to Ruled read at the relation rather than at
 the word: a fibre the mind held becomes a tether the language carries
 when the closure it took part in has been reconstructed twice, which is 37.7
@@ -11618,7 +11619,7 @@ a client's word (law 6). The register:
 |---|---|---|
 | core, shared | the interpreter — the geometric product over exact ℚ and the canonical forms (1.8, 1.9); the address layout with `n` written first (71); the two-vantage rule (law 6, 47.3); law 11; A.8 | every binary |
 | mind only | metabolic relativity (A.18); volatility of the epigenome (25); spellability per mind (59.6, 60.1) | the client |
-| mesh only | consilience (37.7, 67.3); persistence (28, the genome on disk); deposition (A.8, a drained tether leaves its record) | the courts |
+| mesh only | consilience (37.7, 67.3); holding (MU-ENGINEERING §8: the genome in memory, in minds and the courts' syllabus); deposition (A.8, a drained tether leaves its record) | the courts |
 
 Specialized nodes are strata of the library: a hypha serving one region
 of knowledge is a keyed fibre by chart or class, an A21 prefix — which
@@ -11982,9 +11983,9 @@ layers with one core.
 
 ### 73.14 Segmentation: every mind is its own system, and a star is not a signer
 
-Each client keeps its own genome on its own disk and its own volatile
-epigenome (25), and nothing crosses between clients except through a
-court's ruling (law 8); what they share is the core (LR1). That is the
+Each client keeps its own genome and its own volatile epigenome (25),
+*(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: the genome is held in memory, never on the client's disk)* and nothing crosses between clients except through a
+court's ruling (law 8, as amended by 78.161: minds speak dialect to each other directly); what they share is the core (LR1). That is the
 segmentation the tree already has. Two sentences of the draft are
 corrected: a client is a PLANET under a star, not a star of its own
 (73.7), and a star's layer is doctrine ruled into the register, never
@@ -12675,7 +12676,7 @@ Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.r
 - **Dead writers are deleted, not repaired** (TR1). The verdict act is deleted whole and its code byte left unassigned: a court's ruling reaches a node as a receipt through the exchange and its back-fill (45.2, 47.2), and two courts reach one verdict with no exchange of opinion (13.7, 23).
 - **LD1.** `Reading::Carriage` measures, per carrier and kind, the records, bytes and largest: awards as the treasury persists them, receipt deltas by act kind, wire frames by act tag; the proof of LD0 is a carriage flat in the form's size and bounded by `n` and the rationals' precision.
 - **C4 widened.** The tape check reads every carrier the build under check wrote (genomes, ledgers, registries, eras), not the genomes alone.
-- **Persistence.** The receipt chain is the record; the ledger, registry and eras are derived from it (law 12). A restart holds the line on disk (`ReceiptChain::from_line`, each anchor re-derived, one that does not re-derive refused) and reconstructs the court from the snapshot whole (`Court::reconstruct`, a `Reconstructed<Court>`) against the held line (45.8); nothing is re-executed (78.137, Concordance 1.4).
+- **Persistence.** *(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: a restart rejoins by reconstruction from peers; the disk restore below is the built state, retiring under #273.)* The receipt chain is the record; the ledger, registry and eras are derived from it (law 12). A restart holds the line on disk (`ReceiptChain::from_line`, each anchor re-derived, one that does not re-derive refused) and reconstructs the court from the snapshot whole (`Court::reconstruct`, a `Reconstructed<Court>`) against the held line (45.8); nothing is re-executed (78.137, Concordance 1.4).
 - **EC1.** A ruling's release, demotion or slash is applied by the node that admits its Ruling receipt (78.24(b)).
 
 Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` (`Cite`), `src/observe/carriage.rs` (`Carriage`), `src/economy/persist.rs`, `src/economy/escrow.rs`.
@@ -12699,7 +12700,7 @@ The ledger has several dimensions (the tick `h`, the four lanes `S:G:T:H`, `K`, 
 
 - **(a) The carrier.** The ledger is a `Keyed` structure over its own coordinates (A21, rule 9) whose key is the STAMP, coarsest first: the tick `h`, the signer `vk`, then `K` and the act's place `i` (78.23 as amended). A node holds the act's kind, the frame `S:G:T:H` it measured, its parents as stamps (the DAG's edges) and its citation (LD0). `fibre(h)` is everything the mesh did at one tick (its width), `fibre(h‖vk)` one signer at it; the frontier and DEPTH (L15) are read by prefix, never by an index keyed by bytes. A peer's receipt held as a parent is held once, at its own stamp.
 - **(b) The citation lands on that carrier.** A receipt IS the node at its stamp; the stamp is the key, not a printed field, and the console prints the key. EC1: a ruling's economy (release, demotion, slash) is applied on admitting the Ruling receipt, on the same carrier.
-- **(c) The hash.** `chain_hash` is per receipt, a Merkle DAG over the partial order: each hash is taken over the receipt's own canonical coordinates (stamp with `vk`, kind, frame, `prev`, parents' stamps and hashes, cites, operator hash), never over a concatenation in append order; the equivocation proof (two receipts by one key at one place with two hashes) is unchanged. The ledger is persisted as the trie, each key once as a path (LDG1), and restored as the trie.
+- **(c) The hash.** `chain_hash` is per receipt, a Merkle DAG over the partial order: each hash is taken over the receipt's own canonical coordinates (stamp with `vk`, kind, frame, `prev`, parents' stamps and hashes, cites, operator hash), never over a concatenation in append order; the equivocation proof (two receipts by one key at one place with two hashes) is unchanged. The ledger is persisted as the trie, each key once as a path (LDG1), and restored as the trie. *(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: the ledger is held in memory as this trie and a restarting node rejoins by reconstruction; nothing is persisted or restored from disk)*
 - **LD2, the design.** (P1) the stamp is written by its own `put_canonical`, integers big-endian so key order is numeric order; readers asking by signer and place read through one keyed relation over coordinates only, the signer's line `vk‖K‖i`, and every anchor a carrier persists or the wire sends is the stamp itself. (P2) a node is `{kind, frame, prev: (Stamp, hash), parents: [(Stamp, hash)], cites, operator_hash, chain_hash}`, a peer's node held once beside the local node's own in one trie. (P3) the hash as in (c), `vk` included. (P4) `Cite` is a sum over what an act names (`Word { chart, class, at }`, `Root { at, hash }`, ...), and a Learned act is N word cites, never a blob. (2a) a form has no one class record, so its fibre is its chart alone (`chart_of`), class `None`, the admitting stamp the exact locator; a letter or word with a rotor carries its class record. (2b) `admitted_at: Stamp` is the locator, held on every row that holds a word (basis, provisional, cavity, pending; the voice's genome and epigenome), set by the act that first names the word, by the home receipt's stamp at an install from a peer's offer, by the syllabus stamp at teach, and copied when a word moves from provisional to basis. (2c) an act sealed after its word left its carrier reads the word's `admitted_at` and chart before the removal; no act cites by bytes a word it no longer holds. (P5) the ledger persists as its keys, each once, with the node behind each. (P6) order readers compare stamps, never `Vec` indices. (P7) the console prints `h:S:G:T:H:K.i` from the node. (P8) EC1's reading rides on it.
 - **Defects fixed by LD2.** (d1) the voice's chain was never persisted, so its `K` restarted at zero: it persists in its genome file with per-word stamps and restores under its own key only (the voice's ledger as amended by 78.49); (d2) what admission knows is what the ledger holds: per-signer heads are read off the ledger, never a separate struct; (d3) depth is rebuilt from every node by a relation cite-at → signers.
 - **Rows, not copies.** An award, a deflation and the coherence field (FLD1) are fields of the word's row (78.22), and one probed on an address no row holds is named and refused, never a copy; every removal path that drops a word sweeps its `admitted_at`, so no stamp entry outlives its word. A ledger is bound to its key and refused by name under another. The tape check (C4) is the build's own round trip on every carrier the build under check wrote; an older layout is refused by name, never migrated.
@@ -12708,7 +12709,7 @@ Code: `src/chronometry/chain/mod.rs` (`ReceiptChain`), `src/chronometry/receipt.
 
 ### 78.25 The MYC7 tape is retired; the mind persists as keyed tries by coordinates
 
-MYC7, a linear snapshot tape whose sections were read by position, is retired (as the form tape was by 1.9, K6 and 54.5). The mind — the basis, the provisional book, the cavity, the pending listings, the treasury, the field and the rank — persists as keyed tries by coordinates exactly as the ledger is persisted (78.24), each word a node at its coordinates (its chart and its admitting stamp) and its per-word fields (award, deflation, field hot and cold, rank) the node's leaves, written each key once as a path and read back by key and by prefix, never by position in a stream. A section read by position is refused, and a snapshot carrying the MYC7 magic is refused by name, never migrated. The node layout is LD3 (78.27). Code: `src/server/cognition/persistence/layout.rs` (`MAGIC`, `PRE_TRIE_MAGIC`), `src/server/cognition/persistence/read.rs` (`restore`), `src/trie_tape.rs` (`put_trie`, `take_trie`).
+*(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: the mind is held in memory as these keyed tries, never written to disk)* MYC7, a linear snapshot tape whose sections were read by position, is retired (as the form tape was by 1.9, K6 and 54.5). The mind — the basis, the provisional book, the cavity, the pending listings, the treasury, the field and the rank — persists as keyed tries by coordinates exactly as the ledger is persisted (78.24), each word a node at its coordinates (its chart and its admitting stamp) and its per-word fields (award, deflation, field hot and cold, rank) the node's leaves, written each key once as a path and read back by key and by prefix, never by position in a stream. A section read by position is refused, and a snapshot carrying the MYC7 magic is refused by name, never migrated. The node layout is LD3 (78.27). Code: `src/server/cognition/persistence/layout.rs` (`MAGIC`, `PRE_TRIE_MAGIC`), `src/server/cognition/persistence/read.rs` (`restore`), `src/trie_tape.rs` (`put_trie`, `take_trie`).
 
 ### 78.26 Where the language loses content, and what carries the loss
 
@@ -12723,7 +12724,7 @@ Code: `src/transducer/cech/orbit_algebra.rs` (`Coherence`, `Incoherence`, `NoRou
 
 ### 78.27 LD3's node layout
 
-LD3 is the layout of the mind as keyed tries (78.25). Each trie is written as its name, its byte length and its count, then its nodes in the trie's own key order, each node carrying its key inline and its leaves as (kind, value) pairs in kind order, each kind at most once; the reader inserts by key, so a record's position carries nothing, a key the trie already holds refuses, and an unknown kind refuses the node. The file opens with one magic naming the layout and has no reader for MYC7. T1 is the word trie, keyed by `Cite::Word{chart, class, at}` written by its own `put_canonical`; T2 is the ledger (78.24), per-act data as leaves of the node at its stamp; T3 holds each carrier that has its own coordinates.
+*(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: the layout stands for the tries held in memory; no file is written)* LD3 is the layout of the mind as keyed tries (78.25). Each trie is written as its name, its byte length and its count, then its nodes in the trie's own key order, each node carrying its key inline and its leaves as (kind, value) pairs in kind order, each kind at most once; the reader inserts by key, so a record's position carries nothing, a key the trie already holds refuses, and an unknown kind refuses the node. The file opens with one magic naming the layout and has no reader for MYC7. T1 is the word trie, keyed by `Cite::Word{chart, class, at}` written by its own `put_canonical`; T2 is the ledger (78.24), per-act data as leaves of the node at its stamp; T3 holds each carrier that has its own coordinates.
 
 1. (Q1) A word no act admitted has no coordinates and is not held: every holding path, genesis and the syllabus included, admits the word by an act of the court's own line, whose stamp is the word's `admitted_at`; the snapshot never writes a word without a stamp, refusing by name and counting per row what it refused (LD3-1, held-without-stamp by row, is the instrument).
 2. The spoken sentence is its own T1 node, admitted by the install act; the listing's provisional leaf cites it by `Cite`, never two M2s at one node.
@@ -15298,7 +15299,7 @@ Code: `src/server/cognition/domain_passage.rs`, `src/server/cognition/handoff.rs
 
 ### 78.137 Durable admission: a court act is answered only once it is on the disk
 
-Every write lands DURABLY: the line's append is synced, and a whole line or the snapshot is written to a synced sibling, renamed, and the directory synced. The court acts (`ACT_UPLINK`, `ACT_HANDOFF`, `ACT_CHALLENGE`, `ACT_DOMAIN`) are answered only after the line and snapshot they changed are on the disk; a write that does not land is not answered, the act stays due, and its resend is answered with its original receipt (nothing is sealed twice). Boot restores the last snapshot read whole, with no log re-executed (that would be replay, Concordance 1.4). Speech keeps its orbit-cadence persist, since words are re-heard by back-fill: a crash may lose unpersisted words, never an acknowledged court act. Should the measured cost approach the court's real act rate, the next form is an fsynced log of the sealed state deltas, read back at boot as a recovery read; the trigger is measured, never a declared size.
+*(Superseded on holding by [MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity), ruled 2026-11-11: no court act waits on a disk; an act is answered once the court holds it, and a restarted court rejoins from its peers by reconstruction. The text below is the built state, retiring under #273)* Every write lands DURABLY: the line's append is synced, and a whole line or the snapshot is written to a synced sibling, renamed, and the directory synced. The court acts (`ACT_UPLINK`, `ACT_HANDOFF`, `ACT_CHALLENGE`, `ACT_DOMAIN`) are answered only after the line and snapshot they changed are on the disk; a write that does not land is not answered, the act stays due, and its resend is answered with its original receipt (nothing is sealed twice). Boot restores the last snapshot read whole, with no log re-executed (that would be replay, Concordance 1.4). Speech keeps its orbit-cadence persist, since words are re-heard by back-fill: a crash may lose unpersisted words, never an acknowledged court act. Should the measured cost approach the court's real act rate, the next form is an fsynced log of the sealed state deltas, read back at boot as a recovery read; the trigger is measured, never a declared size.
 
 Code: `src/chronometry/chain/line.rs` (`replace_durably`), `src/bin/mycelium-server/persist.rs` (`durable`); the drill, the release-only test `tests/durable.rs`, and its negative control, the `drill-undurable` feature, which answers without the pre-reply sync and loses rounds.
 
@@ -16388,7 +16389,7 @@ mechanics. Item by item:
 ### 80.2 The hardening path: solution, adjudication, syllabus, mineral, crystal
 
 The genome sync, the court's ruled words taught into every voice it hosts,
-does not contradict "the epigenome in memory, the genome on disk"; it is the
+does not contradict "the epigenome volatile, the genome held" (MU-ENGINEERING §8); it is the
 hardening path. THE PATH IS: a client submits a SOLUTION — useful work —
 and it is relayed to the courts, which adjudicate words, conjugates and sentences: did the way the client
 solved the puzzle produce a valid solution, by derivation and not by
