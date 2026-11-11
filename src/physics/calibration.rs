@@ -380,25 +380,6 @@ pub fn idle_park(rtt: Option<std::num::NonZeroU64>) -> std::time::Duration {
     }
 }
 
-/// How long an idle court exchange loop parks on consecutive idle cycles
-/// without motion: back off on consecutive idle cycles up to the aperture
-/// bound (`aperture_cycle()`), starting at one scheduler floor (`stroke_floor()`).
-/// 78.152, Issue #234 — motion on the shelf ends the park immediately.
-#[expect(
-    clippy::disallowed_types,
-    reason = "law 9, 78.152 — the scheduler floor bounds an idle park; told to the scheduler in its own units"
-)]
-pub fn idle_backoff(consecutive_idle: u32) -> std::time::Duration {
-    let floor = stroke_floor();
-    let max_shift = 31 - aperture_cycle().leading_zeros();
-    let shift = consecutive_idle.min(max_shift);
-    let mult = 1u32 << shift;
-    match floor.checked_mul(mult) {
-        Some(d) => d,
-        None => floor,
-    }
-}
-
 /// Strokes per pool cycle — the aperture: the full pool over one spend,
 /// the vertices of the alphabet base's unit cell (`STROKES_PER_RESERVE`), in
 /// the `u32` its readers count circuits in.

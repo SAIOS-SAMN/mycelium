@@ -961,6 +961,9 @@ fn main() {
             // that was not read.
             let kind = mycelium::anastome::dialogue::act_tag(&delimited.body);
             judge::judge(&mut stream, delimited, &context);
+            // #234: a judgement may have moved the court; the idle exchange,
+            // parked until the next motion, reads it.
+            crate::tuniversal::shelf().judged();
             if let Some(kind) = kind {
                 mycelium::observe::note_served(kind);
                 let n = served[kind as usize].fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;

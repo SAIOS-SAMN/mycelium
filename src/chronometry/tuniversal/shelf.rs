@@ -95,7 +95,7 @@ impl TShelf {
         raised
     }
 
-    /// A ENVELOPE READ AT THE DOOR, with the point its speaker carried: the act
+    /// AN ENVELOPE READ AT THE DOOR, with the point its speaker carried: the act
     /// is counted and wakes a parked reader (work arrived); the point is held
     /// as heard where it advances on the heard one.
     pub fn heard_at_door(&self, point: Option<TPoint>) {
@@ -129,11 +129,44 @@ impl TShelf {
         self.advances()
     }
 
-    /// PARK UNTIL SOMETHING MOVED SINCE `seen` — the final point advanced or
-    /// an act arrived — bounded by `floor`, the one scheduler floor
-    /// (`physics::stroke_floor`, 78.152): the wait ends on the first motion;
-    /// the floor is told to the scheduler and read by no one. Answers what it
-    /// saw on waking.
+    /// AN ACT JUDGED: the court may have moved (an act sealed, its K, its
+    /// roots, its tick), so a parked reader is woken to read it, as an act
+    /// arriving wakes it (#234: the idle court parks until the next motion,
+    /// and a judgement that sealed is one).
+    pub fn judged(&self) {
+        {
+            let mut h = match self.held.lock() {
+                Ok(h) => h,
+                Err(e) => e.into_inner(),
+            };
+            if let Some(n) = h.acts.checked_add(1) {
+                h.acts = n;
+            }
+        }
+        self.moved.notify_all();
+    }
+
+    /// #234 (ruled 2026-11-11, option (a)) — PARK UNTIL SOMETHING MOVED SINCE
+    /// `seen`, with no bound: the final point advanced or an act arrived. What
+    /// an idle court at rest waits for — its next due event is the next
+    /// motion, so it burns nothing while none comes. Answers what it saw on
+    /// waking.
+    pub fn park_until_moved(&self, seen: Seen) -> Seen {
+        let guard = match self.held.lock() {
+            Ok(h) => h,
+            Err(e) => e.into_inner(),
+        };
+        let moved = |h: &ShelfState| h.acts != seen.acts || self.advances() != seen.advances;
+        drop(self.moved.wait_while(guard, |h| !moved(h)));
+        self.seen()
+    }
+
+    /// PARK UNTIL SOMETHING MOVED SINCE `seen`, bounded by `floor`, the one
+    /// scheduler floor (`physics::stroke_floor`, 78.152): a court still
+    /// booting (its genesis not yet written or adopted) has work its cycles
+    /// do before anything arrives, so it parks one floor at a time; the wait
+    /// ends on the first motion and the floor is told to the scheduler and
+    /// read by no one. Answers what it saw on waking.
     #[expect(
         clippy::disallowed_types,
         reason = "law 9, 78.152 — the scheduler floor bounds a park and is told to the scheduler in its own units; no reading is taken from it"
@@ -144,8 +177,6 @@ impl TShelf {
             Err(e) => e.into_inner(),
         };
         let moved = |h: &ShelfState| h.acts != seen.acts || self.advances() != seen.advances;
-        // Released before the shelf is read again: on waking, or at once
-        // where something already moved.
         match moved(&guard) {
             true => drop(guard),
             false => drop(self.moved.wait_timeout_while(guard, floor, |h| !moved(h))),

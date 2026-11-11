@@ -17,12 +17,24 @@ fn tshelf_raise_final_wakes_parked_reader() {
     let seen = shelf.seen();
     let s2 = std::sync::Arc::clone(&shelf);
     let raiser = std::thread::spawn(move || s2.raise_final(TPoint { h: 11, ..p }));
-    let woke = loop {
-        let now = shelf.park(seen, crate::physics::stroke_floor());
-        if now.advances > seen.advances {
-            break now;
-        }
-    };
+    let woke = shelf.park_until_moved(seen);
     assert!(raiser.join().expect("joins"));
-    assert_eq!(woke.advances, 2);
+    assert_eq!(woke.advances, 2, "woken by the advance, with no bound");
+}
+
+/// #234 (ruled 2026-11-11, option (a)) — AN IDLE READER PARKS UNTIL THE NEXT
+/// MOTION, with no bound: an act arriving at the door wakes it, and so does
+/// an act judged (the court may have moved); a reader that saw nothing new
+/// is never woken by the passing of strokes.
+#[test]
+fn tshelf_park_until_moved_wakes_on_act_and_judgement() {
+    let shelf = std::sync::Arc::new(TShelf::new());
+    for wake in [|s: &TShelf| s.heard_at_door(None), |s: &TShelf| s.judged()] {
+        let seen = shelf.seen();
+        let s2 = std::sync::Arc::clone(&shelf);
+        let waker = std::thread::spawn(move || wake(&s2));
+        let woke = shelf.park_until_moved(seen);
+        waker.join().expect("joins");
+        assert_eq!(woke.acts, seen.acts + 1, "woken by the one motion");
+    }
 }

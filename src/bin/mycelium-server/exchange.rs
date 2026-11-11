@@ -377,7 +377,6 @@ impl Exchange {
         // The orbits this court sealed since the ledger was last persisted.
         let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
-        let mut idle_consecutive = 0u32;
         // 78.152: what the door's shelf had moved when this cycle last
         // parked or worked — a park waits for motion past it.
         let mut park_seen = crate::tuniversal::shelf().seen();
@@ -1081,29 +1080,31 @@ impl Exchange {
             // the circuit with no destination does, so the loop paces on the
             // court's own stroke; `idle` counts those circuits on the cycle
             // line.
-            let moved = (reached, silent) != last_organs || any_moved || asked_any;
-            if moved {
-                idle_consecutive = 0;
-            } else if let Some(n) = idle_consecutive.checked_add(1) {
-                idle_consecutive = n;
-            }
             if !asked_any {
                 // The same tick, and the same ruling: no peer was due, so
                 // this cycle did nothing and must cost the processor
                 // something rather than a decrement.
-                // 78.152, Issue #234: THE PARK ENDS ON THE FIRST MOTION — an advance of
-                // the final point, or an act read at the door — and is
-                // bounded by idle_backoff on consecutive idle cycles.
+                // 78.152: THE PARK ENDS ON THE FIRST MOTION — an advance of
+                // the final point, or an act read at the door (every act heard
+                // there is counted on the shelf). #234 (ruled 2026-11-11,
+                // option (a)): the next due event is the next motion — a peer
+                // is due only on one (this court's K, its roots, the final
+                // point), the tick is signed only where it moved, the reserve
+                // regenerates at an orbit's close and a parent is fetched on an
+                // ask — so an idle court parks until it, unbounded, and burns
+                // nothing while none comes. A court still BOOTING — its genesis
+                // not yet written, or not yet adopted from a peer — has work
+                // its own cycles do (the first receipt, the asks that adopt
+                // the origin), so it parks one scheduler floor at a time
+                // until it is written.
                 idle += 1;
                 let shelf = crate::tuniversal::shelf();
-                let floor = mycelium::physics::idle_backoff(idle_consecutive);
-                let _ = shelf.park(park_seen, floor);
+                let _ = match genesis_written.load(std::sync::atomic::Ordering::Relaxed) {
+                    true => shelf.park_until_moved(park_seen),
+                    false => shelf.park(park_seen, mycelium::physics::stroke_floor()),
+                };
             }
-            let seen_now = crate::tuniversal::shelf().seen();
-            if seen_now != park_seen {
-                idle_consecutive = 0;
-            }
-            park_seen = seen_now;
+            park_seen = crate::tuniversal::shelf().seen();
             // Written when the READING CHANGES, not every cycle. As
             // first shipped this fired on any silence and logged 17,588
             // lines in 35 minutes on one hypha: it found the deadlock
