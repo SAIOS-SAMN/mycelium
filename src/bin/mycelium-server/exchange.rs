@@ -902,7 +902,7 @@ impl Exchange {
                         // wall); the addresses share the ask's frame with its
                         // own header (D4.6). Nothing waits, nothing is asked.
                         let awaited = match crate::court_lock::held!(court) {
-                            Ok(mut h) => h.run(|k, _| match mycelium::network::wire::frame_budget().checked_sub(mycelium::anastome::dialogue::CITED_REQUEST_HEADER) {
+                            Ok(mut h) => h.run(|k, _| match mycelium::network::wire::BODY_BUDGET.checked_sub(mycelium::anastome::dialogue::CITED_REQUEST_HEADER) {
                                 Some(bytes) => k.awaited_citations(usize::from(u8::MAX), bytes),
                                 None => Vec::new(),
                             }),

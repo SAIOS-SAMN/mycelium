@@ -55,7 +55,7 @@ impl Court {
         let head = self.final_prefix_head()?;
         let own_vk = self.chain.signer();
         let after = self.chain.root().map(|r| r.at);
-        let (at_most, bytes) = Self::receipts_frame()?;
+        let (at_most, bytes) = Self::receipts_bounds()?;
         // The page is served in line order: walked once, it names the last
         // close on it, whether work stands before that close, and the place
         // it reached.
@@ -99,7 +99,7 @@ impl Court {
     /// budget (`receipts_reply_budget`) less its own count header, and the
     /// most of the smallest tape that fits it. `None` where the frame is
     /// smaller than the envelopes.
-    pub fn receipts_frame() -> Option<(usize, usize)> {
+    pub fn receipts_bounds() -> Option<(usize, usize)> {
         let bytes = Self::receipts_reply_budget()?.checked_sub(crate::anastome::dialogue::RECEIPTS_REPLY_HEADER)?;
         Some((bytes / KStepReceipt::MIN_TAPE, bytes))
     }
@@ -108,7 +108,7 @@ impl Court {
     /// frame's body less the reading height the door writes behind it
     /// (D1.3, D4.6: each envelope its codec's own length).
     pub fn receipts_reply_budget() -> Option<usize> {
-        crate::network::wire::frame_budget().checked_sub(crate::anastome::dialogue::READING_HEIGHT_LEN)
+        crate::network::wire::BODY_BUDGET.checked_sub(crate::anastome::dialogue::READING_HEIGHT_LEN)
     }
 
     /// THE PEERS' FOLDED LINES LEAVE THE HOT LEDGER (45.8): each peer's

@@ -203,7 +203,7 @@ impl SeatMind {
                         }
                         // THE SEAT'S BOUND: what one frame could carry of its
                         // values, shared among the series it holds.
-                        let bound = crate::network::wire::frame_budget() / self.series.len().max(1);
+                        let bound = crate::network::wire::BODY_BUDGET / self.series.len().max(1);
                         if let Some(s) = self.series.get_mut(&key) {
                             s.observe(p.seq, at.clone(), a.clone(), bound);
                         }

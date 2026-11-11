@@ -65,7 +65,7 @@ pub(crate) fn union_quotient(
     Some((a, b, v.clone()))
 }
 
-/// THE FRAMES A MEMBER OCCUPIES, read at its own coordinate (52.5 reading
+/// THE DELIMITED A MEMBER OCCUPIES, read at its own coordinate (52.5 reading
 /// 6). `bodies_at` is keyed `member ‖ frame`, so the frames this member
 /// stands on are the fibre under its own member prefix and the remaining key
 /// IS the frame, by its own spelling (AT1 Q4) — whose byte order is the

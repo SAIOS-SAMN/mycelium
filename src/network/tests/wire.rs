@@ -1,8 +1,8 @@
 use crate::network::wire::*;
 
-/// A frame decodes to itself: a length and a body, no lane byte.
+/// An envelope decodes to itself: a length and a body, no lane byte.
 #[test]
-fn frame_round_trips_as_length_and_body() {
+fn envelope_round_trips_as_length_and_body() {
     let f = Delimited { body: vec![1, 2, 3, 9] };
     let bytes = f.encode().unwrap();
     assert_eq!(&bytes[..HEAD], &4u32.to_le_bytes(), "the envelope opens with the body's length");
@@ -24,7 +24,7 @@ fn encode_refuses_body_past_delimited_max() {
 /// 78.152 TU-7, v0.5.0 — THE POINT STANDS IN THE EXPRESSION, NOT ON THE
 /// ENVELOPE: an act's expression carries its speaker's last final point
 /// behind the act, its lanes holding shares of a unit, read back exactly by
-/// its count; the frame carrying it is a length and the expression's bytes.
+/// its count; the envelope carrying it is a length and the expression's bytes.
 #[test]
 fn expression_carries_last_final_point_inside_the_body() {
     use crate::anastome::dialogue::Expression;
@@ -35,9 +35,9 @@ fn expression_carries_last_final_point_inside_the_body() {
     let e = Expression::of(vec![0x53, 1, 2], Some(point.clone()));
     let body = e.write().unwrap();
     assert_eq!(body[0], 0x53, "the act's tag stays at offset zero");
-    let (frame, n) = Delimited::decode(&Delimited { body: body.clone() }.encode().unwrap()).unwrap();
+    let (delimited, n) = Delimited::decode(&Delimited { body: body.clone() }.encode().unwrap()).unwrap();
     assert_eq!(n, HEAD + 3 + point.to_bytes().len() + 2);
-    assert_eq!(Expression::read(frame.body), Some(e));
+    assert_eq!(Expression::read(delimited.body), Some(e));
     let none = Expression::of(vec![0x53, 1, 2], None);
     assert_eq!(none.write().unwrap(), vec![0x53, 1, 2, 0, 0], "a speaker with no point read writes the count zero");
     assert_eq!(Expression::read(none.write().unwrap()), Some(none), "an expression with no point reads with none");

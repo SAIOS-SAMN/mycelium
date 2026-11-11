@@ -192,7 +192,7 @@ pub(super) fn family_percept(
             unreached.push(k);
             continue;
         }
-        // THE FRAMES THE STROKE WAS SIZED BY, perceived once by the caller
+        // THE DELIMITED THE STROKE WAS SIZED BY, perceived once by the caller
         // (`perceive_family`): read, never perceived a second time. A pair
         // the frames do not hold was not perceived, and is not reached.
         let Some(pair) = frames.get(k) else {
@@ -333,7 +333,7 @@ pub(super) fn family_percept(
         if quotients.is_empty() {
             continue;
         }
-        // THE CLASSES THE CHART'S FRAMES READ (21 step 1): a rotor class per
+        // THE CLASSES THE CHART'S DELIMITED READ (21 step 1): a rotor class per
         // versor, the frames grouped by the versor they read, in frame order.
         let mut by_class: Keyed<Vec<Quotient>> = Keyed::new();
         for q in quotients {
@@ -433,7 +433,7 @@ pub(super) fn family_percept(
             if let Some(m) = merged {
                 acting.gauge = crate::transducer::sentence::hue_listing(&m);
             }
-            // THE MEMBER CLAIMS ONLY THE FRAMES ITS GAUGE REPRODUCES (21 step
+            // THE MEMBER CLAIMS ONLY THE DELIMITED ITS GAUGE REPRODUCES (21 step
             // 1, ruled 2026-10-18: the over-claim answered at the
             // pivot, never by a filter of candidates). Agreeing with the
             // least frame's map was the test; the gauge the member holds is
@@ -456,7 +456,7 @@ pub(super) fn family_percept(
             // left the step between two sections' frames without an overlap.
             let mut on_chart: Vec<&Quotient> = claimed.clone();
             let mut members = vec![member_of(c, acting, &mut claimed, &first.car.v)];
-            // THE OTHER VERSORS THE CHART READ ON OTHER FRAMES: the placement
+            // THE OTHER VERSORS THE CHART READ ON OTHER DELIMITED: the placement
             // varies (move 6's reading), and a word that differs is ANOTHER
             // SECTION OF THE FIBRE (21 step 2, S12.2; AT1, ruled) — a member
             // of this class with its own carriage and its own frames, never a
@@ -520,7 +520,7 @@ pub(super) fn family_percept(
         }
     }
 
-    // THE FRAMES THE BUDGET DID NOT MEASURE are unreached (rule 11): every
+    // THE DELIMITED THE BUDGET DID NOT MEASURE are unreached (rule 11): every
     // frame with a chart on both sides whose quotient was not attempted.
     if cut {
         for k in 0..n {
@@ -784,7 +784,7 @@ pub(super) fn family_percept(
 
     for (class_key, read) in reads.entries() {
         let class = class_key.encode().as_bytes().to_vec();
-        // EACH MEMBER HOLDS ITS FRAMES (AT1, ruled): the member's charts are
+        // EACH MEMBER HOLDS ITS DELIMITED (AT1, ruled): the member's charts are
         // its chart at each of them. Two members of one section key — one
         // action placed twice, at two frames — are one member standing on
         // the union of both frames.
@@ -1306,7 +1306,7 @@ pub(super) fn family_percept(
     // curvature (Stokes), grouped into tubes by the ray it fixes and counted
     // in each tube's own quantum, weighed by the mass its faces carried —
     // order built on 𝒯 as the field closes, never a length.
-    // 78.74 — THE FRAMES' FIBRES AND THE QUOTIENT BY TORSION, read before
+    // 78.74 — THE DELIMITED' FIBRES AND THE QUOTIENT BY TORSION, read before
     // the field: a class merged into another's algorithm with certainty —
     // every fibre between them torsion — turns free beyond the group's
     // charged member; nothing partial is eliminated.

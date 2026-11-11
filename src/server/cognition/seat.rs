@@ -25,7 +25,7 @@ use crate::network::nerve::Keyed;
 /// the reply's head before its pieces — v1.4's `[1][epoch][seq][count]`,
 /// which covers v1.3's `[count]` — derived, not declared.
 pub fn mail_bound() -> usize {
-    crate::network::wire::frame_budget() - MailRead::HEAD
+    crate::network::wire::BODY_BUDGET - MailRead::HEAD
 }
 
 /// A LISTING'S COORDINATES: `[0][domain]` in the domain's own universe,

@@ -545,7 +545,7 @@ assert_eq!(ends(Incidence::Contact), vec![(1, 3)], "one contact face for one bod
 assert_eq!(ends(Incidence::Site), vec![(1, 2), (3, 4)], "each side's occupants chained on the side's site");
 }
 
-/// C2, 70.6 — A BODY MOVING BETWEEN FRAMES TOUCHES THE BODY THAT STOOD.
+/// C2, 70.6 — A BODY MOVING BETWEEN DELIMITED TOUCHES THE BODY THAT STOOD.
 /// One body stood at `(0, 0)` in frame 0. The other stands at `(0, 2)` in
 /// frame 0 and reaches `(0, 1)` in frame 1, beside where the first stood.
 /// In no single frame do the two share an edge or a corner. Across frames,

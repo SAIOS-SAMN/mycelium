@@ -288,7 +288,7 @@ impl Mind {
             .iter()
             .map(|d| dialogue::ChartOf { inv: d.inv.clone(), have: sheaf::have(&atlas, &d.inv) })
             .collect();
-        let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
+        let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::BODY_BUDGET);
         self.ask(move |s| s.speak_keyed(&voice, request), move |entity, body| {
             entity.board.court.syncing = false;
             if let Ok(body) = body {
@@ -411,7 +411,7 @@ impl Mind {
                     eprintln!("  adopt refused: a word's record passes a length its field writes");
                     continue;
                 };
-                if used + bytes.len() > crate::network::wire::frame_budget() {
+                if used + bytes.len() > crate::network::wire::BODY_BUDGET {
                     break 'strata;
                 }
                 used += bytes.len();

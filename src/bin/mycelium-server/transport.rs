@@ -8,7 +8,7 @@
 //! THE CHANNEL (MU-PRECURSORS §3.1). The door accepts each connection on the
 //! channel its caller speaks (`accept`), and every ask to a peer is dialled
 //! on Noise where the peer speaks it (`tell_peer_over`); the host's static
-//! key and its pins are its Noise home (`seal`). Frames inside a Noise
+//! key and its pins are its Noise home (`seal`). Envelopes inside a Noise
 //! channel ride `NoiseStream::{write_delimited, read_delimited}`; a plaintext peer's
 //! ride the stream as they always did.
 
@@ -39,7 +39,7 @@ pub(crate) fn home() -> Option<&'static NoiseHome> {
 }
 
 /// A CONNECTION AT THE DOOR, on the channel its caller speaks: the opening
-/// answered with the handshake, a plaintext frame left to be read. A
+/// answered with the handshake, a plaintext envelope left to be read. A
 /// handshake that fails is refused by name and the connection let go.
 pub(crate) fn accept(tcp: TcpStream, pace: Pace) -> Option<Channel> {
     accept_with(tcp, home(), pace)
@@ -62,16 +62,16 @@ pub(crate) fn accept_with(tcp: TcpStream, home: Option<&NoiseHome>, pace: Pace) 
 /// THE LISTENER'S OWN ANSWER, where every reader is busy (23.8): the
 /// caller's channel opened at the mesh's measured prior, so a caller that
 /// stalls its opening holds the listener no longer than a silent peer holds
-/// an ask, and `frame` (the deferral) written on it unread — inside Noise
+/// an ask, and `delimited` (the deferral) written on it unread — inside Noise
 /// for a Noise caller, as before for a plaintext one.
-pub(crate) fn defer_unread(tcp: TcpStream, mesh: &Mesh, frame: Delimited) {
-    defer_unread_with(tcp, mesh, frame, home());
+pub(crate) fn defer_unread(tcp: TcpStream, mesh: &Mesh, delimited: Delimited) {
+    defer_unread_with(tcp, mesh, delimited, home());
 }
 
-pub(crate) fn defer_unread_with(tcp: TcpStream, mesh: &Mesh, frame: Delimited, home: Option<&NoiseHome>) {
+pub(crate) fn defer_unread_with(tcp: TcpStream, mesh: &Mesh, delimited: Delimited, home: Option<&NoiseHome>) {
     let Some(pace) = pace_of(Stall::of(prior(mesh)).resolved()) else { return };
     let Some(mut s) = accept_with(tcp, home, pace) else { return };
-    answer(&mut s, frame);
+    answer(&mut s, delimited);
 }
 
 /// The pace a stall reads at; none for `Unmeasured`, on which no read is
@@ -84,45 +84,45 @@ pub(crate) fn pace_of(stall: Stall) -> Option<Pace> {
     }
 }
 
-/// Write one frame back, or REFUSE the act. `encode` answers `None` when a
+/// Write one envelope back, or REFUSE the act. `encode` answers `None` when a
 /// body is over the wire budget, and every one of these sites wrote
-/// `.unwrap_or_default()` -- an EMPTY buffer, which is not a frame. The
+/// `.unwrap_or_default()` -- an EMPTY buffer, which is not an envelope. The
 /// caller then waited on five bytes that were never coming, with no read
 /// bound, which is how one oversized reply stopped an exchange thread and
-/// every act it had left to perform. An act that cannot be framed is
+/// every act it had left to perform. An act that cannot be delimited is
 /// refused, said once, and the connection closes; the caller reads that as
 /// silence, which it already counts (rule 11).
 ///
-/// `frame`'s body is the act; the expression the door writes is formed by
+/// `delimited`'s body is the act; the expression the door writes is formed by
 /// the door's clock (`tuniversal::express`), which stands the door's final
 /// point beside the act. The transport moves its bytes and reads none.
-pub(crate) fn answer(s: &mut Channel, frame: Delimited) {
-    let _ = answer_written(s, frame);
+pub(crate) fn answer(s: &mut Channel, delimited: Delimited) {
+    let _ = answer_written(s, delimited);
 }
 
-/// `answer`, saying whether the reply was WRITTEN: false where the frame
+/// `answer`, saying whether the reply was WRITTEN: false where the envelope
 /// would not encode or the asker had gone (a reply that missed the asker's
 /// wait). The catch-up door counts it (`Court::serve`); a write that fails
 /// is never silent there (2026-10-08). A LOWER BOUND: a reply written just
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
-pub(crate) fn answer_written(s: &mut Channel, frame: Delimited) -> bool {
-    let refused = || eprintln!("  court reply refused: body {} over the wire budget", frame.body.len());
-    let Some(body) = crate::tuniversal::express(&frame.body) else {
+pub(crate) fn answer_written(s: &mut Channel, delimited: Delimited) -> bool {
+    let refused = || eprintln!("  court reply refused: body {} over the wire budget", delimited.body.len());
+    let Some(body) = crate::tuniversal::express(&delimited.body) else {
         refused();
         return false;
     };
-    let frame = Delimited { body };
+    let delimited = Delimited { body };
     match s {
-        Channel::Noise(n) => match n.write_delimited(&frame) {
+        Channel::Noise(n) => match n.write_delimited(&delimited) {
             Ok(()) => true,
-            Err(mycelium::network::noise::NoiseRefusal::FrameOverBudget { .. }) => {
+            Err(mycelium::network::noise::NoiseRefusal::OverBudget { .. }) => {
                 refused();
                 false
             }
             Err(_) => false,
         },
-        Channel::Plain(p) => match frame.encode() {
+        Channel::Plain(p) => match delimited.encode() {
             Some(bytes) => p.write_all(&bytes).is_ok(),
             None => {
                 refused();
@@ -137,19 +137,19 @@ pub(crate) fn answer_written(s: &mut Channel, frame: Delimited) -> bool {
 /// speaker's point and answers the act. Bytes that are no expression close
 /// the connection, as a truncated envelope does.
 pub(crate) fn read_delimited(s: &mut Channel) -> Option<Delimited> {
-    let frame = match s {
-        Channel::Plain(_) => read_plain_frame(s)?,
+    let delimited = match s {
+        Channel::Plain(_) => read_plain_delimited(s)?,
         Channel::Noise(n) => match n.read_delimited() {
-            Ok(frame) => frame,
+            Ok(delimited) => delimited,
             // Refused by name inside the channel, as on plain TCP below.
-            Err(mycelium::network::noise::NoiseRefusal::FrameOverBudget { .. }) => {
+            Err(mycelium::network::noise::NoiseRefusal::OverBudget { .. }) => {
                 refuse_over_budget(s);
                 return None;
             }
             Err(_) => return None,
         },
     };
-    Some(Delimited { body: crate::tuniversal::hear(frame.body)? })
+    Some(Delimited { body: crate::tuniversal::hear(delimited.body)? })
 }
 
 /// THE ACT WHOSE HEAD NAMES A BODY PAST THE WIRE'S BUDGET, answered refused
@@ -160,11 +160,11 @@ fn refuse_over_budget(s: &mut Channel) {
     answer(s, Delimited { body });
 }
 
-fn read_plain_frame(s: &mut Channel) -> Option<Delimited> {
+fn read_plain_delimited(s: &mut Channel) -> Option<Delimited> {
     let mut head = [0u8; mycelium::network::wire::HEAD];
     s.read_exact(&mut head).ok()?;
     let Some(len) = mycelium::network::wire::delimited_len(head) else {
-        // REFUSED BY NAME, NOT DROPPED (78.125): the frame names a body past
+        // REFUSED BY NAME, NOT DROPPED (78.125): the length names a body past
         // the wire's one budget. Its body is never read — a length is no
         // licence to allocate — but the act is answered refused before the
         // connection closes.
@@ -176,7 +176,7 @@ fn read_plain_frame(s: &mut Channel) -> Option<Delimited> {
     Some(Delimited { body })
 }
 
-/// THE DEFERRAL FRAME, read on a hypha-to-hypha reply (23.8, I36): a full
+/// THE DEFERRAL, read on a hypha-to-hypha reply (23.8, I36): a full
 /// reflex pool answers every act with the pending outcome and the door's
 /// four deficit lanes. On a peer's reply that is impedance — the peer refused nothing
 /// and witnessed nothing — and never a vantage: decoded as an offer reply
@@ -354,7 +354,7 @@ pub(crate) fn tell_peer_over(endpoint: &str, body: Vec<u8>, stall: Stall, home: 
     // A PEER THAT SAYS NOTHING IS SILENT, NOT AUTHORITATIVE. `read_exact`
     // with no bound makes a peer that writes nothing an unbounded wait, and
     // one such peer stops this thread and every act it was going to perform
-    // -- which is what a frame that failed to encode on the far side
+    // -- which is what an envelope that failed to encode on the far side
     // produced: an empty write, and a caller waiting on five bytes that
     // never came. Silence is a refusal and is counted as one.
     //
@@ -364,13 +364,13 @@ pub(crate) fn tell_peer_over(endpoint: &str, body: Vec<u8>, stall: Stall, home: 
     // so the READ is polled instead (`Pace::Polled`): non-blocking, one
     // spend per poll that moves no byte, refused when the transport's own
     // deadline is spent. PROGRESS REFILLS THE BUDGET: what it bounds is a
-    // STALL, so a peer trickling a large frame is never refused for being
+    // STALL, so a peer trickling a large envelope is never refused for being
     // slow, and one that has said nothing at all still is. A poll costs the
     // processor its scheduler floor (the stroke-duration ruling), so a peer
     // whose listener has merely not been scheduled is not counted silent.
     // A court's act to a peer is written as the door's expression: the act
     // and the door's final point beside it (`tuniversal::express`).
-    let frame = Delimited { body: crate::tuniversal::express(&body)? };
+    let delimited = Delimited { body: crate::tuniversal::express(&body)? };
     // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this court
     // spent between the write and the first byte back, one stroke per poll
     // of the socket, the poll that found the byte included. It returned a
@@ -381,11 +381,11 @@ pub(crate) fn tell_peer_over(endpoint: &str, body: Vec<u8>, stall: Stall, home: 
     s.paced_mut().measure();
     let reply = match &mut s {
         Channel::Noise(n) => {
-            n.write_delimited(&frame).ok()?;
+            n.write_delimited(&delimited).ok()?;
             n.read_delimited().ok()?.body
         }
         Channel::Plain(p) => {
-            p.write_all(&frame.encode()?).ok()?;
+            p.write_all(&delimited.encode()?).ok()?;
             let mut head = [0u8; mycelium::network::wire::HEAD];
             p.read_exact(&mut head).ok()?;
             let len = mycelium::network::wire::delimited_len(head)?;

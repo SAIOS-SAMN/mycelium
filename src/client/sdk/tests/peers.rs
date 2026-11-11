@@ -36,7 +36,7 @@ fn gain_and_conjugate() -> (Mv, Mv) {
     (gain, conjugate)
 }
 
-/// THE RECORD IS FOLDED FROM THE PEER'S FRAMES, FILED BY THE RESIDUE'S
+/// THE RECORD IS FOLDED FROM THE PEER'S DELIMITED, FILED BY THE RESIDUE'S
 /// CONJUGACY INVARIANTS. A question asked of a peer stands with the frame
 /// it answered under its coordinates: an answer whose factor re-derives the
 /// residue reads TAKEN, filed by the residue's class read off the motion,
@@ -98,7 +98,7 @@ fn peer_inexact_on_a_class_is_not_asked_it_again() {
     assert_eq!(fresh_reading, Addressed::Ask, "a peer whose record holds nothing against it is askable");
 }
 
-/// A PEER'S FRAMES LAPSE WITH THE QUESTION THEY ANSWERED: the question's
+/// A PEER'S DELIMITED LAPSE WITH THE QUESTION THEY ANSWERED: the question's
 /// line let go, its frames go with it and the record holds nothing.
 #[test]
 fn peer_frames_lapse_with_the_question() {

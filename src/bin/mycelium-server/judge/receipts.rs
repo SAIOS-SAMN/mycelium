@@ -18,7 +18,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     let Some(req) = dialogue::decode_receipts_request(&frame.body) else { return };
     // A budget smaller than the envelopes serves nothing: the page's tapes,
     // and the reply's whole budget behind which the reading height rides.
-    let (Some((at_most, budget)), Some(reply)) = (mycelium::cognition::Court::receipts_frame(), mycelium::cognition::Court::receipts_reply_budget())
+    let (Some((at_most, budget)), Some(reply)) = (mycelium::cognition::Court::receipts_bounds(), mycelium::cognition::Court::receipts_reply_budget())
     else {
         return;
     };

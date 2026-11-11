@@ -290,6 +290,6 @@ fn seat_post_keeps_mailbox_bound() {
     let mail = read(&mut k, &mind(), 0);
     assert_eq!(mail.len() as u64 + k.seats.dropped(), posted, "what is held and what was dropped are every piece");
     let reply = encode_mail_reply(Ok(&mail)).expect("writes");
-    assert!(reply.len() <= crate::network::wire::frame_budget(), "one read carries the whole box");
+    assert!(reply.len() <= crate::network::wire::BODY_BUDGET, "one read carries the whole box");
     assert!(mail.windows(2).all(|w| w[0].seq < w[1].seq), "in sequence order");
 }

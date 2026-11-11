@@ -395,7 +395,7 @@ fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
             }
         }
         let gauge = take_gauge(k, p)?;
-        // AT1 — THE MEMBER'S FRAMES, each by its own spelling (Q4).
+        // AT1 — THE MEMBER'S DELIMITED, each by its own spelling (Q4).
         let nf = take_key_count(k, p)?;
         let mut frames = Keyed::new();
         for _ in 0..nf {

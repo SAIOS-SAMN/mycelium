@@ -121,7 +121,7 @@ pub fn quote(
     };
     // The items' share of the frame: its body less the quote reply's own
     // header (D1.3, D4.6).
-    let budget = crate::network::wire::frame_budget().checked_sub(crate::anastome::dialogue::QUOTE_REPLY_HEADER)?;
+    let budget = crate::network::wire::BODY_BUDGET.checked_sub(crate::anastome::dialogue::QUOTE_REPLY_HEADER)?;
     // NO ESCROW POOL, NO QUOTE. The pool gates whether the book is quotable
     // at all; it does not bound the scale of what is served, which is the
     // body budget's job.

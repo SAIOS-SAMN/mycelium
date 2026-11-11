@@ -114,7 +114,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
             let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
             h.run(|k, reads| {
                 let store = k.anchor_evidence();
-                let (m, end) = dialogue::evidence_page(store, mycelium::network::wire::frame_budget(), reads);
+                let (m, end) = dialogue::evidence_page(store, mycelium::network::wire::BODY_BUDGET, reads);
                 (store.iter().take(m).cloned().collect(), end)
             })
         };
@@ -494,7 +494,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                 &context.bind,
                 charts,
                 &from,
-                mycelium::network::wire::frame_budget(),
+                mycelium::network::wire::BODY_BUDGET,
             ) else {
                 eprintln!("  cover page refused: the bind does not fit its length");
                 return true;
@@ -547,7 +547,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
             // nerve's class records on the hold's stroke, resumed page to
             // page past the chart the last reading stopped at (78.153b).
             let (page, classes) = h.run(|k, reads| {
-                let page = k.serve_syllabus(&window, svoice, mycelium::network::wire::frame_budget());
+                let page = k.serve_syllabus(&window, svoice, mycelium::network::wire::BODY_BUDGET);
                 (page, k.class_records_on(&mycelium::transducer::stalk::Invariant::default(), &svoice, reads))
             });
             drop(h);

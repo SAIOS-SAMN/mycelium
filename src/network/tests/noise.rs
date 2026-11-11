@@ -86,10 +86,10 @@ fn message_lengths(mut seen: &[u8]) -> Vec<usize> {
 }
 
 /// XX completes between two homes over loopback TCP: each side holds the
-/// other's public key, and a frame carrying an expression with its point,
+/// other's public key, and an envelope carrying an expression with its point,
 /// and its reply, read back exactly.
 #[test]
-fn initiate_completes_handshake_and_round_trips_frames() {
+fn initiate_completes_handshake_and_round_trips_envelopes() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "127.0.0.1:7500", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
@@ -110,8 +110,8 @@ fn initiate_completes_handshake_and_round_trips_frames() {
     assert_eq!(ia.read_delimited().unwrap(), reply);
 }
 
-/// A frame past one Noise message rides as ⌈bytes / CHUNK⌉ messages,
-/// none over the ceiling, and joins back to the same frame.
+/// An envelope past one Noise message rides as ⌈bytes / CHUNK⌉ messages,
+/// none over the ceiling, and joins back to the same envelope.
 #[test]
 fn write_delimited_chunks_past_one_message_and_rejoins() {
     let ((_da, a), (_db, b)) = (home(), home());
@@ -119,30 +119,30 @@ fn write_delimited_chunks_past_one_message_and_rejoins() {
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     rb.get_mut().seen.clear();
     let body: Vec<u8> = (0..3 * CHUNK + 7).map(|i| u8::try_from(i % 251).unwrap()).collect();
-    let frame = Delimited { body };
+    let delimited = Delimited { body };
     let sender = std::thread::spawn(move || {
-        ia.write_delimited(&frame).unwrap();
-        frame
+        ia.write_delimited(&delimited).unwrap();
+        delimited
     });
     let got = rb.read_delimited().unwrap();
-    let frame = sender.join().unwrap();
-    assert_eq!(got, frame.clone());
+    let delimited = sender.join().unwrap();
+    assert_eq!(got, delimited.clone());
     let lens = message_lengths(&rb.get_ref().seen);
-    let plain = HEAD + frame.body.len();
+    let plain = HEAD + delimited.body.len();
     assert_eq!(lens.len(), plain.div_ceil(CHUNK));
     assert!(lens.iter().all(|&l| l <= MESSAGE_MAX));
     assert_eq!(lens.iter().map(|l| l - TAG_LEN).sum::<usize>(), plain);
 }
 
 /// A body over the wire's budget is refused before a byte is sent: the
-/// next frame is the next thing the peer reads.
+/// next envelope is the next thing the peer reads.
 #[test]
 fn write_delimited_refuses_over_budget_before_sending() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     let over = Delimited { body: vec![0; DELIMITED_MAX + 1] };
-    assert!(matches!(ia.write_delimited(&over), Err(NoiseRefusal::FrameOverBudget { len }) if len == DELIMITED_MAX + 1));
+    assert!(matches!(ia.write_delimited(&over), Err(NoiseRefusal::OverBudget { len }) if len == DELIMITED_MAX + 1));
     let next = Delimited { body: vec![4, 2] };
     ia.write_delimited(&next).unwrap();
     assert_eq!(rb.read_delimited().unwrap(), next);
@@ -157,7 +157,7 @@ fn read_delimited_refuses_head_past_budget() {
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
     let len = DELIMITED_MAX + 1;
     ia.write_all(&u32::try_from(len).unwrap().to_le_bytes()).unwrap();
-    assert!(matches!(rb.read_delimited(), Err(NoiseRefusal::FrameOverBudget { len: l }) if l == len));
+    assert!(matches!(rb.read_delimited(), Err(NoiseRefusal::OverBudget { len: l }) if l == len));
 }
 
 /// One flipped bit of a transport message's ciphertext fails its tag.
@@ -198,12 +198,12 @@ fn pin_refuses_changed_peer_key() {
     assert!(matches!(a.pin("a\tb", &c.public()), Err(NoiseRefusal::PeerLabel(_))));
 }
 
-/// THE OPENING READS AS NO PLAINTEXT FRAME: its head, read as a plaintext
+/// THE OPENING READS AS NO PLAINTEXT ENVELOPE: its head, read as a plaintext
 /// length, passes the wire's `DELIMITED_MAX`, so a door that speaks only
 /// plaintext refuses it by length and reads no body; a responder opened
 /// with anything else answers `NotSpoken`.
 #[test]
-fn opening_reads_as_no_plaintext_frame() {
+fn opening_reads_as_no_plaintext_envelope() {
     let len = usize::try_from(u32::from_le_bytes([OPEN[0], OPEN[1], OPEN[2], OPEN[3]])).unwrap();
     assert!(len > DELIMITED_MAX);
     assert!(len > crate::network::wire::BODY_BUDGET + TPoint::TRAILER_MAX);
@@ -212,8 +212,8 @@ fn opening_reads_as_no_plaintext_frame() {
     let (_db, b) = home();
     let (mut sa, sb) = loopback();
     let responder = std::thread::spawn(move || respond(sb, &b, None).map(|s| s.remote_static()));
-    let frame = Delimited { body: vec![1, 2, 3, 4, 5] };
-    sa.write_all(&frame.encode().unwrap()).unwrap();
+    let delimited = Delimited { body: vec![1, 2, 3, 4, 5] };
+    sa.write_all(&delimited.encode().unwrap()).unwrap();
     assert!(matches!(responder.join().unwrap(), Err(NoiseRefusal::NotSpoken { answered }) if answered[..HEAD] == 5u32.to_le_bytes()));
 }
 

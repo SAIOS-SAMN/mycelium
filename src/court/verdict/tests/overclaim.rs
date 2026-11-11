@@ -1,4 +1,4 @@
-// 23.1 step 3 against 21 step 1 — A MEMBER CLAIMS ONLY THE FRAMES ITS GAUGE
+// 23.1 step 3 against 21 step 1 — A MEMBER CLAIMS ONLY THE DELIMITED ITS GAUGE
 // REPRODUCES: the mind's extraction, reconstructed by the court's own body check,
 // raises no vertex-body fault where the frames' hue maps differ (the
 // over-claim answered at the pivot, ruled 2026-10-18).
@@ -10,7 +10,7 @@ fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
-/// THREE FRAMES, ONE SLIDE, THREE HUE MAPS. One cell slides one column right
+/// THREE DELIMITED, ONE SLIDE, THREE HUE MAPS. One cell slides one column right
 /// in every frame, recoloured 1 → 2, then 3 → 4, then 3 → 5. The second and
 /// third frames each agree with the first's map (no hue sent two ways) and
 /// disagree with each other, so no one gauge reproduces all three. The

@@ -10,6 +10,26 @@
 /// The MTU body budget: the most bytes one act may carry. An act exceeding
 /// it is refused (fragmentation is the caller's concern; the wire never
 /// silently truncates).
+///
+/// AN ENVELOPE IS A TRANSPORT CONSTRUCT, NOT A LOCAL MEMORY CACHE (the
+/// wire-MTU ruling, 2026-09-11). This was `spend_unit() * 1024`, and
+/// `spend_unit()` is `reserve_max()/8`, read off the host's free memory at
+/// boot: three on an eight-core box, so the envelope clamped to its 4 KiB
+/// floor. Two nodes of the same mesh therefore disagreed about how large a
+/// envelope is, and whether a chain could be paged AT ALL depended on what
+/// else the machine was doing.
+///
+/// Measured on the development deployment at epoch 11: hypha a holds every receipt from 0
+/// to 2000 and could serve none of `1111..1112` — two receipts of ~5.5 KiB
+/// against a 4 KiB envelope — so the back-fill stopped there and could never
+/// pass it. Receipts on either side, 1.9 KiB, served fine.
+///
+/// The budget is the same on every node of the mesh, so a page that one
+/// node can build another can read, and no node's memory pressure changes
+/// what the protocol is. AND IT IS THE WIRE'S ONE CARRIER (PH1): a nerve act
+/// carries what an envelope carries, `BODY_BUDGET`, the protocol's coordinate
+/// the codec refuses past and the wire contract states (H4) — one number
+/// the mesh agrees on, not a second, smaller one chosen beside it.
 /// REGISTERED: BODY_BUDGET
 pub const BODY_BUDGET: usize = 768 * 1024;
 
@@ -23,11 +43,11 @@ pub const DELIMITED_MAX: usize = BODY_BUDGET + u16::MAX as usize + 2;
 /// FORMAT: u32 LE length.
 pub const HEAD: usize = 4;
 
-/// Frame-integrity digest of served bytes (corpus files, signed manifests).
+/// Byte-integrity digest of served bytes (corpus files, signed manifests).
 /// Not a key of mathematical structure.
 #[expect(
     clippy::disallowed_methods,
-    reason = "law 2 — the object is the frame's bytes, and frame integrity is a property of those bytes and of no structure they carry"
+    reason = "law 2 — the object is the delimited's bytes, and delimited integrity is a property of those bytes and of no structure they carry"
 )]
 pub fn integrity_hash<'a, I>(chunks: I) -> [u8; 32]
 where
@@ -40,32 +60,7 @@ where
     *h.finalize().as_bytes()
 }
 
-/// Bytes one nerve act may carry.
-///
-/// A WIRE FRAME IS A TRANSPORT CONSTRUCT, NOT A LOCAL MEMORY CACHE (the
-/// wire-MTU ruling, 2026-09-11). This was `spend_unit() * 1024`, and
-/// `spend_unit()` is `reserve_max()/8`, read off the host's free memory at
-/// boot: three on an eight-core box, so the frame clamped to its 4 KiB
-/// floor. Two nodes of the same mesh therefore disagreed about how large a
-/// frame is, and whether a chain could be paged AT ALL depended on what
-/// else the machine was doing.
-///
-/// Measured on the development deployment at epoch 11: hypha a holds every receipt from 0
-/// to 2000 and could serve none of `1111..1112` — two receipts of ~5.5 KiB
-/// against a 4 KiB frame — so the back-fill stopped there and could never
-/// pass it. Receipts on either side, 1.9 KiB, served fine.
-///
-/// The budget is the same on every node of the mesh, so a page that one
-/// node can build another can read, and no node's memory pressure changes
-/// what the protocol is. AND IT IS THE WIRE'S ONE CARRIER (PH1): a nerve act
-/// carries what a frame carries, `BODY_BUDGET`, the protocol's coordinate
-/// the codec refuses past and the wire contract states (H4) — one number
-/// the mesh agrees on, not a second, smaller one chosen beside it.
-pub fn frame_budget() -> usize {
-    BODY_BUDGET
-}
-
-/// A wire frame: a body delimited by its length. The body is opaque
+/// An envelope: a body delimited by its length. The body is opaque
 /// transport bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Delimited {
@@ -89,14 +84,14 @@ impl Delimited {
         let mut out = Vec::with_capacity(HEAD + self.body.len());
         out.extend_from_slice(&len.to_le_bytes());
         out.extend_from_slice(&self.body);
-        // LD1: the frame's bytes, by the act its body opens with.
+        // LD1: the envelope's bytes, by the act its body opens with.
         if let Some(tag) = crate::anastome::dialogue::act_tag(&self.body) {
-            crate::observe::note_frame(tag, out.len() as u64);
+            crate::observe::note_delimited(tag, out.len() as u64);
         }
         Some(out)
     }
 
-    /// Decode one frame from the head of `bytes`; returns `(frame, bytes_read)`.
+    /// Decode one envelope from the head of `bytes`; returns `(delimited, bytes_read)`.
     /// `None` on a length past [`DELIMITED_MAX`] or a truncated buffer.
     pub fn decode(bytes: &[u8]) -> Option<(Delimited, usize)> {
         let len = delimited_len(bytes.get(..HEAD)?.try_into().ok()?)?;

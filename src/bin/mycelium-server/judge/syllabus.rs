@@ -63,7 +63,7 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) 
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
     // The words' and records' share of the frame, exact: its body less the
     // reply's count and the class records' count (D4.6).
-    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER + dialogue::CLASS_RECORDS_HEADER) else {
+    let Some(mut budget) = mycelium::network::wire::BODY_BUDGET.checked_sub(dialogue::SYLLABUS_REPLY_HEADER + dialogue::CLASS_RECORDS_HEADER) else {
         return;
     };
     let mut words: Vec<dialogue::Taught> = Vec::new();
@@ -175,7 +175,7 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) 
 /// its own expense through the fetch, and is answered with nothing here.
 fn cited(stream: &mut Channel, context: &Context, cvoice: [u8; 32], addrs: &[mycelium::transducer::address::Address]) {
     let court = context.mesh.addrs.lock().is_ok_and(|a| a.get(&cvoice).is_some());
-    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
+    let Some(mut budget) = mycelium::network::wire::BODY_BUDGET.checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
     let mut words: Vec<dialogue::Taught> = Vec::new();
     if court {
         if let Ok(mut h) = crate::court_lock::held!(context.court) {
@@ -208,7 +208,7 @@ fn cited(stream: &mut Channel, context: &Context, cvoice: [u8; 32], addrs: &[myc
 fn present(stream: &mut Channel, context: &Context, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
     // The words' and the answer's share of the frame: its body less the
     // reply's count; `present` keeps the answer's own width out of it.
-    let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
+    let Some(budget) = mycelium::network::wire::BODY_BUDGET.checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
     let Ok(mut h) = crate::court_lock::held!(&context.court) else { return };
     let presented = h.run(|k, reads| k.present(voice, motion, budget, reads));
     drop(h);

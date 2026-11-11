@@ -13,7 +13,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     // against it, and the entries the page can hold are the body less that
     // header over an entry's fewest bytes (D4.6); the reply keeps those that
     // fit at each entry's own length, and says how many it carries.
-    let budget = mycelium::network::wire::frame_budget();
+    let budget = mycelium::network::wire::BODY_BUDGET;
     let Some(entries_room) = budget.checked_sub(dialogue::ENTRIES_REPLY_HEADER) else {
         return;
     };

@@ -236,7 +236,7 @@ fn check_home(home: &Path) -> ! {
                         // witness page holds: where the cut can land.
                         let chain_vk = scratch.chain().signer();
                         let after = scratch.chain().root().map(|r| r.at);
-                        if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Court::receipts_frame()) {
+                        if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Court::receipts_bounds()) {
                             let page = scratch.receipts_page(&chain_vk, after, top, at_most, bytes);
                             println!("  fold: the witness page holds {} receipts ({at_most} at most, {bytes} bytes)", page.len());
                             for r in scratch.chain().line_between(&chain_vk, after, top, 6) {
