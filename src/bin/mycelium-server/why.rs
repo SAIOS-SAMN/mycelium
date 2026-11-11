@@ -58,7 +58,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
     };
     let kind = String::from_utf8_lossy(why.kind.name());
     println!(
-        "{BOLD}═══ WHY {} ═══{RESET}  {endpoint}  {DIM}{kind} at h {} · frame {:?}{RESET}",
+        "{BOLD}═══ WHY {} ═══{RESET}  {endpoint}  {DIM}{kind} at h {} · measure {:?}{RESET}",
         why.at.place().print(),
         why.at.h,
         why.mu

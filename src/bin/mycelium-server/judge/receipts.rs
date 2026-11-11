@@ -3,7 +3,7 @@
 //
 //! A page of one signer's receipts, from the hot chain, `ARC1` (an era
 //! replay only, 78.147), or what this court admitted of the signer, as many
-//! as fit the frame budget and never past a hole — or, for a catch-up below
+//! as fit the body budget and never past a hole — or, for a catch-up below
 //! the signer's fold root, the root. 78.151: read off the court's published
 //! reading, never the court, with the reading's height behind the answer;
 //! a range the reading does not yet reach is answered short at its height.
@@ -14,8 +14,8 @@ use mycelium::anastome::dialogue;
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(req) = dialogue::decode_receipts_request(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(req) = dialogue::decode_receipts_request(&delimited.body) else { return };
     // A budget smaller than the envelopes serves nothing: the page's tapes,
     // and the reply's whole budget behind which the reading height rides.
     let (Some((at_most, budget)), Some(reply)) = (mycelium::cognition::Court::receipts_bounds(), mycelium::cognition::Court::receipts_reply_budget())

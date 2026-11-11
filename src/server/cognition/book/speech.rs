@@ -59,9 +59,9 @@ impl Court {
         // THE ACT'S ROOT (65.5): one stroke of this court's own metabolism
         // for the whole speech, threaded to every sentence it hears.
         //
-        // 78.153 — a frame deferred on no lane is a reconstruction its stroke could
+        // 78.153 — an act deferred on no lane is a reconstruction its stroke could
         // not finish: the voice speaks it again, and this reading does, while
-        // the frame's reconstructions move on.
+        // the act's reconstructions move on.
         let keys: Vec<Vec<u8>> = sentences
             .iter()
             .map(|s| crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task)))
@@ -80,22 +80,22 @@ impl Court {
         }
     }
 
-    /// A SPEECH FRAME AS THE JUDGE HANDS IT OVER: every tape decoded, a
+    /// A SPEECH ACT AS THE JUDGE HANDS IT OVER: every tape decoded, a
     /// tape that does not parse adjudicated a `MalformedComplex` naming no
     /// address, and the rest heard in the order sent.
-    pub fn hear_frame(
+    pub fn hear_act(
         &mut self,
         act: &crate::anastome::dialogue::SpeechAct,
     ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
-        // THE ACT'S ROOT (65.5): the wire hands the frame here, and one
-        // stroke is the whole frame's draw, threaded to every sentence.
+        // THE ACT'S ROOT (65.5): the wire hands the act here, and one
+        // stroke is the whole act's draw, threaded to every sentence.
         let mut budget = self.physics.stroke();
-        self.hear_frame_on(act, &mut budget)
+        self.hear_act_on(act, &mut budget)
     }
 
-    /// [`Court::hear_frame`] on the stroke handed in (78.153: a fixture
-    /// that asks what one frame hears hands it a stroke that holds it).
-    pub fn hear_frame_on(
+    /// [`Court::hear_act`] on the stroke handed in (78.153: a fixture
+    /// that asks what one act hears hands it a stroke that holds it).
+    pub fn hear_act_on(
         &mut self,
         act: &crate::anastome::dialogue::SpeechAct,
         budget: &mut crate::physics::Budget,
@@ -303,7 +303,7 @@ impl Court {
         }
         match out {
             Outcome::Deferred(lanes) => Err(lanes),
-            // Per sentence: this one waits, the rest of the frame is
+            // Per sentence: this one waits, the rest of the act is
             // adjudicated as normal and keeps its verdicts.
             Outcome::Awaiting(form) => Ok(Adjudication::Awaiting { form }),
             Outcome::Refused(reason) if reason == crate::verdict::REFUSE_ROOM => {
@@ -473,7 +473,7 @@ impl Court {
             false => Some(task),
         };
         // The caller's stroke (65.5): a sentence is heard inside the act that
-        // hears it — a speech frame, or a ruling re-hearing what waited.
+        // hears it — a speech act, or a ruling re-hearing what waited.
         //
         // 78.153 — ON THAT ONE STROKE, RESUMED: a reconstruction the stroke could not
         // finish is NOT HEARD — deferred on no lane, the voice speaks again,

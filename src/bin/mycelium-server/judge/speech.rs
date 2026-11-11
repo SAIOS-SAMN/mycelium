@@ -1,10 +1,10 @@
 // 26, 50.9 — ACT_SPEECH: a voice stands sentences at the sentences' home court and
 // is answered an adjudication per sentence.
 //
-//! The speaker's frame is handed to the court whole (`hear_frame`): every
+//! The speaker's envelope is handed to the court whole (`hear_act`): every
 //! tape decoded there, every sentence heard in the order sent, and the
 //! reply one `Adjudication` per sentence — never an opaque byte. An act
-//! the door deferred is answered the deferral frame (23.8), which carries
+//! the door deferred is answered the deferral envelope (23.8), which carries
 //! the lanes and nothing else.
 
 use crate::context::Context;
@@ -15,10 +15,10 @@ use mycelium::network::channel::Channel;
 
 
 /// A voice speaks sentences to the court that homes them (26).
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
     let court = &context.court;
 
-    let Some(act) = dialogue::decode_speech(&frame.body) else {
+    let Some(act) = dialogue::decode_speech(&delimited.body) else {
         return;
     };
     // THE HEARING IS THE TRANSITION THAT ADMITS: what it docketed, and what
@@ -27,7 +27,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         // OWED (78.153b): the hearing mints its strokes per sentence (the
         // lock audit, row 9); this hold's stroke is not yet threaded in.
         Ok(mut h) => h.run(|k, _| {
-            let heard = k.hear_frame(&act);
+            let heard = k.hear_act(&act);
             // MU-CLIENT §5.5 — agreed language: the other mind's signed
             // HOLD verified, its attestation sealed on the word.
             let attested = k.attest_agreements(&act);

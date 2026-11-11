@@ -24,10 +24,10 @@ pub(crate) fn read_act(s: &mut impl std::io::Read) -> Option<Vec<u8>> {
 }
 
 /// A FIXTURE PEER'S REPLY: `act` written as an expression with no point,
-/// framed whole.
+/// delimited whole.
 pub(crate) fn reply_bytes(act: &[u8]) -> Vec<u8> {
     let body = mycelium::anastome::dialogue::write_act(act, None).expect("an expression");
-    mycelium::network::wire::Delimited { body }.encode().expect("framed")
+    mycelium::network::wire::Delimited { body }.encode().expect("delimited")
 }
 
 /// The act an expression carries, its point set aside.

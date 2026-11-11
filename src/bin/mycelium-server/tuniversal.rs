@@ -234,7 +234,7 @@ pub(crate) fn sign_tick(mesh: &Mesh, tick: Option<Tick>) -> Option<Vec<TickReadi
 /// 78.152b — WHY A PUSHED TICK WAS NOT HEARD.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TickRefusal {
-    /// The frame does not read whole as `ACT_TICK`.
+    /// The envelope does not read whole as `ACT_TICK`.
     Unreadable,
     /// Its keeper is no peer court this mesh knows (one whose signed digest
     /// named its key and door), or is this court itself.

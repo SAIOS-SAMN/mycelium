@@ -28,7 +28,7 @@ pub(crate) fn syllabus_admit(sy: &mut Syllabus, addrs: impl IntoIterator<Item = 
 /// cursor, as many as one page's wire count carries, and the cursor they
 /// start at. A voice with no cursor starts at the beginning of the order.
 /// What of the window is SERVED is the court's to say — the page ends at
-/// the frame's bytes or where its reserve cannot fund the next word
+/// the envelope's bytes or where its reserve cannot fund the next word
 /// (`Court::serve_syllabus`) — never a count of reads.
 ///
 /// The window is a slice read from the cursor: O(page), never O(cursor)

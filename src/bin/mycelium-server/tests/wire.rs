@@ -1,4 +1,4 @@
-// 26 — the wire: an act is a frame or it is not written, and a ruled word
+// 26 — the wire: an act is an envelope or it is not written, and a ruled word
 // enters the syllabus once, in order.
 
 use crate::syllabus::{syllabus_admit, Syllabus};
@@ -8,14 +8,14 @@ use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 use std::net::TcpStream;
 
-/// AN ENCODE FAILURE REFUSES THE FRAME. Twenty-one sites wrote
+/// AN ENCODE FAILURE REFUSES THE ENVELOPE. Twenty-one sites wrote
 /// `.encode().unwrap_or_default()`, which sends an EMPTY buffer when a
-/// body is over the wire budget. That is not a frame, and the caller
+/// body is over the wire budget. That is not an envelope, and the caller
 /// waited on five bytes that were never coming: one oversized reply
 /// stopped an exchange thread and every act it had left. Nothing is
 /// written, and nothing is invented in its place.
 #[test]
-fn answer_refuses_frame_over_budget_writing_nothing() {
+fn answer_refuses_delimited_over_budget_writing_nothing() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();
     let reader = std::thread::spawn(move || {
@@ -32,10 +32,10 @@ fn answer_refuses_frame_over_budget_writing_nothing() {
     assert!(reader.join().expect("join").is_empty(), "an unframeable act writes nothing");
 }
 
-/// And a frame within the budget is written whole, so the refusal above
+/// And an envelope within the budget is written whole, so the refusal above
 /// is not simply a write path that never works.
 #[test]
-fn answer_writes_frame_within_budget() {
+fn answer_writes_delimited_within_budget() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();
     let reader = std::thread::spawn(move || {
@@ -59,7 +59,7 @@ fn answer_writes_frame_within_budget() {
 
 /// A PAGE'S WINDOW IS THE ORDER AFTER A VOICE'S OWN CURSOR, not a copy of
 /// the book (checklist (j)), as many as the wire's count carries; what of it
-/// is served is the court's reserve and the frame's to say
+/// is served is the court's reserve and the envelope's to say
 /// (`Court::serve_syllabus`). Each voice has its own cursor.
 #[test]
 fn syllabus_window_follows_each_voice_cursor() {

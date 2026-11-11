@@ -14,19 +14,19 @@ use mycelium::anastome::dialogue::domain::{decode_domain_request, encode_domain_
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-/// 78.154 — READ-LEDGER off the published reading: `true` where the frame
+/// 78.154 — READ-LEDGER off the published reading: `true` where the envelope
 /// was one and was answered here.
-pub(crate) fn serve_ledger(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
-    let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&frame.body) else { return false };
+pub(crate) fn serve_ledger(stream: &mut Channel, delimited: &Delimited, context: &Context) -> bool {
+    let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&delimited.body) else { return false };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     let page = context.published.take().ledger_page(&domain, after);
     answer(stream, Delimited { body: encode_ledger_page(&page) });
     true
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(request) = decode_domain_request(&frame.body) else { return };
-    if serve_ledger(stream, frame, context) {
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(request) = decode_domain_request(&delimited.body) else { return };
+    if serve_ledger(stream, delimited, context) {
         return;
     }
     // The final point is read off the shelf before the court is taken.
@@ -37,7 +37,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     }
     let body = match crate::court_lock::held!(context.court) {
         // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
-        // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
+        // spends it; MAP and TRAVERSE read what the envelope carries; READ-MAP
         // walks one universe's records (a fibre), owed to the shelf.
         Ok(mut h) => h.run(|k, reads| match request {
             DomainRequest::Genesis(domain) => encode_domain_reply(&k.hear_domain(&domain)),

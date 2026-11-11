@@ -41,18 +41,18 @@ pub(crate) fn stir() {
 
 /// A SEAT READ, OFFERED TO BE HELD: `None` where it was taken (held, or —
 /// a read of the same reader already held — answered the earlier one in its
-/// place); the stream and frame back where it is no mail read, or something
+/// place); the stream and envelope back where it is no mail read, or something
 /// was filed past its cursor, to be answered now as before.
-pub(crate) fn offer(stream: Channel, frame: Delimited, context: &Context) -> Option<(Channel, Delimited)> {
-    let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return Some((stream, frame)) };
+pub(crate) fn offer(stream: Channel, delimited: Delimited, context: &Context) -> Option<(Channel, Delimited)> {
+    let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&delimited.body) else { return Some((stream, delimited)) };
     if !r.verified() || context.seat_relay.filed_past(&r) {
-        return Some((stream, frame));
+        return Some((stream, delimited));
     }
     let (lock, _) = &*HELD;
     let earlier = match lock.lock() {
         Ok(mut h) => {
             let earlier = h.reads.remove(&r.reader);
-            h.reads.insert(r.reader, (stream, frame));
+            h.reads.insert(r.reader, (stream, delimited));
             earlier
         }
         Err(_) => return None,
@@ -81,8 +81,8 @@ pub(crate) fn spawn(context: Context) {
                 let readers: Vec<Vec<u8>> = h.reads.scoped().map(|(k, _)| k).collect();
                 readers.iter().filter_map(|k| h.reads.remove(k)).collect::<Vec<_>>()
             };
-            for (mut stream, frame) in reads {
-                crate::judge::seat::judge(&mut stream, &frame, &context);
+            for (mut stream, delimited) in reads {
+                crate::judge::seat::judge(&mut stream, &delimited, &context);
             }
         }
     });
