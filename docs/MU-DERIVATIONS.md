@@ -3356,7 +3356,13 @@ the naming.
 
 ### D4.8 Certified mathematics: `P_SERIES_CAP`, `w ≥ 14_000`, Poisson `w + 256`, guard bits, `stop_at`
 
-**Status.** **Built** for (a)–(c) and for (e) where a test asked it
+**Status.** O2 **ruled and built** (operator, 2026-11-11; 78.182 item
+25): `gamma_p`, `gamma_p_terms`, `erf`, `poisson_quantile`, `Quantile` and
+`SeriesRefusal` are retired. They had no caller, and they are continuous
+approximations outside the exact kernel. What follows records them as
+they were built.
+
+**Status as built.** **Built** for (a)–(c) and for (e) where a test asked it
 (2026-10-31, the live-readings ruling). (a): `gamma_p_terms` is the exact
 bound `max(0, ⌈2x − a⌉ − 1) + w₂ − 8`; `gamma_p` and `erf` take `&mut
 Budget`, refuse `SeriesRefusal::Unmetered { needed }` before a term where
@@ -3715,7 +3721,7 @@ Each line names its entry and the reading or ruling that decides it.
 30. **D4.8 O1** — the width contract of `Encl` (absolute or outward
     rounding only): a ruling on 78.130's promise. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 24).
 31. **D4.8 O2** — whether `gamma_p`, `erf` and `poisson_quantile` keep a
-    place without a caller: a ruling naming a consumer, or deferral. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 25).
+    place without a caller: a ruling naming a consumer, or deferral. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 25): retired; **Built**.
 32. **D4.8 O3** — the exact Stirling least-term derivation of `X₀`: a
     derivation, closed by its proof.
 
