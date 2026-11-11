@@ -131,7 +131,10 @@ fn judge_solve_prices_closing_rule_by_discharge() {
             // carried) are each over 7 sites; H, the shell count, stands.
             let form = crate::transducer::sentence::from_element_form(&rule).expect("a form");
             let counts = crate::transducer::family::form_deflation_read(&form, &carried(), &k, &crate::transducer::alphabet::Word::identity()).pay;
-            assert_eq!(pay, crate::economy::Mu::counts(counts).over([7, 7, 7, 1]).expect("non-zero wholes"), "the deflation over the frame's 1·7 sites");
+            assert_eq!(pay.lanes(), crate::economy::Mu::counts(counts).over([7, 7, 7, 1]).expect("non-zero wholes").lanes(), "the deflation over the frame's 1·7 sites, lane by lane");
+            // §2.5 — the pay holds the modes its closure moved: T's share on
+            // the slide's flux.
+            assert!(pay.modes().on_lane(crate::economy::modes::T).all(|(m, _)| matches!(m, crate::economy::modes::Mode::Flux { .. })), "T paid on the flux: {}", pay.modes().print());
             // 78.162 — the slide the rule carried is held as its own mode on
             // T, a null flux with an exact positive amount, never a count of
             // lanes.
