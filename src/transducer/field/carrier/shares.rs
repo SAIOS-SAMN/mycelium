@@ -69,6 +69,43 @@ impl Cohesion {
     pub fn fluidity(&self) -> Vec<(Key, Q)> {
         self.planes().iter().map(|(k, c)| (k.clone(), Q::one() - c)).collect()
     }
+
+    /// THE THROAT TRAVERSAL STATE on plane `k` (78.176):
+    /// - `Balanced` where `c_k == 1/2` (the throat boundary);
+    /// - `TooCohesive` where `c_k > 1/2` (sticks at the throat);
+    /// - `TooFluid` where `c_k < 1/2` (tears at the throat).
+    pub fn traversal_state_on(&self, plane: &Key) -> Option<TraversalState> {
+        let c = self.on(plane)?;
+        let half = Q::new(num_bigint::BigInt::from(1), num_bigint::BigInt::from(2));
+        match () {
+            _ if *c == half => Some(TraversalState::Balanced),
+            _ if *c > half => Some(TraversalState::TooCohesive),
+            _ => Some(TraversalState::TooFluid),
+        }
+    }
+
+    /// FIRST-DEGREE PLANAR ORBITAL SHEAR `Δθ_k = 360° · c_k = 360° / (1 + t_k)`.
+    /// On a turning plane between attractors, reach is first-degree (t = r/M)
+    /// and the turn count is 1 + t (never (1 + t)^2). Eliminates the 1/r^2
+    /// ultraviolet singularity (bounded at 360° as r -> 0) and infrared
+    /// dark matter anomaly (first-degree shear preserves orbital hold).
+    pub fn planar_shear_on(&self, plane: &Key) -> Option<Q> {
+        let c = self.on(plane)?;
+        Some(super::turning::whole_turn() * c)
+    }
+}
+
+/// THROAT TRAVERSAL STATE on a turning plane (LAW-PASSAGE, 78.172; 78.176):
+/// a whole too cohesive sticks at the throat, one too fluid tears; balanced
+/// traversal occurs at the throat where viscosity and fluidity agree (c = d = 1/2).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TraversalState {
+    /// Both shares agree at 1/2: smooth traversal under the passage involution t ↦ 1/t.
+    Balanced,
+    /// Held share c_k > 1/2: viscosity dominates, the whole sticks at the throat.
+    TooCohesive,
+    /// Open share d_k > 1/2 (c_k < 1/2): fluidity dominates, the whole tears at the throat.
+    TooFluid,
 }
 
 /// FRAME PLANE `k`'S KEY, its own two units `e₊ₖe₋ₖ` (`e_+k-k`), where the
