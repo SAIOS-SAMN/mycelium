@@ -6,7 +6,7 @@ use mycelium::cognition::Court;
 use std::sync::Mutex;
 
 /// Durable state, in the order the two depend on each other: the line
-/// first — a frame appended, or the whole through a rename — then the
+/// first — a record appended, or the whole through a rename — then the
 /// snapshot, atomically (to .tmp, then rename), which names the stamp the
 /// line stood at. A snapshot is never written over a line that did not
 /// land, so the two on disk always agree; a crash between them leaves a

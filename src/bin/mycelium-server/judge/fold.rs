@@ -3,7 +3,7 @@
 //
 //! 47.2 steps 1 and 2 on the proposal's section before anything is
 //! fetched; then the receipts by `ACT_RECEIPTS` and the ledger entries by
-//! `ACT_ENTRIES` from the home, paged by the frame budget; `Court::verify_fold` on both;
+//! `ACT_ENTRIES` from the home, paged by the body budget; `Court::verify_fold` on both;
 //! the witness's own signed position over the root written out (place,
 //! height and hash, `Root::signed`) in reply, and the
 //! era filed under the home's key.
@@ -15,8 +15,8 @@ use mycelium::chronometry::Place;
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(p) = dialogue::decode_fold(&frame.body) else { return };
+pub(crate) fn judge(s: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(p) = dialogue::decode_fold(&delimited.body) else { return };
     let witness = context.mesh.vk;
     let home = p.section.receipt.stamp.vk;
     let say = |s: &mut Channel, w: dialogue::FoldWitness| {
@@ -152,7 +152,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
     // 78.147: the era is held with its root's proof — the home's signed
     // position verified above and this witness's own — so this court, the
     // root's second holder, answers a catch-up below it with it.
-    // OWED (78.153b): the era frame and its disk append stay under the court.
+    // OWED (78.153b): the era record and its disk append stay under the court.
     if let Ok(mut h) = crate::court_lock::held!(context.court) {
         h.run(|k, _| k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,

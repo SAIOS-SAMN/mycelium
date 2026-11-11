@@ -24,27 +24,27 @@ fn mail_reply(r: &ReadMail, read: Result<MailRead, Refusal>) -> Option<Vec<u8>> 
 /// worker pool answers every act with the door's deficit, and reading one's
 /// own mail spends nothing — so a READ-MAIL is served off the relay's own
 /// lock (no court), once per window of the reader's mail
-/// (`SharedRelay::exempt_read`). `false` where the frame is no read, or the
+/// (`SharedRelay::exempt_read`). `false` where the envelope is no read, or the
 /// read is not exempt: the caller defers it as before. A task read, a
 /// wallet read and a seat post are served here too (2026-10-09).
-pub(crate) fn serve_exempt(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
+pub(crate) fn serve_exempt(stream: &mut Channel, delimited: &Delimited, context: &Context) -> bool {
     // A TASK READ takes the registry's lock and never the court's, so a
     // full pool waiting on cognition has no reason to defer it: a seated
     // mind's fetch of the task before its seat was deferred 2026-10-08 on
     // every hypha and no call was made. Served here, as observe is.
-    if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_TASK) {
-        return crate::control::serve_control(stream, frame, context);
+    if mycelium::anastome::dialogue::act_tag(&delimited.body) == Some(mycelium::anastome::dialogue::ACT_TASK) {
+        return crate::control::serve_control(stream, delimited, context);
     }
     // A wallet read and a seat listing are answered off the published
     // reading before this (`judge::serve_published`, 78.151).
     // A SEAT POST (TAKE, CALL) is a mind's one act at its seat: deferred
     // after every restart, minds read the minds' percepts and never held the
     // seats again (2026-10-09). Served here the same way, in its turn.
-    if let Some(Ok(SeatRequest::Post(_))) = decode_seat_request(&frame.body) {
-        judge(stream, frame, context);
+    if let Some(Ok(SeatRequest::Post(_))) = decode_seat_request(&delimited.body) {
+        judge(stream, delimited, context);
         return true;
     }
-    let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return false };
+    let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&delimited.body) else { return false };
     let Some(mail) = context.seat_relay.exempt_read(&r) else { return false };
     let Some(body) = mail_reply(&r, mail) else { return false };
     answer(stream, Delimited { body });
@@ -52,10 +52,10 @@ pub(crate) fn serve_exempt(stream: &mut Channel, frame: &Delimited, context: &Co
 }
 
 /// 78.151 — A SEAT LISTING, read on the relay's own lock: relay state, never
-/// the court's, so no court is taken. `false` where the frame is no listing.
+/// the court's, so no court is taken. `false` where the envelope is no listing.
 /// v1.4: at the sub-origin it names, where it names one.
-pub(crate) fn serve_listing(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
-    let Some(Ok(SeatRequest::ReadListing(domain, sub_origin))) = decode_seat_request(&frame.body) else { return false };
+pub(crate) fn serve_listing(stream: &mut Channel, delimited: &Delimited, context: &Context) -> bool {
+    let Some(Ok(SeatRequest::ReadListing(domain, sub_origin))) = decode_seat_request(&delimited.body) else { return false };
     // A domain with no listing is answered with none: an empty body.
     match context.seat_relay.listing(&domain, sub_origin.as_ref()) {
         Some(body) => answer(stream, Delimited { body }),
@@ -64,16 +64,16 @@ pub(crate) fn serve_listing(stream: &mut Channel, frame: &Delimited, context: &C
     true
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(request) = decode_seat_request(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(request) = decode_seat_request(&delimited.body) else { return };
     let body = match request {
         Err(why) => {
-            // A frame that names no domain: counted on the relay's reading.
+            // An envelope that names no domain: counted on the relay's reading.
             context.seat_relay.note_unread();
             encode_post_reply(Err(why))
         }
         Ok(SeatRequest::ReadListing(..)) => {
-            serve_listing(stream, frame, context);
+            serve_listing(stream, delimited, context);
             return;
         }
         Ok(SeatRequest::Post(s)) => match crate::court_lock::held!(context.court) {

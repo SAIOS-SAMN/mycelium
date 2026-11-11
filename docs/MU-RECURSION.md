@@ -8097,7 +8097,7 @@ idea's form (`contract`) and the court's reader of each
 beside `PivotCertificate`; tests: `receive_adjudication_contracts_form_and_seals_address`,
 `speak_refuses_sealed_tape_before_wire`,
 `hear_speech_verifies_contraction_before_reconstruction`,
-`hear_frame_on_reaches_one_standing_on_two_courts`,
+`hear_act_on_reaches_one_standing_on_two_courts`,
 `contract_turns_still_contact_word_into_demand`,
 `contract_drops_face_that_does_not_rederive`,
 `receive_adjudication_drops_refused_sentence_from_dialect`,

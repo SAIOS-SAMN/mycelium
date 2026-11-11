@@ -20,8 +20,8 @@ use mycelium::network::wire::Delimited;
 use mycelium::physics::laws::codec::{decode_laws_request, encode_register_reply, LawsRequest};
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(request) = decode_laws_request(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(request) = decode_laws_request(&delimited.body) else { return };
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
         // 78.124 — the core clock: this court's head stamp, read at the ask.

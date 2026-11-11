@@ -42,11 +42,11 @@ fn door(home: Option<NoiseHome>, connections: usize, reply: Vec<u8>) -> (String,
             };
             let (kind, caller) = (ch.kind(), ch.remote_static());
             match read_delimited(&mut ch) {
-                Some(frame) => {
+                Some(delimited) => {
                     answer(&mut ch, Delimited { body: reply.clone() });
-                    heard.push(Ok((kind, caller, frame.body)));
+                    heard.push(Ok((kind, caller, delimited.body)));
                 }
-                None => heard.push(Err(String::from("no frame read"))),
+                None => heard.push(Err(String::from("no envelope read"))),
             }
         }
         heard
@@ -186,7 +186,7 @@ fn pinned_key_mismatch_refused() {
         }
         other => panic!("expected PinnedAnsweredPlain, read {:?}", other.map(|ch| ch.kind())),
     }
-    assert_eq!(served.join().expect("the door"), vec![Err(String::from("no frame read"))], "the opening alone, refused as a plaintext head");
+    assert_eq!(served.join().expect("the door"), vec![Err(String::from("no envelope read"))], "the opening alone, refused as a plaintext head");
     assert!(!met(&addr, Kind::Plain, Side::Dialled), "never dialled in plaintext");
 }
 

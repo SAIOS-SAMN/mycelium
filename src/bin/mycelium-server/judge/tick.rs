@@ -1,9 +1,9 @@
 // 78.152b — ACT_TICK: a peer keeper's ring, pushed on its own act, heard at
-// the door where the frame is read — before the work queue and on the
+// the door where the envelope is read — before the work queue and on the
 // overflow path — so TUniversal never waits on this court's load.
 //
 //! The door takes no court here: `tuniversal::hear_tick` is handed the mesh and
-//! the frame, never the court. Answered one byte.
+//! the envelope, never the court. Answered one byte.
 
 use crate::context::Context;
 use crate::transport::answer;
@@ -14,8 +14,8 @@ use mycelium::network::channel::Channel;
 /// A pushed ring heard and answered `TICK_HEARD`, or `TICK_REFUSED` where it
 /// does not read, its keeper is no known peer court, no origin is adopted
 /// here, or a reading was refused (counted by name in `hear_ring`).
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let ack = match crate::tuniversal::hear_tick(&context.mesh, &frame.body) {
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let ack = match crate::tuniversal::hear_tick(&context.mesh, &delimited.body) {
         Ok(_) => TICK_HEARD,
         Err(_) => TICK_REFUSED,
     };

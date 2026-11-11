@@ -1,5 +1,5 @@
 // 47.1, 47.2 — admission: what this court accepts from a peer, in the
-// order 47.2 gives, and the tally of what it did with each frame.
+// order 47.2 gives, and the tally of what it did with each act.
 //
 //! A receipt is admitted against the origin, its signature, its K against
 //! the head this court already holds, and its height, in that order. A gap
@@ -51,7 +51,7 @@ pub(crate) fn read_published_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
 /// it was sent, so signing the address signs the form by its content and
 /// not by the spelling (law 2).
 ///
-/// `chart` is the FRAME's chart (47.1): the axes of the chart the payload
+/// `chart` is the ACT's chart (47.1): the axes of the chart the payload
 /// lives on — an offered word's — and none for a transmission digest,
 /// whose payload is a root over the whole cover. It wrote the hypha's
 /// entire active cover here: with a thousand corpus listings that was
@@ -63,7 +63,7 @@ pub(crate) fn read_published_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
 /// `None` when this hypha has adopted no origin or holds no receipt yet: it
 /// has no causal position to sign from, and an act it cannot sign is one it
 /// does not make. `None` too when the prefix does not fit the wire
-/// (`SignedPrefix::fits`): a position that cannot be framed is not signed.
+/// (`SignedPrefix::fits`): a position that cannot be delimited is not signed.
 pub(crate) fn sign_position(
     court: &Mutex<Court>,
     mesh: &Mesh,
@@ -259,10 +259,10 @@ pub(crate) struct AdmissionTally {
 }
 
 impl AdmissionTally {
-    /// THE ONE CLASSIFICATION OF A PEER'S FRAME: counted on this cycle's
+    /// THE ONE CLASSIFICATION OF A PEER'S ACT: counted on this cycle's
     /// line and, on the same arm, on the observer's replication reading
     /// under the signer the digest named (CV5) — one match, so the two
-    /// cannot read the frame differently (law 12). The axes are named in
+    /// cannot read the act differently (law 12). The axes are named in
     /// `observe::replication`, beside the one statement of the axes' order.
     pub(crate) fn note(
         &mut self,
