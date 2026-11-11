@@ -62,8 +62,7 @@ pub enum Released {
     AtRest,
 }
 
-/// The lines threading a tube or an orbit, in key order, as `thread` moves
-/// them.
+/// The lines threading a tube, in key order, as `thread` moves them.
 pub(crate) fn thread_on(lines: &mut Vec<Vec<u8>>, thread: &Thread) {
     match thread {
         Thread::Free => {}
@@ -77,6 +76,31 @@ pub(crate) fn thread_on(lines: &mut Vec<Vec<u8>>, thread: &Thread) {
                 lines.remove(at);
             }
         }
+    }
+}
+
+/// One line wound onto a standing orbit, in admission order, with the
+/// increment its admission brought.
+pub type OrbitLine = (Vec<u8>, Mv);
+
+/// The lines threading an orbit, in admission order, each holding the
+/// increment its admission brought. A line wound again on the same orbit
+/// composes its increment in place without losing its place in the admission
+/// order.
+fn thread_orbit_line(lines: &mut Vec<OrbitLine>, thread: &Thread, increment: &Mv) {
+    match thread {
+        Thread::Free => {}
+        Thread::Wound(k) => match lines.iter_mut().find(|(l, _)| l == k) {
+            Some((_, held)) => {
+                let next = held.geo(increment);
+                *held = match next.canonical() {
+                    Some(canon) => canon,
+                    None => next,
+                };
+            }
+            None => lines.push((k.clone(), increment.clone())),
+        },
+        Thread::Unwound(k) => lines.retain(|(l, _)| l != k),
     }
 }
 
@@ -360,8 +384,9 @@ impl State {
 struct Orbit {
     state: State,
     open: u64,
-    /// The lines of the complex threading it.
-    lines: Vec<Vec<u8>>,
+    /// The lines of the complex threading it, in admission order, each with
+    /// the increment its admission brought.
+    lines: Vec<(Vec<u8>, Mv)>,
     /// 78.43(3) — THE DISTANCE ALONG IT: the transitions it has been carried
     /// through since it last returned.
     carried: u64,
@@ -575,10 +600,16 @@ impl OrbitRegistry {
                     *slot = left;
                 }
             }
-            self.released.extend(o.lines.into_iter().map(|l| (l, Released::Dissipated)));
+            self.released.extend(o.lines.into_iter().map(|(l, _)| (l, Released::Dissipated)));
             self.reservoir.insert(&k, (o.state, o.open));
             self.left.push(k);
         }
+    }
+
+    /// THE LINES THREADING EACH STANDING ORBIT, in admission order, each with
+    /// the increment its admission brought.
+    pub fn attached_lines(&self) -> Vec<(Vec<u8>, Vec<OrbitLine>)> {
+        self.orbits.scoped().map(|(k, o)| (k, o.lines.clone())).collect()
     }
 
     /// The orbits that left the field since the last take.
@@ -603,7 +634,7 @@ impl OrbitRegistry {
     /// motion — the orbits that ring; each with its lane, its key and the
     /// lines threading it. Read, moving nothing.
     pub fn focus(&self) -> Vec<FocusOrbit> {
-        let read = |(k, o): (Vec<u8>, &Orbit)| (lane_of_key(&k), k, o.lines.clone());
+        let read = |(k, o): (Vec<u8>, &Orbit)| (lane_of_key(&k), k, o.lines.iter().map(|(l, _)| l.clone()).collect());
         let moving: Vec<FocusOrbit> = self.orbits.scoped().filter(|(_, o)| o.in_motion).map(read).collect();
         match moving.is_empty() {
             false => moving,
@@ -688,11 +719,11 @@ impl OrbitRegistry {
                 (key, State::Ray(before), State::Ray(after), mode.ray.clone())
             }
         };
-        let lines = match self.orbits.get(&key) {
-            Some(o) => o.lines.clone(),
+        let lines: Vec<Vec<u8>> = match self.orbits.get(&key) {
+            Some(o) => o.lines.iter().map(|(l, _)| l.clone()).collect(),
             None => Vec::new(),
         };
-        let admitted = self.step(&key, lane, &before, after, mass, line, mode.order.map(u64::from))?;
+        let admitted = self.step(&key, lane, &before, after, mass, line, &increment, mode.order.map(u64::from))?;
         // Every OTHER line wound on the orbit is carried by what moved it.
         let own = match line {
             Thread::Wound(k) | Thread::Unwound(k) => Some(k),
@@ -719,16 +750,21 @@ impl OrbitRegistry {
             None => moved.iter().map(|(h, _)| (*h, *h)).collect(),
         };
         let after: Vec<(u8, u8)> = held.iter().map(|(h, at)| (*h, sigma(*at))).collect();
-        self.step(&key, LANE_GAUGE, &State::Hues(held), State::Hues(after), mass, line, hue_order(&moved))
+        let one = Mv::scalar(BigRational::from_integer(1.into()));
+        self.step(&key, LANE_GAUGE, &State::Hues(held), State::Hues(after), mass, line, &one, hue_order(&moved))
     }
 
     /// `key` THREADED ON THE ORBIT A MODE STANDS ON, where the field holds it;
     /// nothing moves. Answers whether it was held.
     fn thread_mode(&mut self, mode: &MotionMode, key: &[u8]) -> bool {
         let Some((_, at)) = orbit_of_mode(mode) else { return false };
+        let increment = match mode.flow() {
+            Some(point) => point.versor(),
+            None => mode.ray.clone(),
+        };
         match self.orbits.get_mut(&at) {
             Some(o) => {
-                thread_on(&mut o.lines, &Thread::Wound(key.to_vec()));
+                thread_orbit_line(&mut o.lines, &Thread::Wound(key.to_vec()), &increment);
                 true
             }
             None => false,
@@ -739,9 +775,10 @@ impl OrbitRegistry {
     /// field holds it; nothing moves. Answers whether it was held.
     fn thread_hues(&mut self, gauge: &[(u8, u8)], key: &[u8]) -> bool {
         let Some((_, at)) = orbit_of_hues(gauge) else { return false };
+        let one = Mv::scalar(BigRational::from_integer(1.into()));
         match self.orbits.get_mut(&at) {
             Some(o) => {
-                thread_on(&mut o.lines, &Thread::Wound(key.to_vec()));
+                thread_orbit_line(&mut o.lines, &Thread::Wound(key.to_vec()), &one);
                 true
             }
             None => false,
@@ -756,7 +793,7 @@ impl OrbitRegistry {
     /// SEALS (78.43): its age complete, its lines released, held whole in
     /// the reservoir at its coordinates to re-form where motion lands.
     #[expect(clippy::too_many_arguments, reason = "78.43 — the motion's order is the admission's own coordinate, read where the motion is split, never stored beside the orbit")]
-    fn step(&mut self, key: &[u8], lane: usize, before: &State, after: State, mass: u64, line: &Thread, order: Option<u64>) -> Option<Admitted> {
+    fn step(&mut self, key: &[u8], lane: usize, before: &State, after: State, mass: u64, line: &Thread, increment: &Mv, order: Option<u64>) -> Option<Admitted> {
         let transport = self.transport[lane].checked_add(mass)?;
         let held_open = self.orbits.get(key).map_or(0, |o| o.open);
         let mut lines = match self.orbits.get(key) {
@@ -772,7 +809,7 @@ impl OrbitRegistry {
             (Some(p), Some(o)) => Some(lcm(p, o)?),
             _ => None,
         };
-        thread_on(&mut lines, line);
+        thread_orbit_line(&mut lines, line, increment);
         let (d0, d1) = (before.distance()?, after.distance()?);
         // What stands open on the orbit after, `None` where it returned.
         let (moved, left) = match () {
@@ -797,7 +834,7 @@ impl OrbitRegistry {
                 self.orbits.remove(key);
                 // HARMONIC: the orbit returned; its tension vented, and every
                 // line threading it relaxed.
-                self.released.extend(lines.into_iter().map(|l| (l, Released::Returned)));
+                self.released.extend(lines.into_iter().map(|(l, _)| (l, Released::Returned)));
                 // A count past its carrier is refused and the return still
                 // stands.
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.returns, 1);
@@ -810,7 +847,7 @@ impl OrbitRegistry {
             // the lane's open pressure falling by exactly that strain.
             Some(open) if period.is_some_and(|p| carried >= p) => {
                 self.orbits.remove(key);
-                self.released.extend(lines.into_iter().map(|l| (l, Released::Sealed)));
+                self.released.extend(lines.into_iter().map(|(l, _)| (l, Released::Sealed)));
                 self.reservoir.insert(key, (after, open));
                 self.open[lane] = lane_open.checked_sub(open)?;
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.sealed, 1);

@@ -135,3 +135,107 @@ fn hold_perceived_conserves_escrow_through_merge() {
         assert_eq!(total, [1, 3, 0, 3], "every unit held or returned, exactly once: held {held:?}, returned {returned:?}");
     });
 }
+
+/// MU-CLIENT §4.13, MU-SENSING §3.7, §3.9: `cech::orbit` orbits attach to the
+/// `Well`s whose lines thread them in admission order (`Well::orbits`). A
+/// single-line orbit stands attached on its well and refuses
+/// `NotRevolution { at: 1 }` until a second well threads the same orbit,
+/// forming a closed revolution with readable holonomy, precession, and
+/// orthogonal-plane rate shear (`Well::local_shear`). When `Field::beat_under`
+/// beats with court pressure (`deficit`) on that orbit's lane, the ringing
+/// orbit is dragged into the reservoir and its line is released
+/// (`Released::Dissipated`), deforming the well it faces (releasing the
+/// thought to the cavity at its chart and returning its escrow), while a well
+/// on an unpressed lane keeps its attached local orbit intact.
+#[test]
+fn court_pressure_deforms_the_well_it_faces() {
+    use crate::transducer::cech::orbit::Field;
+    use crate::transducer::cech::Thread;
+    use crate::transducer::cga::{self, Mv, E1, E2, E3, EP};
+    use crate::transducer::field::carrier::{FieldRefusal, RotorPrecession};
+    use crate::transducer::field::SectionLink;
+    use crate::transducer::rewrite::LANE_SHELL;
+    use crate::transducer::spelled::SectionSite;
+    use num_rational::BigRational;
+
+    let mut c = Contemplation::new();
+    let r1 = vec![SectionLink { site: SectionSite::on_plane([0, 0]), before: 1, after: 2 }];
+    let r2 = vec![
+        SectionLink { site: SectionSite::on_plane([1, 0]), before: 2, after: 3 },
+        SectionLink { site: SectionSite::on_plane([1, 1]), before: 2, after: 3 },
+    ];
+    let r3 = vec![
+        SectionLink { site: SectionSite::on_plane([2, 0]), before: 3, after: 4 },
+        SectionLink { site: SectionSite::on_plane([2, 1]), before: 3, after: 4 },
+        SectionLink { site: SectionSite::on_plane([2, 2]), before: 3, after: 4 },
+    ];
+    c.hold(r1.clone());
+    c.hold(r2.clone());
+    c.hold(r3.clone());
+    let k1 = crate::transducer::field::well::remainder_address(&crate::transducer::element::place_chain(&r1).expect("placed")).as_bytes().to_vec();
+    let k2 = crate::transducer::field::well::remainder_address(&crate::transducer::element::place_chain(&r2).expect("placed")).as_bytes().to_vec();
+    let k3 = crate::transducer::field::well::remainder_address(&crate::transducer::element::place_chain(&r3).expect("placed")).as_bytes().to_vec();
+    if let Some(w) = c.wells.get_mut(&k1) {
+        w.escrow = [0, 0, 0, 5];
+    }
+    if let Some(w) = c.wells.get_mut(&k2) {
+        w.escrow = [0, 0, 0, 7];
+    }
+
+    let mut field = Field::new();
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    let one = BigRational::from_integer(1.into());
+    let two = BigRational::from_integer(2.into());
+    let turn_12 = Mv::scalar(two.clone()).add(&Mv::blade(E1 | E2, one.clone()));
+    let modes_12 = cga::motion_modes(&turn_12, &mut budget).expect("modes").expect("exact");
+    assert_eq!(modes_12.len(), 1);
+
+    // 1. Single-line orbit on well 1: attached to well 1, refuses `NotRevolution { at: 1 }`.
+    field.orbits.admit_mode(&modes_12[0], 1, &Thread::Wound(k1.clone())).expect("admitted");
+    c.sync_field(&mut field);
+    let w1 = c.wells.get(&k1).expect("well 1 stands");
+    assert_eq!(w1.local_orbits().len(), 1, "single-line orbit attached to well 1");
+    assert_eq!(w1.local_precessions(), Err(FieldRefusal::NotRevolution { at: 1 }));
+
+    // 2. Second line (`k2`) winds onto the same orbit in admission order:
+    // the two-well revolution closes and reads `RotorPrecession::Advances`.
+    field.orbits.admit_mode(&modes_12[0], 1, &Thread::Wound(k2.clone())).expect("admitted");
+    // Well 3 threads a turning on an orthogonal plane (`E3 | EP`) so `local_shear`
+    // between well 1 (`E1 | E2`) and well 3 (`E3 | EP`) reads the orthogonal drag.
+    let turn_3p = Mv::scalar(two).add(&Mv::blade(E3 | EP, one));
+    let modes_3p = cga::motion_modes(&turn_3p, &mut budget).expect("modes").expect("exact");
+    field.orbits.admit_mode(&modes_3p[0], 1, &Thread::Wound(k3.clone())).expect("admitted");
+    c.sync_field(&mut field);
+
+    let (w1, w2, w3) = (c.wells.get(&k1).expect("w1"), c.wells.get(&k2).expect("w2"), c.wells.get(&k3).expect("w3"));
+    let rev = w1.local_orbits()[0].1.revolution().expect("two-line revolution closes");
+    assert_eq!((&rev[0].from, &rev[0].to), (&w1.centre(), &w2.centre()), "step 0 runs w1 -> w2 in admission order");
+    assert_eq!((&rev[1].from, &rev[1].to), (&w2.centre(), &w1.centre()), "step 1 closes w2 -> w1");
+    assert!(matches!(w1.local_precessions().expect("bound")[0].1, RotorPrecession::Advances(_)));
+    let shears = w1.local_shear(w3).expect("orthogonal shear");
+    assert_eq!(shears.len(), 1, "orthogonal orbit planes exert non-zero rate drag");
+    assert!(!shears[0].is_zero());
+
+    // 3. First beat with zero court deficit: ringing orbits stay in the field
+    // and transition out of `in_motion`.
+    assert!(field.beat_under(&[0; 4]), "field beats on prior admissions");
+    c.sync_field(&mut field);
+    assert!(c.wells.get(&k1).is_some() && c.wells.get(&k2).is_some(), "ringing wells stand without court pressure");
+
+    // 4. Touch only a spatial boost on a free line so the field moves, then
+    // beat under court pressure on `LANE_SHELL`: the court's deficit drags the
+    // ringing shell orbits into the reservoir and deforms the wells they face.
+    let boost = cga::transvection(&BigRational::from_integer(2.into()), &BigRational::from_integer(1.into()), E1 | cga::EM)
+        .expect("boost");
+    let boost_modes = cga::motion_modes(&boost, &mut budget).expect("modes").expect("exact");
+    field.orbits.admit_mode(&boost_modes[0], 1, &Thread::Free).expect("spatial boost moves field");
+    let mut deficit = [0u64; 4];
+    deficit[LANE_SHELL] = 1;
+    let cavity_before = c.cavity_len();
+    assert!(field.beat_under(&deficit), "field beats under court pressure on shell lane");
+    c.sync_field(&mut field);
+
+    assert!(c.wells.get(&k1).is_none() && c.wells.get(&k2).is_none() && c.wells.get(&k3).is_none(), "pressed wells released");
+    assert!(c.cavity_len() > cavity_before, "deformed wells' remainders retired to the cavity at their charts");
+    assert_eq!(c.take_returned_escrow(), [0, 0, 0, 12], "escrow conserved upon court-pressure release");
+}
