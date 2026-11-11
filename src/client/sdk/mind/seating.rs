@@ -769,6 +769,7 @@ impl Mind {
         if self.file_seat_solve(key, id, &outs, &crossed, &ground).is_err() {
             return Some(Stop::Unsubmitted);
         }
+        self.contemplation.release_scene(id);
         let (at, key, id, addr) = (seat.at, key.clone(), *id, crossed.address().as_bytes().to_vec());
         met(&mut seat.met.calls);
         let posted = args.clone();
@@ -807,5 +808,23 @@ impl Mind {
         ground: &crate::transducer::family::transduce::Ground<u8>,
     ) -> io::Result<()> {
         self.submit_solve_signed(key, id, &[], outputs, rule, ground)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn solve_before_first_seat(
+        &mut self,
+        id: &[u8; 32],
+        train: Vec<crate::transducer::family::TrainPair>,
+        tests: Vec<crate::transducer::family::SectionSample>,
+    ) {
+        let Some(mut seating) = self.board.seating.take() else { return };
+        let key = seating.key.clone();
+        let mut field = std::mem::take(&mut self.field);
+        if let Some(seat) = seating.seats.first_mut() {
+            seat.hold.held = true;
+            field.think(|| self.solve_before(seat, &key, id, train, tests));
+        }
+        self.field = field;
+        self.board.seating = Some(seating);
     }
 }
