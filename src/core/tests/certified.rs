@@ -146,7 +146,6 @@ fn planck_tail_is_one_at_zero_and_agrees_with_series() {
     assert!(order.lo < order.hi && order.lo > Q::zero(), "an interval of x");
 }
 
-/// The Poisson quantile reads the CDF's steps, and refuses `u = 1`.
 /// D1.2 PHASE A — THE REFINEMENT ENDS ON A RATIONAL RADIUS: `π` refined past
 /// every rational it is set against, each on its true side — `3` and
 /// `333/106` below, `22/7` and `355/113` above (the last within `3·10⁻⁷` of
