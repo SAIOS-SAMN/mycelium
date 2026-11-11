@@ -99,6 +99,9 @@ impl Court {
             Some(m) if m == PRE_LINE_MAGIC => {
                 return Err(RestoreRefusal::Retired { magic: "MYT1", layout: "the tries with the line and the eras inside them" });
             }
+            Some(m) if m == PRE_MODES_MAGIC => {
+                return Err(RestoreRefusal::Retired { magic: "MYT3", layout: "μ as one exact rational per lane" });
+            }
             Some(m) if m == PRE_RATIONAL_MAGIC => {
                 return Err(RestoreRefusal::Retired { magic: "MYT2", layout: "μ as four u64 counts per holding and row" });
             }

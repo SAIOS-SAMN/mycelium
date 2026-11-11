@@ -177,7 +177,7 @@ fn paid_verdict_carries_the_modes_paid() {
             assert!(modes.on_lane(crate::economy::modes::T).next().is_some(), "the clause's slide is a T mode: {}", modes.print());
             // The flux and the modes read one set of motions: the T mode the
             // verdict carries is the T lane the μ paid.
-            assert!(*pay.lane(2) > crate::core::Q::from_integer(0.into()), "the slide's flux is paid on T: {pay}");
+            assert!(pay.lane(2) > crate::core::Q::from_integer(0.into()), "the slide's flux is paid on T: {pay}");
         }
         other => panic!("the clause's carriage closes the pair: {other:?}"),
     }

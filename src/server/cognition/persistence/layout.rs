@@ -1,7 +1,12 @@
 /// THE LAYOUT'S ONE MAGIC (78.27): the mind as keyed tries, its line and
-/// its eras on disk beside it (45.8), every μ an exact rational per lane
-/// (`economy::Mu`).
-pub const MAGIC: &[u8; 4] = b"MYT3";
+/// its eras on disk beside it (45.8), every μ a holding of modes
+/// (`economy::Mu` over `economy::modes::Modes`, MU-ECONOMY §9).
+pub const MAGIC: &[u8; 4] = b"MYT4";
+
+/// THE TRIES WHOSE μ WAS ONE RATIONAL PER LANE, refused BY NAME and never
+/// migrated: every holding, row and award carried one value per lane where
+/// the layout now carries its modes. The recut is the road.
+pub const PRE_MODES_MAGIC: &[u8; 4] = b"MYT3";
 
 /// THE TRIES WHOSE μ WAS FOUR `u64` COUNTS, refused BY NAME and never
 /// migrated: every holding, row and award carried counts where the layout

@@ -306,10 +306,10 @@ impl Modes {
         Some(out)
     }
 
-    /// THE LANE'S WHOLE, read exactly: the sum of its modes' amounts. Held
-    /// private: room, a price and an ask are read per lane and per mode
-    /// (MU-ECONOMY §12 items 5, 8), never as this one count.
-    fn lane_whole(&self, lane: u8) -> Q {
+    /// THE LANE'S WHOLE, read exactly: the sum of its modes' amounts. A
+    /// reading of the holding, never the holding: room, a price and an ask
+    /// are read per lane and per mode (MU-ECONOMY §12 items 5, 8).
+    pub(crate) fn lane_whole(&self, lane: u8) -> Q {
         self.modes().filter(|(m, _)| m.lane() == lane).fold(Q::zero(), |s, (_, a)| s + a)
     }
 
@@ -337,6 +337,44 @@ impl Modes {
             drawn.add_mode(m.clone(), a * amount / &whole);
         }
         self.take(&drawn)?;
+        Ok(drawn)
+    }
+
+    /// EVERY MODE AT `r` TIMES ITS AMOUNT, exactly; a zero factor holds
+    /// nothing, a negative one is refused.
+    pub fn scaled(&self, r: &Q) -> Option<Modes> {
+        if r.is_negative() {
+            return None;
+        }
+        let mut out = Modes::new();
+        for (m, a) in self.modes() {
+            out.add_mode(m.clone(), a * r);
+        }
+        Some(out)
+    }
+
+    /// The modes on the lanes `keep` names, whole; nothing on the others.
+    pub fn on_lanes(&self, keep: impl Fn(u8) -> bool) -> Modes {
+        let mut out = Modes::new();
+        for (m, a) in self.modes().filter(|(m, _)| keep(m.lane())) {
+            out.add_mode(m.clone(), a.clone());
+        }
+        out
+    }
+
+    /// AN ASK READ AGAINST THIS HOLDING, MODE BY MODE (MU-ECONOMY §2.5,
+    /// §12 item 8): the ask's amount on each lane drawn from that lane's
+    /// modes in proportion (`draw_lane`), all lanes or none. The ask holds
+    /// no modes of its own; what it reads as is the modes it would draw,
+    /// returned to travel with the transfer. Refused whole, naming the first
+    /// lane's mode short in lane order, where any lane holds less.
+    pub fn draw_lanes(&mut self, ask: &super::Mu) -> Result<Modes, Box<Short>> {
+        let mut trial = self.clone();
+        let mut drawn = Modes::new();
+        for lane in [S, G, T, H] {
+            drawn.add(&trial.draw_lane(lane, &ask.lane(usize::from(lane)))?);
+        }
+        *self = trial;
         Ok(drawn)
     }
 

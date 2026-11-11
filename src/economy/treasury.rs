@@ -263,18 +263,20 @@ impl Treasury {
         self.touch(&party);
     }
 
-    /// DEBIT, WHOLE OR REFUSED: `mu` drawn from `party`'s balance, or the
-    /// first lane the balance is short on, named, and nothing moved
-    /// (§2.3, law 5).
+    /// DEBIT, WHOLE OR REFUSED: `mu` drawn from `party`'s balance, each
+    /// lane from that lane's modes in proportion (MU-ECONOMY §2.5), and the
+    /// modes drawn returned to travel with the transfer; or the first lane
+    /// the balance is short on, named, and nothing moved (§2.3, law 5).
     ///
     /// Every caller clamps to the balance before asking, so a refusal is a
     /// broken clamp; it is returned rather than floored because a floor
     /// burns the difference against §6's equation.
-    pub(crate) fn debit(&mut self, party: [u8; 32], mu: &Mu) -> Result<(), super::MuRefusal> {
-        let left = self.balance_of(&party).draw(mu)?;
+    pub(crate) fn debit(&mut self, party: [u8; 32], mu: &Mu) -> Result<Mu, super::MuRefusal> {
+        let mut left = self.balance_of(&party);
+        let drawn = left.draw_out(mu)?;
         self.balances.insert(party, left);
         self.touch(&party);
-        Ok(())
+        Ok(drawn)
     }
 
     /// 78.151 — `party`'s account moved: named for the next publisher.
@@ -355,10 +357,12 @@ impl Treasury {
         // short (STD1: the arm that read a short debit could not fire).
         let add = asked.capped(&bal);
         if !add.is_zero() {
-            let drawn = self.debit(party, &add);
-            debug_assert!(drawn.is_ok(), "add ≤ bal, debited against it");
-            self.stakes.insert(party, held.add(&add));
-            self.write(Entry { kind: Kind::Stake, who: party, mu: add.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+            // A bond holds the modes it was staked from (§2.5).
+            let Ok(moved) = self.debit(party, &add) else { return Mu::zero() };
+            self.stakes.insert(party, held.add(&moved));
+            self.write(Entry { kind: Kind::Stake, who: party, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+            self.refresh_bond();
+            return moved;
         } else if self.stakes.get(&party).is_none() {
             self.stakes.insert(party, held);
         }
