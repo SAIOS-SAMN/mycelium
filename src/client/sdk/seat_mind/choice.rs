@@ -32,12 +32,36 @@
 //! quantity, so no hidden scalar weighs one record against another.
 
 use super::*;
-use crate::anastome::dialogue::seat::Arg;
+use crate::anastome::dialogue::seat::{
+    Arg, TAG_BIGQ, TAG_BYTES, TAG_COUNT, TAG_FLAG, TAG_KEY, TAG_MV, TAG_Q,
+};
 use crate::network::nerve::Keyed;
-use crate::transducer::cga::FlowPoint;
-use num_bigint::BigInt;
+use crate::transducer::cga::{FlowPoint, Mv};
+use num_bigint::{BigInt, BigUint};
 use num_rational::BigRational as Q;
-use num_traits::{Signed, Zero};
+use num_traits::{One, Signed, Zero};
+
+/// Default argument for a tag as listed by a seat.
+pub fn default_arg_for_tag(tag: u8) -> Arg {
+    match tag {
+        TAG_COUNT => Arg::Count(1),
+        TAG_FLAG => Arg::Flag(true),
+        TAG_Q => Arg::Q { num: 1, den: 1 },
+        TAG_BIGQ => match Arg::big_q(BigInt::from(1), BigUint::from(1u8)) {
+            Some(a) => a,
+            None => Arg::Count(1),
+        },
+        TAG_KEY => Arg::Key([0u8; 32]),
+        TAG_BYTES => Arg::Bytes(Vec::new()),
+        TAG_MV => Arg::Mv(Mv::scalar(Q::one())),
+        _ => Arg::Count(1),
+    }
+}
+
+/// Default arguments for a function's argument tags.
+pub fn default_args_for_tags(tags: &[u8]) -> Vec<Arg> {
+    tags.iter().copied().map(default_arg_for_tag).collect()
+}
 
 /// WHICH WAY A QUANTITY IS FAVOURED to move.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -130,8 +154,21 @@ impl Experience {
     }
 
     /// Every call of it was refused: tried, and never applied.
-    fn refused_only(&self) -> bool {
+    pub(crate) fn refused_only(&self) -> bool {
         self.applied == 0 && !self.refused.is_empty()
+    }
+
+    /// Whether this function's calls have proven futile: refused only,
+    /// or its read rates on all favoured quantities are non-positive (moves
+    /// against or not at all).
+    pub fn is_futile(&self, favoured: &[(Vec<u8>, Direction)]) -> bool {
+        if self.refused_only() {
+            return true;
+        }
+        if self.read > 0 && !favoured.is_empty() {
+            return favoured.iter().all(|(k, d)| !d.along(&self.rate_at(k)).is_positive());
+        }
+        false
     }
 }
 
@@ -148,6 +185,9 @@ pub enum Why {
     /// Every read function moved the favoured quantities against or not at
     /// all; this one is counselled and not yet read.
     Untried { against: Vec<u16> },
+    /// #147 — Untried function or arguments taken as an escaping orbit from
+    /// repertoire, worked by the drive.
+    EscapingOrbit { chord: usize },
     /// No read function dominates: the counsel.
     NoneDominates,
     /// 78.148 — no counsel: under the mind's own valuation, this read call's
@@ -190,6 +230,7 @@ impl std::fmt::Display for Why {
                 write!(f, ", at least as far the favoured way as fn {over:?} on every one")
             }
             Why::Untried { against } => write!(f, "fn {against:?} moved the favoured records against or not at all — a counselled call not yet read, tried"),
+            Why::EscapingOrbit { chord } => write!(f, "untried function taken as escaping orbit of chord {chord} — worked by the drive"),
             Why::NoneDominates => write!(f, "no read call dominates on every favoured record — the house's counsel"),
             Why::Reached { valuation, values, over, along } => {
                 write!(f, "{valuation}: at {values:?} its read outcomes move")?;
@@ -267,6 +308,35 @@ impl SeatMind {
         favoured.scoped().filter(|(k, _)| !contested.contains(k)).map(|(k, d)| (k, *d)).collect()
     }
 
+    /// Untried counselled function, if any.
+    fn untried_counsel(&self) -> Option<&Counsel> {
+        self.counsel.iter().find(|c| match self.experience(c.fn_id) {
+            Some(e) => e.read == 0 && !e.refused_only(),
+            None => true,
+        })
+    }
+
+    /// Untried function from the seat's repertoire (an escaping orbit), if any.
+    fn untried_repertoire(&self) -> Option<(u16, Vec<Arg>, usize)> {
+        for sf in &self.repertoire {
+            let untried_fn = match self.experience(sf.id) {
+                Some(e) => e.read == 0 && !e.refused_only(),
+                None => true,
+            };
+            if untried_fn {
+                let args = default_args_for_tags(&sf.tags);
+                let untried_call = match self.call_experience(sf.id, &args) {
+                    Some(e) => e.read == 0 && !e.refused_only(),
+                    None => true,
+                };
+                if untried_call {
+                    return Some((sf.id, args, sf.tags.len()));
+                }
+            }
+        }
+        None
+    }
+
     /// THE MIND'S CALL AT THIS BEAT (the module's rule, stated).
     pub fn decide(&self) -> Decision {
         if let Some(fn_id) = self.awaiting() {
@@ -283,7 +353,13 @@ impl SeatMind {
             [] => None,
         };
         let follow = |why: Why| match counsel {
-            Some(c) => Decision::Call(Choice { fn_id: c.fn_id, args: c.args.clone(), followed: true, why, certificate: None }),
+            Some(c) => Decision::Call(Choice {
+                fn_id: c.fn_id,
+                args: c.args.clone(),
+                followed: true,
+                why,
+                certificate: self.drive_certificate(),
+            }),
             None => Decision::NothingToCall,
         };
         // The read functions this mind can call: an effect read, arguments held.
@@ -296,10 +372,60 @@ impl SeatMind {
             })
             .collect();
         if read.is_empty() {
+            if let Some(c) = counsel {
+                if let Some(e) = self.experience(c.fn_id) {
+                    if e.refused_only() {
+                        if let Some(u) = self.untried_counsel() {
+                            return Decision::Call(Choice {
+                                fn_id: u.fn_id,
+                                args: u.args.clone(),
+                                followed: counsel.is_some_and(|first| first.fn_id == u.fn_id),
+                                why: Why::Untried { against: Vec::new() },
+                                certificate: self.drive_certificate(),
+                            });
+                        }
+                        if let Some((fn_id, args, chord)) = self.untried_repertoire() {
+                            return Decision::Call(Choice {
+                                fn_id,
+                                args,
+                                followed: false,
+                                why: Why::EscapingOrbit { chord },
+                                certificate: self.drive_certificate(),
+                            });
+                        }
+                        return Decision::NothingToCall;
+                    }
+                }
+            }
             return follow(Why::NoExperience);
         }
         let favoured = self.favoured();
         if favoured.is_empty() {
+            if let Some(c) = counsel {
+                if let Some(e) = self.experience(c.fn_id) {
+                    if e.is_futile(&[]) {
+                        if let Some(u) = self.untried_counsel() {
+                            return Decision::Call(Choice {
+                                fn_id: u.fn_id,
+                                args: u.args.clone(),
+                                followed: counsel.is_some_and(|first| first.fn_id == u.fn_id),
+                                why: Why::Untried { against: Vec::new() },
+                                certificate: self.drive_certificate(),
+                            });
+                        }
+                        if let Some((fn_id, args, chord)) = self.untried_repertoire() {
+                            return Decision::Call(Choice {
+                                fn_id,
+                                args,
+                                followed: false,
+                                why: Why::EscapingOrbit { chord },
+                                certificate: self.drive_certificate(),
+                            });
+                        }
+                        return Decision::NothingToCall;
+                    }
+                }
+            }
             return follow(Why::NothingFavoured);
         }
         // Each read function's rates, the favoured way, quantity by quantity.
@@ -324,24 +450,37 @@ impl SeatMind {
                 args,
                 followed: counsel.is_some_and(|c| c.fn_id == *id),
                 why: Why::Dominates { over, along: named },
-                certificate: None,
+                certificate: self.drive_certificate(),
             });
         }
         let none_forward = along.iter().all(|(_, _, rates)| rates.iter().all(|x| !x.is_positive()));
-        if none_forward {
-            let untried = self.counsel.iter().find(|c| match self.experience(c.fn_id) {
-                Some(e) => e.read == 0 && !e.refused_only(),
-                None => true,
-            });
+        let counsel_futile = counsel.is_some_and(|c| match self.experience(c.fn_id) {
+            Some(e) => e.is_futile(&favoured),
+            None => false,
+        });
+        if none_forward || counsel_futile {
+            let untried = self.untried_counsel();
             if let Some(c) = untried {
                 return Decision::Call(Choice {
                     fn_id: c.fn_id,
                     args: c.args.clone(),
                     followed: counsel.is_some_and(|first| first.fn_id == c.fn_id),
                     why: Why::Untried { against: along.iter().map(|(id, _, _)| *id).collect() },
-                    certificate: None,
+                    certificate: self.drive_certificate(),
                 });
             }
+            if let Some((fn_id, args, chord)) = self.untried_repertoire() {
+                return Decision::Call(Choice {
+                    fn_id,
+                    args,
+                    followed: false,
+                    why: Why::EscapingOrbit { chord },
+                    certificate: self.drive_certificate(),
+                });
+            }
+            // Anti-turtling: no futile act repeated against a counterparty.
+            // If counselled act is futile and no untried act remains, pass.
+            return Decision::NothingToCall;
         }
         follow(Why::NoneDominates)
     }

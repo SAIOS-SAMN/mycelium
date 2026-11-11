@@ -183,6 +183,6 @@ impl SeatMind {
         let Some(args) = c.e.args.clone() else { return Decision::NothingToCall };
         let over = calls.iter().enumerate().filter(|(j, _)| j != i).map(|(_, o)| (o.fn_id, o.values.clone())).collect();
         let named = favoured.iter().filter_map(|(k, d)| Some((Locator::of(k)?, *d, c.e.rate_at(k)))).collect();
-        Decision::Call(Choice { fn_id: c.fn_id, args, followed: false, why: Why::Reached { valuation: Valuation::Reach, values: c.values.clone(), over, along: named }, certificate: None })
+        Decision::Call(Choice { fn_id: c.fn_id, args, followed: false, why: Why::Reached { valuation: Valuation::Reach, values: c.values.clone(), over, along: named }, certificate: self.drive_certificate() })
     }
 }

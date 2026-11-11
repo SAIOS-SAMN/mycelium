@@ -719,3 +719,124 @@ fn pending_ignores_redelivered_percept() {
     }
     assert_eq!(m.awaiting(), Some(2));
 }
+
+/// MU-CLIENT §6, §6a; test_doctrine_inversion_anti_turtling (barren-realms ASCE Pillar 2 & 3).
+/// No futile act repeated against a counterparty: if counselled act is futile
+/// (moves against favoured, rate <= 0, or refused only), do not repeat it;
+/// take untried escaping orbits from counsel or repertoire, or pass (`Decision::NothingToCall`).
+#[test]
+fn test_doctrine_inversion_anti_turtling() {
+    let mut m = SeatMind::new(verifying(&domain()), 7);
+    // The house listing provides function 2 (e.g. fortify) and function 5 (e.g. expand/commerce).
+    m.perceive_listing(&[SeatFn { id: 2, tags: vec![] }, SeatFn { id: 5, tags: vec![TAG_COUNT] }]);
+    // The house counsels function 2 with negative worth (its moves are worth undoing -> favoured is Raise).
+    let counsel = Record::Counsel { fn_id: 2, args: vec![], worth: Arg::Q { num: -1, den: 1 }, cost: Arg::Count(0) };
+    let rec_before = Record::Plain { kind: 10, args: vec![Arg::Count(100)] };
+    m.perceive(&percept(1, Arg::Count(1), vec![rec_before, counsel.clone()]));
+    // Beat 0: With no experience, counsel is followed.
+    let d0 = m.decide();
+    assert_eq!(d0, Decision::Call(Choice { fn_id: 2, args: vec![], followed: true, why: Why::NoExperience, certificate: None }));
+    m.called(2, vec![], [1; 32]);
+
+    // Outcome arrives: call 2 was applied, but lowered the record from 100 to 90.
+    // Under worth -1, favoured is Raise; function 2 moves against favoured (-10/call), so it is futile.
+    let outcome = Outcome {
+        domain: verifying(&domain()),
+        sub_origin: None,
+        seat: 7,
+        mind: verifying(&mind()),
+        call: [1; 32],
+        applied: true,
+        reason: 0,
+        deed: [0; 32],
+    };
+    assert_eq!(m.outcome(&outcome), Some(2));
+    let rec_after = Record::Plain { kind: 10, args: vec![Arg::Count(90)] };
+    // The house still insists on counselling futile function 2.
+    m.perceive(&percept(2, Arg::Count(2), vec![rec_after, counsel.clone()]));
+
+    // Anti-turtling / doctrine inversion:
+    // The mind refuses to repeat futile function 2.
+    // Instead, it takes untried function 5 from its repertoire as an escaping orbit!
+    let d1 = m.decide();
+    assert_eq!(
+        d1,
+        Decision::Call(Choice {
+            fn_id: 5,
+            args: vec![Arg::Count(1)],
+            followed: false,
+            why: Why::EscapingOrbit { chord: 1 },
+            certificate: None,
+        })
+    );
+    m.called(5, vec![Arg::Count(1)], [2; 32]);
+
+    // Suppose function 5 was also applied and also lowered the record further to 80.
+    let outcome2 = Outcome {
+        domain: verifying(&domain()),
+        sub_origin: None,
+        seat: 7,
+        mind: verifying(&mind()),
+        call: [2; 32],
+        applied: true,
+        reason: 0,
+        deed: [0; 32],
+    };
+    assert_eq!(m.outcome(&outcome2), Some(5));
+    let rec_after2 = Record::Plain { kind: 10, args: vec![Arg::Count(80)] };
+    m.perceive(&percept(3, Arg::Count(3), vec![rec_after2, counsel]));
+
+    // When all untried escaping orbits have been exhausted and counsel is futile:
+    // The mind passes (`Decision::NothingToCall`) rather than repeating any futile act!
+    assert_eq!(m.decide(), Decision::NothingToCall, "no futile act repeated: rest is equilibrium");
+}
+
+/// #147 — Seat play carries certified move from escaping-orbit play into Choice.certificate,
+/// which is certified on the mind and claimed onto a Form.
+#[test]
+fn seat_play_from_escaping_orbits_carries_certificate() {
+    let mut m = SeatMind::new(verifying(&domain()), 7);
+    m.perceive_listing(&[SeatFn { id: 2, tags: vec![] }, SeatFn { id: 7, tags: vec![TAG_COUNT] }]);
+    let cert = crate::transducer::sentence::tests::fixtures::cert(crate::transducer::sentence::Axis::Placement, [1, 0, 0, 0]);
+    m.attach_drive_certificate(cert.clone());
+
+    // Function 2 is counselled with worth -1 and lowered record 10 (futile):
+    let counsel = Record::Counsel { fn_id: 2, args: vec![], worth: Arg::Q { num: -1, den: 1 }, cost: Arg::Count(0) };
+    let rec_before = Record::Plain { kind: 10, args: vec![Arg::Count(100)] };
+    m.perceive(&percept(1, Arg::Count(1), vec![rec_before, counsel.clone()]));
+    m.called(2, vec![], [1; 32]);
+    let outcome = Outcome {
+        domain: verifying(&domain()),
+        sub_origin: None,
+        seat: 7,
+        mind: verifying(&mind()),
+        call: [1; 32],
+        applied: true,
+        reason: 0,
+        deed: [0; 32],
+    };
+    m.outcome(&outcome);
+    let rec_after = Record::Plain { kind: 10, args: vec![Arg::Count(90)] };
+    m.perceive(&percept(2, Arg::Count(2), vec![rec_after, counsel]));
+
+    // When mind chooses from escaping orbits in repertoire:
+    let decision = m.decide();
+    let Decision::Call(choice) = decision else { panic!("expected call") };
+    assert_eq!(choice.fn_id, 7);
+    assert_eq!(choice.why, Why::EscapingOrbit { chord: 1 });
+    assert_eq!(choice.certificate, Some(Box::new(cert.clone())));
+
+    // Calling the function and attaching the certificate to the pending call:
+    let reference = [42u8; 32];
+    m.called(choice.fn_id, choice.args.clone(), reference);
+    if let Some(c) = choice.certificate {
+        m.certify(reference, *c);
+    }
+    assert_eq!(m.certificate(&reference), Some(&cert));
+
+    // Claim the move onto a Form (A20.2):
+    let mut form = crate::transducer::sentence::Form::default();
+    assert!(m.claim(&reference, &mut form), "certificate claimed onto form");
+    assert!(form.certificates.contains(&cert.key()), "form holds claimed certificate");
+    assert_eq!(m.certificate(&reference), None, "claimed certificate let go from seat mind");
+}

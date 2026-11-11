@@ -1725,7 +1725,7 @@ criterion (§7.2). Each is read for the capability it asserts:
 |---|---|---|
 | `test_ideation_space_and_mental_rollouts` | several strategies held at once and projected ahead | the vortex: `several_factorisations_held_as_a_vortex`; the predicted hour: `hold_perceived_joins_predicted_next_hour`. Amplitudes and payoffs refused |
 | `test_theory_of_mind_doctrine_classification` | a counterparty modelled from its conduct | `peer_inexact_on_a_class_is_not_asked_it_again` (§5.3(5)); a doctrine label refused |
-| `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | owed: seat play from the mind's orbits (§6; #147) |
+| `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | built: seat play from the mind's orbits (§6; #147; test `test_doctrine_inversion_anti_turtling`) |
 | `test_gauge_field_lagrangian_barrier_potential` | deliberation that is not a vote | built: `axiomatic_gravity_shears_the_orthogonal_class` (S9b); the argmin refused |
 | `test_attractor_singularity_and_breakout` | a repetition read and left | `flat_region_binds_no_orbit_refused_unbound` (a path no attractor binds is refused), `closed_geodesic_with_zero_precession_is_resonant` (a repetition in a curved field reads as a lawful resonant orbit); owed: `mind_idles_with_no_escaping_orbit` (#135) |
 | `test_cognitive_surprise_tensor` | surprise measured against prediction | exact and twofold: `hold_perceived_keeps_out_of_turn_hour_as_twist`, `hold_perceived_holds_off_orbit_slip_on_thought`. The norm refused |
@@ -1737,7 +1737,7 @@ criterion (§7.2). Each is read for the capability it asserts:
 | `test_theory_of_mind_and_the_hearing` | another mind heard and read | `hear_across_seats_word_in_hearer_rings`, `hear_across_leaves_word_dividing_no_layer`; `peer_record_folds_answer_frames_by_the_residue_class` |
 | `test_persistence_save_and_restore` | as `test_asce_state_persistence_round_trip` | as above |
 | `test_terminal_renderer` | an operator view | the observer (§7.2), never cognition |
-| `test_seated_mind_taking_seat_and_playing_turns` | a seated mind plays | `seat_mind` choice built; the seated harness, quickstart stage 8 (#133); play from orbits owed: #147 |
+| `test_seated_mind_taking_seat_and_playing_turns` | a seated mind plays | `seat_mind` choice built; the seated harness, quickstart stage 8 (#133); play from orbits built (#147) |
 | `test_seats_module_sovereign_integration` | a seat registered with the house | the seat surface (78.145) built; a house listing and answering a seat, `sdk/examples/seats.rs` (#133) |
 
 The first seven are ASCE's suite (test_advanced_sovereign_cognition.py in
@@ -1779,6 +1779,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **amendment held beside & Track 10 claims** (#135): unrenewed constructor re-derived from residue, entered beside original at conjugate grade, separated by commutator $g_1 g_2 \tilde{g}_1 \tilde{g}_2$; the five sovereign mind claims verified | §4.10, §4.12, §7.1 | `mind/amend.rs` (`evaluate_amendment`, `Mind::amend_constructor`, `Mind::revise_perception_by_amendment`, `Amendment`); `client/sdk/tests/track10.rs` (`mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`, `mind_declines_a_scene_its_field_does_not_bind`, `mind_acts_at_its_returns`, `mind_revises_a_perception_on_a_court_ruling_by_amendment`) |
 | **axiomatic gravity** (#134, track 26 S9b; MU-SENSING §3.7): the local orbit's shear on the orthogonal orbit class (disjoint turning planes, $B_1 \cdot B_2 = 0$ and $B_1 \wedge B_2 \neq 0$), the shear being the commuting drag part of 78.46's split changing rate and not plane; sharing planes taking lift (plane tilt) and zero drag; flat where no orbit is held | §4.12, §6a | `t/field/carrier/gravity.rs` (`axiomatic_shear`, `orbit_rate_shear`, `plane_split`, `primary_plane`); `t/field/carrier/atlas.rs` (`Atlas::axiomatic_shear`); claims `only_disjoint_plane_orbits_change_rate_under_axiomatic_gravity`, `axiomatic_gravity_shears_the_orthogonal_class` |
 | **vortex candidate monodromy & stated well reconstructed** (#134, track 26 S9c; MU-SENSING §3.8, LAW-FIELD v1 §3.2): each candidate's monodromy read between atlas charts (flat, torsion of order $\ell$, or rupture); motion inversion over disjoint planes; stated well's holonomy, precession, and monodromy reconstructed and admitted by a court | §4.8, §7.1 | `t/field/carrier/atlas.rs` (`Atlas::candidate_monodromy`, `Orbit::monodromy`, `Attractor::monodromy`, `Curvature::{monodromy, precession}`); `t/field/carrier/holonomy.rs` (`Motion::inverse`); `t/field/carrier/holding.rs` (`WellBody::monodromy`); `t/field/well.rs` (`Well::monodromy`); claims `candidate_monodromy_reads_flat_torsion_and_unbound_between_charts`, `mind_well_stated_and_reconstructed_by_a_court` |
+| **seat play from the mind's own orbits** (#147): seat series lifted into the field (`seat_mind::lift`), the call a physics action carrying its A20 certificate (`Choice.certificate`, `SeatMind::certify`, `claim`), anti-turtling doctrine inversion (`is_futile`, untried escaping orbits from repertoire, `Decision::NothingToCall`), and standing orbit synchronization (`attach_orbits`) | §6, §6a | `client/sdk/seat_mind/` (`choice.rs`, `repertoire.rs`, `mind.rs`, `lift.rs`); `client/sdk/mind/seating.rs`; `client/sdk/seat.rs`; tests in `client/sdk/tests/seat_mind.rs` (`test_doctrine_inversion_anti_turtling`, `seat_play_from_escaping_orbits_carries_certificate`), `seat_lift.rs` |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
@@ -1833,10 +1834,7 @@ then the backlog. Each item names its issue.
       `Reanchor` on coordinate re-gauge, and deduplication via `propose_rewrite`.
       Owed: the witness of a court's `Ruling(Retired)` citing a mind's
       proposal on a running network;
-   7. seat play from the mind's own orbits (§6; #147): the seat's series
-      lifted into the field and the call a relay carrying its certificate
-      on the mind are built; the escaping-orbit play, and so a call that
-      names a certified move, waits on #134 S9a.
+   7. *(built, #147: **seat play from the mind's own orbits**, the seat's series lifted into the field, the call a physics action carrying its certificate, anti-turtling doctrine inversion, and escaping-orbit play; see **Built**)*;
 4. **Also owed on the client:** of #149 (§1, §4.9; 78.176), the claims
    that a whole too cohesive sticks at the throat and one too fluid tears,
    which wait on an exact reading in LAW-PASSAGE or LAW-TRAVERSAL, frames
