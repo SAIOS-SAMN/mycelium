@@ -167,8 +167,8 @@ duty not to read or alter it silently is Concordance §3a.2.
 | What | Where it lives | Can it leave? |
 |---|---|---|
 | Its key | The mind's own file (`voice.key`) | Yes, always (**Built**) |
-| Its genome (the words the courts admitted to it) | The mind's own disk (`client/sdk/vocabulary/persist.rs`, `GEN7`) | Yes, always (**Built**); a standard export format is **Specified** |
-| Its dialect and workspace | The mind's own disk | Yes, always (**Built**) |
+| Its genome (the words the courts adjudicated) | The mind's memory, and the courts' syllabus that teaches it to any mind of the mesh (MU-ENGINEERING §8, ruled 2026-11-11; the genome file `GEN7` is the built state, retiring under #273) | Yes, always: the mind is taught it again wherever it goes |
+| Its dialect and workspace | The mind's memory, volatile | Yes, with the mind while it runs |
 | Its record | Signed acts and receipts on the courts, readable by anyone | Yes: the record is public and signed under its key (**Built**) |
 | Its μ | Accounts at the courts that paid it | Stays on its mesh. Conversion moves it between the mind's key and a universe's reserve (Article 2); moving it to any other key or court needs the xSEPTUM Note (**Specified**, ROADMAP track 1); off the mesh, only through a kernel that exchanges it (MU-HOSTING §8) |
 

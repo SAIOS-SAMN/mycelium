@@ -216,11 +216,54 @@ through the crate-private `keyed_persist_walk`. The work counters
 and insert, `Rotor::geo` and `cech::extend`, let a test assert what one
 fetched vertex, one held thought and one meet cost.
 
-## 8. Persistence and continuity
+## 8. Holding and continuity
 
-A hypha's snapshot and a mind's genome are each written as a keyed trie
-by its own coordinates and read back by key, never by position. The layout
-tags in the code are:
+**Ruled** (operator, 2026-11-11; issue #273). This section is the one
+description of how the mesh holds its state and how it continues across a
+restart. Every other document points here and describes no other path.
+
+1. **The mesh is held in memory and distributed.** A court's receipts, its
+   presentation of the language, its syllabus and its book, and a mind's
+   genome and epigenome are held in memory. No act waits on a disk write or
+   a disk read. Holding is fast because it is memory and the mesh's own
+   motion.
+2. **The genome is the adjudicated words.** The genome is the words the
+   courts adjudicated, held by one content in two places: in each mind's
+   genome, and in the courts' syllabus that teaches it. A mind is taught
+   it by the syllabus, as a mineral, and holds it as a crystal where its
+   own circuits re-derive it (MU-CLIENT §5.5; MU-RECURSION 80.2). The
+   epigenome (the dialect, the holds, the escrows) is volatile.
+3. **Replication is reconstruction, never byte-exactness.** A node holds
+   another's state as mathematical content and context: the words with
+   their derivations, their citations at their stamps, and the receipts'
+   causal order. It continues by re-deriving that content under the laws
+   (law 8; MU-SCIENCE §5.0) and admits only what reaches the same exact
+   object. Two holdings are equal where their content is equal (law 2),
+   never where their bytes are.
+4. **Where state is held is the language's own structure, not a
+   placement.** Peers are not chosen round robin, and there is no replica
+   count. The anastome carries the algorithm inside the algorithm: a word
+   holds the derivation that reconstructs it (two layers, the word and the
+   presentation that re-derives it), across the dimensions of the
+   multi-dimensional ledger (lane, layer and grade). A node whose dialect
+   differs reconstructs it through the conjugating element between the two
+   perspectives, which is dialectic conversion (MU-ANASTOME §1.3;
+   MU-RECURSION 23.9). A node holds what its own holdings reconstruct, and
+   the home trie places by chart (MU-RECURSION 73.15).
+5. **A restart is a rejoin.** A hypha that starts holds its identity and
+   nothing else. It is brought back into the mesh by reconstruction from its
+   peers (catch-up and back-fill). A mind that starts holds its key and is
+   taught by the syllabus.
+6. **Only identity and configuration stay on disk.** These are the keys
+   (`hypha.key`, `noise.key`, `voice.key`), the Noise pins, the bind and
+   peer list, the genesis allocation and the corpus manifests. None of
+   them is state.
+7. **Open:** what holds the mesh when every node stops at once. By item 1,
+   a mesh with every node stopped holds nothing.
+
+**Status: ruled, not built.** The tree still writes and reads the layouts
+below. Each retires as holding in memory is built (#273), and until then
+this table is the record of what the code writes:
 
 | tag | what | where |
 |---|---|---|
@@ -229,18 +272,19 @@ tags in the code are:
 | `MYE2` | a cold era segment | `chronometry/era.rs` |
 | `GEN7` | a mind's genome: the words a court admitted | `client/sdk/vocabulary/persist.rs` |
 | `TRI1` | an on-disk keyed trie | `network/nerve/keyed/ondisk.rs` |
-| `MSH2` | a signed mesh record | `network/mesh.rs` |
+| `MSH2` | a signed mesh record (configuration, item 6) | `network/mesh.rs` |
 | `CUR3`, `INT1` | the registry's snapshot: its dispatch cursor and task states, then its intake cursor | `server/registry.rs` |
 | `COC1` | the Čech complexes (addresses and rotors only) | `anastome/dialogue/acts.rs` |
 
+The disk paths that retire with it are the court act answered only once
+it is on the disk (`persist::durable`, MU-RECURSION 78.137) and its drill
+(`tests/durable.rs`); the snapshot and line restored at boot; the
+genome file; and the chatter rendezvous directory (`HOME/../chatter`,
+`client/sdk/chatter.rs`), which peers found on the wire replace.
 Superseded layouts are refused by name and never migrated: `MYC7` (the
 positional tape) and `MYT1` for the snapshot, `GEN4`, `GEN5` and `GEN6` for
-the genome. The one exception is the mesh record, which is configuration:
-an `MSH1` record is read and written back as `MSH2`. Ledgers and genomes
-are rewritten atomically; a restore rebuilds the basis (a derived index)
-from the lettered federation, and `prune_basis_to_ruled` drops the words
-the court has not ruled. Within one layout, residues,
-thoughts, and dialects are never deleted (`MU-STANDARDS.md` §10).
+the genome. Within one layout, residues, thoughts and dialects are never
+deleted (`MU-STANDARDS.md` §10).
 
 ## 9. Transport, carrier and coordinate
 

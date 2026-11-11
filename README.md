@@ -926,7 +926,9 @@ as `peers`, copy the corpus manifests (step 4), and start without
   `dispatched`, `boundary` (refusals at a universe's core tube), `clock`,
   `memory`, `replication`, `agreements` and others.
   `--at HOST:PORT` reads another hypha.
-- **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP. `--check`
+- **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP, which is the
+  built state. As ruled, the mesh is held in memory and a restart rejoins
+  from its peers ([MU-ENGINEERING §8](docs/MU-ENGINEERING.md#8-holding-and-continuity), #273). `--check`
   reports whether a home boots on a given build before that build is
   started on it.
 - **Recut.** Adopting a new ledger layout means re-founding a network on
