@@ -10,7 +10,7 @@ use crate::transducer::field::carrier::*;
 use crate::transducer::field::*;
 use crate::transducer::sentence::tests::fixtures::link;
 use forms::coordinate::{Axis, Key, Square};
-use forms::passage::Frame;
+use forms::passage::PassageState;
 use num_traits::One;
 
 fn q(n: i64, d: i64) -> Q {
@@ -38,7 +38,7 @@ fn turning(k: u32, l: u32) -> Key {
 fn well_cohesion_is_the_held_share_of_its_inflation() {
     let well = held();
     let cohesion = well.cohesion().expect("a reading");
-    let plane = frame_plane(well.body().expect("stands").membrane().plane()).expect("the membrane's plane");
+    let plane = pole_plane(well.body().expect("stands").membrane().plane()).expect("the membrane's plane");
     let gauge = well.inflation().expect("a gauge").gauge;
     assert_eq!(cohesion.planes().len(), 1, "one frame, one plane");
     assert_eq!(cohesion.on(&plane), gauge.share().ok().as_ref());
@@ -52,14 +52,14 @@ fn well_cohesion_is_the_held_share_of_its_inflation() {
 #[test]
 fn well_body_cohesion_half_at_the_throat_and_exchanged_by_the_passage() {
     let body = held().body().expect("stands");
-    let plane = frame_plane(body.membrane().plane()).expect("the membrane's plane");
+    let plane = pole_plane(body.membrane().plane()).expect("the membrane's plane");
     let at_throat = body.cohesion(q(3, 1), q(3, 1)).expect("a reading");
     assert_eq!(at_throat.on(&plane), Some(&q(1, 2)));
     assert_eq!(at_throat.fluidity(), vec![(plane.clone(), q(1, 2))]);
     let poles = body.membrane().poles();
     for (h, r) in [(q(2, 1), q(1, 1)), (q(1, 3), q(5, 3)), (q(4, 1), q(0, 1))] {
         let before = body.cohesion(h.clone(), r.clone()).expect("a reading");
-        let state = poles.state(&Frame { hold: h, reach: r }).expect("a state");
+        let state = poles.state(&PassageState { hold: h, reach: r }).expect("a state");
         let passed = poles.read(&poles.swap(&state).expect("the swap")).expect("a frame");
         let after = body.cohesion(passed.hold, passed.reach).expect("a reading");
         let fluidity_on = |c: &Cohesion| c.fluidity().into_iter().find(|(k, _)| *k == plane).map(|(_, nu)| nu);
@@ -74,13 +74,13 @@ fn well_body_cohesion_half_at_the_throat_and_exchanged_by_the_passage() {
 /// holds no frame (one axis, or a mixed pair) is refused.
 #[test]
 fn well_cohesion_read_per_plane_never_summed() {
-    let frame = |h, r| Frame { hold: q(h, 1), reach: q(r, 1) };
-    let planes = [(turning(1, 2), frame(2, 1)), (turning(2, 3), frame(1, 1)), (frame_plane(1).expect("e_+1-1"), frame(1, 3))];
+    let frame = |h, r| PassageState { hold: q(h, 1), reach: q(r, 1) };
+    let planes = [(turning(1, 2), frame(2, 1)), (turning(2, 3), frame(1, 1)), (pole_plane(1).expect("e_+1-1"), frame(1, 3))];
     let cohesion = Cohesion::of(&planes).expect("a reading");
     assert_eq!(cohesion.planes().len(), 3);
     assert_eq!(cohesion.on(&turning(1, 2)), Some(&q(2, 3)));
     assert_eq!(cohesion.on(&turning(2, 3)), Some(&q(1, 2)));
-    assert_eq!(cohesion.on(&frame_plane(1).expect("e_+1-1")), Some(&q(1, 4)));
+    assert_eq!(cohesion.on(&pole_plane(1).expect("e_+1-1")), Some(&q(1, 4)));
     let twice = [(turning(1, 2), frame(2, 1)), (turning(2, 1), frame(1, 1))];
     assert!(matches!(Cohesion::of(&twice), Err(FieldRefusal::NotTurningPlane(_))));
     let one_axis = Key::axis(Axis::unit(Square::Positive, 1).expect("a unit"));
@@ -101,7 +101,7 @@ fn contemplation_cohesion_reads_per_plane_over_held_wells() {
     let (key, well) = c.wells.scoped().next().map(|(k, w)| (k.clone(), w.clone())).expect("held well");
 
     let cohesion = c.cohesion().expect("reading").expect("cohesion stands");
-    let plane = frame_plane(well.body().expect("stands").membrane().plane()).expect("frame plane");
+    let plane = pole_plane(well.body().expect("stands").membrane().plane()).expect("pole plane");
     assert_eq!(cohesion.planes().len(), 1);
     assert_eq!(cohesion.on(&plane), Some(&Q::one()));
 
@@ -119,10 +119,10 @@ fn contemplation_cohesion_reads_per_plane_over_held_wells() {
 /// dark matter patches at r -> ∞.
 #[test]
 fn first_degree_planar_orbital_shear_and_throat_traversal() {
-    let frame = |h, r| Frame { hold: q(h, 1), reach: q(r, 1) };
+    let frame = |h, r| PassageState { hold: q(h, 1), reach: q(r, 1) };
     let p1 = turning(1, 2);
     let p2 = turning(2, 3);
-    let p3 = frame_plane(1).expect("frame plane 1");
+    let p3 = pole_plane(1).expect("pole plane 1");
 
     // p1: throat (t = 1, h = 5, r = 5) => c = 1/2, d = 1/2
     // p2: deep hold (t = 1/3, h = 3, r = 1) => c = 3/4, d = 1/4
