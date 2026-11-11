@@ -6,10 +6,10 @@
 //!
 //! A back-filled receipt carries no signature of its own (47.2 step 3): it is
 //! admitted by its chain, and its signer's signature reaches it only through
-//! a signed frame at or above its place on the signer's line, whose
+//! a signed prefix at or above its place on the signer's line, whose
 //! predecessor hashes link down to it (MU-HOSTING §5a.10: the hash links, it
 //! never admits). So a founding receipt admitted by back-fill waits behind
-//! the one signed-reach gate (`reach.rs`) until such a frame is admitted,
+//! the one signed-reach gate (`reach.rs`) until such a prefix is admitted,
 //! and a founding receipt admitted under its own signature is reconstructed
 //! at once. Each citation is then applied by the founding hypha's own rules and
 //! refusals (`Court::admit_domain`, `designate_reserve`, `record_origin`),

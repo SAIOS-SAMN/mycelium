@@ -6,7 +6,7 @@
 //! projection of the modes onto one number per lane, a reading and never
 //! the holding.
 //!
-//! μ is measured as a share of a frame, and a share is a rational: a
+//! μ is measured as a share of an enclosure, and a share is a rational: a
 //! reading that could carry only whole counts would floor every share it
 //! was paid. Until v0.5.0, every amount of μ the built economy carries — a
 //! balance, a bond, an escrow or held value read at one court, an event's

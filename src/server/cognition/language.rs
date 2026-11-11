@@ -46,7 +46,7 @@ pub enum Outcome {
     /// court has not ruled. It is docketed here and heard again when that
     /// address is ruled; nothing is refused, sealed or drawn. Unlike
     /// `Deferred`, which is the DOOR turning an act away on the lanes,
-    /// this is per sentence — the rest of the frame is adjudicated — and
+    /// this is per sentence — the rest of the act is adjudicated — and
     /// it carries the cited address, because the voice holds that form
     /// and must assert it here first (chapter 6's depth order).
     Awaiting(crate::transducer::address::Address),

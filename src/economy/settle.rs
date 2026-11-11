@@ -178,7 +178,7 @@ impl Treasury {
     ///
     /// K3 (78.177 §4a(1), ruled 2026-11-06) — `converged` are the minds
     /// whose own words converged with this one, each with its share of the
-    /// frame: they are paid POWC out of the composition premium, after the
+    /// enclosure: they are paid POWC out of the composition premium, after the
     /// base and use shares (`Treasury::pay_converging`); a word has no
     /// premium, and its convergences are held as claims, never minted.
     pub fn settle_recursive(

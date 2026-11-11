@@ -58,7 +58,7 @@ impl Court {
     }
 
     /// 78.152 TU-6 UNPACK — a final point's coordinates by name, and the
-    /// frame each receipt at its tick measured, per lane.
+    /// measure each receipt at its tick took, per lane.
     pub fn unpack(
         &self,
         p: &crate::chronometry::tuniversal::TPoint,

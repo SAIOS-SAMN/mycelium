@@ -108,7 +108,7 @@ impl TickReading {
         self.signed_bytes(origin).is_some_and(|m| crate::court::identity::verify(&self.keeper, &m, &self.sig))
     }
 
-    /// The reading on the wire, its keeper left to the frame that carries it.
+    /// The reading on the wire, its keeper left to the envelope that carries it.
     pub fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         self.put_body(out)?;
         out.extend_from_slice(&self.sig);

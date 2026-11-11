@@ -279,7 +279,7 @@ let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
 let chain = germinate(&painted(&a), &painted(&b)).unwrap();
-assert!(k.intake(&chain, &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")), "the corpus intake lists the body");
+assert!(k.intake(&chain, &reperiod_of(&painted(&a), &painted(&b)).expect("the extent fits")), "the corpus intake lists the body");
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
 let rem = vec![link(0, 1, 1, 0)];
@@ -471,7 +471,7 @@ fn intake_prepared_computes_no_chart_under_hold() {
     let b = vec![(0, 0, 2u8)];
     let chain = germinate(&painted(&a), &painted(&b)).expect("the pair has a chain");
     let before = charts_read();
-    let prepared = prepare_intake(&chain, &frame_of(&painted(&a), &painted(&b)).expect("the extent fits"));
+    let prepared = prepare_intake(&chain, &reperiod_of(&painted(&a), &painted(&b)).expect("the extent fits"));
     assert!(!prepared.is_empty(), "the chain has a piece to list");
     assert_eq!(charts_read() - before, prepared.len() as u64, "each piece charted once, off the court");
     let before = charts_read();

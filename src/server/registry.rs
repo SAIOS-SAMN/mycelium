@@ -45,7 +45,7 @@ pub struct TaskRegistry {
     /// (citation, the posted task, state) — append-only, content-addressed.
     /// The task's full content address ([`task_address_of`]) is never held
     /// here: it is recomputed losslessly from the task it names, where a
-    /// reader needs its coordinates, and a task of busy frames makes it
+    /// reader needs its coordinates, and a task of busy samples makes it
     /// tens of kilobytes (an index copies the address it is keyed by).
     tasks: Vec<(TaskCitation, PostedTask, TaskState)>,
     /// 78.146, wire v1.2 — each task's CITATION, the 32 bytes that name it
@@ -89,9 +89,9 @@ pub struct TaskRegistry {
 /// outputs are the court's and are no part of the identity. Two tasks that
 /// differ by one site, one extent or one place are two tasks.
 ///
-/// THE IDENTITY READS NO GROUND AND FIXES NO FRAME (the operator's ruling of
+/// THE IDENTITY READS NO GROUND AND FIXES NO ENCLOSURE (the operator's ruling of
 /// 2026-11-03, scope separation): the hypha addresses what the source
-/// posted. The ground is the mind's deduction, and frame fixing is a
+/// posted. The ground is the mind's deduction, and enclosure fixing is a
 /// perspective a sensor may take after intake, never before addressing.
 ///
 /// `None` where a member is no sample (an empty or ragged raster): skipping

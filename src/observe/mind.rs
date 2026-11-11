@@ -67,14 +67,14 @@ pub const PERSPECTIVE: [&str; 9] = ["tasks", "known", "unknown", "one perspectiv
 
 /// WHAT A HELD-OUT PERSPECTIVE DISAGREED ABOUT (MU-CLIENT §4.4): its
 /// siblings derived no rule; the rule spoke nothing on it; spoke with a
-/// remainder; laid down another frame; or coloured the right cells
+/// remainder; laid down another enclosure; or coloured the right cells
 /// otherwise — and, where it put cells in the wrong places (78.167 A1, the
 /// occupancy split by cause, each cause present counted): ERASED a body the
 /// truth keeps that no vertex reached; did not CREATE cells the truth has
 /// and the input has not; DISPLACED — left ground where the truth keeps a
 /// body the speech did reach; did not CLEAR cells the truth has as ground —
 /// in the order the counts are kept.
-pub const DISAGREE: [&str; 9] = ["no rule", "unspoken", "remainder", "frame", "erased", "uncreated", "displaced", "uncleared", "hue"];
+pub const DISAGREE: [&str; 9] = ["no rule", "unspoken", "remainder", "enclosure", "erased", "uncreated", "displaced", "uncleared", "hue"];
 
 /// 78.167 A2 — THE DEMANDS A FAILED PERSPECTIVE'S RULE SPOKE NOTHING FOR, by
 /// kind (`Demand::kind_byte`'s order).
@@ -331,7 +331,7 @@ pub struct MindReading {
     pub flux: [i128; 4],
     /// MU-DERIVATIONS (the readers) — THE FAMILIES IT TOOK IN, two readings
     /// side by side: their count per lane (`family_magnitude`, the mind's
-    /// metabolism, never μ), the exact share of the frames their pairs
+    /// metabolism, never μ), the exact share of the enclosures their pairs
     /// change (`transduce::family_share`), and the families whose share did
     /// not read whole, so a zero says where the reading stopped.
     pub fed: [u64; 4],
@@ -427,7 +427,7 @@ impl MindReading {
     }
 
     /// ONE FAMILY TAKEN IN: its count per lane, and its exact share of the
-    /// frames, or the share unread.
+    /// enclosures, or the share unread.
     pub fn fed(&mut self, mag: &[u64; 4], share: Option<Q>) {
         use crate::physics::metabolism::step_or_refuse;
         for (slot, v) in self.fed.iter_mut().zip(mag) {
@@ -711,7 +711,7 @@ impl MindReading {
                 self.flux.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(":")
             ),
             format!(
-                "  fed: count {} · share of the frames {} (unread {})",
+                "  fed: count {} · share of the enclosures {} (unread {})",
                 self.fed.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(":"),
                 self.fed_share,
                 self.fed_unshared

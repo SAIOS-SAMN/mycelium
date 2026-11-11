@@ -648,7 +648,7 @@ impl Court {
                     return refuse(R::Degenerate);
                 }
                 // 78.134 — A MOUTH IS A TUBE between two places, never two
-                // free frames: its mass and spaces well formed, each frame a
+                // free poses: its mass and spaces well formed, each pose a
                 // motion of its own end's space (78.140: `ℍ³` or a torus),
                 // its throat fitting both faces, and a mouth it supersedes an
                 // open untethered one of the same pair.

@@ -1,5 +1,5 @@
 // 45, 78.24 — THE RECEIPT: one act at its stamp, the parents it cites by
-// stamp, the frame it measured, and the words it names by coordinates.
+// stamp, the measure it took, and the words it names by coordinates.
 
 use crate::court::admission::{Commitment, Predecessor};
 use crate::transducer::address::Address;
@@ -890,7 +890,7 @@ pub struct KStepReceipt {
     pub stamp: Stamp,
     /// The act admitted (45.1).
     pub kind: ActKind,
-    /// THE FRAME, `S:G:T:H` (45.1, 45.9, 78.21): what the act measured,
+    /// THE MEASURE, `S:G:T:H` (45.1, 45.9, 78.21): what the act measured,
     /// per lane, never summed and never compared across lanes (law 5). The
     /// zero vector is a reading, not an absence.
     pub mu: [u64; 4],
@@ -929,7 +929,7 @@ pub fn operator_hash(voice: &[u8; 32], court_head: &[u8; 32]) -> [u8; 32] {
 }
 
 impl KStepReceipt {
-    /// The least tape one node takes: its stamp, kind, frame, no
+    /// The least tape one node takes: its stamp, kind, measure, no
     /// predecessor, no parent, no citation, and the two hashes — what a
     /// reader allots one node when it bounds an untrusted count.
     /// FORMAT: least tape length of one node.
@@ -968,7 +968,7 @@ impl KStepReceipt {
     }
 
     /// THE NODE'S CANONICAL COORDINATES (78.24 (c)): its stamp, kind,
-    /// frame, predecessor, parents, citations and operator, in that order.
+    /// measure, predecessor, parents, citations and operator, in that order.
     fn put_body(&self, out: &mut Vec<u8>) -> Option<()> {
         self.stamp.put_canonical(out);
         out.push(self.kind.byte());
@@ -1060,7 +1060,7 @@ impl KStepReceipt {
         Some(KStepReceipt { stamp, kind, mu, prev, parents, cites, operator_hash, chain_hash: Predecessor::of_bytes(chain_hash) })
     }
 
-    /// CK1 — THE STAMP AS IT PRINTS, `h:S:G:T:H:K.i`: the tick, the frame
+    /// CK1 — THE STAMP AS IT PRINTS, `h:S:G:T:H:K.i`: the tick, the measure
     /// the act measured, the signer's orbit and the act's place in it.
     pub fn print(&self) -> String {
         let [s, g, t, h] = self.mu;
@@ -1069,7 +1069,7 @@ impl KStepReceipt {
 }
 
 /// 78.124 — THE CORE CLOCK'S STAMP, `h:S:G:T:H:K.i`: the tick (TUniversal's
-/// height), the frame the act measured on the four lanes `{S, G, T, H}`, the
+/// height), the measure the act took on the four lanes `{S, G, T, H}`, the
 /// signer's orbit and the act's place in it — what keeps the cores of
 /// domains and universes aligned, and what a kernel's own step clock is
 /// held to (ruled 2026-10-07: the server tracks time in TUniversal, a

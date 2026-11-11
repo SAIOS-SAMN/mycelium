@@ -6,8 +6,8 @@
 // holds a word of its own on the same scene, another vertex with the same
 // section, the court seals the CONVERGENCE: two constructions, one conclusion.
 //
-//! What the court checks: the frame opens under the signature of the mind it
-//! names (78.161's chatter frame), it is a HOLD, it names exactly this word,
+//! What the court checks: the chatter opens under the signature of the mind it
+//! names (78.161's chatter), it is a HOLD, it names exactly this word,
 //! the mind is not the speaker, this court holds the word — ruled, or
 //! provisional on its docket — and the word is TRUE ON ITS SCENE: decompressed
 //! by its own letters onto the family it is bound to (`family::local::
@@ -56,12 +56,12 @@ impl Court {
     /// on the evidence and sealed, with the convergences it carries.
     pub fn attest_agreements(&mut self, act: &crate::anastome::dialogue::SpeechAct) -> Vec<Attested> {
         let mut sealed = Vec::new();
-        for (tape, frame) in act.sentences.iter().zip(&act.agreements) {
-            let Some(frame) = frame else { continue };
+        for (tape, held) in act.sentences.iter().zip(&act.agreements) {
+            let Some(held) = held else { continue };
             let mut p = 0usize;
             let Some(e) = Element::from_bytes(tape, &mut p) else { continue };
             let address = e.address();
-            let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::verify(frame) else { continue };
+            let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::verify(held) else { continue };
             if said.as_slice() != address.as_bytes() || peer == act.voice {
                 continue;
             }
