@@ -50,7 +50,7 @@ pub use cover::*;
 pub use demand::*;
 pub use docket::*;
 pub use equivocation::*;
-pub use expression::{write_act, Expression};
+pub use expression::{speaks, write_act, Expression, Unheard};
 pub use factorisation::*;
 pub use fold::*;
 pub use offer::*;

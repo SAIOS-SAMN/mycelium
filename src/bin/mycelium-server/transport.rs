@@ -149,7 +149,32 @@ pub(crate) fn read_delimited(s: &mut Channel) -> Option<Delimited> {
             Err(_) => return None,
         },
     };
-    Some(Delimited { body: crate::tuniversal::hear(delimited.body)? })
+    match crate::tuniversal::hear(delimited.body) {
+        Ok(body) => Some(Delimited { body }),
+        // #235 — AN EXPRESSION AT ANOTHER WIRE VERSION IS REFUSED BY NAME,
+        // before its act is read: answered refused at this door's version,
+        // which the speaker's reader names, and the connection closed.
+        Err(mycelium::anastome::dialogue::Unheard::Version { spoken, served }) => {
+            refuse_version(s, spoken, served);
+            None
+        }
+        Err(mycelium::anastome::dialogue::Unheard::Malformed) => None,
+    }
+}
+
+/// Refusals by wire version, counted, said at powers of two.
+static VERSION_REFUSED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// THE ACT AT A WIRE VERSION THIS DOOR DOES NOT SPEAK (#235), answered
+/// refused at the door's own version before the connection closes.
+fn refuse_version(s: &mut Channel, spoken: u16, served: u16) {
+    let n = VERSION_REFUSED.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+    if n.is_power_of_two() {
+        eprintln!("  door refused wire {spoken:#06x}: this door speaks {served:#06x} ({n} refused)");
+    }
+    let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
+    let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
+    answer(s, Delimited { body });
 }
 
 /// THE ACT WHOSE HEAD NAMES A BODY PAST THE WIRE'S BUDGET, answered refused
@@ -399,7 +424,12 @@ pub(crate) fn tell_peer_over(endpoint: &str, body: Vec<u8>, stall: Stall, home: 
     // The peer door's final point stands in its expression: a claim of that
     // door, heard here (`tuniversal::hear`) — this court's final point is its
     // own keepers' quorum.
-    Some((crate::tuniversal::hear(reply)?, rtt))
+    let heard = crate::tuniversal::hear(reply).map_err(|why| {
+        if let mycelium::anastome::dialogue::Unheard::Version { spoken, served } = why {
+            eprintln!("  peer reply refused: it speaks wire {spoken:#06x}, this door {served:#06x}");
+        }
+    });
+    Some((heard.ok()?, rtt))
 }
 
 /// WHETHER A PEER IS ASKED AGAIN (45.7, S13.1), a predicate at the wire

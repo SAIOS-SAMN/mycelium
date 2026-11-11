@@ -142,6 +142,14 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   of the seven universe acts, which moves their layouts: `WIRE_VERSION` is
   `0x0300` (wire v3.0).
 
+  **Refusal by version** (#235). Every expression carries the wire version
+  it is written at as its last two bytes (`anastome::dialogue::expression`).
+  A reader reads it first and refuses another major by name,
+  `Unheard::Version { spoken, served }`, before the point or the act: the
+  door answers such an act refused at its own version and closes, and a
+  session refuses such a reply naming both versions. A minor step, being
+  additive, is heard.
+
 ## 5. Physics and time
 
 - `physics/` (`src/physics/`): reserve per lane calibrated per host;
