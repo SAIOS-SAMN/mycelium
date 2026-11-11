@@ -218,20 +218,20 @@ The two sides stay comparable through what they share:
    both". Which keepers form the quorum when the two branches' keeper sets
    differ: the union, each branch's majority, or the keepers of the shared
    origin? Deciding reading: the keeper sets of the two branches at the
-   superposition.
+   superposition. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 14).
 2. **Which side keeps the shared origin.** The draft gives the shared origin
    to the side that activates and a branch origin to the side that does
    not. The other reading names both sides as branches of the fork point,
    so neither inherits the origin. Deciding ruling: whether "the network's
-   clock" is defined by a release or by the shared history.
+   clock" is defined by a release or by the shared history. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 15).
 3. **Laws that cannot converge.** A release that changes how an address is
    computed (a key rule) makes the two branches' addresses disagree for the
    same content, so convergence cannot be read across it. Candidates: such
    a release is refused as a fork-forming release, or it carries a
-   translation table sealed at activation.
+   translation table sealed at activation. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 16).
 4. **μ across branches.** Whether μ minted on a branch after the fork point
    is honoured on realignment as the branch's own supply (folded by the
-   tier fold) or crosses only by the federation crossing (track 16).
+   tier fold) or crosses only by the federation crossing (track 16). **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 17).
 
 ---
 

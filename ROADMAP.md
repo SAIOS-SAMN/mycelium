@@ -121,15 +121,16 @@ adopted by a recut (track 6). Items:
 
 The rulings the model still needs are listed in MU-ECONOMY §12.
 
-**2. Waiting on an operator ruling.** Do not start these until the ruling
-is recorded:
+**2. Ruled 2026-11-11, to build** ([78.182](docs/proposals/78.182-rulings-2026-11-11.md)):
 - Concordance draft 5 (MU-CONCORDANCE §12): 2.11 restated on
-  LAW-PASSAGE v3 (adopted by both operators 2026-11-05), held until
-  xylarium reads 78.172's fixtures.
-- B1: carrying line mouth offers and tier handoff offers in the reserve's
-  act, which amends rulings 78.126 and 78.136.
-- The proposed name `AddressOnly`.
-- The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
+  LAW-PASSAGE v3. Mycelium exports 78.172's `PassageState` fixtures so
+  xylarium reads them (item 7).
+- B1: line mouth offers and tier handoff offers carried in the reserve's
+  one act, amending rulings 78.126 and 78.136 (item 8).
+- `AddressOnly`, ruled on #160 (2026-11-06).
+- MU-DERIVATIONS §7's rulings (items 18–25) and MU-RELEASE §10 (items
+  14–17). The register's soak readings stay open until minds work on a
+  mesh (#246).
 
 ## 1. Settlement: the xSEPTUM Note
 
