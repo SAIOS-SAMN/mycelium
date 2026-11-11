@@ -60,14 +60,18 @@ impl Budget {
         self.remaining
     }
 
-    /// Spend one read. False when the token is exhausted — or when the
-    /// process has been asked to stop ([`halt`]). A read granted is counted
+    /// Spend one read. False when the token is exhausted, when the
+    /// process has been asked to stop ([`halt`]), or when the hold this
+    /// thread stands in was flagged for preemption (`meter`). A read granted is counted
     /// on this thread ([`spent_here`]).
     pub fn spend(&mut self) -> bool {
-        if self.remaining == 0 || HALTED.load(std::sync::atomic::Ordering::Relaxed) {
+        // 78.182 item 5 — a hold flagged for preemption (a waiter found it
+        // spent past its stroke) is refused its next read, as a spent token.
+        if self.remaining == 0 || HALTED.load(std::sync::atomic::Ordering::Relaxed) || super::meter::preempted_here() {
             return false;
         }
         self.remaining -= 1;
+        super::meter::count_here();
         SPENT.with(|s| {
             // Past 2⁶⁴ reads on one thread the count stands; a hold reads
             // the difference across itself, which then reads zero.

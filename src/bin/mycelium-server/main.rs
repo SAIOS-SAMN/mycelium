@@ -960,7 +960,17 @@ fn main() {
             // counted under no kind: 0xff was a sentinel standing for a byte
             // that was not read.
             let kind = mycelium::anastome::dialogue::act_tag(&delimited.body);
+            // 78.182 item 5 — an act whose judge was answered `Deferred` (the
+            // hold it waited behind spent past its stroke) and wrote nothing
+            // is answered with the door's deferral, as a full pool answers:
+            // never judged on a partial reading, and safe to send again.
+            let (deferred_at, answers_at) = (crate::court_lock::deferred_here(), crate::transport::answers_here());
             judge::judge(&mut stream, delimited, &context);
+            if crate::court_lock::deferred_here() != deferred_at && crate::transport::answers_here() == answers_at {
+                if let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) {
+                    answer(&mut stream, Delimited { body: dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit) });
+                }
+            }
             // #234: a judgement may have moved the court; the idle exchange,
             // parked until the next motion, reads it.
             crate::tuniversal::shelf().judged();
