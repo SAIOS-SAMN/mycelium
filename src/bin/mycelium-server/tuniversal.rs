@@ -111,12 +111,13 @@ pub(crate) fn express(act: &[u8]) -> Option<Vec<u8>> {
 }
 
 /// THE ACT AN EXPRESSION READ AT THIS DOOR CARRIES, its speaker's point
-/// heard on the shelf (held apart as heard, never as final). `None` where
-/// the bytes are no expression.
-pub(crate) fn hear(expression: Vec<u8>) -> Option<Vec<u8>> {
-    let e = mycelium::anastome::dialogue::Expression::read(expression)?;
+/// heard on the shelf (held apart as heard, never as final); or why it is
+/// not heard: no expression, or one at a wire version this door does not
+/// speak (#235), refused by name before its act is read.
+pub(crate) fn hear(expression: Vec<u8>) -> Result<Vec<u8>, mycelium::anastome::dialogue::Unheard> {
+    let e = mycelium::anastome::dialogue::Expression::heard(expression)?;
     SHELF.heard_at_door(e.point);
-    Some(e.act)
+    Ok(e.act)
 }
 
 /// The origin this court adopted, as a point's origin; `None` before it.

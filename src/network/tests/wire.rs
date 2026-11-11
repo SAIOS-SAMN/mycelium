@@ -36,10 +36,11 @@ fn expression_carries_last_final_point_inside_the_body() {
     let body = e.write().unwrap();
     assert_eq!(body[0], 0x53, "the act's tag stays at offset zero");
     let (delimited, n) = Delimited::decode(&Delimited { body: body.clone() }.encode().unwrap()).unwrap();
-    assert_eq!(n, HEAD + 3 + point.to_bytes().len() + 2);
+    assert_eq!(n, HEAD + 3 + point.to_bytes().len() + 2 + 2);
     assert_eq!(Expression::read(delimited.body), Some(e));
     let none = Expression::of(vec![0x53, 1, 2], None);
-    assert_eq!(none.write().unwrap(), vec![0x53, 1, 2, 0, 0], "a speaker with no point read writes the count zero");
+    let [lo, hi] = crate::anastome::dialogue::WIRE_VERSION.to_le_bytes();
+    assert_eq!(none.write().unwrap(), vec![0x53, 1, 2, 0, 0, lo, hi], "a speaker with no point read writes the count zero, then its wire version");
     assert_eq!(Expression::read(none.write().unwrap()), Some(none), "an expression with no point reads with none");
 }
 
@@ -47,8 +48,35 @@ fn expression_carries_last_final_point_inside_the_body() {
 /// refused whole: no writing is legacy.
 #[test]
 fn expression_without_its_count_is_refused() {
-    use crate::anastome::dialogue::Expression;
-    assert_eq!(Expression::read(vec![0x53]), None, "one byte holds no count");
-    assert_eq!(Expression::read(vec![0x53, 1, 2, 9, 0]), None, "a count of nine passes the bytes");
-    assert_eq!(Expression::read(vec![0x53, 1, 2, 3, 0]), None, "three bytes read as no point");
+    use crate::anastome::dialogue::{Expression, Unheard, WIRE_VERSION};
+    let [lo, hi] = WIRE_VERSION.to_le_bytes();
+    assert_eq!(Expression::heard(vec![0x53]), Err(Unheard::Malformed), "one byte holds no version");
+    assert_eq!(Expression::heard(vec![0x53, lo, hi]), Err(Unheard::Malformed), "a version holds no count");
+    assert_eq!(Expression::heard(vec![0x53, 1, 2, 9, 0, lo, hi]), Err(Unheard::Malformed), "a count of nine passes the bytes");
+    assert_eq!(Expression::heard(vec![0x53, 1, 2, 3, 0, lo, hi]), Err(Unheard::Malformed), "three bytes read as no point");
+}
+
+/// #235 — A READER HEARS ITS OWN MAJOR AT ANY MINOR, AND REFUSES ANOTHER
+/// MAJOR BY NAME before the point or the act: an expression of an older or a
+/// newer major is `Unheard::Version`, naming both versions; a minor step,
+/// additive by the wire version rule (MU-ENGINEERING §4), is heard. The
+/// version is the expression's last two bytes, so it is read whatever the
+/// act and the point hold.
+#[test]
+fn expression_at_another_wire_version_is_refused_by_name() {
+    use crate::anastome::dialogue::{speaks, Expression, Unheard, WIRE_VERSION};
+    let at = |v: u16| {
+        let mut b = Expression::of(vec![0x53, 1, 2], None).write().unwrap();
+        let n = b.len();
+        b[n - 2..].copy_from_slice(&v.to_le_bytes());
+        b
+    };
+    let major = WIRE_VERSION >> 8;
+    for spoken in [WIRE_VERSION, WIRE_VERSION + 1, major << 8 | 0xff] {
+        assert_eq!(Expression::heard(at(spoken)).map(|e| e.act), Ok(vec![0x53, 1, 2]), "{spoken:#06x}, one major, is heard");
+    }
+    for spoken in [(major - 1) << 8, (major + 1) << 8, 0x0200, 0xffff] {
+        assert_eq!(Expression::heard(at(spoken)), Err(Unheard::Version { spoken, served: WIRE_VERSION }), "{spoken:#06x} is refused by name");
+    }
+    assert!(speaks(major << 8 | 7, major << 8) && !speaks((major + 1) << 8, major << 8 | 9), "the major alone decides");
 }
