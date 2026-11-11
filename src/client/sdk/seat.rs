@@ -224,7 +224,9 @@ impl super::Mind {
     /// mind's returns, MU-CLIENT §4.4(4)).
     pub(crate) fn perceive_seat(&mut self, p: &Percept) -> super::seat_mind::Perceived {
         let at = SeatName { domain: p.domain, sub_origin: p.sub_origin, seat: p.seat };
-        self.with_seat_mind(at, |m| m.perceive(p))
+        let perceived = self.with_seat_mind(at, |m| m.perceive(p));
+        let _ = crate::transducer::mind::with_field(|field| self.contemplation.attach_orbits(field));
+        perceived
     }
 }
 
