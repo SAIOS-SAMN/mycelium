@@ -276,11 +276,11 @@ impl Court {
                     let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_FIBRE_UNWITNESSED, s);
                     return Ok(self.refuse_sentence(voice, s, refusal));
                 }
-                ColourProof::Witnessed(t) if !s.receipts().witness.contains(&t) => {
+                ColourProof::Witnessed(t) if !s.stalk().witness.contains(&t) => {
                     let mut w = s.clone();
-                    let mut env = w.receipts().clone();
+                    let mut env = w.stalk().clone();
                     env.witness.push(t);
-                    w.set_receipts(env);
+                    w.set_stalk(env);
                     held = w;
                     &held
                 }
@@ -347,7 +347,7 @@ impl Court {
         if let Some(t) = task.filter(|t| witnesses(t)) {
             return ColourProof::Witnessed(Address::from_bytes(t));
         }
-        if let Some(t) = s.receipts().witness.iter().find(|t| witnesses(t.as_bytes())) {
+        if let Some(t) = s.stalk().witness.iter().find(|t| witnesses(t.as_bytes())) {
             return ColourProof::Witnessed(t.clone());
         }
         let derived = s.colour_citation().is_some_and(|(first, after)| {

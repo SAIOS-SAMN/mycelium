@@ -91,7 +91,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
     if let Some(d) = read_deferral(&reply) {
         return Ok(vec![(String::new(), Outcome::Deferred(d))]);
     }
-    let Some(samples) = task::decode_task_envelope(&reply) else {
+    let Some(samples) = task::decode_task(&reply) else {
         return Err(format!("the court answered the task request with {} bytes that are no task envelope", reply.len()));
     };
     // The envelope carries samples of any rank (track 26 S5); this client's

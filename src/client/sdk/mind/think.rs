@@ -922,7 +922,7 @@ impl Mind {
         // WORD (no face) whose derivation cites ruled words mints no
         // dimension: the court reconstructs it from what it holds (D4), and it
         // goes now. A sentence is never one: it is shared, not carried.
-        let cites = e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
+        let cites = e.stalk().derivations.iter().any(|d| !d.generators.is_empty());
         let composed = cites && crate::transducer::sentence::from_element_form(e).is_some_and(|f| f.faces.is_empty());
         if !composed && self.hold_for_union(e, family) {
             return;

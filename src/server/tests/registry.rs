@@ -340,7 +340,7 @@ fn task_identity_writes_rank_and_width() {
 /// routes) take nothing of it, and the walks pass it once routed to none.
 #[test]
 fn hypha_serves_a_rank_three_task() {
-    use crate::anastome::dialogue::{decode_task_envelope, encode_task_envelope};
+    use crate::anastome::dialogue::{decode_task, encode_task};
     use crate::transducer::alphabet::AlphabetRank;
     use crate::transducer::sentence::SectionRefusal;
     let posted = crate::server::tests::fixtures::rank_three_task();
@@ -351,8 +351,8 @@ fn hypha_serves_a_rank_three_task() {
     assert_eq!(reg.len(), 1);
     let (served, task) = reg.dispatch().expect("the open task is dispatched whatever its rank");
     assert_eq!(served, id);
-    let sent = task.envelope(id);
-    let env = decode_task_envelope(&encode_task_envelope(&id, &sent.train, &sent.tests).expect("the envelope writes at rank 3")).expect("and reads whole");
+    let sent = task.family(id);
+    let env = decode_task(&encode_task(&id, &sent.train, &sent.tests).expect("the envelope writes at rank 3")).expect("and reads whole");
     assert_eq!(env.id, id);
     assert_eq!(env.train, posted.train, "the train pairs served as posted");
     assert_eq!(env.tests, vec![posted.test[0].0.clone()], "the test input, never the withheld output");

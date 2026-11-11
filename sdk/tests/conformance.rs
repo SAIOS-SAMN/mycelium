@@ -159,7 +159,7 @@ fn read_deferral_round_trips_deficit() {
         let bytes = encode_deferral(PENDING_CODE, &deficit);
         assert_eq!(read_deferral(&bytes), Some(Deferral { deficit }));
         assert!(read_deferral(&bytes[..bytes.len() - 1]).is_none());
-        assert!(mycelium_sdk::task::decode_task_envelope(&bytes).is_none());
+        assert!(mycelium_sdk::task::decode_task(&bytes).is_none());
         assert!(mycelium_sdk::task::decode_solve_verdict(&bytes).is_none());
     }
     // The height is the eight bytes after the code: a pending outcome at
