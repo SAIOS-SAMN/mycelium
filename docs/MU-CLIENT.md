@@ -103,12 +103,24 @@ concurrent turning plane, as orbital masses in one field. It takes three
 readings over the whole held field at once, never as a pipeline:
 **congruence**, pairwise agreement on overlaps; **coherence**, the whole
 gluing consistently within one mind; and **cohesion**, the viscosity (ruled
-2026-11-06). Per turning plane `k`, cohesion is the held share
-`c_k = A/(A + Q) = ν(1/t)`; the open share `ν(t)` is fluidity, never
-viscosity (78.175 F1–F2). At the throat both are ½, and a passage
-exchanges them (78.172). Cohesion is read per plane and never summed
-across planes. A cohesive whole traverses an open, punctured tube intact:
-too cohesive, it sticks; too fluid, it tears.
+2026-11-06; issue #149, #249). The inverse square law ($1/r^2$) is refused
+as classical continuum mechanics' original sin: orbits are not flux painted onto
+a 2-sphere ($4\pi r^2$, reducing $\mathbb{C}^6$ multi-plane rotational states to
+a 2D area sheet), but closed 1-dimensional turning traversals of $360^\circ$ on a
+named plane between an attractor pair. On each plane $k$, reach is first-degree
+($t_k = r_k/M_k$) and the turn count is $1 + t_k$ (never $(1 + t_k)^2$). The
+hold $M_k$ and reach $r_k$ stand in the same first-degree denominator:
+cohesion is the held share $c_k = M_k/(r_k + M_k) = 1/(1 + t_k) = \nu(1/t_k)$;
+the open share $d_k = r_k/(r_k + M_k) = t_k/(1 + t_k) = \nu(t_k)$ is fluidity,
+satisfying $c_k + d_k = 1$ identically on every plane. Planar orbital shear is
+first-degree $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$,
+closing both UV ($r \to 0 \implies \Delta\theta_k = 360^\circ$, zero singularity)
+and IR ($r \to \infty$, retaining orbital hold without dark matter patches).
+At the throat both shares are ½, and a passage exchanges them (78.172). Cohesion
+is read per plane and never summed across planes. A cohesive whole traverses an
+open, punctured tube intact: too cohesive ($c_k > 1/2$), it sticks; too fluid
+($c_k < 1/2$), it tears; balanced ($c_k = d_k = 1/2$), it traverses smoothly under
+passage involution $t \mapsto 1/t$.
 
 Communication is what these readings culminate in. Only a cohesive whole is
 asserted as an expression (§4.9, §5), and it crosses only through open
@@ -116,7 +128,7 @@ tubes (LAW-TRAVERSAL, [proposal 78.176](proposals/78.176-law-traversal.md)):
 the thought traverses as an anastome over the four lanes S:G:T:H, one
 `Cl(p, q)` per lane, stamped at its TUniversal height, the sexagesimal
 reading display only. Disagreement across minds is contradiction, held at
-the courts, never resolved inside one mind (§5.4). Cohesion is read per plane over held wells and thoughts by `Contemplation::cohesion` and `Mind::cohesion` (#149); the sticking and tearing at the throat are owed (§7.1). The language's statement is
+the courts, never resolved inside one mind (§5.4). Cohesion is read per plane over held wells and thoughts by `Contemplation::cohesion` and `Mind::cohesion` (#149, #249), exposing traversal state and first-degree planar shear per plane. The language's statement is
 [MU-ANASTOME §9.4, thought: every ideation held at
 once](MU-ANASTOME.md#94-thought-every-ideation-held-at-once), and the path one
 construct takes from a game kernel's sensorium through the mind to the
@@ -914,7 +926,7 @@ COHESION, the viscosity: per turning plane, the held share
 `c_k = A/(A + Q) = ν(1/t)`, never summed across planes, its complement the
 fluidity `ν(t)` (§1). Only a cohesive whole is asserted as an expression,
 crossing only through open tubes (78.176); disagreement with another mind
-is contradiction, held at the courts (§5.4). Cohesion is read per plane over held wells and thoughts by `Contemplation::cohesion` and `Mind::cohesion` (#149); the sticking and tearing at the throat are owed (§7.1).
+is contradiction, held at the courts (§5.4). Cohesion is read per plane over held wells and thoughts by `Contemplation::cohesion` and `Mind::cohesion` (#149, #249), evaluating traversal state (`TraversalState::Balanced`, `TooCohesive`, `TooFluid`) and first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ without continuum $1/r^2$ singularities.
 
 Understanding is the lower faculty and feeds what is said; comprehension
 is the higher, over several thoughts, and feeds construction.
@@ -1766,7 +1778,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_envelope`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
 | **seated solves signed by the mind**: filed under its own key, leaving at the mind's next return, then the house's call (#124); the seat's call chosen from what calls did; the seated harness against a live house (#133) | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`); `sdk/examples/seats.rs`; `scripts/quickstart` stage 8 |
 | **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
-| **cohesion as a named reading** (#149): per plane the held share `c_k = A/(A + Q) = ν(1/t)`, the viscosity, beside the open share `ν(t)`, the fluidity; both ½ at the throat, exchanged by the passage; a keyed vector over the planes, never stored and never summed; a well reads it from its inflation on its membrane's frame plane | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`, `Contemplation::cohesion`); `client/sdk/mind/think.rs` (`Mind::cohesion`); tests in `client/sdk/tests/cohesion.rs` and `t/field/tests/shares.rs` |
+| **cohesion as a named reading & throat traversal** (#149, #249): per plane the held share $c_k = M_k/(r_k + M_k) = 1/(1+t_k) = \nu(1/t_k)$, the viscosity, beside the open share $d_k = \nu(t_k)$, the fluidity; both ½ at the throat, exchanged by the passage, $c_k + d_k = 1$ identically on every plane; first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ continuum singularities and dark matter patches; throat traversal state `TraversalState` (Balanced at $c_k = 1/2$, TooCohesive at $c_k > 1/2$, TooFluid at $c_k < 1/2$); a keyed vector over the planes, never stored and never summed; a well reads it from its inflation across its membrane frame plane and turning planes | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `TraversalState`, `planar_shear_on`, `traversal_state_on`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`, `Contemplation::cohesion`); `client/sdk/mind/think.rs` (`Mind::cohesion`); tests in `client/sdk/tests/cohesion.rs` and `t/field/tests/shares.rs` |
 | **the cross-chamber bracket read** (#148; CB1, 78.26(2)): each pair of a sentence's chambers meeting at a body, the commutator of each pair of their actions exact, held by a chamber or an enclosure wrapping both, or lost; the pairs unread named; counted on the pivot tally once per fresh reading of the cells; a lost bracket a demand on the docket (`Cite::Bracket`), no enclosure formed without a witness, answered by the cell a witness certifies (ruled on #148) | §4.9 | `t/cech/bracket.rs` (`cross_brackets`, `CrossBracket`, `Bracketed`, `CrossUnread`, `answering_cell`); `t/family/comprehend.rs` (`pivot_cells`, `chambers_of`); `t/sentence/pivot/cells.rs` (`PivotCells.brackets`, `PivotTally::add_brackets`); `t/field/plan.rs` (`docket_brackets`, `answer_brackets`); `chronometry/receipt.rs` (`Cite::Bracket`) |
 | **the algebra held per class** (#143): each circuit's curvature the mind takes in heard in its class, the holonomy rotor's conjugacy invariants written out; the class's algebra closed with only what lies outside its span, that part read per axis by its coset; two minds file one word in two frames under one class, each on its own planes, the conjugating element carrying one basis into the other's span; a court's field holds none | §3.2, §4.2, §4.11 | `t/cech/class_algebra.rs` (`ClassAlgebras::hear`, `class_of`, `HeardInClass`); `t/cech/orbit.rs` (`Field.classes`); `t/family/pairing.rs` (`mark_flux`); claims `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`, `two_minds_align_on_the_class_each_reading_it_on_its_own_planes` |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |

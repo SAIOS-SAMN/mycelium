@@ -42,5 +42,26 @@ fn mind_cohesion_read_per_plane_over_held_thoughts() {
     for (k, nu) in &fluidity {
         let c = cohesion.on(k).expect("matching plane");
         assert_eq!(nu + c, Q::one(), "per plane, c_k + ν_k = 1 on {}", k.written());
+
+        // Traversal state and first-degree planar shear
+        let state = cohesion.traversal_state_on(k).expect("traversal state");
+        let shear = cohesion.planar_shear_on(k).expect("planar shear");
+        assert!(shear > Q::zero(), "planar shear is positive");
+        assert!(shear <= Q::new(360.into(), 1.into()), "planar shear does not exceed 360°");
+
+        match state {
+            TraversalState::Balanced => {
+                assert_eq!(c, &Q::new(1.into(), 2.into()));
+                assert_eq!(shear, Q::new(180.into(), 1.into()));
+            }
+            TraversalState::TooCohesive => {
+                assert!(c > &Q::new(1.into(), 2.into()));
+                assert!(shear > Q::new(180.into(), 1.into()));
+            }
+            TraversalState::TooFluid => {
+                assert!(c < &Q::new(1.into(), 2.into()));
+                assert!(shear < Q::new(180.into(), 1.into()));
+            }
+        }
     }
 }

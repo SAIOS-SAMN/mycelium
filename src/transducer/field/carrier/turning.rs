@@ -174,7 +174,7 @@ impl PartialEq for TurningPlane {
 impl Eq for TurningPlane {}
 
 /// THE DEGREES OF ONE WHOLE TURN, exact.
-fn whole_turn() -> Q {
+pub(crate) fn whole_turn() -> Q {
     Q::from_integer(BigInt::from(DEGREES_PER_TURN))
 }
 
