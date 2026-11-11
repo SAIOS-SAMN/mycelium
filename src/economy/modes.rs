@@ -10,6 +10,13 @@
 //! the mode was moved. Two modes are one where the modes'
 //! canonical coordinates are one (A21, law 2): the amounts add. A draw takes
 //! modes out, or is refused naming the mode it lacks and both amounts.
+//!
+//! THE FOUNDING MODE (MU-ECONOMY §2.5, 78.180 ruling 3) is the identity
+//! motion of its lane: a genesis allocation, a Note's mode-0 receipt and a
+//! mint whose proof cites no motion are held at it, never with empty modes.
+//! A PER-LANE DRAW takes an amount on one lane from the modes on that lane in
+//! proportion to their amounts, exactly in ℚ, never from another lane's
+//! (`draw_lane`).
 
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::Mv;
@@ -18,6 +25,10 @@ use num_rational::BigRational;
 use num_traits::{Signed, Zero};
 
 type Q = BigRational;
+
+/// FORMAT: the founding mode's leading byte on its wire and key, its lane
+/// added: `0x10` for S through `0x13` for H, apart from every lane byte.
+pub const FOUNDING: u8 = 0x10;
 
 /// THE LANES, by place (law 5): S, G, T, H.
 pub const S: u8 = 0;
@@ -42,6 +53,9 @@ pub enum Mode {
     /// fraction of 360° turned (t/ℓ per turn), so two 90° turns and one
     /// 180° turn are one holding.
     Turn { ray: Mv },
+    /// THE FOUNDING MODE of a lane: the lane's identity motion, at which
+    /// value no motion of the network made is held (MU-ECONOMY §2.5).
+    Founding { lane: u8 },
 }
 
 impl Mode {
@@ -52,13 +66,23 @@ impl Mode {
             Mode::Hue(_) => G,
             Mode::Flux { .. } => T,
             Mode::Turn { .. } => H,
+            Mode::Founding { lane } => *lane,
         }
+    }
+
+    /// The founding mode of `lane`; `None` past the four base lanes, which
+    /// open only by a ruled act (MU-ECONOMY §1).
+    pub fn founding(lane: u8) -> Option<Mode> {
+        (lane <= H).then_some(Mode::Founding { lane })
     }
 
     /// THE MODE'S COORDINATES WRITTEN OUT (A21): the lane, then what the mode
     /// is, each length-delimited by its own codec. `None` where a ray has no
     /// canonical writing.
     pub fn key(&self) -> Option<Vec<u8>> {
+        if let Mode::Founding { lane } = self {
+            return (*lane <= H).then(|| vec![FOUNDING + lane]);
+        }
         let mut k = vec![self.lane()];
         let ray = |k: &mut Vec<u8>, r: &Mv| -> Option<()> {
             r.canonical()?.put_canonical(k);
@@ -87,6 +111,7 @@ impl Mode {
             Mode::Turn { ray: r } => {
                 ray(&mut k, r)?;
             }
+            Mode::Founding { .. } => {}
         }
         Some(k)
     }
@@ -94,6 +119,10 @@ impl Mode {
     /// The mode written on the wire: the lane, then the mode's own fields
     /// (rays whole, by `Mv::to_bytes`).
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        if let Mode::Founding { lane } = self {
+            out.push(FOUNDING + (*lane <= H).then_some(*lane)?);
+            return Some(());
+        }
         out.push(self.lane());
         match self {
             Mode::Boost { ray, c, forward } => {
@@ -116,6 +145,7 @@ impl Mode {
             Mode::Turn { ray } => {
                 ray.to_bytes(out);
             }
+            Mode::Founding { .. } => {}
         }
         Some(())
     }
@@ -154,12 +184,16 @@ impl Mode {
                 Mode::Flux { ray, forward: side(p)? }
             }
             H => Mode::Turn { ray: Mv::from_bytes(b, p)? },
+            f if (FOUNDING..=FOUNDING + H).contains(&f) => Mode::Founding { lane: f - FOUNDING },
             _ => return None,
         })
     }
 }
 
-/// WHAT A DRAW LACKED: the mode, what was held of it, what was asked.
+/// WHAT A DRAW LACKED: the mode, what was held of it, what was asked. A
+/// per-lane draw that the lane cannot cover names the lane's first mode in
+/// coordinate order (its founding mode where the lane holds none), the
+/// lane's whole as held and the amount asked.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Short {
     pub mode: Mode,
@@ -263,6 +297,49 @@ impl Modes {
         Ok(())
     }
 
+    /// `amount` HELD AT THE FOUNDING MODE OF `lane` (MU-ECONOMY §2.5): a
+    /// genesis allocation, or a mint whose proof cites no motion. `None` past
+    /// the base lanes; empty for an amount that is not positive.
+    pub fn founding(lane: u8, amount: Q) -> Option<Modes> {
+        let mut out = Modes::new();
+        out.add_mode(Mode::founding(lane)?, amount);
+        Some(out)
+    }
+
+    /// THE LANE'S WHOLE, read exactly: the sum of its modes' amounts. Held
+    /// private: room, a price and an ask are read per lane and per mode
+    /// (MU-ECONOMY §12 items 5, 8), never as this one count.
+    fn lane_whole(&self, lane: u8) -> Q {
+        self.modes().filter(|(m, _)| m.lane() == lane).fold(Q::zero(), |s, (_, a)| s + a)
+    }
+
+    /// A PER-LANE DRAW (MU-ECONOMY §2.5, 78.180 ruling 3): `amount` taken on
+    /// `lane` from the modes on that lane, each in proportion to its amount,
+    /// exactly in ℚ, and returned as the modes drawn, which travel with the
+    /// transfer. Never from another lane. Refused whole, naming the lane's
+    /// first mode with the lane's whole and the amount, where the lane holds
+    /// less; a draw of nothing draws nothing.
+    pub fn draw_lane(&mut self, lane: u8, amount: &Q) -> Result<Modes, Box<Short>> {
+        let mut drawn = Modes::new();
+        if !amount.is_positive() {
+            return Ok(drawn);
+        }
+        let whole = self.lane_whole(lane);
+        if &whole < amount {
+            let first = self.modes().find(|(m, _)| m.lane() == lane).map(|(m, _)| m.clone());
+            let mode = match first {
+                Some(m) => m,
+                None => Mode::Founding { lane },
+            };
+            return Err(Box::new(Short { mode, held: whole, asked: amount.clone() }));
+        }
+        for (m, a) in self.modes().filter(|(m, _)| m.lane() == lane) {
+            drawn.add_mode(m.clone(), a * amount / &whole);
+        }
+        self.take(&drawn)?;
+        Ok(drawn)
+    }
+
     /// THE MODES OF ONE MOTION, at `share` times its amount, `share` the
     /// share of the enclosure the motion's work covers (78.174 §1 item 9;
     /// MU-ENGINEERING §9.3: a mode's amount is its share of the enclosure,
@@ -340,6 +417,10 @@ impl Modes {
             Mode::Hue(GaugeMode::Move(x, y)) => format!("G move {x}→{y} ×{a}"),
             Mode::Flux { forward, .. } => format!("T flux {} {a}", if *forward { "+" } else { "−" }),
             Mode::Turn { .. } => format!("H turn {a} of 360°"),
+            Mode::Founding { lane } => match ["S", "G", "T", "H"].get(usize::from(*lane)) {
+                Some(l) => format!("{l} founding ×{a}"),
+                None => format!("lane {lane} founding ×{a}"),
+            },
         };
         match self.is_empty() {
             true => "no modes".to_string(),
