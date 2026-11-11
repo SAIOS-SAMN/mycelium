@@ -932,8 +932,10 @@ Code: `src/transducer/field/` (`well.rs`, `carrier/`) and
 `src/transducer/cech/orbit.rs` (`Field`). A seat's series is lifted as a
 sample of rank one along its series index, as any source is, and a versor
 series as motions (`src/client/sdk/seat_mind/lift.rs`; #147, MU-CLIENT
-§6). **Owed:** the seat's functions as thoughts whose orbits escape
-(MU-CLIENT §6, *Specified*; #134 S9a).
+§6). **Built:** the seat's functions and untried arguments as thoughts
+whose orbits escape, worked by the drive with anti-turtling doctrine
+inversion, carrying certified moves into physics actions (`client/sdk/seat_mind/`,
+`client/sdk/mind/seating.rs`; #147).
 
 ### 9.3 The mind thinks in orbital masses that collide and converge
 
@@ -1097,7 +1099,6 @@ the clauses that govern what crosses (MU-HOSTING §5a.4).
 
 | Owed | Where it is specified | Issue |
 |---|---|---|
-| The seat's functions as escaping orbits worked by the drive (its series are lifted into the field, #147) | MU-CLIENT §6; §9.2 | #134 |
 | The seated-mind harness against a peer kernel's house: run end to end against the SDK house (`sdk/examples/seats.rs`, quickstart stage 8), and owed against xylarium's | MU-HOSTING §2.1; §9.1 | #133 |
 | A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |
 | Translation between kernels' sensoria at the conjugate class | §1.3; §9.8 | none yet |

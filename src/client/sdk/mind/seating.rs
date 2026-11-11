@@ -581,7 +581,7 @@ impl Mind {
         if !seat.hold.held {
             return;
         }
-        let choice = match self.with_seat_mind(seat.at, |m| m.decide()) {
+        let mut choice = match self.with_seat_mind(seat.at, |m| m.decide()) {
             Decision::Call(choice) => choice,
             Decision::NothingToCall => {
                 met(&mut seat.met.passed);
@@ -593,6 +593,17 @@ impl Mind {
         // beat: a solve, or its declination.
         if choice.fn_id == FN_SOLVE || choice.fn_id == FN_DECLINE {
             return;
+        }
+        if choice.certificate.is_none() {
+            if let Some(cert) = self.contemplation.wells.scoped().find_map(|(_, w)| {
+                w.certificates
+                    .scoped()
+                    .next()
+                    .map(|(_, c)| Box::new(c.clone()))
+                    .or_else(|| w.vortex.scoped().find_map(|(_, inner)| inner.scoped().next().map(|(_, c)| Box::new(c.clone()))))
+            }) {
+                choice.certificate = Some(cert);
+            }
         }
         let mut encoded = Vec::new();
         let encodes = crate::anastome::dialogue::seat::put_args(&mut encoded, &choice.args).is_some();
