@@ -162,7 +162,7 @@ fn open_heavy() -> Parcel {
     Parcel::kind(&q(2, 1), &q(4, 1)).expect("an open-heavy kind")
 }
 
-/// F3 ON FRAMES, OPPOSED POLES LOCK: `x = ⅕`, `x̄ = ½`, the body hydrogen
+/// F3 ON DELIMITED, OPPOSED POLES LOCK: `x = ⅕`, `x̄ = ½`, the body hydrogen
 /// (`σ = ⅓`, `o = ⅓`); one neighbour the open-heavy kind `(2, 4)` (`σ = −⅓`,
 /// `o = ⅔`), `w = 1`, `n = ⅔`, `Δ = 0°` (`h = 1`): `F = −4/27`,
 /// `x̄ ⊖ x = ⅓`, `y = 4/729`, `x′ = (⅕ + 4/729)/(1 + 4/3645) = 749/3649`,
@@ -176,7 +176,7 @@ fn opposed_poles_lock_on_frames() {
     assert!(q(1, 5) < p.rate && p.rate < q(1, 2));
 }
 
-/// F3 ON FRAMES, THE POLES REVERSED SPLIT: the neighbour's pair of frames
+/// F3 ON DELIMITED, THE POLES REVERSED SPLIT: the neighbour's pair of frames
 /// with its roles swapped, `(2, 4) ↦ (4, 2)` (`σ = ⅓`, `o = ⅓`), against the
 /// hydrogen body: `F = 2/27`, `y = −2/729`,
 /// `x′ = (⅕ − 2/729)/(1 − 2/3645) = 719/3643`, below ⅕.
@@ -191,7 +191,7 @@ fn reversed_poles_split_on_frames() {
     assert!(p.rate < q(1, 5));
 }
 
-/// F3 ON FRAMES, A BODY ALONE IS UNTOUCHED, and a neighbour at the throat
+/// F3 ON DELIMITED, A BODY ALONE IS UNTOUCHED, and a neighbour at the throat
 /// (frames `(1, 1)`, `σ = 0`) contributes nothing: the hydrogen body keeps
 /// `x′ = x = ⅕` both.
 #[test]
@@ -205,7 +205,7 @@ fn alone_or_throat_keeps_rate() {
     assert_eq!(pull(&q(1, 5), &q(1, 2), &hydrogen(), &f).map(|p| (p.push, p.rate)), Ok((q(0, 1), q(1, 5))));
 }
 
-/// F3 ON FRAMES, A HALF ALIGNMENT: the lock's pair at `Δ = 45°` (`h = ½`):
+/// F3 ON DELIMITED, A HALF ALIGNMENT: the lock's pair at `Δ = 45°` (`h = ½`):
 /// `F = −2/27`, `y = 2/729`, `x′ = (⅕ + 2/729)/(1 + 2/3645) = 739/3647`.
 /// Two neighbours weigh by holding: the open-heavy kind at `w = 1` and
 /// hydrogen at `w = 3`, `F = (−4/27 + 3·2/27)/4 = 1/54`.
@@ -271,7 +271,7 @@ fn algebra_check_of_pull() {
     assert_eq!(two, Field::Held { holding: q(4, 1), field: q(1, 6) });
 }
 
-/// F3 ON THE FRAMES: the body `A = 3, Q = 1` (`σ = ½`, `o = ¼`) and a
+/// F3 ON THE DELIMITED: the body `A = 3, Q = 1` (`σ = ½`, `o = ¼`) and a
 /// hydrogen neighbour (`σ = ⅓`, `o = ⅓`, `w = 1`, `n = ⅔`, `Δ = 0°`):
 /// `F = 2/27`, `y = −1/324`, `x′ = (⅕ − 1/324)/(1 − 1/1620) = 319/1619`.
 #[test]

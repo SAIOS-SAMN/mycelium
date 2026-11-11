@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! THE ENCRYPTED CHANNEL: Noise_XX over a byte stream (a TCP connection on
-//! the mesh), carrying the wire's frames (`wire::Delimited`) inside Noise
+//! the mesh), carrying the wire's envelopes (`wire::Delimited`) inside Noise
 //! transport messages.
 //!
 //! No certificate authority stands behind it. Each host keeps one static
@@ -10,14 +10,14 @@
 //! that presents a different key is refused by name (`PeerKeyChanged`).
 //!
 //! The channel only encrypts and authenticates the BYTES between two hosts.
-//! Identity stays in the Ed25519-signed acts the frames carry; the Noise
+//! Identity stays in the Ed25519-signed acts the envelopes carry; the Noise
 //! static key is a Curve25519 key of the channel and is never an identity,
 //! never derived from one and never read as one.
 //!
 //! On the stream every Noise message is `[len:2 BE][message]`, a message at
-//! most `MESSAGE_MAX` bytes. A frame's encoding is cut into plaintext chunks
+//! most `MESSAGE_MAX` bytes. An envelope's encoding is cut into plaintext chunks
 //! of at most `CHUNK` bytes, one transport message each; the reader joins
-//! them back. A frame over the wire's budget is refused exactly as the
+//! them back. An envelope over the wire's budget is refused exactly as the
 //! plaintext wire refuses it: before a byte is sent, and on read before its
 //! body is allocated.
 //!
@@ -28,9 +28,9 @@
 //!
 //! THE OPENING. The initiator writes [`OPEN`] alone and begins the handshake
 //! only once the responder has answered [`OPEN`]. No plaintext
-//! frame begins with `OPEN`: its first four bytes, read as a plaintext
+//! envelope begins with `OPEN`: its first four bytes, read as a plaintext
 //! length, pass the wire's `DELIMITED_MAX`. A door that speaks only
-//! plaintext reads it as a frame over budget and answers a plaintext
+//! plaintext reads it as an envelope over budget and answers a plaintext
 //! refusal, which the initiator reads as `NotSpoken`; a door that speaks
 //! Noise tells the two apart by those four bytes (`channel::accept`).
 
@@ -95,12 +95,12 @@ pub enum NoiseRefusal {
     /// A Noise message past `MESSAGE_MAX`.
     #[error("noise message of {len} bytes over the {MESSAGE_MAX}-byte ceiling")]
     MessageTooLarge { len: usize },
-    /// A frame whose body is past the wire's budget.
-    #[error("frame of {len} bytes over the wire budget")]
-    FrameOverBudget { len: usize },
-    /// A decrypted frame whose head does not read as a length.
-    #[error("noise channel carried a malformed frame")]
-    FrameMalformed,
+    /// An envelope past the wire's budget.
+    #[error("envelope of {len} bytes over the wire budget")]
+    OverBudget { len: usize },
+    /// A decrypted envelope whose head does not read as a length.
+    #[error("noise channel carried a malformed envelope")]
+    Malformed,
     /// A transport message that failed to authenticate: tampered, replayed,
     /// reordered or cut.
     #[error("noise transport message failed to authenticate")]
@@ -438,21 +438,21 @@ impl<S: Read + Write> NoiseStream<S> {
         Ok(())
     }
 
-    /// One wire frame sealed onto the channel. A body over the wire's
+    /// One envelope sealed onto the channel. A body over the wire's
     /// budget is refused before a byte is sent.
-    pub fn write_delimited(&mut self, frame: &Delimited) -> Result<(), NoiseRefusal> {
-        let bytes = frame.encode().ok_or(NoiseRefusal::FrameOverBudget { len: frame.body.len() })?;
+    pub fn write_delimited(&mut self, delimited: &Delimited) -> Result<(), NoiseRefusal> {
+        let bytes = delimited.encode().ok_or(NoiseRefusal::OverBudget { len: delimited.body.len() })?;
         self.send(&bytes)
     }
 
-    /// One wire frame off the channel. A head naming a body past the wire's
+    /// One envelope off the channel. A head naming a body past the wire's
     /// budget is refused before the body is allocated.
     pub fn read_delimited(&mut self) -> Result<Delimited, NoiseRefusal> {
         let mut head = [0u8; HEAD];
         self.take_plain(&mut head)?;
         let Some(len) = delimited_len(head) else {
-            let len = usize::try_from(u32::from_le_bytes(head)).map_err(|_| NoiseRefusal::FrameMalformed)?;
-            return Err(NoiseRefusal::FrameOverBudget { len });
+            let len = usize::try_from(u32::from_le_bytes(head)).map_err(|_| NoiseRefusal::Malformed)?;
+            return Err(NoiseRefusal::OverBudget { len });
         };
         let mut body = vec![0u8; len];
         self.take_plain(&mut body)?;
@@ -460,7 +460,7 @@ impl<S: Read + Write> NoiseStream<S> {
     }
 }
 
-/// The channel as a byte stream, so a reader of plaintext frames reads it
+/// The channel as a byte stream, so a reader of plaintext envelopes reads it
 /// unchanged. A close at a message boundary reads as the end of the stream.
 impl<S: Read + Write> Read for NoiseStream<S> {
     fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {

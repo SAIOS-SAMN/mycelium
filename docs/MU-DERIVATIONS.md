@@ -144,7 +144,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture (**Built** 2026-10-31) | yes | M | 5 |
-| D4.2 | `take(32)` (evidence reply) | `mycelium-server/control.rs:102` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
+| D4.2 | `take(32)` (evidence reply) | `mycelium-server/control.rs:102` | protocol size | Medium | fill to the body budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused (**Built** 2026-10-31; `0 × 0` admitted) | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration (**Built** 2026-10-31: (iii), both producers' depths closed forms) | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book (**REGISTERED** 2026-10-31 as `POOL_DIVISOR`: the off-lock strokes are unmetered) | yes | M | 5 |
@@ -182,7 +182,7 @@ entry's derivation and needs no ruling unless marked.
 
 ## 3. Group G1 — the open-physics register and law parameters
 
-Four entries: the two numbers the register names today, the frame budget
+Four entries: the two numbers the register names today, the body budget
 every node agrees on, and the register with its gate.
 
 ### D1.1 `CHALLENGE_WINDOW` — fold finality and the end of every held window
@@ -618,14 +618,14 @@ Concordance amendment.
 
 ---
 
-### D1.3 `BODY_BUDGET` — the mesh frame's body bound
+### D1.3 `BODY_BUDGET` — the mesh envelope's body bound
 
 **Status.** **Built** as far as the reading allows (2026-10-31, the
 live-readings ruling). The defect (§2 item 2) is fixed: `encode_receipts_reply`
 admits the head receipt against the caller's budget and refuses one past
 it by name; the door's receipts reply budget is the frame less the reading
 height behind it (`Court::receipts_reply_budget`), the tapes' budget that
-less the reply's count (`Court::receipts_frame`). Every page envelope is its
+less the reply's count (`Court::receipts_bounds`). Every page envelope is its
 codec's own header, a FORMAT constant beside the encoder
 (`RECEIPTS_REPLY_HEADER`, `ENTRIES_REPLY_HEADER`, `SYLLABUS_REPLY_HEADER`,
 `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`, `QUOTE_REPLY_HEADER`,
@@ -643,12 +643,12 @@ budget"); the alignment to `B(k)` waits on those units paging. Tests:
 The text below is the derivation as specified.
 
 **Site.** `src/network/wire.rs:9` —
-`pub const BODY_BUDGET: usize = 768 * 1024;`, served by `frame_budget()`
+`pub const BODY_BUDGET: usize = 768 * 1024;`, served by `BODY_BUDGET`
 (`wire.rs:49`). It is refused past at `Frame::encode` (`wire.rs:132`), on
 read (`wire.rs:171`, `noise.rs:460`, `transport.rs:88, 208`,
 `session.rs:682`), and is the fill bound of every paging codec: receipts
-(`receipts.rs:272`; `Court::receipts_frame`, `era.rs:102`,
-`frame_budget() − 64`), syllabus (`judge/syllabus.rs:66, 178, 209`,
+(`receipts.rs:272`; `Court::receipts_bounds`, `era.rs:102`,
+`BODY_BUDGET − 64`), syllabus (`judge/syllabus.rs:66, 178, 209`,
 `− 64`, `− (64 + 2)`), ledger entries (`judge/entries.rs:13`), observe
 (`judge/observe.rs:136`), quote (`judge/quote.rs:47`), seat mail
 (`seat.rs:28`, `− MailRead::HEAD`), atlas (`atlas.rs:623`), synthesis
@@ -671,7 +671,7 @@ bytes (`noise.rs:47–52`).
 **Governs.** Protocol size and liveness. An act over the budget is
 refused by name at the door. A page stops at the budget. A challenge span
 past one frame is published in Parts (78.125). Every node of the mesh
-must agree on it (the wire-MTU ruling, stated in the `frame_budget`
+must agree on it (the wire-MTU ruling, stated in the `BODY_BUDGET`
 comment).
 
 **Why it is underived.** The wire-MTU ruling fixed that the budget is ONE
@@ -740,7 +740,7 @@ carrying 292 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
 - *Defect found while reading (fixed with this entry; §2 item 2).*
   `encode_receipts_reply` (`src/anastome/dialogue/receipts.rs:272`)
   admits the head receipt against `BODY_BUDGET`, not against the caller's
-  `budget` (`frame_budget() − 64`). The judge then appends 8 bytes of
+  `budget` (`BODY_BUDGET − 64`). The judge then appends 8 bytes of
   reading height (`put_reading_height`, `judge/receipts.rs:42`). A lone
   receipt within 12 bytes of `BODY_BUDGET` therefore builds a body over
   the budget; `Frame::encode` refuses it, and the asker reads silence on
@@ -819,7 +819,7 @@ Inline literals also stand where a reading belongs:
 
 - `tell_peer_within(endpoint, body, 5)` (`src/bin/mycelium-server/transport.rs:136`,
   an unmeasured wire's rtt hint; D4.1)
-- `frame_budget() − 34` (`synthesis.rs:122`)
+- `BODY_BUDGET − 34` (`synthesis.rs:122`)
 - `checked_sub(64)` at nine sites, and `64 + 2` (D4.6)
 - `usize::from(u8::MAX)` as the awaited-citations count (`exchange.rs:882`;
   FORMAT if it is the reply's `u8` count wall)
@@ -2680,7 +2680,7 @@ Symbols for this group, beyond §0.4:
   `A` samples in `mesh.rtt_window` (`transport.rs:307`).
 - `Λ(ρ) : Lambda` — `transport_deadline(ρ) = from_transport(ρ, A)`:
   `Strokes(ρ·A)` or `BeyondTheLedger` (`physics/lambda.rs:22, 32`).
-- `B : usize` — `wire::frame_budget() = BODY_BUDGET = 768·1024` bytes
+- `B : usize` — `wire::BODY_BUDGET = BODY_BUDGET = 768·1024` bytes
   (`src/network/wire.rs:9, 49`).
 - `L(p) : usize` — the bytes remaining in a decoder's input at cursor
   `p`, `b.len() − p`.
@@ -2870,7 +2870,7 @@ what the reply claims to carry).
 **Derivation.**
 
 - The quantity: the reply's body budget `B`, the one carrier the mesh
-  agrees on (`frame_budget`, PH1, H4). The pattern is that of
+  agrees on (`BODY_BUDGET`, PH1, H4). The pattern is that of
   `encode_entries_reply` and `encode_receipts_reply`: fill while the next
   item fits.
 - Formula: with
@@ -3192,7 +3192,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 
 ---
 
-### D4.6 `frame_budget().checked_sub(64)` — the reply header reserve
+### D4.6 `BODY_BUDGET.checked_sub(64)` — the reply header reserve
 
 **Status.** **Built** (2026-10-31, the live-readings ruling). The nine
 sites read each reply's own header, built with D1.3: the encoders that
@@ -3212,13 +3212,13 @@ left for the sweep that types each signed act. Tests
 specified.
 
 **Site.** Nine sites: `src/server/cognition/court/era.rs:102`
-(`receipts_frame`), `src/server/cognition/atlas.rs:623`
+(`receipts_bounds`), `src/server/cognition/atlas.rs:623`
 (`ledger_budget`), `src/bin/mycelium-server/judge/syllabus.rs:178, 209`,
 `judge/entries.rs:13`, `judge/observe.rs:136`, `exchange.rs:881`,
 `src/client/sdk/mind/chatter.rs:309, 319`:
 
 ```rust
-let bytes = crate::network::wire::frame_budget().checked_sub(64)?;
+let bytes = crate::network::wire::BODY_BUDGET.checked_sub(64)?;
 ```
 
 Comments call it "the reply's header" (`era.rs:97–99`, `entries.rs:12`,
@@ -3257,7 +3257,7 @@ constant whose name would mislead).
   `8 + body.len() + one.len() > budget`), so at `entries.rs`, `observe.rs:136`
   and `chatter.rs:309, 319` the subtraction double-counts: pass `B` whole.
 - Where the budget feeds a reader that does not see the header
-  (`receipts_frame` → the `bytes` of `line_page`, `ledger_budget`, and
+  (`receipts_bounds` → the `bytes` of `line_page`, `ledger_budget`, and
   `cited` in `syllabus.rs:178`, which subtracts each word's
   `Stamp::LEN + 4 + len`): `budget = B − H_kind`, with `H_kind` a named
   constant beside its encoder, derived from the format:
@@ -3742,7 +3742,7 @@ is non-substantive and carries no release of its own.
    `B(k)` once O1 is read; D3.2's refusal in `task_address` (law 2) and
    the demand in `finish` (**Built**, with D3.2's metering); D4.1's defects (the measured path, one key per
    peer, no reserve as rtt hint) with D2.7's page-loop window; D4.2's fill
-   to the frame budget; D4.8's termination parts (a)–(d); D2.6's typed
+   to the body budget; D4.8's termination parts (a)–(d); D2.6's typed
    arms (`Calibration`, `Stall`, `NonZeroU64`).
 4. **Entries waiting on rulings and readings** (§7): each lands after its
    reading is taken and its ruling recorded: D1.1, D1.2 Phase B, D2.1–D2.3,

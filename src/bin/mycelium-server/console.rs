@@ -651,7 +651,7 @@ fn carriage(c: &observe::CarrierTally) -> Vec<String> {
                 Some(k) => String::from_utf8_lossy(k.name()).into_owned(),
                 None => format!("kind {kind}"),
             },
-            observe::CARRIER_FRAME => format!("act {kind:#04x}"),
+            observe::CARRIER_DELIMITED => format!("act {kind:#04x}"),
             _ => String::new(),
         }
     };

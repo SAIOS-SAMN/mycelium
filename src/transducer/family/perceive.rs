@@ -232,7 +232,7 @@ pub type FamilyBodies = Vec<PairBodies>;
 /// observations is an open-dimensional enclosure of bodies, never a flat 2D frame.
 pub type Frames = FamilyBodies;
 
-/// THE FAMILY'S FRAMES PERCEIVED ONCE (rule 10, ruled 2026-09-26): each
+/// THE FAMILY'S DELIMITED PERCEIVED ONCE (rule 10, ruled 2026-09-26): each
 /// frame's bodies read by its components, the one reading an extraction's
 /// stroke is sized by ([`super::extraction_spend`]) and the percept then
 /// reads, so no frame's components are read a second time to size the draw.

@@ -79,7 +79,7 @@ fn perceive_bounds_seat_values_to_one_frame() {
         }
         assert_eq!(s.orbit().map(|r| r.period()), Some(3), "the orbit is read on what is held");
     }
-    assert!(held <= crate::network::wire::frame_budget(), "one frame across the seat: {held}");
+    assert!(held <= crate::network::wire::BODY_BUDGET, "one frame across the seat: {held}");
 }
 
 /// 78.156 — THE SUB-INSTANCE LOCATED AT (TPoint, u), ITS DILATION EXACT:

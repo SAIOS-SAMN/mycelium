@@ -89,7 +89,7 @@ pub(crate) struct Question {
     /// read true on its scene: what makes the question one a court can
     /// measure (E1). A question with none stays the conversation's.
     pub(super) evidence: Option<chatter::Evidence>,
-    /// MU-CLIENT §5.3(5) (#145) — THE PEERS' VERIFIED FRAMES said under this
+    /// MU-CLIENT §5.3(5) (#145) — THE PEERS' VERIFIED DELIMITED said under this
     /// question's coordinates: the receipts a peer record is folded from,
     /// held while the question is and lapsing with it.
     pub(super) frames: Vec<Vec<u8>>,
@@ -337,7 +337,7 @@ fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
     // The frame's whole body each time: both encoders count their own
     // headers against it (D4.6).
     if let Some(line) = observe::live::decode_call(q) {
-        return observe::live::encode_lines(&observe::live::call(&line), crate::network::wire::frame_budget());
+        return observe::live::encode_lines(&observe::live::call(&line), crate::network::wire::BODY_BUDGET);
     }
     let ObserveAct::Query(prefix) = observe::decode_act(q)?;
     let own = Source::Mind(*voice);
@@ -346,7 +346,7 @@ fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
         observe::publish(own, Reading::Memory(m));
     }
     observe::replace(own, Reading::Mind(Box::new(mind)));
-    observe::encode_reply(&observe::readings(&prefix), crate::network::wire::frame_budget())
+    observe::encode_reply(&observe::readings(&prefix), crate::network::wire::BODY_BUDGET)
 }
 
 /// A RING'S SIZE AS A SOUND: its return, read off its own coordinates on

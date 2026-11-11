@@ -98,7 +98,7 @@ fn cargo(a: u8, b: u8, nonce: u8) -> Offer {
     }
 }
 
-/// THE BUILDERS ARE THE RESERVES, THE FRAMES REAL: a pair offered by a tier
+/// THE BUILDERS ARE THE RESERVES, THE DELIMITED REAL: a pair offered by a tier
 /// that is not its domain's reserve, to a tier that is not the other's,
 /// within one domain, kept by a stranger, or with a zero frame — refused.
 #[test]

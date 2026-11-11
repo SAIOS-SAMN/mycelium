@@ -324,7 +324,7 @@ fn speak_on_scene(
             // one member's carriage and applying it to another chart's bodies
             // would carry a body by a versor measured on a different one.
             Vertex::Word { derivation, acts, .. } => {
-                // THE CLASS'S SECTION IS ITS MEMBERS' FRAMES (AT1): a class
+                // THE CLASS'S SECTION IS ITS MEMBERS' DELIMITED (AT1): a class
                 // none of whose members holds a frame is claimed whole, and
                 // one whose members hold frames speaks only on those.
                 let pi = pair.and_then(|pi| u64::try_from(pi).ok());

@@ -108,7 +108,7 @@ fn signed_permutation_reads_the_alphabet_letters() {
     assert_eq!(SignedPermutation::of_word(&pythagorean), Err(TransductionRefusal::Oblique));
 }
 
-/// A QUARTER TURN BETWEEN FRAMES OF DIFFERENT EXTENT IS EXACT ON TURNS: a
+/// A QUARTER TURN BETWEEN DELIMITED OF DIFFERENT EXTENT IS EXACT ON TURNS: a
 /// `3 × 5` frame turned lands on a `5 × 3` output site for site, and the same
 /// turn followed by the re-period onto `10 × 6` lands too (every moved
 /// boundary `k/5` and `k/3` lands on periods 10 and 6), each output

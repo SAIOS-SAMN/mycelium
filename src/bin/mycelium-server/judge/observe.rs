@@ -42,7 +42,7 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
     let mut carriage = observe::CarrierTally::default();
     k.treasury().carriage(&mut carriage);
     carriage.of_chain(k.chain());
-    carriage.of_frames();
+    carriage.of_delimited();
     // RM1 — its remainders over its complexes, beside what the torsion
     // filing kept of them.
     let (remainders, torsion_words) = k.remainders();
@@ -140,7 +140,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
             observe::replace(own, Reading::Boundary(Box::new(observe::boundary_reading())));
             // The frame's whole body: `encode_reply` counts its own header
             // against it (D4.6).
-            let budget = mycelium::network::wire::frame_budget();
+            let budget = mycelium::network::wire::BODY_BUDGET;
             let Some(body) = observe::encode_reply(&observe::readings(&prefix), budget) else {
                 eprintln!("  observe reply refused: more readings held than four bytes count");
                 return;

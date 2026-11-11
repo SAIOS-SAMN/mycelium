@@ -360,7 +360,7 @@ fn form_vertex_key_carries_ratio_and_sections() {
         kind: crate::transducer::layers::LayerKind::Whole,
         class: w.rotor().holonomy_key().expect("the 90° turn has a class"),
     });
-    // AT1 — A MEMBER HOLDS ITS FRAMES, and the sections are read off them:
+    // AT1 — A MEMBER HOLDS ITS DELIMITED, and the sections are read off them:
     // the word's member stands at frame 1 as well as the fixture's frame.
     let word = c.vertices.at(&only_word(&c)).cloned().expect("the word vertex");
     c.stand_member(&word, 1).expect("the word stands at frame 1");

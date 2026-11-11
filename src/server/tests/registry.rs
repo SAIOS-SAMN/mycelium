@@ -92,7 +92,7 @@ fn task_address_refuses_ragged_pair() {
     assert_eq!(SectionSample::of_lines(&[vec![1, 1], vec![1]]), Err(Unspelled::Sample(SampleRefusal::Length { expected: 4, found: 3 })), "a ragged raster is no sample");
 }
 
-/// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH FRAMES' FULL CONTENT
+/// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH DELIMITED' FULL CONTENT
 /// WITH THE FOUR PERIODS. `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]`
 /// read one coboundary on `K_lcm`, `{(0,0,1,2), (0,1,1,2)}`, and neither
 /// wrote its frame (one ratio anisotropic, one the identity), so two tasks

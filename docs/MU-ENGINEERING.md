@@ -296,7 +296,9 @@ is refused as stale.
 ### 9.3 Names to settle
 
 "Frame" names ten distinct things. By MU-STANDARDS one name has one
-meaning, so each is to be renamed by its function. No code identifier is
+meaning, so each is to be renamed by its function; and by the ruling of
+2026-11-11 (#239) the word itself is retired, a collapse of volume and
+dimensions, so no meaning keeps it. No code identifier is
 renamed here; the renames follow the dead-code cleanup of
 `src/network/wire.rs`. Counts are of the distinctive identifiers in Rust
 sources (`src/`, `algebra/`, `forms/`, `sdk/`, `sources/`, `tests/`,
@@ -307,7 +309,7 @@ counted under the meaning of their area, not apiece.
 
 | Meaning | Where (examples) | Code identifiers | Document phrases | Proposed name |
 |---|---|---|---|---|
-| The wire envelope: one expression's bytes and their length | `WireFrame`, `frame_budget`, `read_frame`, `write_frame`, `hear_frame`, `FrameOverBudget`, `PageEnd::Frame`, `Inflow::Frame`, `receipts_frame`, the era file's `append_frame` | about 254 | about 57 | An expression delimited by its length: `Delimited` for the envelope, `BODY_BUDGET` alone for the budget, `read_delimited`, `PageEnd::Budget`; the era file's record is a `record` |
+| The wire envelope: one expression's bytes and their length | **Renamed (#239)** on the server and the wire: `BODY_BUDGET` alone, `NoiseRefusal::OverBudget` and `Malformed`, `receipts_bounds`, `note_delimited`; owed on the client's mind, `Inflow::Frame`, `hear_frame`, `read_frame` and `hold_answer_frame` (chatter envelopes) | — | — | An expression delimited by its length: `Delimited` for the envelope, `BODY_BUDGET` alone for the budget, `read_delimited`, `PageEnd::Budget`; the era file's record is a `record` |
 | One sample of a family along `e₃` (78.75; the GLOSSARY's *Frame* today) | `Frames`, `frame_key`, `frame_spelling`, `put_frame`, `member_frames`, `section_of_frames`, `at_frame_zero`, `perceive_frames`, `edges_rederive_frames`, `HeldPose::OneFrame` | about 254 | about 44, and most of MU-RECURSION's 538 | The family's sample `k`: `sample_key`, `sample_spelling`, `samples_of_section`, `HeldPose::OneSample` |
 | The sample's own extent, read as a whole | `Layer::Frame`, `Vertex::Frame`, `VertexAt::Frame`, `frame_fixed_on_ground`, `frame_faces`, `frame_boundary`, `share_of_frame`, `ShapePeriods::InFrame`; "frame fixing" (MU-SENSING §6.1) | about 130 | about 44 | The enclosure, after `transduce::Enclosure`: `Layer::Enclosure`, `Vertex::Enclosure`, `enclosure_faces`, `share_of_enclosure`, "enclosure fixing" |
 | Perception's measured `Frame` defect: four counts of a pair, two planar axes fixed | `src/transducer/element/residue.rs` (`Frame { h_in, w_in, h_out, w_out }`), `from_canonical_framed`, `from_residue_framed`, `frame_ratio`, the "frame fibre" ρ | about 40 | about 24 | The re-period, per phase at rank `n`: `Reperiod`, after `Enclosure::reperiod` (track 26 S4 replaces the four counts) |

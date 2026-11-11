@@ -222,7 +222,7 @@ fn mind_refuses_a_changed_or_unsealed_peer() {
 /// home names that post plaintext, never pins it, and delivers in
 /// plaintext.
 #[test]
-fn post_tells_the_opening_from_a_plaintext_frame() {
+fn post_tells_the_opening_from_a_plaintext_envelope() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (to, delivered) = mpsc::<Vec<u8>>();
     let sealed = chatter::Post::listen_over("127.0.0.1:0", Some(b.clone()), move |f| {

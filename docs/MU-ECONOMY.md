@@ -898,7 +898,7 @@ mint found when partitions rejoin is burned (§3.4). Tests:
 **F3. The frontier reading** (Medium; reading only; track 9).
 `ACT_OBSERVE` reading `frontier`: per open task, its citation, its ask
 per lane and its obstruction kind if a refusal stands on it, paged to the
-frame budget; served by the SDK as `Session::frontier()`. No μ and no
+body budget; served by the SDK as `Session::frontier()`. No μ and no
 admission effect. Tests: `frontier_lists_open_tasks_by_lane`,
 `frontier_omits_closed_tasks`, `frontier_pages_to_frame_budget`.
 

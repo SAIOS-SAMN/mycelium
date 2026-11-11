@@ -737,7 +737,7 @@ Review targets, in order:
   47.4).
 - **Ledger and clock:** receipt chains, co-signed folds, and TUniversal
   finality.
-- **Resource bounds:** stroke budgets and frame budgets under adversarial
+- **Resource bounds:** stroke budgets and body budgets under adversarial
   payloads.
 
 ### Security engineering
@@ -864,7 +864,7 @@ at every citation, admission is paced by room). The open parts, in order:
    designed.
 4. **The frontier reading** (Medium; reading only; with track 9). The open
    tasks on a court, each with its ask per lane and any standing
-   obstruction, paged to the frame budget and served by the SDK as
+   obstruction, paged to the body budget and served by the SDK as
    `Session::frontier()`.
 
 With this work, the solve receipt's code `1` is renamed `SOLVE_AGAIN` (the

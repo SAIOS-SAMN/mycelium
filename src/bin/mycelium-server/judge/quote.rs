@@ -44,7 +44,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         &surface,
         k_step,
         &items,
-        mycelium::network::wire::frame_budget(),
+        mycelium::network::wire::BODY_BUDGET,
     ) else {
         eprintln!("  quote refused: the page does not fit the lengths it writes");
         return;

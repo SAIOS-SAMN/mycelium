@@ -300,7 +300,7 @@ pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace)
 /// the channel's opening is answered with the XX handshake (the caller is
 /// pinned under no name: it dials from a port of its own choosing, and its
 /// identity is the signature on each act); any other head is a plaintext
-/// frame, read whole from its first byte and named.
+/// envelope, read whole from its first byte and named.
 ///
 /// The connection's first four bytes tell the two apart: a plaintext
 /// envelope opens with its length, and the opening's four, read as a length,

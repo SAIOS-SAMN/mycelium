@@ -432,7 +432,7 @@ pub(crate) fn bundle_connections(
     out
 }
 
-/// P10(c), §25.12 — THE CANDIDATE'S MONODROMY AROUND THE FAMILY'S FRAMES:
+/// P10(c), §25.12 — THE CANDIDATE'S MONODROMY AROUND THE FAMILY'S DELIMITED:
 /// `M = ∏ γ⁻¹ V γ`, the product of `V` conjugated by each measured
 /// connection.
 ///

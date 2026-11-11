@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! O10 — HOW A PAIR'S TWO FRAMES RELATE, typed: is the relation a product of
+//! O10 — HOW A PAIR'S TWO DELIMITED RELATE, typed: is the relation a product of
 //! a signed permutation of the phases, the re-period, an offset and a
 //! re-enclosure, or a residue no such product carries? A reading of one
 //! pair, at any rank, for the census of the corpus; it decides nothing a

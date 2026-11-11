@@ -213,7 +213,7 @@ fn projection_refuses_off_site() {
     assert_eq!(changes(&mono.projected().expect("seams land")), vec![(vec![1, 1], vec![1], vec![2])]);
 }
 
-/// TWO FRAMES OF DIFFERENT RANK ARE NOT RELATED: a phase of one has no phase
+/// TWO DELIMITED OF DIFFERENT RANK ARE NOT RELATED: a phase of one has no phase
 /// of the other, and nothing is padded or dropped.
 #[test]
 fn transduction_refuses_rank_mismatch() {

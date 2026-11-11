@@ -368,7 +368,7 @@ fn carry_frames_from(
         let Vertex::Word { .. } = v else {
             continue;
         };
-        // A VERTEX IS ASKED FOR THE FRAMES ITS RULE CLAIMS. A class whose
+        // A VERTEX IS ASKED FOR THE DELIMITED ITS RULE CLAIMS. A class whose
         // placement varies along `e₃` is a section (18.2), and the rule
         // names the frames it was measured at; asking it for the rest is
         // asking it to answer for a claim it did not make, and checking
