@@ -255,6 +255,7 @@ impl Court {
         c.count("closed_since_grant", closed_since_grant.len());
         // §3.4 — the closure points in this court's cones.
         c.count("points", points.len());
+        c.count("points.concurrent", points.scoped().filter(|(_, s)| s.len() > 1).count());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

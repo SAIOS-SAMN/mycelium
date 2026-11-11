@@ -35,9 +35,10 @@
 //!   (`Reading::Judged`) by the task's whole citation. A citation answered
 //!   as a first closure more than once, at two courts or to two voices, is
 //!   two mints of one closure: an EQUIVOCATION OF THE ADVANCE, named with
-//!   each court, voice and height. §3.4 burns the second mint; no court
-//!   burns it yet (one closure per network is v0.5.0's), and the reading
-//!   says both mints stand.
+//!   each court, voice and height. A court holding a point (the closure's
+//!   seal, `Cite::Closure`, in its cones) judges a later closure again; two
+//!   seals made before either was held are concurrent (45.3) and are held
+//!   as a residue naming both, never divided, and the reading says so.
 
 use mycelium::anastome::dialogue::why::{decode_why_reply, encode_why, Named, Why, WhyAsk};
 use mycelium::anastome::dialogue::{decode_entries_reply, encode_entries_request, is_deferral, PENDING_CODE};
@@ -495,7 +496,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
             lines.push(format!("    first closure to voice {} at {} (height {}, {} first verdicts)", short(&p.voice), said(&p.court, &courts), p.height, p.first));
         }
         lines.push(format!(
-            "    {YELLOW}§3.4 burns a second mint naming both receipts; no court burns it yet (one closure per network, v0.5.0): both mints stand{RESET}"
+            "    {YELLOW}§3.4, 45.3: mints a court made before holding the other's seal are concurrent, held as a residue naming both and never divided; a court holding the point judges any later closure again{RESET}"
         ));
     }
     for l in lines {

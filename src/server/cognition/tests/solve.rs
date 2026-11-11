@@ -451,3 +451,30 @@ fn closure_cite_round_trips() {
     let back = crate::chronometry::Cite::take_canonical(&out, &mut p).expect("read");
     assert!(back.restates(&c) && p == out.len());
 }
+
+/// MU-ECONOMY §3.4, 45.3 — TWO SEALS OF ONE POINT ARE HELD AS A RESIDUE:
+/// courts a and b each close one point before holding the other's seal; on
+/// admission each holds both, concurrent, in the order held — never divided
+/// and never ordered by arrival. The first held still decides; a seal met
+/// again is held once; the residue survives a restart.
+#[test]
+fn concurrent_closures_of_one_point_are_held_as_a_residue() {
+    let rule = rule_over(&carried());
+    let task = [5u8; 32];
+    let mut a = Court::new();
+    let mut b = Court::new();
+    a.bind_identity([1; 32]);
+    b.bind_identity([2; 32]);
+    let SolveVerdict::Solved { pay, .. } = a.judge_solve(&rule, &carried()) else { panic!("solved") };
+    assert_eq!(a.pay_solve(&task, [9; 32], &rule, pay.clone(), true), pay);
+    assert_eq!(b.pay_solve(&task, [9; 32], &rule, pay.clone(), true), pay, "b closes it before holding a's seal");
+    let (sa, sb) = (a.chain.head().expect("a's seal"), b.chain.head().expect("b's seal"));
+    a.note_points(&sb);
+    a.note_points(&sb);
+    let residue = a.concurrent_points();
+    assert_eq!(residue.len(), 1, "one point sealed twice");
+    assert_eq!(residue[0].1, vec![sa.stamp, sb.stamp], "both seals, in the order held, once each");
+    assert_eq!(a.point_held(&task, rule.address().as_bytes()), Some(sa.stamp), "the first held still decides");
+    let booted = Court::new().reconstruct(&a.snapshot()).expect("reconstructs").into_object();
+    assert_eq!(booted.concurrent_points(), residue, "the residue survives the snapshot");
+}

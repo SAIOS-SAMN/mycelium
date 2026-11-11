@@ -525,8 +525,9 @@ pub struct Court {
     /// out) a first closure sealed, on this court's line or on a line it
     /// admitted, with the stamp of the receipt that sealed it first here. A
     /// point held is closed: a later closure of it, at this court or any
-    /// other, is judged again. Kept across folds; persisted (`LEAF_POINTS`).
-    pub(crate) points: crate::network::nerve::Keyed<crate::chronometry::Stamp>,
+    /// other, is judged again. More than one seal is a concurrent residue
+    /// (45.3), held. Kept across folds; persisted (`LEAF_POINTS`).
+    pub(crate) points: crate::network::nerve::Keyed<Vec<crate::chronometry::Stamp>>,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
     /// bounded; never persisted. 78.146: on its own lock, so a door serves a
