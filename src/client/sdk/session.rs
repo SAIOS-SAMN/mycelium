@@ -110,7 +110,10 @@ impl Session {
 
     /// The channel this session dials `endpoint` on.
     fn dial(&self, endpoint: &str) -> io::Result<Channel> {
-        crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Blocking).map_err(|why| match why {
+        // Law 9 — every wait here is denominated in strokes (#221).
+        // Polled pace waits up to a stroke budget, reporting silence as a stall.
+        let budget = std::num::NonZeroUsize::new(crate::physics::aperture_cycle() as usize * 64);
+        crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Polled(budget)).map_err(|why| match why {
             crate::network::noise::NoiseRefusal::Io(e) => e,
             why => io::Error::new(io::ErrorKind::ConnectionRefused, why),
         })
@@ -527,8 +530,8 @@ impl Session {
             // and the door's deficit as the surface, so the arm dwells on
             // the lanes the judge named (23.8, S13.4), and as the deficit,
             // the gravity the mind's field feels (MU-CLIENT §4.13).
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
-                // A would-block that carries no deferral names no lanes,
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut => {
+                // A would-block or timeout that carries no deferral names no lanes,
                 // and no surface is read off one.
                 let lanes = match deferral_of(&e) {
                     Some(d) => d.deficit,

@@ -377,6 +377,7 @@ impl Exchange {
         // The orbits this court sealed since the ledger was last persisted.
         let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
+        let mut idle_consecutive = 0u32;
         // 78.152: what the door's shelf had moved when this cycle last
         // parked or worked — a park waits for motion past it.
         let mut park_seen = crate::tuniversal::shelf().seen();
@@ -1080,19 +1081,29 @@ impl Exchange {
             // the circuit with no destination does, so the loop paces on the
             // court's own stroke; `idle` counts those circuits on the cycle
             // line.
+            let moved = (reached, silent) != last_organs || any_moved || asked_any;
+            if moved {
+                idle_consecutive = 0;
+            } else if let Some(n) = idle_consecutive.checked_add(1) {
+                idle_consecutive = n;
+            }
             if !asked_any {
                 // The same tick, and the same ruling: no peer was due, so
                 // this cycle did nothing and must cost the processor
                 // something rather than a decrement.
-                // 78.152: THE PARK ENDS ON THE FIRST MOTION — an advance of
+                // 78.152, Issue #234: THE PARK ENDS ON THE FIRST MOTION — an advance of
                 // the final point, or an act read at the door — and is
-                // bounded by the one scheduler floor (`stroke_floor`), told
-                // to the scheduler and read by no one.
+                // bounded by idle_backoff on consecutive idle cycles.
                 idle += 1;
                 let shelf = crate::tuniversal::shelf();
-                let _ = shelf.park(park_seen, mycelium::physics::stroke_floor());
+                let floor = mycelium::physics::idle_backoff(idle_consecutive);
+                let _ = shelf.park(park_seen, floor);
             }
-            park_seen = crate::tuniversal::shelf().seen();
+            let seen_now = crate::tuniversal::shelf().seen();
+            if seen_now != park_seen {
+                idle_consecutive = 0;
+            }
+            park_seen = seen_now;
             // Written when the READING CHANGES, not every cycle. As
             // first shipped this fired on any silence and logged 17,588
             // lines in 35 minutes on one hypha: it found the deadlock
