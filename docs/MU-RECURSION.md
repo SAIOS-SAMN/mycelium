@@ -9109,8 +9109,8 @@ the word with the citations (edges) and the rounds (triangles) that
 contain it, and the stalk is the derivations, the pivot certificates and
 the demands' bodies held there. Evidence restricts to each overlap, and
 two courts' reconstructions glue over the star (consilience, 37.7), so it
-is a sheaf. The carrier is `element::ReceiptsEnvelope`, which code
-comments cite as "54.5 Road (d)"; it is to be renamed `WordStalk` (#165).
+is a sheaf. The carrier is `element::WordStalk` (78.179 §2, #165; earlier
+named `ReceiptsEnvelope`, which code comments cite as "54.5 Road (d)").
 
 ### 54.6 Binding
 

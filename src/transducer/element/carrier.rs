@@ -470,7 +470,7 @@ pub struct Element {
     ///
     /// All three rode `description` — the tape — which is precisely why the
     /// tape could not be retired. See [`crate::transducer::element::receipts`].
-    pub(crate) receipts: crate::transducer::element::ReceiptsEnvelope,
+    pub(crate) stalk: crate::transducer::element::WordStalk,
     /// THE ANCHOR FIBRE (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
     /// scene. Empty = ⊤, the unconstrained carrier (pure topological actions,
@@ -510,7 +510,7 @@ impl Element {
             sections: Vec::new(),
             torsion: Vec::new(),
             filing: crate::network::nerve::Keyed::new(),
-            receipts: crate::transducer::element::ReceiptsEnvelope::default(),
+            stalk: crate::transducer::element::WordStalk::default(),
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
@@ -715,17 +715,17 @@ impl Element {
         &self.filing
     }
 
-    /// THE RECEIPTS ENVELOPE this word carries (54.5 Road (d)): its nerve
+    /// THE WORD'S STALK this word carries (54.5 Road (d); 78.179 §2, #165): its nerve
     /// incidence and the evidence a court reconstructs it with.
-    pub fn receipts(&self) -> &crate::transducer::element::ReceiptsEnvelope {
-        &self.receipts
+    pub fn stalk(&self) -> &crate::transducer::element::WordStalk {
+        &self.stalk
     }
 
-    /// Set the envelope. The address does not move: none of this is a
+    /// Set the stalk. The address does not move: none of this is a
     /// coordinate of the form (§1.5, `form_vertex_key_ignores_citations_and_certificates`), which is
     /// the whole reason it rides here.
-    pub fn set_receipts(&mut self, receipts: crate::transducer::element::ReceiptsEnvelope) {
-        self.receipts = receipts;
+    pub fn set_stalk(&mut self, stalk: crate::transducer::element::WordStalk) {
+        self.stalk = stalk;
     }
 
     pub fn torsion(&self) -> &[TorsionCycle] {

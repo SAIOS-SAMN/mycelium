@@ -567,14 +567,16 @@ impl DerivationCite {
 }
 
 /// THE ENVELOPE: the graded nerve incidence this word stands in, and the
-/// evidence a court reconstructs it with.
+/// THE WORD'S STALK (78.179 §2, #165): the word's evidence as a sheaf
+/// over its star in the cover's nerve: the citations (edges) and rounds
+/// (triangles), derivations, certificates and demands' bodies held there.
 ///
-/// It rides the element — `Element.receipts` — because an element is a word
+/// It rides the element — `Element.stalk` — because an element is a word
 /// AS ONE MIND MINTED IT, which is the smallest carrier that has both
 /// indices of `Address × Signer`. The form is geometry and is the same
 /// complex whatever mind holds it; none of this factors through it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ReceiptsEnvelope {
+pub struct WordStalk {
     /// 1-simplices: the citations, with the citations' transitions.
     pub nerve: Vec<NerveEdge>,
     /// 2-simplices: triple overlaps with a cell attached.
@@ -596,8 +598,8 @@ pub struct ReceiptsEnvelope {
     pub witness: Vec<Address>,
 }
 
-impl ReceiptsEnvelope {
-    /// THE ENVELOPE A FORM LEAVES, taken at the mint (54.5 Road (d), B2).
+impl WordStalk {
+    /// THE STALK A FORM LEAVES, taken at the mint (54.5 Road (d), B2; 78.179 §2).
     ///
     /// The mint has the form in hand, so this is where the three evidential
     /// carriers come off it — once, at the one place a word is made — rather
@@ -606,20 +608,20 @@ impl ReceiptsEnvelope {
     /// EVERY LIST IS IN ITS OWN CONTENT ORDER (rule 15). The nerve is sorted
     /// by each edge's site key and the derivations by each one's vertex address,
     /// so two minds that read a form's vertices in different orders emit
-    /// the same envelope. `certificates` comes off a `Keyed`, which is
+    /// the same stalk. `certificates` comes off a `Keyed`, which is
     /// already in key order.
     ///
     /// NO TRIANGLES ARE EMITTED. A triple overlap is derivable from the
     /// edges; what a 2-simplex carries is an ATTACHMENT, and nothing attaches
     /// an inter-form 2-cell yet. Emitting empty triangles for every triple
     /// would be a coordinate standing for no theorem (T21(iii)).
-    pub fn of_form(f: &crate::transducer::sentence::Form) -> ReceiptsEnvelope {
+    pub fn of_form(f: &crate::transducer::sentence::Form) -> WordStalk {
         use crate::transducer::sentence::Vertex;
         // THE 1-SKELETON IS THE FORM'S COVER, taken whole (54.7 B5a). It
         // was rebuilt here by reading the `Glued` vertices for the vertices' target
         // addresses, and a vertex no longer names the form it mates with:
         // the boundary is the chart's, the incidence is the cover's.
-        let mut env = ReceiptsEnvelope { nerve: f.cover.clone(), ..ReceiptsEnvelope::default() };
+        let mut env = WordStalk { nerve: f.cover.clone(), ..WordStalk::default() };
         // THE DEMANDS' BODIES AND THE REMAINDER'S CHAIN, as evidence (AT1):
         // in the demands' own key order, which is content.
         for (at, v) in f.demands() {
@@ -782,22 +784,22 @@ impl ReceiptsEnvelope {
     /// read as the empty envelope: the writer never produces one, so its
     /// presence is a record this build cannot read and admitting it would
     /// restore exactly the collapse [`Self::to_block`] removes (rule 11).
-    pub fn from_block(b: &[u8], pos: &mut usize) -> Option<ReceiptsEnvelope> {
+    pub fn from_block(b: &[u8], pos: &mut usize) -> Option<WordStalk> {
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
         let body = b.get(*pos..*pos + n)?;
         *pos += n;
         let mut p = 0usize;
-        ReceiptsEnvelope::from_bytes(body, &mut p)
+        WordStalk::from_bytes(body, &mut p)
     }
 
-    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<ReceiptsEnvelope> {
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<WordStalk> {
         let count = |b: &[u8], p: &mut usize| -> Option<u64> {
             let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
             *p += 8;
             Some(v)
         };
-        let mut env = ReceiptsEnvelope::default();
+        let mut env = WordStalk::default();
         let n = count(b, pos)?;
         for _ in 0..n {
             env.nerve.push(NerveEdge::from_bytes(b, pos)?);

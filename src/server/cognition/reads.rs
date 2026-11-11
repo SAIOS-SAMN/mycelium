@@ -183,7 +183,7 @@ impl Court {
         let mut out = [0usize; 8];
         for (_, held) in self.basis.scoped() {
             let e = held.element();
-            let cites = || e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
+            let cites = || e.stalk().derivations.iter().any(|d| !d.generators.is_empty());
             let slot = match () {
                 _ if e.is_rewrite() => 5,
                 _ if e.is_translation() => 6,

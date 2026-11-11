@@ -142,8 +142,8 @@ pub(crate) fn serve_control(s: &mut Channel, delimited: &Delimited, context: &Co
         let envelope = |tid: &mycelium::registry::TaskCitation, task: &dialogue::PostedTask| {
             // Track 26 S4c: the posted samples go out as posted, at any rank
             // and width, each at its position in the family.
-            let e = task.envelope(*tid);
-            let b = dialogue::encode_task_envelope(&e.id, &e.train, &e.tests).ok();
+            let e = task.family(*tid);
+            let b = dialogue::encode_task(&e.id, &e.train, &e.tests).ok();
             if b.is_none() {
                 eprintln!("  task passed over: its envelope does not fit its lengths");
             }

@@ -265,7 +265,7 @@ impl Mind {
         let act = dialogue::encode_task_by_citation(&self.hypha.voice().id(), &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             entity.scenes.pulling.remove(&id);
-            let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).and_then(|e| e.section().ok()).map(|env| env.train);
+            let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task(&b)).and_then(|e| e.section().ok()).map(|env| env.train);
             let (evident, charts) = match family {
                 Some(f) => {
                     let evident = entity.scenes.read(&id, &word, &f, speaker);

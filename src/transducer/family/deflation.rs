@@ -638,7 +638,7 @@ fn mint_or_refuse(
     // on the unchecked word that a demand vertex acts on nothing.
     let held = crate::transducer::sentence::held_form(
         &crate::transducer::sentence::form_vertex_key(form),
-        &crate::transducer::element::ReceiptsEnvelope::of_form(form),
+        &crate::transducer::element::WordStalk::of_form(form),
     )
     .ok_or(ObstructionRefusal::MintAddressUndecoded)?;
     let read = form_deflation_read(&held, family, crystal, &here);

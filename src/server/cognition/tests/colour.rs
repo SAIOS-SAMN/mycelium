@@ -63,7 +63,7 @@ fn perceive_speech_admits_colour_theorem_by_composition() {
     assert_eq!(k.treasury().minted(), minted, "its admission mints nothing");
     // A FORGED CITATION: the same citation on a word it does not compose to.
     let mut forged = colour_word(&FibreRelation::of_rows(&[(3, 1)])).expect("a word");
-    forged.set_receipts(crate::transducer::element::ReceiptsEnvelope {
+    forged.set_stalk(crate::transducer::element::WordStalk {
         derivations: vec![crate::transducer::element::DerivationCite {
             vertex: forged.address(),
             generators: vec![(a.address(), a.address(), 1), (b.address(), b.address(), 1)],
@@ -96,11 +96,11 @@ fn glue_fetched_admits_colour_word_by_rederived_witness() {
     assert_eq!(home.perceive_speech_under([1; 32], &tid, std::slice::from_ref(&word), &[None]), vec![crate::anastome::dialogue::SPEECH_STOOD]);
     let held = home.provisional.get(word.address().as_bytes()).cloned().expect("provisional");
     assert_eq!(held.address(), word.address(), "the witness does not rename the word");
-    assert_eq!(held.receipts().witness, vec![crate::transducer::address::Address::from_bytes(tid)], "it carries its witness");
+    assert_eq!(held.stalk().witness, vec![crate::transducer::address::Address::from_bytes(tid)], "it carries its witness");
     // THROUGH THE RECORD: what travels is what a peer reads.
     let tape = held.to_bytes().expect("the record writes");
     let sent = Element::from_bytes(&tape, &mut 0).expect("and reads back");
-    assert_eq!(sent.receipts().witness, held.receipts().witness);
+    assert_eq!(sent.stalk().witness, held.stalk().witness);
     // A PEER HOLDING THE TASK re-derives it.
     let mut peer = Court::new();
     peer.bind_task_family(tid, family);
