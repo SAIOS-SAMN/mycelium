@@ -228,9 +228,9 @@ fn tube_of_reads_places_and_levels_on_curved_space() {
         assert_eq!(place.geo(place), Mv::scalar(Q::from_integer((-1).into())), "on the sheet, v² = −1");
     }
     assert_eq!(t.from_level, t.to_level, "one throat, one curvature: equal ends");
-    let cosh2 = crate::core::certified::cosh(&crate::core::certified::Encl::exact(Q::from_integer(2.into())), 64);
+    let cosh2 = crate::core::certified::cosh(&crate::core::certified::Certified::Exact(Q::from_integer(2.into())), 64);
     let Level::Curved(c) = &t.from_level else { panic!("a curved face") };
-    assert!(cosh2.contains(c) || *c >= cosh2.hi, "c = cosh(2m/R), never undersized");
+    assert!(cosh2.contains(c) || c >= cosh2.hi(), "c = cosh(2m/R), never undersized");
     let wide = Mouth { tube: Some(Tube { to_space: Geometry::Curved((2, 1)), ..tube() }), nonce: [9; 32], ..mouth(4, 6, one(), one(), [0; 4]) };
     let other = open(&mut k, wide, 4, 6);
     let t = k.tube_of(&other).expect("a tube");

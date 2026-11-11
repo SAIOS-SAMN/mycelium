@@ -24,16 +24,16 @@ fn q(n: i64, d: i64) -> Q {
     Q::new(BigInt::from(n), BigInt::from(d))
 }
 
-fn point(v: Q) -> Encl {
-    Encl::exact(v)
+fn point(v: Q) -> Certified {
+    Certified::Exact(v)
 }
 
 /// The enclosure holds the reference (known to far more digits than `W`)
 /// and is no wider than `2^-60`.
-fn pins(e: &Encl, reference: &str, name: &str) {
+fn pins(e: &Certified, reference: &str, name: &str) {
     let r = dec(reference);
     let slack = Q::new(BigInt::one(), BigInt::from(10).pow(45));
-    assert!(e.lo <= &r + &slack && &r - &slack <= e.hi, "{name}: {e:?} misses {reference}");
+    assert!(e.lo() <= &(&r + &slack) && &(&r - &slack) <= e.hi(), "{name}: {e:?} misses {reference}");
     assert!(e.width() <= Q::new(BigInt::one(), BigInt::one() << 60u32), "{name}: wider than 2^-60");
 }
 
@@ -90,8 +90,8 @@ fn enclosure_ignores_thread() {
 }
 
 /// Whether `e` lies strictly inside `(lo, hi)`.
-fn within(e: &Encl, lo: Q, hi: Q) -> bool {
-    e.lo > lo && e.hi < hi
+fn within(e: &Certified, lo: Q, hi: Q) -> bool {
+    e.lo() > &lo && e.hi() < &hi
 }
 
 /// The hyperbolic and inverse circular functions are enclosed: sinh, cosh
@@ -140,10 +140,10 @@ fn planck_tail_is_one_at_zero_and_agrees_with_series() {
     // The rest is the second term, ~e^{-30}/2 ≈ 2^-44 of the first; the grid
     // adds 2^-64 absolute (F(30) ≈ 4·10⁻¹⁰, so absolute, not relative).
     let gap = far.sub(&first).abs_max();
-    let allowed = &first.hi / Q::from_integer(BigInt::one() << 40u32) + Q::new(BigInt::one(), BigInt::one() << 60u32);
+    let allowed = first.hi() / Q::from_integer(BigInt::one() << 40u32) + Q::new(BigInt::one(), BigInt::one() << 60u32);
     assert!(gap < allowed, "the first term, to 2^-40 of itself and the grid");
-    let order = planck_tail(&Encl::new(q(2, 1), q(3, 1)).expect(""), W).expect("");
-    assert!(order.lo < order.hi && order.lo > Q::zero(), "an interval of x");
+    let order = planck_tail(&Certified::between(q(2, 1), q(3, 1)).expect(""), W).expect("");
+    assert!(order.lo() < order.hi() && order.lo() > &Q::zero(), "an interval of x");
 }
 
 /// D1.2 PHASE A — THE REFINEMENT ENDS ON A RATIONAL RADIUS: `π` refined past
@@ -156,5 +156,64 @@ fn separates_terminates_on_rational_radius() {
     for (r, side) in [(q(3, 1), Less), (q(333, 106), Less), (q(22, 7), Greater), (q(355, 113), Greater)] {
         assert_eq!(separates(&r, pi), Some(side), "{r}");
     }
-    assert_eq!(separates(&q(1, 3), |_| Encl::exact(q(1, 3))), Some(Equal));
+    assert_eq!(separates(&q(1, 3), |_| Certified::Exact(q(1, 3))), Some(Equal));
+}
+
+/// 78.182 ITEM 24 — A ZERO-WIDTH ENCLOSURE IS A POINT AND IS REFUSED:
+/// `Encl::new` refuses `lo = hi` and `lo > hi` and admits `lo < hi`, whose
+/// width is positive; the checked `Certified::between` answers the point
+/// `Exact` and refuses the reversed pair.
+#[test]
+fn encl_refuses_zero_width() {
+    assert_eq!(Encl::new(q(1, 3), q(1, 3)), None, "a point is no enclosure");
+    assert_eq!(Encl::new(q(1, 2), q(1, 3)), None, "reversed bounds");
+    let e = Encl::new(q(1, 3), q(1, 2)).expect("lo < hi");
+    assert!(e.width() > Q::zero() && e.round(4).width() > Q::zero(), "outward rounding keeps the width positive");
+    assert_eq!(Certified::between(q(1, 3), q(1, 3)), Some(point(q(1, 3))), "the point is exact");
+    assert_eq!(Certified::between(q(1, 2), q(1, 3)), None);
+    assert_eq!(Certified::between(q(1, 3), q(1, 2)), Some(Certified::Enclosed(e)));
+}
+
+/// AT AN ARGUMENT WHERE THE VALUE IS RATIONAL, IT IS EXACT: `exp 0 = 1`,
+/// `ln 1 = 0`, `sin 0 = 0`, `cos 0 = 1`, `tan 0 = 0`, `sinh 0 = 0`, `cosh 0 =
+/// 1`, `atan 0 = 0`, `acos 1 = 0`, `logistic 0 = ½`, `√(9/4) = 3/2`, `lnΓ 1 =
+/// lnΓ 2 = 0`, `F(0) = 1`, `8^{2/3} = 4`, `(4/9)^{−1/2} = 3/2`; and points
+/// compose to a point.
+#[test]
+fn special_argument_answers_exact() {
+    let zero = point(Q::zero());
+    let one = point(Q::one());
+    assert_eq!(exp(&zero, W), one, "exp 0");
+    assert_eq!(ln(&one, W), Some(zero.clone()), "ln 1");
+    assert_eq!(sin_cos(&zero, W), (zero.clone(), one.clone()), "sin 0, cos 0");
+    assert_eq!(cos(&zero, W), one, "cos 0");
+    assert_eq!(tan(&zero, W), Some(zero.clone()), "tan 0");
+    assert_eq!(sinh(&zero, W), zero, "sinh 0");
+    assert_eq!(cosh(&zero, W), one, "cosh 0");
+    assert_eq!(atan(&zero, W), zero, "atan 0");
+    assert_eq!(acos(&one, W), Some(zero.clone()), "acos 1");
+    assert_eq!(logistic(&zero, W), Some(point(q(1, 2))), "logistic 0");
+    assert_eq!(sqrt(&point(q(9, 4)), W), Some(point(q(3, 2))), "√(9/4)");
+    assert_eq!(lgamma(&one, W), Some(zero.clone()), "lnΓ 1");
+    assert_eq!(lgamma(&point(q(2, 1)), W), Some(zero.clone()), "lnΓ 2");
+    assert_eq!(planck_tail(&zero, W), Some(one.clone()), "F(0)");
+    assert_eq!(powq(&point(q(8, 1)), &q(2, 3), W), Some(point(q(4, 1))), "8^(2/3)");
+    assert_eq!(powq(&point(q(4, 9)), &q(-1, 2), W), Some(point(q(3, 2))), "(4/9)^(−1/2)");
+    let p = point(q(2, 3)).mul(&point(q(3, 4))).add(&point(q(1, 2))).div(&point(q(2, 1)));
+    assert_eq!(p, Some(point(q(1, 2))), "points compose to a point");
+    assert_eq!(point(q(1, 3)).round(8), point(q(1, 3)), "an exact value stays exact under round");
+}
+
+/// AN IRRATIONAL VALUE IS ENCLOSED, OF POSITIVE WIDTH: `e`, `√2`, `cos 1`,
+/// `π`, `ln 2`, `2^{1/2}` and `lnΓ 3 = ln 2` are each an `Encl`.
+#[test]
+fn irrational_value_is_enclosed_with_positive_width() {
+    let enclosed = |c: &Certified| matches!(c, Certified::Enclosed(e) if e.width() > Q::zero());
+    assert!(enclosed(&exp(&point(Q::one()), W)), "e");
+    assert!(enclosed(&sqrt(&point(q(2, 1)), W).expect("√2")), "√2");
+    assert!(enclosed(&cos(&point(Q::one()), W)), "cos 1");
+    assert!(enclosed(&pi(W)), "π");
+    assert!(enclosed(&ln2(W)), "ln 2");
+    assert!(enclosed(&powq(&point(q(2, 1)), &q(1, 2), W).expect("2^½")), "2^½");
+    assert!(enclosed(&lgamma(&point(q(3, 1)), W).expect("lnΓ 3")), "lnΓ 3");
 }

@@ -3361,8 +3361,22 @@ the naming.
 
 ### D4.8 Certified mathematics: `P_SERIES_CAP`, `w ≥ 14_000`, Poisson `w + 256`, guard bits, `stop_at`
 
-**Status.** O2 **ruled and built** (operator, 2026-11-11; 78.182 item
-25): `gamma_p`, `gamma_p_terms`, `erf`, `poisson_quantile`, `Quantile` and
+**Status.** O1 **ruled and built** (operator, 2026-11-11; 78.182 item
+24): an `Encl`'s width is strictly positive, and a zero-width enclosure is
+a point and is refused. A certified real is `Certified::{Exact(Q),
+Enclosed(Encl)}`; `Encl::new` refuses `lo ≥ hi`, the fields are private,
+and `Encl::exact` is retired. Every function takes and returns
+`Certified`, reads a point argument at its own `*_point` path, and answers
+`Exact` where the value is rational (`exp 0`, `ln 1`, `sin 0`, `cos 0`,
+`sqrt` of a rational square, `lnΓ 1`, `lnΓ 2`, `F(0)`, `powq` at a rational
+power); bounds that meet after an operation are `Exact`. The ruling
+settles what a point is, not a width bound: (e)'s absolute guards for
+`ln2`, `pi`, `sin_cos`, `tan`, `powq`, `lgamma` and `planck` stay open as
+derivations. Tests: `encl_refuses_zero_width`,
+`special_argument_answers_exact`,
+`irrational_value_is_enclosed_with_positive_width`, and the module's
+`compile_fail` doc test. O2 **ruled and built** (operator, 2026-11-11;
+78.182 item 25): `gamma_p`, `gamma_p_terms`, `erf`, `poisson_quantile`, `Quantile` and
 `SeriesRefusal` are retired. They had no caller, and they are continuous
 approximations outside the exact kernel. What follows records them as
 they were built.
@@ -3386,7 +3400,8 @@ integer or half-integer is exact through factorials
 Not built: (d) the width-relative stop (the `stop_at` margin stands, and
 (a)'s bound is for it), and (e)'s fixed-point guards for `ln2`, `pi`,
 `sin_cos`, `tan`, `powq`, `lgamma` and `planck` (O1, the width contract,
-open). Tests (`core::tests::certified`): `gamma_p_terms_equal_closed_form`,
+ruled 2026-11-11 as positive width, which leaves these guards open as
+derivations). Tests (`core::tests::certified`): `gamma_p_terms_equal_closed_form`,
 `gamma_p_refuses_short_budget_up_front`, `gamma_p_width_is_within_grid_at_large_x`,
 `erf_tail_branch_is_derived_without_cap` (`erf 101` at `w = 14 600`),
 `poisson_quantile_answers_sector_on_spent_budget`,
@@ -3591,7 +3606,8 @@ the term count, each bounded by the series' ratio):
   - **O1, the width contract of `Encl`:** absolute `≤ c·2^{-w}`, or
     "rounded outward to the grid" only. (a)–(e) are derived for the
     absolute contract; under the weaker contract only the termination
-    parts (a)–(d) bind.
+    parts (a)–(d) bind. **Ruled and built** (78.182 item 24): the width is
+    strictly positive and a point is `Certified::Exact`, never an `Encl`.
   - **O2, whether `gamma_p`, `erf` and `poisson_quantile` are to have
     callers at all.** Without one, a smaller step is to delete the caps
     and the functions' `+40` guards in favour of (a)/(c) when a caller
@@ -3724,7 +3740,7 @@ Each line names its entry and the reading or ruling that decides it.
 29. **D4.5 O1** — the off-lock share of a worker's act: decided by
     metering off-lock strokes beside `physics::spent_here`.
 30. **D4.8 O1** — the width contract of `Encl` (absolute or outward
-    rounding only): a ruling on 78.130's promise. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 24).
+    rounding only): a ruling on 78.130's promise. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 24): positive width, a point refused; **Built** (`Certified::{Exact, Enclosed}`).
 31. **D4.8 O2** — whether `gamma_p`, `erf` and `poisson_quantile` keep a
     place without a caller: a ruling naming a consumer, or deferral. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 25): retired; **Built**.
 32. **D4.8 O3** — the exact Stirling least-term derivation of `X₀`: a
