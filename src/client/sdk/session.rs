@@ -111,8 +111,9 @@ impl Session {
     /// The channel this session dials `endpoint` on.
     fn dial(&self, endpoint: &str) -> io::Result<Channel> {
         // Law 9 — every wait here is denominated in strokes (#221).
-        // Polled pace waits up to a stroke budget, reporting silence as a stall.
-        let budget = std::num::NonZeroUsize::new(crate::physics::aperture_cycle() as usize * 64);
+        // Polled pace waits up to a stroke budget (an aperture power of strokes),
+        // reporting silence as a stall while accommodating solve verification holds.
+        let budget = std::num::NonZeroUsize::new(crate::physics::aperture_cycle() as usize * 4096);
         crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Polled(budget)).map_err(|why| match why {
             crate::network::noise::NoiseRefusal::Io(e) => e,
             why => io::Error::new(io::ErrorKind::ConnectionRefused, why),
