@@ -41,7 +41,7 @@ impl Court {
         &self,
         s: &Element,
     ) -> Option<crate::transducer::address::Address> {
-        let env = s.receipts();
+        let env = s.stalk();
         for e in &env.nerve {
             if !self.ruled_contains(e.target.as_bytes()) {
                 return Some(e.target.clone());

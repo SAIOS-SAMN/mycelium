@@ -26,7 +26,7 @@
 //! A mind perceives the samples of any rank (`transduce::TaskPercept`). The
 //! word machinery that spells a percept is the alphabet's, written on one
 //! rank at one byte per symbol; its section is bridged here at the two ends
-//! (MU-SENSING §2): [`TaskEnvelope::section`] and [`PostedTask::section`]
+//! (MU-SENSING §2): [`TaskFamily::section`] and [`PostedTask::section`]
 //! at intake, [`spoken_outputs`] at speech. A sample of another rank or
 //! width is carried exactly, perceived, and refused by the section by name
 //! (`sentence::SectionRefusal`: the alphabet's rank, or the width), never
@@ -283,10 +283,10 @@ pub fn section_of(s: &Sample) -> Result<SectionSample, SectionRefusal> {
 }
 
 /// A REGISTERED TASK AS THE REGISTRY HANDS IT OVER (wire v1.2; track 26
-/// S5): the family to learn from and the inputs to answer, as samples of
-/// any rank, never the answers.
+/// S5; 78.179 §3): the family of manifolds to learn from and the inputs to
+/// answer, as samples of any rank, never the answers.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TaskEnvelope {
+pub struct TaskFamily {
     /// The task's citation (wire v1.2) — what a solve names it by.
     pub id: [u8; 32],
     /// The TRAIN pairs: the family the rule is extracted from, each pair's
@@ -297,8 +297,8 @@ pub struct TaskEnvelope {
     pub tests: Vec<Sample>,
 }
 
-/// A TASK ENVELOPE ON THE ALPHABET'S SECTION (MU-SENSING §2): the
-/// envelope's samples as the section's carrier the word machinery spells.
+/// A TASK FAMILY ON THE ALPHABET'S SECTION (MU-SENSING §2): the
+/// family's samples as the section's carrier the word machinery spells.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskSection {
     pub id: [u8; 32],
@@ -306,20 +306,20 @@ pub struct TaskSection {
     pub tests: Vec<SectionSample>,
 }
 
-impl TaskEnvelope {
-    /// THE ENVELOPE OF A TASK HELD ON THE SECTION: its train pairs and test
+impl TaskFamily {
+    /// THE FAMILY OF A TASK HELD ON THE SECTION: its train pairs and test
     /// inputs, each a sample at its position. The registry serves posted
-    /// samples (`PostedTask::envelope`).
-    pub fn of_section(id: [u8; 32], train: &[TrainPair], tests: &[SectionSample]) -> Result<TaskEnvelope, SampleWire> {
+    /// samples (`PostedTask::family`).
+    pub fn of_section(id: [u8; 32], train: &[TrainPair], tests: &[SectionSample]) -> Result<TaskFamily, SampleWire> {
         let mut pairs = Vec::with_capacity(train.len());
         for (i, (x, y)) in train.iter().enumerate() {
             pairs.push((placed(x, Split::Train, i, Member::Input)?, placed(y, Split::Train, i, Member::Output)?));
         }
         let tests = tests.iter().enumerate().map(|(i, x)| placed(x, Split::Test, i, Member::Input)).collect::<Result<_, _>>()?;
-        Ok(TaskEnvelope { id, train: pairs, tests })
+        Ok(TaskFamily { id, train: pairs, tests })
     }
 
-    /// THE ENVELOPE ON THE ALPHABET'S SECTION, or the refusal naming the
+    /// THE FAMILY ON THE ALPHABET'S SECTION, or the refusal naming the
     /// first sample off it ([`section_of`]).
     pub fn section(&self) -> Result<TaskSection, SectionRefusal> {
         let train = self.train.iter().map(|(x, y)| Ok((section_of(x)?, section_of(y)?))).collect::<Result<_, SectionRefusal>>()?;
@@ -383,12 +383,12 @@ impl PostedTask {
         train.chain(self.test.iter().map(|(x, _)| x))
     }
 
-    /// THE ENVELOPE THE POSTED TASK SERVES under its citation `id` (track
-    /// 26 S4c): the train pairs and the test inputs as posted, at any rank
+    /// THE TASK FAMILY THE POSTED TASK SERVES under its citation `id` (track
+    /// 26 S4c; 78.179 §3): the train pairs and the test inputs as posted, at any rank
     /// and width, never a withheld output. No sample passes through the
     /// alphabet's section on the way out.
-    pub fn envelope(&self, id: [u8; 32]) -> TaskEnvelope {
-        TaskEnvelope { id, train: self.train.clone(), tests: self.test.iter().map(|(x, _)| x.clone()).collect() }
+    pub fn family(&self, id: [u8; 32]) -> TaskFamily {
+        TaskFamily { id, train: self.train.clone(), tests: self.test.iter().map(|(x, _)| x.clone()).collect() }
     }
 }
 

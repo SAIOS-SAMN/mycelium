@@ -327,7 +327,7 @@ fn from_address_agrees_on_every_court_reading() {
 /// `every_court_reader_agrees_on_both_decoders` stood here. It fed the
 /// legacy tape's decoder (retired with its codec at LD3-c) and the
 /// address's `from_address` +
-/// `ReceiptsEnvelope` into the four readers the purge was about and
+/// `WordStalk` into the four readers the purge was about and
 /// asserted one verdict, over corpus and fixtures. It passed at `bceeb56`:
 /// 39 words on both decoders, 3 citing, 3 cover sites — 2 of arity 1
 /// through all four readers, 1 multi-sheeted audited without the oracle,
@@ -415,7 +415,7 @@ fn form_vertex_key_keeps_carrier_invariants() {
     for f in &forms {
         let Some(e) = as_element_form(f, [1, 0, 0, 0]) else { continue };
         checked += 1;
-        let env = e.receipts();
+        let env = e.stalk();
 
         // 1 — RETRACTION. The key is what the form IS (law 2), so decoding
         // it returns the form and re-keying that returns the key. A decode

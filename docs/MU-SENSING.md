@@ -743,8 +743,7 @@ is set by gravity:
 - **The mind perceives every task at its own rank**
   (`transduce::TaskPercept`): the default perspective, the ground, each
   sample's bodies and each pair's factorisations, held under the task's
-  citation (`Mind::perceive_envelope`, to be renamed `perceive_task`;
-  78.179 §6) before the word path (claims
+  citation (`Mind::perceive_task`; 78.179 §3, §6) before the word path (claims
   `rank_three_task_is_perceived`, `rank_one_task_is_perceived`).
 - Shear and precession in the contemplation are S9's; the carrier reads
   a resonant orbit and refuses an unbound path since S7 stage 2.
@@ -1017,14 +1016,14 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
   member]` (`samples::position`). Every reader refuses a place other than
   its position (`PlaceOffPosition`), so a family has one writing.
 - The task as the registry serves it, a family of manifolds (78.179 §3;
-  `encode_task_envelope`, `TaskEnvelope`, both to be renamed, §6 there), the posted
+  `encode_task`, `TaskFamily`, #165), the posted
   task (`encode_posted_samples`, `PostedTask`) and a solve's outputs
   (`encode_solve_spoken`, `SolveAct.outputs`; `encode_samples` for the
   seat's solve call) carry samples, read back exactly at ranks 1 to 4
   and widths 1, 2 and 4 (claim `task_round_trips_samples_of_rank_n`).
 - The mind perceives every task's samples at the samples' own rank (track 26
   S4b). The word machinery spells the alphabet's section:
-  `TaskEnvelope::section` and `PostedTask::section` admit the samples of
+  `TaskFamily::section` and `PostedTask::section` admit the samples of
   the letters' rank at width 1 as `spelled::SectionSample`, each the
   posted sample itself (track 26 S4d), and refuse any other sample by name
   (`sentence::SectionRefusal`: the alphabet's rank, or the width).
@@ -1032,7 +1031,7 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
 - **The hypha serves tasks of any rank** (track 26 S4c). The registry
   holds each task as posted (`PostedTask`), names it by that content
   alone (`TaskRegistry::post`) and serves it as posted
-  (`PostedTask::envelope`, to be renamed `PostedTask::family`; 78.179 §6);
+  (`PostedTask::family`; 78.179 §6);
   the corpus intake reads posted samples
   (`decode_posted_samples`). Only the word machinery's readers take the
   alphabet's section (`TaskRegistry::section`): a solve's reconstruction on the

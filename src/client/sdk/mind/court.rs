@@ -48,7 +48,7 @@ pub(crate) struct CourtPace {
     pub(crate) quoted: Option<YieldQuote>,
     pub(crate) pulling: bool,
     /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`),
-    /// on the alphabet's section (`TaskEnvelope::section`, track 26 S5).
+    /// on the alphabet's section (`TaskFamily::section`, track 26 S5).
     pub(crate) task: Option<(crate::anastome::dialogue::TaskSection, super::offer::Offer)>,
     /// The court height at which the registry returned an empty task envelope.
     /// When the registry holds no task, a settled mind rests and does not

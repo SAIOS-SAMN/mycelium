@@ -16,7 +16,7 @@ use crate::transducer::element::{self, Element};
 /// word's, its reconstruction is the word's integrity alone. Every other word reconstructs
 /// on the family it is bound to, as before.
 pub(crate) fn reconstructs_on_family(spoken: &Element) -> bool {
-    !spoken.receipts().derivations.iter().any(|d| d.conjugator.is_some())
+    !spoken.stalk().derivations.iter().any(|d| d.conjugator.is_some())
 }
 
 /// 78.153 — WHERE A WORD'S RECONSTRUCTION IS KEPT: its address and the task whose

@@ -122,6 +122,7 @@ adopted by a recut (track 6). Items:
 The rulings the model still needs are listed in MU-ECONOMY §12.
 
 **2. Ruled 2026-11-11, to build** ([78.182](docs/proposals/78.182-rulings-2026-11-11.md)):
+- The mesh held in memory and distributed by reconstruction, no disk I/O; a restart rejoins from peers; the genome held in minds and the courts' syllabus ([MU-ENGINEERING §8](docs/MU-ENGINEERING.md#8-holding-and-continuity), [#273](https://github.com/SAIOS-SAMN/mycelium/issues/273)).
 - Concordance draft 5 (MU-CONCORDANCE §12): 2.11 restated on
   LAW-PASSAGE v3. Mycelium exports 78.172's `PassageState` fixtures so
   xylarium reads them (item 7).

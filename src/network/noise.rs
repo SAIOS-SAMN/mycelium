@@ -89,6 +89,11 @@ pub enum NoiseRefusal {
     /// opened again without its seal. Re-pinning is an operator act.
     #[error("noise peer {peer} is pinned and answered in plaintext")]
     PinnedAnsweredPlain { peer: String, pinned: [u8; KEY_LEN] },
+    /// D1.3 O2 (78.182 item 19) — a plaintext channel with a peer off this
+    /// host: plain TCP stays for loopback and one host, and across the
+    /// host's boundary only an authenticated tube is spoken.
+    #[error("plaintext refused across the host's boundary with {peer}")]
+    PlainAcrossBoundary { peer: String },
     /// A peer address the pin store cannot hold as one line.
     #[error("noise peer address {0:?} cannot be pinned")]
     PeerLabel(String),

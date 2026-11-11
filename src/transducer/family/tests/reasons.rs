@@ -27,7 +27,7 @@ fn reasons_of_round_trips() {
     let words = form.vertices.entries().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     let demands = form.vertices.entries().filter(|(_, v)| matches!(v, Vertex::Demand { .. })).count();
     assert_eq!((r.words.len(), r.open.len()), (words, demands), "one reason per word and per demand");
-    assert_eq!(r.unsaid, e.receipts().remainder.len() as u64);
+    assert_eq!(r.unsaid, e.stalk().remainder.len() as u64);
     assert_eq!(r.measure, [1, 0, 0, 1]);
     // The court's copy: the bytes the voice puts on the wire, decoded.
     let bytes = e.to_bytes().expect("the sentence writes");
