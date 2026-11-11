@@ -59,9 +59,10 @@ fn found(k: &mut Court) {
     assert!(matches!(k.designate_reserve(&reservation.sign(&domain)), Founded::Reserved { .. }));
     super::boundary::signs(k, &r);
     let anchor = k.anchor();
-    k.treasury.genesis(verifying(&r), [3, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&r), [192, 192, 192, 192], anchor);
+    // #237: each line's bond covers what its folds move on every lane.
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
-        let bond = Bond { domain: verifying(&domain), reserve: verifying(&r), tier: verifying(line), mu: Some([1, 0, 0, 0].into()), nonce: [i; 32] };
+        let bond = Bond { domain: verifying(&domain), reserve: verifying(&r), tier: verifying(line), mu: Some([64, 64, 64, 64].into()), nonce: [i; 32] };
         assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
     }
 }

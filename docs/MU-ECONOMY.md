@@ -699,7 +699,11 @@ are ratios the physics already reads, studied off the wire and never tuned
 on it:
 - price against pressure: a listing's price is its own measure, and the
   court's read price per unit of gas is `1 + y_l/R` (§7.1);
-- bond against cover room;
+- bond against exposure (ruled 2026-11-11, #237; 78.182 item 1): a carried
+  line is admitted only while its tier's bond covers its exposure on every
+  lane, `B_l ≥ X_l`, the `X` the slash reads, and is refused
+  `Underbonded { lane, bond, exposure }` otherwise; the bond's strain reads
+  the same `X`;
 - verification's share of a release, `y/(y + R)` per lane (§5.1);
 - slash against bond: a falsified fold's tier forfeits `B·X/(B + X)` per
   lane, its exposure `X` against its bond `B`, and the challenger is paid
