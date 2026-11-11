@@ -9,7 +9,7 @@
 use crate::transducer::family::SectionSample;
 use crate::server::court_lock::held;
 
-/// The family's measured frame ratio — perception, identical across pairs
+/// The family's measured re-period — perception, identical across pairs
 /// or refused (never rounded), each circle's re-period.
 pub fn family_ratio(train: &[(SectionSample, SectionSample)]) -> Option<((usize, usize), (usize, usize))> {
     crate::transducer::family::family_ratio(train)
@@ -119,7 +119,7 @@ pub fn quote(
             held!(k).ok()?.run(|k, _| k.seal_closure(view.gens, measured))
         }
     };
-    // The items' share of the frame: its body less the quote reply's own
+    // The items' share of the envelope: its body less the quote reply's own
     // header (D1.3, D4.6).
     let budget = crate::network::wire::BODY_BUDGET.checked_sub(crate::anastome::dialogue::QUOTE_REPLY_HEADER)?;
     // NO ESCROW POOL, NO QUOTE. The pool gates whether the book is quotable

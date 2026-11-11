@@ -331,13 +331,13 @@ impl Court {
         }
     }
 
-    /// THE FRAME AN ACT ON A WORD MEASURED: the word's magnitude on whichever
+    /// THE MEASURE AN ACT ON A WORD TOOK: the word's magnitude on whichever
     /// row holds it — the basis, the cavity, provisional, the listing book
     /// or the court's federation. Where no row holds it, nothing measured
     /// it: the act's μ⃗ is read as `[0; 4]` and the clock counts an act
-    /// sealed without a frame (ACT1, 78.27 Q1(a)). It read `word_at`, which
+    /// sealed without a measure (ACT1, 78.27 Q1(a)). It read `word_at`, which
     /// does not read the listing book or the federation, so every List act
-    /// on a held listing read no frame (ACT1-reading's return R1).
+    /// on a held listing read no measure (ACT1-reading's return R1).
     pub(crate) fn measure_of(&mut self, address: &[u8]) -> [u64; 4] {
         match self.named_word(address) {
             Some(w) => w.magnitude(),
@@ -430,7 +430,7 @@ impl Court {
     /// 78.93 B0 — A REFUSAL SEALED ON THIS COURT'S LINE: the refused
     /// sentence by its fibre and the refusal's kind, so a "no" and why
     /// outlive the process that said it. The act measured nothing it admits,
-    /// so its frame is the zero reading. Its receipt, or `None` where the
+    /// so its measure is the zero reading. Its receipt, or `None` where the
     /// line could not take it — the refusal then stands in memory alone and
     /// the verdict says so by the head it answers with.
     pub(super) fn seal_refusal(&mut self, s: &Element, kind: crate::transducer::sentence::RefusalKind, voice: [u8; 32]) -> Option<KStepReceipt> {
@@ -522,7 +522,7 @@ impl Court {
     /// over the fold, then its continuity (every lane's nets sum exactly to
     /// its declared emission); admitted, the fold's coordinates — the tier,
     /// the prefix head it nets, its rows' commitment — are sealed on this
-    /// court's line and its receipt id returned. Its frame is the zero
+    /// court's line and its receipt id returned. Its measure is the zero
     /// reading: a tier's settlement moves nothing in this court's book.
     ///
     /// MU-HOSTING §5a.10 — taken reconstructed (`Reconstructed::fold`: the
@@ -606,28 +606,28 @@ impl Court {
     /// OK1 — THE COURT'S CYCLE CLOSES BY NAME (78.23 as amended): one
     /// circuit of exchange, deliberation, lapse and persist is one orbit,
     /// and its close is an act — a node of kind `Orbit` at the orbit's last
-    /// place, carrying the orbit's frame, the per-lane sum over its acts.
+    /// place, carrying the orbit's measure, the per-lane sum over its acts.
     /// `K` moves here and nowhere else.
     ///
     /// A COLLISION IS PREVENTED, NEVER NAMED AFTER: the close takes its tick
     /// from the parents it would cite, and where a peer's orbit closed at
-    /// that tick with a frame equal on every lane, this close is WITHHELD —
+    /// that tick with a measure equal on every lane, this close is WITHHELD —
     /// the orbit stays open, the next stroke's work (the docket's next
     /// question) is the separating transport, and the count goes on the
     /// clock. A close with no act since the last seals nothing.
     pub fn orbit(&mut self) -> crate::chronometry::Close {
         use crate::chronometry::Close;
-        let Some((_, frame)) = self.chain.open_orbit() else { return Close::Nothing };
+        let Some((_, measure)) = self.chain.open_orbit() else { return Close::Nothing };
         let parents = self.antichain_of(&self.pending_parents);
         let Some(at) = self.chain.next_stamp(&parents).or_else(|| self.chain.next_stamp(&[])) else {
             return Close::Nothing;
         };
-        if self.chain.collides(at.h, frame) {
+        if self.chain.collides(at.h, measure) {
             self.withheld += 1;
             return Close::Withheld;
         }
         let own_vk = self.identity;
-        match self.seal_step(ActKind::Orbit, frame, own_vk, |_| Vec::new()) {
+        match self.seal_step(ActKind::Orbit, measure, own_vk, |_| Vec::new()) {
             Some(r) => {
                 // The orbit closed: what nothing flowed to for a whole orbit
                 // lapses by `ZeroFlux` (78.37 (3)).

@@ -87,7 +87,7 @@ impl Published {
 
     /// 78.154 — READ-LEDGER answered off this reading, as
     /// `Court::ledger_page` answers it: the entries after `u`, as many as
-    /// fit one frame.
+    /// fit one envelope.
     pub fn ledger_page(&self, domain: &[u8; 32], after: u64) -> crate::anastome::dialogue::atlas::LedgerPage {
         crate::cognition::atlas::Atlas::page(self.ledgers.get(domain), after, crate::cognition::atlas::ledger_budget())
     }

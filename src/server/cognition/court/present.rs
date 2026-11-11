@@ -45,12 +45,12 @@ impl Court {
             count(&mut self.acts.fetch, &FETCH, "presentation: composes");
         }
         let answer = PresentationAnswer { read: true, cites: d.cites, composes: d.composes, residue: d.residue, holes: d.holes };
-        // The words share the frame with the answer behind them: its own
+        // The words share the envelope with the answer behind them: its own
         // writing's width is kept out of their bytes (D4.6).
         let bytes = match crate::anastome::dialogue::presentation_answer_len(&answer).and_then(|n| bytes.checked_sub(n)) {
             Some(room) => room,
             None => {
-                count(&mut self.acts.fetch, &FETCH, "presentation: answer passes the frame");
+                count(&mut self.acts.fetch, &FETCH, "presentation: answer passes the envelope");
                 0
             }
         };

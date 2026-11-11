@@ -276,7 +276,7 @@ impl Court {
         for s in self.settlements_cold.iter().chain(self.settlements.iter()) {
             let mut v = Vec::new();
             crate::trie_tape::put_key(&mut v, &s.listing);
-            // LD0 — a settlement whose chain or citations cannot be framed is
+            // LD0 — a settlement whose chain or citations cannot be delimited is
             // not written, never a partial record.
             if crate::anastome::dialogue::push_chain(&mut v, &s.chain).is_none() {
                 refused.settlements += 1;
@@ -530,7 +530,7 @@ impl Court {
 
     /// T3 — THE ERAS HELD IN HAND, each by its root's stamp: the root's height,
     /// signer and place are the key, and each other coordinate of the era
-    /// and its payload are leaves. A filed era is its own frame in the cold
+    /// and its payload are leaves. A filed era is its own record in the cold
     /// segment, and is not written here.
     fn put_eras(&self, out: &mut Vec<u8>, refused: &mut SnapshotTally) {
         let mut nodes: Keyed<Leaves> = Keyed::new();

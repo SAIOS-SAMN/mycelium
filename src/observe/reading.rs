@@ -375,8 +375,8 @@ pub const BODY_FAULTS: [&str; 8] = [
     "no versor",
     "carries nowhere",
     "no compartment",
-    "before the frame",
-    "past the frame",
+    "before the enclosure",
+    "past the enclosure",
     "wrong hue",
     "image reached in part",
     "gauge ambiguous",
@@ -481,15 +481,15 @@ impl CourtReading {
 pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("parent", "receipts admitted from a digest, cited as a parent"),
     ("backfill", "receipts admitted by back-fill, page by page"),
-    ("gap", "frames that reported a hole in a chain (the back-fill chases it)"),
-    ("stale", "frames at a K already held with the same hash"),
+    ("gap", "heads that reported a hole in a chain (the back-fill chases it)"),
+    ("stale", "heads at a K already held with the same hash"),
     ("equivocation", "two hashes at one K on one chain (47.4)"),
     ("refused_origin", "receipts of another genesis"),
     ("refused_signature", "receipts whose signature did not verify"),
     ("refused_receipt", "receipts refused on the receipts' chain"),
     ("no_section", "digests carrying no receipt section"),
     ("malformed", "receipt sections that did not parse whole"),
-    ("no_origin", "frames heard before this court adopted an origin"),
+    ("no_origin", "heads heard before this court adopted an origin"),
     ("digest_unreadable", "digests that were not one cover digest"),
     ("digest_signature", "digests whose cover signature did not verify"),
     // ACT1-hold-b (45.2, LD0's defect 3b): what the chase of a gap did.
@@ -547,7 +547,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // isolation): a citation of another signer's receipt this court does not
     // hold is counted apart from a hole in the signer's own line, and a
     // back-fill page that stops on one says so, under the CITED signer.
-    ("missing_parent", "frames citing another signer's receipt this court does not hold (the back-fill chases it)"),
+    ("missing_parent", "heads citing another signer's receipt this court does not hold (the back-fill chases it)"),
     ("backfill_missing_parent", "back-fill pages stopped on a cited receipt of this signer that this court does not hold"),
     ("backfill_missing_unrooted", "of them, citations of a signer whose fold root this court does not hold (no era proof can run)"),
     ("missing_depth", "the cited orbit against the head held for this signer at the last such stop (a level, not a count)"),
@@ -685,7 +685,7 @@ pub mod replication {
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
 /// with what it did with that signer's receipts on every axis of
-/// [`REPLICATION_AXES`]; and the frames no signer could be read off,
+/// [`REPLICATION_AXES`]; and the heads no signer could be read off,
 /// apart, never attributed to one.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Replication {
@@ -817,7 +817,7 @@ pub enum Reading {
     Adjudication(Adjudication),
     /// PH5 — a court's last phase window (78.17).
     Phase(super::CourtStage),
-    /// LD1 — the bytes per award, per receipt delta and per frame (78.22).
+    /// LD1 — the bytes per award, per receipt delta and per envelope (78.22).
     Carriage(super::CarrierTally),
     /// ACT1 — a node on the TUniversal clock, with its three counts
     /// (78.21, 78.27(1), EC1).

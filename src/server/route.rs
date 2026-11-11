@@ -42,7 +42,7 @@ pub type TaskRoutes = Arc<Vec<PairRoute>>;
 
 /// THE ROUTES OF A TASK, read: each train pair of one enclosure as its
 /// planar coboundary, in canonical order, its residue formed in the pair's
-/// frame, charted, and cut into the pieces the court lists. A pair with no
+/// re-period, charted, and cut into the pieces the court lists. A pair with no
 /// A5 form cannot be addressed, so it has no route (U14).
 ///
 /// A PAIR OF UNEQUAL ENCLOSURES HAS NO ROUTE YET. Its relation is its
@@ -60,17 +60,17 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
         }
         // One enclosure: the speech reaches every site and needs no ground.
         let Ok(chain) = crate::transducer::family::speak::residue_of(Some(a), b) else { continue };
-        let Some(frame) = crate::transducer::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()) else {
+        let Some(reperiod) = crate::transducer::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()) else {
             continue;
         };
-        let Some(residue) = crate::transducer::element::from_residue_framed(&chain, &frame) else {
+        let Some(residue) = crate::transducer::element::from_residue_framed(&chain, &reperiod) else {
             continue;
         };
         out.push(PairRoute {
             address: residue.address(),
             chart: crate::transducer::stalk::invariant_of(&residue),
             magnitude: residue.magnitude(),
-            pieces: crate::cognition::prepare_intake(&chain, &frame),
+            pieces: crate::cognition::prepare_intake(&chain, &reperiod),
         });
     }
     out

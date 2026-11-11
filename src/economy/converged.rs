@@ -5,8 +5,8 @@
 //! TO IT. Two minds' different words, one section on one scene (K1–K2):
 //! the minds whose words converged with the installed one are paid out of
 //! its COMPOSITION PREMIUM, what is left after the base and use shares are
-//! taken out (`settle_recursive`). Each is paid its share of the frame,
-//! the share its own word's section takes of each pair's frame (O1,
+//! taken out (`settle_recursive`). Each is paid its share of the enclosure,
+//! the share its own word's section takes of each pair's enclosure (O1,
 //! `family::local::word_local`); where the shares together pass what the
 //! premium holds on a lane, they split that lane in proportion to them,
 //! exactly. Where no premium is left, each convergence is held as a claim

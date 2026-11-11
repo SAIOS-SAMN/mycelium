@@ -150,11 +150,11 @@ let b = vec![(0, 0, 2u8)];
 let c = vec![(1, 0, 3u8)];
 let d = vec![(1, 0, 4u8)];
 assert!(
-    k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")),
+    k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &reperiod_of(&painted(&a), &painted(&b)).expect("the extent fits")),
     "the first corpus task lists"
 );
 assert!(
-    k.intake(&germinate(&painted(&c), &painted(&d)).unwrap(), &frame_of(&painted(&c), &painted(&d)).expect("the extent fits")),
+    k.intake(&germinate(&painted(&c), &painted(&d)).unwrap(), &reperiod_of(&painted(&c), &painted(&d)).expect("the extent fits")),
     "a second task of the same μ⃗ lists too: the corpus drew no room"
 );
 assert_eq!(k.pending.len(), 2, "both are on the book");
@@ -174,14 +174,14 @@ fn intake_lists_each_body_as_demand() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (5, 5, 3u8)];
 let b = vec![(0, 0, 2u8), (5, 5, 4u8)];
-assert!(k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")), "the first task lists");
+assert!(k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &reperiod_of(&painted(&a), &painted(&b)).expect("the extent fits")), "the first task lists");
 assert_eq!(k.pending.len(), 2, "two bodies, two demands");
 let c = vec![(0, 0, 1u8), (5, 5, 6u8)];
 let d = vec![(0, 0, 2u8), (5, 5, 8u8)];
-assert!(k.intake(&germinate(&painted(&c), &painted(&d)).unwrap(), &frame_of(&painted(&c), &painted(&d)).expect("the extent fits")), "the second task adds a body");
+assert!(k.intake(&germinate(&painted(&c), &painted(&d)).unwrap(), &reperiod_of(&painted(&c), &painted(&d)).expect("the extent fits")), "the second task adds a body");
 assert_eq!(k.pending.len(), 3, "the shared body is one listing; the new body lists");
 assert!(
-    !k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")),
+    !k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &reperiod_of(&painted(&a), &painted(&b)).expect("the extent fits")),
     "a task whose bodies are all listed adds nothing"
 );
 }

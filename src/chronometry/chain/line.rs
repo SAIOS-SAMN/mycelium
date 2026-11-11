@@ -3,10 +3,10 @@
 // cut is named by its root, and the whole is written again only where the
 // file carries as many nodes that left as nodes that stand.
 //
-//! The file is the line's magic and the key it signs as, then frames. A
-//! frame is its byte length and its records (`pack.rs`), and is the one
-//! write that carried it: a frame that runs past the file's end is a write
-//! that did not land, and the line stands on the frames before it. Its
+//! The file is the line's magic and the key it signs as, then appends. An
+//! append is its byte length and its records (`pack.rs`), and is the one
+//! write that carried it: an append that runs past the file's end is a write
+//! that did not land, and the line stands on the appends before it. Its
 //! records are the nodes filed, each packed against what the file already
 //! carries; this chain's own root, which cuts its own line at or below it;
 //! the peer nodes that left, by stamp; and an anchor on every line's last
@@ -30,7 +30,7 @@ pub(super) struct Journal {
     /// Whether the next write is the whole line: none was written, or the
     /// last did not land.
     whole: bool,
-    /// What the file already carries, which the next frame is packed
+    /// What the file already carries, which the next append is packed
     /// against.
     packer: Packer,
 }
@@ -72,7 +72,7 @@ impl Journal {
     }
 }
 
-/// ONE WRITE OF THE LINE: the whole, which replaces the file, or a frame
+/// ONE WRITE OF THE LINE: the whole, which replaces the file, or an append
 /// appended to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LineWrite {
@@ -83,7 +83,7 @@ pub struct LineWrite {
 impl LineWrite {
     /// THE WRITE LANDED AT `path` — DURABLY (78.137): the whole through a
     /// synced sibling and a rename, its directory synced, so the file is the
-    /// old line or the new one even across a crash; a frame by an append,
+    /// old line or the new one even across a crash; an append by an append,
     /// synced. `false` where it did not land on the disk.
     pub fn land(&self, path: &std::path::Path) -> bool {
         use std::io::Write;
@@ -121,8 +121,8 @@ pub fn replace_durably(path: &std::path::Path, bytes: &[u8]) -> bool {
     written && std::fs::rename(&tmp, path).is_ok() && std::fs::File::open(&dir).and_then(|d| d.sync_all()).is_ok()
 }
 
-/// A frame: its records' length, then the records.
-fn frame(body: Vec<u8>) -> Vec<u8> {
+/// An append: its records' length, then the records.
+fn append(body: Vec<u8>) -> Vec<u8> {
     let mut out = (body.len() as u64).to_le_bytes().to_vec();
     out.extend_from_slice(&body);
     out
@@ -138,7 +138,7 @@ impl ReceiptChain {
     pub const PRE_RATIONAL_LINE_MAGIC: &'static [u8; 4] = b"MYL2";
 
     /// THE WHOLE LINE as the file carries it, with the packer that wrote
-    /// it: the magic, and one frame of the key this chain signs as — the
+    /// it: the magic, and one append of the key this chain signs as — the
     /// stream's first signer — the root it stands on, every node it holds in
     /// stamp order, and the anchors. `None` where a node does not write
     /// (LD0).
@@ -154,7 +154,7 @@ impl ReceiptChain {
         }
         packer.anchors(&mut body);
         let mut out = Self::LINE_MAGIC.to_vec();
-        out.extend_from_slice(&frame(body));
+        out.extend_from_slice(&append(body));
         Some((out, packer))
     }
 
@@ -166,7 +166,7 @@ impl ReceiptChain {
     }
 
     /// WHAT THE LINE ON DISK DOES NOT YET CARRY, as the write that carries
-    /// it: a frame of the nodes filed, the root, and the peer nodes shed
+    /// it: an append of the nodes filed, the root, and the peer nodes shed
     /// since the last write — or the whole, where none was written, the
     /// last did not land, or the file would carry as many nodes that left
     /// as nodes that stand. `Ok(None)` where nothing moved; `Err` where a
@@ -200,7 +200,7 @@ impl ReceiptChain {
                     packer.root(&mut body, root);
                 }
                 packer.anchors(&mut body);
-                (frame(body), packer)
+                (append(body), packer)
             }
         };
         self.journal = Journal { dead: if whole { 0 } else { dead }, whole: false, packer, ..Journal::default() };
@@ -212,9 +212,9 @@ impl ReceiptChain {
         self.journal.whole = true;
     }
 
-    /// THE LINE READ BACK from its file: every frame applied in order, and
-    /// the held nodes settled as `from_nodes` settles them. A frame that
-    /// runs past the end did not land: the line stands on the frames before
+    /// THE LINE READ BACK from its file: every append applied in order, and
+    /// the held nodes settled as `from_nodes` settles them. An append that
+    /// runs past the end did not land: the line stands on the appends before
     /// it, the answer says so, and the next write is the whole. `None`
     /// refuses the file: not this layout, a record that does not read
     /// whole, an anchor its line does not re-derive, a node twice, or a node

@@ -124,7 +124,7 @@ pub const MEMBER_SPOKEN: u8 = 16;
 /// keyed by its root's stamp `h‖signer‖K‖i`: the root's height and place
 /// and the signer are the key; its hash, its witness, the two signatures,
 /// the identities it named, its first place and count, and its payload are
-/// the leaves. A filed era is its own frame in the cold segment and is not
+/// the leaves. A filed era is its own record in the cold segment and is not
 /// written here.
 pub const ERAS_TRIE: &str = "eras";
 pub const LEAF_ROOT_HASH: u8 = 1;

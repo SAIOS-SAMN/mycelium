@@ -417,7 +417,7 @@ fn torus_for_4(k: &mut Court) {
 /// A local throat of domain 4 by the builder line `keeper`, its ends
 /// slid to `(32, −17)` and `(5, 4)`.
 fn local(keeper: [u8; 32], freshness: u64) -> MapRecord {
-    MapRecord::LocalThroat { throat: [42; 32], keeper, frames: (slide(32, -17), slide(5, 4)), freshness }
+    MapRecord::LocalThroat { throat: [42; 32], keeper, poses: (slide(32, -17), slide(5, 4)), freshness }
 }
 
 /// A LOCAL THROAT MAPS WITHOUT A MOUTH PAIR: refused in a universe that
@@ -436,11 +436,11 @@ fn map_local_throat_reads_ends_exactly() {
     torus_for_4(&mut k);
     let mixed = Mv::scalar(q(1)).add(&base_vector(&[q(1), q(0)]));
     for bad in [Mv::zero(), mixed] {
-        let record = MapRecord::LocalThroat { throat: [42; 32], keeper: line, frames: (slide(1, 1), bad), freshness: 3 };
+        let record = MapRecord::LocalThroat { throat: [42; 32], keeper: line, poses: (slide(1, 1), bad), freshness: 3 };
         assert_eq!(map(&mut k, 4, 10, record), Mapped::Refused(MapRefusal::NotVersor));
     }
     for off in [crate::transducer::cga::translator_at(&[q(0), q(0), q(1)]), dilator(&q(2))] {
-        let record = MapRecord::LocalThroat { throat: [42; 32], keeper: line, frames: (off, slide(5, 4)), freshness: 3 };
+        let record = MapRecord::LocalThroat { throat: [42; 32], keeper: line, poses: (off, slide(5, 4)), freshness: 3 };
         assert_eq!(map(&mut k, 4, 10, record), Mapped::Refused(MapRefusal::Unplaced), "no motion of the torus");
     }
     let founder = MapAct { domain: domain(4), point: fp(10), record: local(line, 3), nonce: [1; 32] }.signed(&key(4));

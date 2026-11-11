@@ -65,7 +65,7 @@ fn count_names_every_producer_in_table() {
     }
     holds(
         &SYLLABUS,
-        &["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "deferred: reserve"],
+        &["pages", "words served", "words missed", "ended: order", "ended: budget", "ended: count", "deferred: reserve"],
     );
     holds(
         &FETCH,

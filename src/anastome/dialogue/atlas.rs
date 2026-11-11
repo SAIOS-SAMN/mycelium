@@ -374,7 +374,7 @@ pub fn dilation(u: (u64, u64), h: (u64, u64)) -> Option<(u64, u64)> {
 }
 
 /// A READ-LEDGER ANSWER: the entries after `u`, in chain order, as many as
-/// fit one frame, and whether more stand.
+/// fit one pose, and whether more stand.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct LedgerPage {
     pub entries: Vec<HeldEntry>,
@@ -470,13 +470,13 @@ pub fn local_record_citation(domain: &[u8; 32], local: &[u8; 32]) -> [u8; 32] {
 /// in-universe throat (a line's tube, core to galaxy, a long haul) —
 /// its throat key, its keeper (the builder line's key, carried inline),
 /// its two ends' DELIMITED and its `N`; both ends stand in the posting
-/// universe, each place read off its frame in the universe's declared
+/// universe, each place read off its pose in the universe's declared
 /// geometry. No 78.128 act and no court bond: the map record is all of it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MapRecord {
     Mouth { place: Place, freshness: u64 },
     Segment { kind: Segment, a: Place, b: Place, span: (u64, u64), keeper: Option<[u8; 32]> },
-    LocalThroat { throat: [u8; 32], keeper: [u8; 32], frames: (crate::transducer::cga::Mv, crate::transducer::cga::Mv), freshness: u64 },
+    LocalThroat { throat: [u8; 32], keeper: [u8; 32], poses: (crate::transducer::cga::Mv, crate::transducer::cga::Mv), freshness: u64 },
 }
 
 fn put_place(out: &mut Vec<u8>, (m, side): &Place) {
@@ -511,23 +511,23 @@ impl MapRecord {
                     }
                 }
             }
-            MapRecord::LocalThroat { throat, keeper, frames, freshness } => {
+            MapRecord::LocalThroat { throat, keeper, poses, freshness } => {
                 out.push(2);
                 out.extend_from_slice(throat);
                 out.extend_from_slice(keeper);
-                frames.0.to_bytes(out);
-                frames.1.to_bytes(out);
+                poses.0.to_bytes(out);
+                poses.1.to_bytes(out);
                 out.extend_from_slice(&freshness.to_le_bytes());
             }
         }
     }
 
-    /// A local throat's two ends read off its frames in `space`; `None`
-    /// for any other record, or where a frame is no motion of that space.
+    /// A local throat's two ends read off its poses in `space`; `None`
+    /// for any other record, or where a pose is no motion of that space.
     pub fn local_places(&self, space: &crate::anastome::dialogue::universe::Geometry) -> Option<(crate::transducer::cga::Mv, crate::transducer::cga::Mv)> {
         use crate::anastome::dialogue::tube::place_in;
         match self {
-            MapRecord::LocalThroat { frames: (f0, f1), .. } => Some((place_in(space, f0)?, place_in(space, f1)?)),
+            MapRecord::LocalThroat { poses: (f0, f1), .. } => Some((place_in(space, f0)?, place_in(space, f1)?)),
             MapRecord::Mouth { .. } | MapRecord::Segment { .. } => None,
         }
     }
@@ -550,7 +550,7 @@ impl MapRecord {
                 let (throat, keeper) = (key32(b, p)?, key32(b, p)?);
                 let f0 = crate::transducer::cga::Mv::from_bytes(b, p)?;
                 let f1 = crate::transducer::cga::Mv::from_bytes(b, p)?;
-                MapRecord::LocalThroat { throat, keeper, frames: (f0, f1), freshness: u64_at(b, p)? }
+                MapRecord::LocalThroat { throat, keeper, poses: (f0, f1), freshness: u64_at(b, p)? }
             }
             _ => return None,
         })
@@ -683,12 +683,12 @@ pub enum MapRefusal {
     Behind,
     /// 13 — the court's line could not take it.
     LineRefused,
-    /// 14 — a local throat's frame is zero or no versor.
+    /// 14 — a local throat's pose is zero or no versor.
     NotVersor,
     /// 15 — a local throat in a universe that declared no geometry.
     NoGeometry,
     /// 16 — a local throat's end does not read a place in its universe's
-    /// geometry (its frame no motion of that space).
+    /// geometry (its pose no motion of that space).
     Unplaced,
 }
 
@@ -798,7 +798,7 @@ impl HeldRecord {
 /// universe's own space, derived at the read and never stored beside it — a
 /// mouth's one place off its tube (78.140: a point of the curved space or of
 /// the torus's fundamental domain), a local throat's two ends off its
-/// frames in the universe's declared geometry (side 0, then side 1); none
+/// poses in the universe's declared geometry (side 0, then side 1); none
 /// for a segment, or where a place does not read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MapEntry {

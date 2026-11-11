@@ -9,7 +9,7 @@ use crate::transducer::element::Element;
 #[derive(Clone, Debug)]
 pub enum SolveVerdict {
     /// Reconstructed clean on every withheld pair; `pay` what it discharged there
-    /// as μ, each closed pair's share of its frame (78.170 O1, ruled
+    /// as μ, each closed pair's share of its enclosure (78.170 O1, ruled
     /// 2026-11-01), and `modes` the modes the closing form moved on the pairs
     /// it closed (78.162), each exact: S boosts, G hue modes, T null fluxes,
     /// H turns.

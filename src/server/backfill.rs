@@ -1,9 +1,9 @@
 // 47.2 step 3, 45.2 — THE BACK-FILL: a gapped signer's receipts, fetched by
 // place range and admitted by the receipts' chain, page after page until the chain
-// holds the reported frame's predecessor; and the heard head admitted again
+// holds the reported head's predecessor; and the heard head admitted again
 // once it does.
 //
-//! A gap is not a refusal: the frame that reported it is admitted again
+//! A gap is not a refusal: the head that reported it is admitted again
 //! once the chain reaches it, and nothing back-filled is cited as a
 //! parent. Only the reported head, re-admitted once its predecessor is
 //! held, is a parent (45.2); back-fill never advances a head. The pages of
@@ -35,8 +35,8 @@ pub enum Ask {
 pub type AdoptedOrigin = Option<([u8; 32], u32)>;
 
 /// WHAT ONE PASS OF THE CHASE DID: whether it admitted anything (the
-/// caller re-admits the reporting frame on that) and whether the chain
-/// REACHED the reported frame's predecessor (the gap closed) or the pass
+/// caller re-admits the reporting head on that) and whether the chain
+/// REACHED the reported head's predecessor (the gap closed) or the pass
 /// ended short — on its budget, or on a page that closed nothing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Pass {
@@ -76,7 +76,7 @@ fn prove_folded(
     }
     // THE PROOF IS WALKED PAGE BY PAGE (the wedge read on hypha b,
     // 2026-10-15): it asked one page from the citation to the root and failed
-    // wherever the era between them was longer than a frame — and every later
+    // wherever the era between them was longer than an envelope — and every later
     // fold moved the root further, so a court behind its peers' folds could
     // never prove an old citation, its signer's line never admitted again
     // (a and c admitted 0 of b's receipts in 20 hours). Each page now opens
@@ -152,7 +152,7 @@ fn close_through_root(
 }
 
 /// Fetch and admit pages of `vk`'s receipts up to `to`, the place of the
-/// reported frame's predecessor — strictly after the head this court holds
+/// reported head's predecessor — strictly after the head this court holds
 /// for the signer, or from its genesis when it holds none — until the
 /// chain holds `to` or `budget` is spent. `fetch(signer, after, upto)`
 /// answers a page of the signer's receipts strictly after `after` (from
@@ -330,10 +330,10 @@ pub fn chase(
     Pass { advanced, reached }
 }
 
-/// ONE HEARD HEAD (45.2, 47.2 step 3): the reporting frame admitted; on a
-/// gap, the chase over `fetch`, and the frame admitted again where the
-/// chase advanced. `admit` admits the one frame — the server's verified
-/// digest section, a test's verified receipt — so the same frame is what is
+/// ONE HEARD HEAD (45.2, 47.2 step 3): the reporting head admitted; on a
+/// gap, the chase over `fetch`, and the head admitted again where the
+/// chase advanced. `admit` admits the one head — the server's verified
+/// digest section, a test's verified receipt — so the same head is what is
 /// admitted both times.
 ///
 /// THE CHASE'S APERTURE IS MEASURED AGAINST THE GAP IT IS CLOSING, never a
@@ -351,7 +351,7 @@ pub fn chase(
 /// nothing is timed; the pass ends on what the chain reads.
 ///
 /// ACT1-hold-b — THE CHASE ON THE OBSERVER, per signer (CV5): the lag at
-/// the report in orbits (a level: the reported frame's orbit against the
+/// the report in orbits (a level: the reported head's orbit against the
 /// head held), whether the pass REACHED `to` or ended short of it, and
 /// whether the head was then admitted as a PARENT — the one admission that
 /// advances this court's height (45.2).
@@ -363,10 +363,10 @@ pub fn hear<E>(
     mut fetch: impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
 ) -> Result<Admitted, E> {
     let mut admitted = admit();
-    // EVERY HOLE THE FRAME NAMES IS CHASED, not only its own line's. A
-    // frame whose own line is held can still cite a parent of ANOTHER
+    // EVERY HOLE THE HEAD NAMES IS CHASED, not only its own line's. A
+    // head whose own line is held can still cite a parent of ANOTHER
     // signer this court does not hold (`MissingParent`), and this chased
-    // only `Gap`: on the development deployment, c's frames cited b's receipts a did not
+    // only `Gap`: on the development deployment, c's heads cited b's receipts a did not
     // hold, b's cited c's, and neither line ever advanced at a — "reached"
     // with nothing admitted, the tally reading both holes as one "gap"
     // (2026-09-30). Each hole is chased at most once per hearing, so a
@@ -388,7 +388,7 @@ pub fn hear<E>(
         //
         // A CITATION INTO A CLOSED ERA is proved by the era's own chain,
         // never chased as a hole below the head (78.65, 78.87 R2): proved,
-        // the frame is admitted again; unproved, it waits for the next
+        // the head is admitted again; unproved, it waits for the next
         // hearing — nothing in a closed era moves, so the answer can only
         // arrive. 78.147: asked before the hole is read as chased, since the
         // root a chase adopted is what puts a citation inside an era.
@@ -458,7 +458,7 @@ pub fn hear<E>(
         admitted = admit();
         match &admitted {
             Ok(Admitted::Parent(p)) => note_replication(Some(p.at.vk), replication::PARENT_AFTER_BACKFILL, 1),
-            // What a chase that moved or reached its hole left the frame
+            // What a chase that moved or reached its hole left the head
             // as, where it is not a parent: the line on the journal at
             // powers of two, until the reading carries it (Phase 1).
             Ok(other) => {

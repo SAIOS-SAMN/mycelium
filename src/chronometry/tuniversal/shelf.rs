@@ -12,10 +12,10 @@ use std::sync::{Condvar, Mutex};
 struct ShelfState {
     /// The greatest point final in this door's view (TU-3).
     final_point: Option<TPoint>,
-    /// The greatest point a speaker CARRIED in on a frame (TU-7): a claim the
+    /// The greatest point a speaker CARRIED in on an envelope (TU-7): a claim the
     /// door read, not a quorum's — never folded into the final point.
     heard: Option<TPoint>,
-    /// Frames read at the door, counted: an act arriving is work.
+    /// Envelopes read at the door, counted: an act arriving is work.
     acts: u64,
 }
 
@@ -95,7 +95,7 @@ impl TShelf {
         raised
     }
 
-    /// A FRAME READ AT THE DOOR, with the point its speaker carried: the act
+    /// A ENVELOPE READ AT THE DOOR, with the point its speaker carried: the act
     /// is counted and wakes a parked reader (work arrived); the point is held
     /// as heard where it advances on the heard one.
     pub fn heard_at_door(&self, point: Option<TPoint>) {
