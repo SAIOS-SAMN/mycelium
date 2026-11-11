@@ -727,7 +727,12 @@ impl Treasury {
             _ => Mu::zero(),
         };
         // pooled ≤ mu on every lane: the pool pays at most what was asked.
-        let rest = mu.shortfall(&pooled);
+        // What is minted keeps the mint's own modes (§2.5): the pool's part
+        // drawn from them in proportion, the rest held as the proof moved it.
+        let rest = match mu.draw(&pooled) {
+            Ok(rest) => rest,
+            Err(_) => mu.shortfall(&pooled),
+        };
         if rest.is_zero() {
             return pooled;
         }

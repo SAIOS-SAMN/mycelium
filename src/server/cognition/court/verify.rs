@@ -57,10 +57,17 @@ impl Court {
         organs: &[[u8; 32]],
         at: crate::economy::Anchor,
     ) -> Option<Mu> {
-        let base = self.treasury.escrow_of(address)?.mu.capped(&discharge);
+        // 78.149 (b): the closer's discharge, capped lane-wise by what the
+        // escrow held, keeping the discharge's modes (MU-ECONOMY §2.5).
+        let held = self.treasury.escrow_of(address)?.mu.clone();
+        let base = discharge.capped(&held);
         let taken = self.pay_verification(&base, organs, at);
-        // taken ≤ base on every lane: the organs' shares sum to at most it.
-        let rest = base.shortfall(&taken);
+        // taken ≤ base on every lane: the organs' shares sum to at most it;
+        // the rest keeps the discharge's modes.
+        let rest = match base.draw(&taken) {
+            Ok(rest) => rest,
+            Err(_) => base.shortfall(&taken),
+        };
         self.treasury.release_discharged(address, rest, at)
     }
 }
