@@ -113,6 +113,35 @@ impl Mu {
         Mu(Box::new(modes))
     }
 
+    /// THE PER-LANE AMOUNTS `lanes` CARRIED BY THE MODES `modes` MOVED
+    /// (MU-ECONOMY §1, §2.5): each lane's whole of `lanes` set on that lane's
+    /// modes in proportion to their amounts, exactly, so the holding reads
+    /// the ruled share on every lane and holds the motion that earned it. A
+    /// lane the modes do not reach is held at its founding mode. A mint whose
+    /// proof cites a motion carries that motion's modes this way.
+    pub fn carried_by(lanes: &Mu, modes: &Modes) -> Mu {
+        let mut out = Modes::new();
+        for (lane, amount) in (0u8..).zip(lanes.lanes()) {
+            if amount.is_zero() {
+                continue;
+            }
+            let whole = modes.lane_whole(lane);
+            match whole.is_zero() {
+                true => {
+                    if let Some(m) = Mode::founding(lane) {
+                        out.add_mode(m, amount);
+                    }
+                }
+                false => {
+                    for (m, a) in modes.modes().filter(|(m, _)| m.lane() == lane) {
+                        out.add_mode(m.clone(), a * &amount / &whole);
+                    }
+                }
+            }
+        }
+        Mu(Box::new(out))
+    }
+
     /// The modes held.
     pub fn modes(&self) -> &Modes {
         &self.0
@@ -199,14 +228,24 @@ impl Mu {
         }))
     }
 
-    /// `self` CAPPED BY `cap`, read lane by lane: on each lane the lesser of
-    /// the two wholes. A reading (§2.5).
+    /// `self` CAPPED BY `cap`, lane by lane, keeping `self`'s modes: a lane
+    /// within the cap whole; a lane past it with each of its modes scaled by
+    /// the cap's whole over the lane's, exactly, so the lane reads the cap.
     pub fn capped(&self, cap: &Mu) -> Mu {
         let (a, b) = (self.lanes(), cap.lanes());
-        founded(&std::array::from_fn(|l| match a[l] > b[l] {
-            true => b[l].clone(),
-            false => a[l].clone(),
-        }))
+        let mut out = Modes::new();
+        for (lane, (have, room)) in (0u8..).zip(a.iter().zip(b.iter())) {
+            let on = self.0.on_lanes(|l| l == lane);
+            match have > room {
+                false => out.add(&on),
+                true => {
+                    if let Some(part) = on.scaled(&(room / have)) {
+                        out.add(&part);
+                    }
+                }
+            }
+        }
+        Mu(Box::new(out))
     }
 
     /// THE HOLDING DIVIDED AT AN ASK: the part taken — on each lane the

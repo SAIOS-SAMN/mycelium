@@ -120,7 +120,9 @@ impl Court {
         match crate::transducer::sentence::from_element_form(form) {
             Some(f) => {
                 let r = crate::transducer::family::form_deflation_read(&f, family, self, &crate::transducer::alphabet::Word::identity());
-                (r.mu, r.modes)
+                // §2.5 — the discharge holds the modes the closing form
+                // moved, each lane at its ruled share.
+                (Mu::carried_by(&r.mu, &r.modes), r.modes)
             }
             None => (Mu::zero(), crate::economy::modes::Modes::new()),
         }
