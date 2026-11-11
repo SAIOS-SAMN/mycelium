@@ -3646,7 +3646,7 @@ Each line names its entry and the reading or ruling that decides it.
    register `BODY_BUDGET`): decided by a typed `MAX_WIRE` table per act
    kind.
 9. **D1.3 O2** — whether the plain TCP transport stays: a ruling on
-   MU-PRECURSORS' one-host development path. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 19).
+   MU-PRECURSORS' one-host development path. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 19): plaintext with a peer on this host only (`channel::on_this_host`), refused `PlainAcrossBoundary` across it on accept and dial; **Built**.
 10. **D1.4 O1** — where FORMAT ends for envelope reservations: decided by
     comparing each with its codec's written header length.
 11. **D1.4 O2** — whether engineering numbers join `OPEN_PHYSICS` or a

@@ -234,3 +234,36 @@ fn noise_home_keeps_key_across_open() {
     assert!(matches!(NoiseHome::open(bad.path()), Err(NoiseRefusal::KeyFileMalformed(_))));
     assert_eq!(std::fs::read(bad.path().join(KEY_FILE)).unwrap(), vec![1u8; KEY_LEN - 1]);
 }
+
+/// D1.3 O2 (78.182 item 19) — PLAINTEXT STAYS ON THE HOST: a loopback peer,
+/// or a peer at the socket's own address, stands on this host; any other
+/// address is across the host's boundary, where only Noise is spoken.
+#[test]
+fn plaintext_peer_stands_on_this_host_only() {
+    use crate::network::channel::on_this_host;
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    let own = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 7));
+    assert!(on_this_host(IpAddr::V4(Ipv4Addr::LOCALHOST), own), "loopback, v4");
+    assert!(on_this_host(IpAddr::V6(Ipv6Addr::LOCALHOST), own), "loopback, v6");
+    assert!(on_this_host(own, own), "this host reached by its own address");
+    assert!(!on_this_host(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 8)), own), "a neighbour is across the boundary");
+    assert!(!on_this_host(IpAddr::V4(Ipv4Addr::new(203, 0, 113, 5)), own), "a remote host is across the boundary");
+}
+
+/// A plaintext dial and accept over loopback stand: the one-host path the
+/// rule keeps (D1.3 O2).
+#[test]
+fn plaintext_over_loopback_is_spoken() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
+    let at = listener.local_addr().expect("addr").to_string();
+    let door = std::thread::spawn(move || {
+        let (tcp, _) = listener.accept().expect("accept");
+        let mut paced = crate::network::channel::Paced::new(tcp, crate::network::channel::Pace::Blocking);
+        let _ = paced.take_head::<{ HEAD }>();
+        drop(paced);
+    });
+    let dialled = crate::network::channel::dial(&at, None, crate::network::channel::Pace::Blocking);
+    assert!(matches!(dialled, Ok(crate::network::channel::Channel::Plain(_))), "a loopback peer is dialled in plaintext");
+    drop(dialled);
+    door.join().expect("the door ends");
+}

@@ -100,7 +100,7 @@ Mycelium's current types, admission path and treasury.
 
 | # | Component | Track | Effort | Status |
 |---|---|---|---|---|
-| 3.1 | Noise XX encrypted transport | 5 | Medium | Landed (opt-in per peer) |
+| 3.1 | Noise XX encrypted transport | 5 | Medium | Landed (opt-in per peer; plaintext on one host only, D1.3 O2) |
 | 3.2 | ~~Mutation audit~~ | 14 | — | Retired |
 | 3.3 | Named refusals in `learn_form` | 7 | Small | In progress |
 | 3.4 | Integer homology and invariant factors | 18, 19, 12 | Medium | Specified |
