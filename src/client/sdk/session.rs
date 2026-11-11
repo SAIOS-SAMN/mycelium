@@ -722,8 +722,16 @@ impl Session {
                 body
             }
         };
-        let Some(e) = crate::anastome::dialogue::Expression::read(body) else {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply is no expression: its point does not read"));
+        // #235 — a reply at a wire version this session does not speak is
+        // refused by name, before its act is read.
+        let e = match crate::anastome::dialogue::Expression::heard(body) {
+            Ok(e) => e,
+            Err(crate::anastome::dialogue::Unheard::Version { spoken, served }) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, format!("the door speaks wire {spoken:#06x}; this session speaks {served:#06x}")));
+            }
+            Err(crate::anastome::dialogue::Unheard::Malformed) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply is no expression: its version, count or point does not read"));
+            }
         };
         self.hear_point(e.point);
         Ok(e.act)

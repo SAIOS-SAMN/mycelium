@@ -224,3 +224,25 @@ fn plaintext_peer_named_not_hidden() {
     assert_eq!(back, mycelium::observe::Reading::Channels(Box::new(reading)));
     assert_eq!(p, out.len());
 }
+
+/// #235 — AN ACT AT ANOTHER WIRE VERSION IS REFUSED BY NAME AT THE DOOR,
+/// before its act is read: the door reads no act, answers refused at its own
+/// version, and closes; the speaker's reader hears that answer, which names
+/// the door's version.
+#[test]
+fn door_refuses_an_act_at_another_wire_version() {
+    use std::io::{Read, Write};
+    let (addr, served) = door(None, 1, vec![0x01]);
+    let mut act = mycelium::anastome::dialogue::Expression::of(vec![0x53, 1, 2], None).write().expect("an expression");
+    let n = act.len();
+    act[n - 2..].copy_from_slice(&0x0200u16.to_le_bytes());
+    let mut tcp = std::net::TcpStream::connect(&addr).expect("dial");
+    tcp.write_all(&Delimited { body: act }.encode().expect("an envelope")).expect("written");
+    let mut reply = Vec::new();
+    tcp.read_to_end(&mut reply).expect("the door answers and closes");
+    let (envelope, _) = Delimited::decode(&reply).expect("one envelope");
+    let heard = dialogue::Expression::heard(envelope.body).expect("the refusal is spoken at the door's version");
+    let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
+    assert_eq!(heard.act, dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]), "answered refused");
+    assert_eq!(served.join().expect("the door"), vec![Err(String::from("no envelope read"))], "no act was read");
+}
