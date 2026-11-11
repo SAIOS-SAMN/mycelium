@@ -9,7 +9,7 @@
 //! — and what it holds is a `CourtGuard`, whose only way in is `CourtGuard::run(|k,
 //! reads| …)`: the court and the hold's one stroke together.
 
-pub(crate) use mycelium::server::court_lock::{holding, stepping, yield_to_waiters};
+pub(crate) use mycelium::server::court_lock::{deferred_here, holding, stepping, yield_to_waiters};
 use mycelium::server::court_lock::CourtGuard;
 use mycelium::cognition::Court;
 use std::sync::Mutex;
@@ -56,9 +56,10 @@ pub(crate) fn step(name: &'static str) {
     mycelium::server::court_lock::step(name);
 }
 
-/// Take the court at site `at`, with the hold's one stroke; `Err(())` where
-/// the lock is poisoned, as `lock()` refuses.
-pub(crate) fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>, ()> {
+/// Take the court at site `at`, with the hold's one stroke; refused where
+/// the lock is poisoned, or `Deferred` where the hold it waits behind has
+/// spent past its stroke (78.182 item 5).
+pub(crate) fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>, mycelium::server::court_lock::Refused> {
     mycelium::server::court_lock::lock(m, at)
 }
 

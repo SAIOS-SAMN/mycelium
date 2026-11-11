@@ -81,3 +81,55 @@ fn confirm_peer_holds_on_resumes_past_reached_stratum() {
     k.confirm_peer_holds_on(&remote, peer, &mut crate::physics::Physics::default().stroke_n(3));
     assert!(k.confirm_cursor.get(&peer).is_none(), "round once: the next starts from the first");
 }
+
+/// 78.182 item 5 — A WAITER READS THE HOLD IT WAITS BEHIND: a hold that has
+/// spent past its stroke answers the waiter `Deferred` at once, naming the
+/// holder's site, its spent reads and its stroke; the holder is flagged and
+/// its next metered read is refused; let go, the court is taken again.
+#[test]
+fn waiter_behind_overrun_hold_is_deferred_and_holder_preempted() {
+    let court: &'static Mutex<Court> = Box::leak(Box::new(Mutex::new(Court::new())));
+    let (held_tx, held_rx) = std::sync::mpsc::channel();
+    let (go_tx, go_rx) = std::sync::mpsc::channel::<()>();
+    let holder = std::thread::spawn(move || {
+        let mut h = held!(court).expect("the court");
+        let stroke = u64::try_from(h.remaining()).expect("a stroke counts in u64");
+        h.run(|_, reads| while reads.spend() {});
+        assert!(crate::physics::Physics::default().stroke_n(1).spend(), "a read past the stroke, on a token of its own");
+        held_tx.send(stroke).expect("the test waits");
+        go_rx.recv().expect("the test answers");
+        let after = crate::physics::Physics::default().stroke_n(1).spend();
+        drop(h);
+        let free = crate::physics::Physics::default().stroke_n(1).spend();
+        (after, free)
+    });
+    let stroke = held_rx.recv().expect("the holder holds");
+    let before = deferred_here();
+    match held!(court) {
+        Err(Refused::Deferred { holder, spent, stroke: s, .. }) => {
+            assert_eq!((spent, s), (stroke + 1, stroke), "the holder's reads and its stroke, as the meter read them");
+            assert!(holder.is_some_and(|h| h.contains("tests/meter.rs")), "the holding site named");
+        }
+        Err(Refused::Poisoned) => panic!("the lock is not poisoned"),
+        Ok(_) => panic!("a hold past its stroke is never waited behind"),
+    }
+    assert_eq!(deferred_here(), before + 1, "the deferral counted on the waiting thread");
+    go_tx.send(()).expect("the holder waits");
+    let (after, free) = holder.join().expect("the holder ends");
+    assert!(!after, "the flagged holder is refused its next metered read");
+    assert!(free, "let go, its thread reads again");
+    assert!(held!(court).is_ok(), "the court is taken again once let go");
+}
+
+/// A WAITER BEHIND A HOLD WITHIN ITS STROKE WAITS, and takes the court once
+/// it is let go: a release is never missed between the try and the park.
+#[test]
+fn waiter_behind_hold_within_stroke_takes_court_on_release() {
+    let court: &'static Mutex<Court> = Box::leak(Box::new(Mutex::new(Court::new())));
+    let h = held!(court).expect("the court");
+    let waiter = std::thread::spawn(move || held!(court).map(|g| g.remaining()).is_ok());
+    // The waiter is parked or about to; the hold read nothing.
+    std::thread::yield_now();
+    drop(h);
+    assert!(waiter.join().expect("the waiter ends"), "the waiter took the court once it was let go");
+}
