@@ -98,9 +98,10 @@ impl Treasury {
     /// escrow.
     pub fn release_discharged(&mut self, address: &[u8], discharge: impl Into<Mu>, at: Anchor) -> Option<Mu> {
         let Escrowed { voices, mu, .. } = self.release_award(address)?;
-        // The claim capped by the discharge is the payment — lane-wise the
-        // lesser of the two; what the claim held above it is never issued.
-        let paid = mu.capped(&discharge.into());
+        // The discharge capped by the claim is the payment — lane-wise the
+        // lesser of the two, holding the discharge's modes (MU-ECONOMY §2.5);
+        // what the claim held above it is never issued.
+        let paid = discharge.into().capped(&mu);
         self.mint_claim(&voices, paid.clone(), at);
         Some(paid)
     }

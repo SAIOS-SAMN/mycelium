@@ -88,3 +88,23 @@ fn mu_parts_shortfalls_and_moves_are_exact() {
     );
     assert_eq!(m.occupied(), vec![0, 1, 3]);
 }
+
+/// MU-ECONOMY §2.5 — A MINT CARRIES ITS PROOF'S MODES: each lane's ruled
+/// amount is set on that lane's modes in proportion, so the holding reads
+/// the same lane by lane and holds the motion; a lane the motion does not
+/// reach stays at its founding mode.
+#[test]
+fn carried_by_sets_each_lane_on_its_modes_in_proportion() {
+    use crate::economy::modes::{Mode, Modes};
+    let mut moved = Modes::founding(3, q(1, 1)).expect("H");
+    moved.add_mode(Mode::Founding { lane: 3 }, q(1, 1));
+    let hue_move = Mode::Hue(crate::transducer::sentence::presentation::GaugeMode::Move(1, 2));
+    moved.add_mode(hue_move.clone(), q(3, 1));
+    let lanes = mu([(1, 2), (2, 3), (0, 1), (5, 1)]);
+    let held = Mu::carried_by(&lanes, &moved);
+    assert_eq!(held.lanes(), lanes.lanes(), "every lane reads its ruled share");
+    assert_eq!(held.modes().amount_of(&hue_move), Some(&q(2, 3)), "G's share on the hue move that moved it");
+    assert_eq!(held.modes().amount_of(&Mode::Founding { lane: 0 }), Some(&q(1, 2)), "S, which no mode reached, at its founding mode");
+    assert_eq!(held.modes().amount_of(&Mode::Founding { lane: 3 }), Some(&q(5, 1)));
+    assert!(Mu::carried_by(&Mu::zero(), &moved).is_zero(), "nothing carried, nothing held");
+}
