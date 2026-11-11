@@ -1710,6 +1710,16 @@ circuit period = strokes − strokes at the last circuit
 The one scheduler floor is told to the operating system; every bound on
 work is counted in strokes or in final-point advances.
 
+**The idle court** (ruled 2026-11-11, #234; 78.182 item 6) parks with no
+bound until the next motion: an act heard at the door, an act judged, or a
+final point advanced (`TShelf::park_until_moved`, `TShelf::judged`). Its
+next due event is always one. A peer is due on this court's K, its roots or
+the final point; the tick is signed where it moved; the reserve regenerates
+at an orbit's close; a parent is fetched on an ask. So an idle court
+spends nothing while none comes. A court still booting (its genesis not
+yet written or adopted) parks one floor at a time, since its own cycles
+write the first receipt and ask the peers that give it its origin.
+
 Sources: MU-RECURSION 47.5, 45.7, 78.152, PH1. Code:
 `src/physics/calibration.rs::stroke_floor`, `::idle_park`,
 `src/physics/lambda.rs::from_transport`, `::persist_dwell`,

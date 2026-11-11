@@ -1085,12 +1085,24 @@ impl Exchange {
                 // this cycle did nothing and must cost the processor
                 // something rather than a decrement.
                 // 78.152: THE PARK ENDS ON THE FIRST MOTION — an advance of
-                // the final point, or an act read at the door — and is
-                // bounded by the one scheduler floor (`stroke_floor`), told
-                // to the scheduler and read by no one.
+                // the final point, or an act read at the door (every act heard
+                // there is counted on the shelf). #234 (ruled 2026-11-11,
+                // option (a)): the next due event is the next motion — a peer
+                // is due only on one (this court's K, its roots, the final
+                // point), the tick is signed only where it moved, the reserve
+                // regenerates at an orbit's close and a parent is fetched on an
+                // ask — so an idle court parks until it, unbounded, and burns
+                // nothing while none comes. A court still BOOTING — its genesis
+                // not yet written, or not yet adopted from a peer — has work
+                // its own cycles do (the first receipt, the asks that adopt
+                // the origin), so it parks one scheduler floor at a time
+                // until it is written.
                 idle += 1;
                 let shelf = crate::tuniversal::shelf();
-                let _ = shelf.park(park_seen, mycelium::physics::stroke_floor());
+                let _ = match genesis_written.load(std::sync::atomic::Ordering::Relaxed) {
+                    true => shelf.park_until_moved(park_seen),
+                    false => shelf.park(park_seen, mycelium::physics::stroke_floor()),
+                };
             }
             park_seen = crate::tuniversal::shelf().seen();
             // Written when the READING CHANGES, not every cycle. As
