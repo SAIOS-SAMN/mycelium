@@ -28,7 +28,7 @@
 
 use crate::transducer::cga::Mv;
 use num_rational::BigRational;
-use num_traits::{Signed, Zero};
+use num_traits::{One, Signed, Zero};
 
 type Q = BigRational;
 
@@ -122,27 +122,34 @@ impl PivotFibre {
         crate::transducer::cga::FlowPoint::of_motion(&self.charge(r))
     }
 
-    /// THE SQUARED LENGTH between the pivots, `d² = −2 Pᵢ·Pⱼ` at the points'
-    /// own weights — read off the inner product, never a sum of squares.
-    pub fn length2(&self) -> Q {
-        let weight = |p: &Mv| -p.geo(&crate::transducer::cga::e_inf()).scalar_part();
-        let (wi, wj) = (weight(&self.pi), weight(&self.pj));
-        -Q::from_integer(2.into()) * self.pi.geo(&self.pj).scalar_part() / (wi * wj)
+    /// THE FIRST-DEGREE REACH between the pivots:
+    /// `r_{ij} = Σ_k |x_{i,k} - x_{j,k}|` across the active planes, exact.
+    pub fn reach(&self) -> Q {
+        match axial_reach(&self.pi, &self.pj) {
+            Some(r) => r,
+            None => Q::zero(),
+        }
     }
 
-    /// 78.74 — THE TETHER'S STRENGTH: its binding, `mᵢ mⱼ / d²`, the
-    /// inverse-square law, exact. Of two tethers to one node, the stronger
-    /// is read by comparing two rationals — never a bool, connected or not.
+    /// THE REACH POLE `t_{ij} = r_{ij} / (m_i + m_j)` against the mutual hold
+    /// `M_{ij} = m_i + m_j`. Invariant under uniform calibre dilation.
+    pub fn pole(&self) -> Q {
+        self.reach() / (&self.mi + &self.mj)
+    }
+
+    /// 78.74 (amended) — THE TETHER'S STRENGTH: the first-degree held face share
+    /// `c_{ij} = (m_i + m_j) / (r_{ij} + m_i + m_j) = 1 / (1 + t_{ij})` in (0, 1].
+    /// Eliminates the 1/d² continuum singularity (bounded at 1 at contact).
     pub fn strength(&self) -> Q {
-        &self.mi * &self.mj / self.length2()
+        let t = self.pole();
+        Q::one() / (Q::one() + t)
     }
 
-    /// 78.74 — THE TETHER'S CAPACITY: the reach of its levels, the switch's
-    /// own square `S² = mᵢ mⱼ d²`. Strength × capacity = `(mᵢ mⱼ)²`: the two
-    /// trade length against binding at fixed masses.
-    pub fn capacity(&self) -> Q {
-        let s = self.switch();
-        s.geo(&s).scalar_part()
+    /// THE TETHER'S FLUIDITY: the open face share
+    /// `d_{ij} = r_{ij} / (r_{ij} + m_i + m_j) = t_{ij} / (1 + t_{ij})` in [0, 1).
+    /// Satisfies `c_{ij} + d_{ij} = 1` identically on the tether.
+    pub fn fluidity(&self) -> Q {
+        Q::one() - self.strength()
     }
 
     /// 78.74 — THE TORQUE A GENERATOR PUTS ON THIS TETHER, squared: its
@@ -156,21 +163,20 @@ impl PivotFibre {
         t.geo(&t.reverse()).scalar_part()
     }
 
-    /// THE FIBRATION'S PROJECTION `π` (78.74): the mass-weighted level a
-    /// point `X` stands on — the one `μ` with `X` on `μ·mⱼPᵢ − mᵢPⱼ`,
-    /// `μ = mᵢ(X·Pⱼ) / (mⱼ(X·Pᵢ))`. Read at points' own weights it is
-    /// `mᵢd²ⱼₓ / (mⱼd²ᵢₓ)`, which is `strength(i, X) / strength(j, X)`: the
-    /// ratio of the two pivots' pulls on `X`. The SWITCH is the level `1`,
-    /// where the pulls balance; above it `Pᵢ` pulls harder, below it `Pⱼ`.
-    /// The levels are the fibres of `π` (Apollonian spheres), the field
-    /// lines its sections (circles through both pivots). `None` at a pivot,
-    /// which every level passes through.
+    /// 78.74 (amended) — THE FIBRATION'S PROJECTION `π`: the ratio of the two
+    /// pivots' first-degree reach poles on `X`:
+    /// `μ = t_{jX} / t_{iX} = (m_i · r_{jX}) / (m_j · r_{iX})`.
+    /// At the switch (first-degree equipotential balance `c(i, X) = c(j, X)`),
+    /// `μ = 1`. Where `P_i` pulls harder (`c(i, X) > c(j, X)`), `μ > 1`.
+    /// Where `P_j` pulls harder (`c(i, X) < c(j, X)`), `μ < 1`.
+    /// `None` where `X` is at either pivot (`r_{iX} = 0` or `r_{jX} = 0`).
     pub fn project(&self, x: &Mv) -> Option<Q> {
-        let (xi, xj) = (x.geo(&self.pi).scalar_part(), x.geo(&self.pj).scalar_part());
-        if xi.is_zero() || xj.is_zero() {
+        let ri = axial_reach(&self.pi, x)?;
+        let rj = axial_reach(&self.pj, x)?;
+        if ri.is_zero() || rj.is_zero() {
             return None;
         }
-        Some(&self.mi * xj / (&self.mj * xi))
+        Some((&self.mi * rj) / (&self.mj * ri))
     }
 
     /// THE FIELD LINE THROUGH `X`: the circle through both pivots and `X`,
@@ -285,4 +291,42 @@ pub fn shape_of(pivots: &[Mv], n: usize) -> Shape {
         true => Shape::Stable(round),
         false => Shape::Determined(round),
     }
+}
+
+/// The base coordinates of a conformal point across its active axes.
+fn axial_coords(p: &Mv) -> Option<Vec<Q>> {
+    let alpha = -p.geo(&crate::transducer::cga::e_inf()).scalar_part();
+    if alpha.is_zero() {
+        return None;
+    }
+    let mut max_axis = 3;
+    for i in 4..=usize::from(crate::transducer::cga::MAX_N) {
+        if let Some(mask) = crate::transducer::cga::base_axis(i) {
+            if !p.coeff(mask).is_zero() {
+                max_axis = i;
+            }
+        }
+    }
+    crate::transducer::cga::base_at(p, max_axis)
+}
+
+/// The first-degree L1 axial reach between two points:
+/// `r = Σ_k |x_{1,k} - x_{2,k}|` in Q_>=0 across the active planes.
+pub fn axial_reach(p1: &Mv, p2: &Mv) -> Option<Q> {
+    let c1 = axial_coords(p1)?;
+    let c2 = axial_coords(p2)?;
+    let len = c1.len().max(c2.len());
+    let mut sum = Q::zero();
+    for i in 0..len {
+        let x1 = match c1.get(i) {
+            Some(v) => v.clone(),
+            None => Q::zero(),
+        };
+        let x2 = match c2.get(i) {
+            Some(v) => v.clone(),
+            None => Q::zero(),
+        };
+        sum += (x1 - x2).abs();
+    }
+    Some(sum)
 }

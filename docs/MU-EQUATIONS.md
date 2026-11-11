@@ -1195,10 +1195,11 @@ Code: `src/physics/equilibrium.rs::coupling`, `::torque`, `::net_torque`,
 switch          S = mⱼ Pᵢ − mᵢ Pⱼ          (balance: mⱼ X·Pᵢ = mᵢ X·Pⱼ)
 levels          S(λ) = λ Pᵢ − Pⱼ
 charge          S(r) S(1)                  (a boost fixing both pivots, carrying level μ to μ r²)
-squared length  d² = −2 Pᵢ · Pⱼ
-strength        mᵢ mⱼ / d²
-capacity        S² = mᵢ mⱼ d²              strength × capacity = (mᵢ mⱼ)²
-projection      μ = mᵢ (X·Pⱼ) / (mⱼ (X·Pᵢ))
+reach           r = Σ_k |x_{i,k} − x_{j,k}|
+pole            t = r / (mᵢ + mⱼ)
+strength        c = (mᵢ + mⱼ) / (r + mᵢ + mⱼ) = 1 / (1 + t)
+fluidity        d = r / (r + mᵢ + mⱼ) = t / (1 + t)   (c + d = 1)
+projection      μ = (mᵢ r_{jX}) / (mⱼ r_{iX}) = t_{jX} / t_{iX}
 field line      Pᵢ ∧ Pⱼ ∧ X;    Z on it ⇔ Pᵢ ∧ Pⱼ ∧ X ∧ Z = 0
 split           B = Pᵢ ∧ Pⱼ,  B² = β² > 0:   G = c B + T + L,  c = ⟨G B⟩₀ / β²
                 T commutes with B (torsion, no work); L anticommutes (lift)
@@ -1207,8 +1208,8 @@ torque²         ⟨T T̃⟩₀
 
 A fibre between two weighted pivots, everything read off the pair.
 
-Sources: MU-RECURSION 78.74. Code: `src/physics/pivot_fibre.rs::Fibre`
-(`switch`, `level`, `charge`, `length2`, `strength`, `capacity`,
+Sources: MU-RECURSION 78.74 (amended). Code: `src/physics/pivot_fibre.rs::PivotFibre`
+(`switch`, `level`, `charge`, `reach`, `pole`, `strength`, `fluidity`,
 `torque2`, `project`, `field_line`, `on_field_line`, `split`).
 
 #### 5.13 The white-hole source
