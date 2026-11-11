@@ -632,6 +632,10 @@ state with no exact representation does not cross.
 
 ### 5a.4 Regulation: the Concordance signed
 
+How the Concordance becomes the engine's law, clause by clause, is
+described once, in [Concordance §0.2](MU-CONCORDANCE.md#02-how-the-concordance-rules-the-engines-laws-clause-by-clause);
+this section keeps the boundary's view and the build status of each part.
+
 The universal laws bind a universe at its boundary because its kernel
 signs the Concordance (§0 SIGNING). The signature is the kernel's
 acceptance of the boundary's regulation, and it is given **clause by
