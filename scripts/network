@@ -20,7 +20,7 @@
 #
 # Usage: scripts/network [DIR] [BASE_PORT] [MINDS]
 #   DIR        where the homes are written (default:
-#              $TMPDIR/mycelium-network, cleared first)
+#              $TMPDIR/mycelium-network, cleared first unless resumed)
 #   BASE_PORT  the hyphae serve on BASE_PORT, +1, +2 (default 7800)
 #   MINDS      how many sovereign minds (default 3), each bootstrapped on
 #              hypha a, b, c in turn
@@ -35,7 +35,14 @@
 #                            node's resident memory and CPU time
 #   MYCELIUM_NETWORK_WORK    how many tasks the SDK client (the worker whose
 #                            solves are paid) asks of each hypha in turn,
-#                            under one key (default 30, the corpus)
+#                            under one key (default 8, as scripts/quickstart;
+#                            30 is the corpus; 0 runs no worker)
+#   MYCELIUM_NETWORK_RESUME  1: start the nodes on the homes DIR already holds
+#                            (a network this script provisioned and stopped),
+#                            keeping their keys, genesis, ledgers and the
+#                            house's domain: nothing is provisioned, no
+#                            genesis is minted, the house founds nothing again,
+#                            and the worker runs only where WORK is set
 #   MYCELIUM_NODE_MEMORY     a node's MemoryMax (default 1G)
 #   MYCELIUM_NODE_CPU        a node's CPUQuota (default 50%)
 #   MYCELIUM_SEAT_TARGET     a target directory whose release build holds
@@ -58,6 +65,7 @@ CORPUS_ROOT="${MYCELIUM_CORPUS:-$ROOT/data/arc-agi-2}"
 TARGET="${CARGO_TARGET_DIR:-$ROOT/target}"
 SEAT_TARGET="${MYCELIUM_SEAT_TARGET:-$TARGET}"
 FOR="${MYCELIUM_NETWORK_FOR:-}"
+RESUME="${MYCELIUM_NETWORK_RESUME:-}"
 FRAME="${MYCELIUM_NETWORK_FRAME:-300}"
 MEM="${MYCELIUM_NODE_MEMORY:-1G}"
 CPU="${MYCELIUM_NODE_CPU:-50%}"
@@ -65,7 +73,8 @@ SRV="$TARGET/release/mycelium-server"
 CLI="$TARGET/release/mycelium-client"
 HOUSE="$TARGET/release/examples/house"
 EX="$TARGET/release/examples/client"
-WORK="${MYCELIUM_NETWORK_WORK:-30}"
+WORK="${MYCELIUM_NETWORK_WORK:-${RESUME:+0}}"
+WORK="${WORK:-8}"
 SEATS="$SEAT_TARGET/release/examples/seats"
 SEAT_CLI="$SEAT_TARGET/release/mycelium-client"
 DECODE="$TARGET/release/mycelium-arc-agi"
@@ -113,13 +122,25 @@ stop() {
 trap stop EXIT
 trap 'exit 0' INT TERM
 
-rm -rf "$DIR"; mkdir -p "$DIR/corpus" "$DIR/frames"
-"$DECODE" decode "$CORPUS_ROOT/training" "$DIR/corpus" 30 > /dev/null || exit 1
 PORT_a=$BASE; PORT_b=$((BASE + 1)); PORT_c=$((BASE + 2))
 port() { eval "echo \$PORT_$1"; }
 HYPHAE=(a b c)
 MINDLIST=()
 for i in $(seq 1 "$MINDS"); do MINDLIST+=("m$i"); done
+if [ -n "$RESUME" ]; then
+  for h in "${HYPHAE[@]}" "${MINDLIST[@]}"; do
+    if [ ! -d "$DIR/$h" ]; then echo "nothing to resume: $DIR/$h is not a home this script provisioned"; exit 2; fi
+  done
+  mkdir -p "$DIR/frames"
+  # The bind a home was provisioned on is in its mesh record (`--check`).
+  for h in "${HYPHAE[@]}"; do
+    if ! "$SRV" --home "$DIR/$h" --check 2>/dev/null | grep -q "bind Some(\"127.0.0.1:$(port "$h")\")"; then
+      echo "hypha $h's home does not bind 127.0.0.1:$(port "$h"): resume on the ports it was provisioned on"; exit 2
+    fi
+  done
+else
+rm -rf "$DIR"; mkdir -p "$DIR/corpus" "$DIR/frames"
+"$DECODE" decode "$CORPUS_ROOT/training" "$DIR/corpus" 30 > /dev/null || exit 1
 
 say "1. identities: one key per hypha, per mind, for the seated mind and the house"
 for n in "${HYPHAE[@]}"; do "$SRV" --home "$DIR/$n" --init || exit 1; done | tee "$DIR/init.txt"
@@ -141,6 +162,24 @@ say "3. the corpus, signed by hypha a and registered on every hypha"
 "$SRV" --home "$DIR/a" --sign-corpus "$DIR/corpus" || exit 1
 for n in b c; do cp "$DIR/a/corpora/corpus.manifest" "$DIR/$n/corpora/"; done
 
+fi
+
+if [ -n "$RESUME" ]; then
+say "4. the courts resumed on their homes, each capped at $MEM and $CPU"
+capped hypha-a "$DIR/a.log" "$SRV" --home "$DIR/a"
+capped hypha-b "$DIR/b.log" "$SRV" --home "$DIR/b"
+capped hypha-c "$DIR/c.log" "$SRV" --home "$DIR/c"
+up=0
+for _ in $(seq 1 120); do
+  n=0
+  for h in "${HYPHAE[@]}"; do
+    if ss -ltn 2>/dev/null | grep -q "127.0.0.1:$(port "$h") "; then n=$((n + 1)); fi
+  done
+  if [ "$n" = 3 ]; then up=1; break; fi
+  sleep 1
+done
+if [ "$up" != 1 ]; then echo "the courts did not listen; see $DIR/{a,b,c}.log"; exit 1; fi
+else
 say "4. the courts, each capped at $MEM and $CPU: a mints the genesis, b and c adopt it"
 capped hypha-a "$DIR/a.log" "$SRV" --home "$DIR/a" --mint-genesis
 minted=0
@@ -163,6 +202,7 @@ for _ in $(seq 1 180); do
 done
 for h in "${HYPHAE[@]}"; do echo "$h: $("$SRV" --home "$DIR/$h" --check 2>/dev/null | grep '^  mesh:')"; done
 if [ "$adopted" != 1 ]; then echo "b and c did not adopt the genesis; see $DIR/b.log, $DIR/c.log"; exit 1; fi
+fi
 
 say "5. $MINDS sovereign minds, inside Noise, chattering at $DIR/chatter"
 i=0
@@ -177,7 +217,11 @@ done
 NODE_ENV=(MYCELIUM_NODE=1)
 
 say "6. a kernel's house on hypha c, and a mind seated in its domain"
-"$HOUSE" "$DIR/house" "127.0.0.1:$PORT_c" > "$DIR/house.txt" 2>&1
+if [ -n "$RESUME" ] && [ -f "$DIR/house.txt" ]; then
+  echo "the house's domain, founded when the network was provisioned:"
+else
+  "$HOUSE" "$DIR/house" "127.0.0.1:$PORT_c" > "$DIR/house.txt" 2>&1
+fi
 grep -E '^(house|domain|crossing)' "$DIR/house.txt"
 DOMAIN=$(sed -n 's/^house \([0-9a-f]\{64\}\)$/\1/p' "$DIR/house.txt" | head -n1)
 echo "127.0.0.1:$PORT_c" > "$DIR/seated/bootstrap"
@@ -222,7 +266,9 @@ say "7. the SDK client works $WORK tasks on each hypha in turn, under one key"
 # courts pay, as in scripts/quickstart. Each court's registry is its own
 # today (MU-ECONOMY §11.3 F2), so a closure presented at a second court is
 # a second mint of one point, which the POW++ reading names (§3.4).
-if [ -x "$EX" ]; then
+if [ "$WORK" = 0 ]; then
+  echo "no worker (MYCELIUM_NETWORK_WORK=0)"
+elif [ -x "$EX" ]; then
   for h in "${HYPHAE[@]}"; do
     # MYC_TRACE: each reader of the worker's stroke writes its trace line,
     # the journal the timeline renders (as in scripts/quickstart).
