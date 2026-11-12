@@ -358,7 +358,7 @@ impl Court {
 
     /// [`Court::ledger`] on the hold's stroke (78.153b): the ladder's
     /// pruning after the seal spends it (`prune_ladder`); the entry's own
-    /// checks read what the frame carries.
+    /// checks read what the envelope carries.
     pub fn ledger_on(&mut self, s: &SignedLedger, fin: Option<TPoint>, reads: &mut crate::physics::Budget) -> Ledgered {
         use LedgerRefusal as R;
         let refuse = Ledgered::Refused;
@@ -366,13 +366,17 @@ impl Court {
         if self.domains.get(&e.domain).is_none() {
             return refuse(R::UnknownDomain);
         }
-        let reserve = match self.reserve_signed(&e.domain, &e.signed_bytes(), &s.sig) {
+        let Some(bytes) = s.signed_bytes() else { return refuse(R::Unsigned) };
+        let reserve = match self.reserve_signed(&e.domain, &bytes, &s.sig) {
             Ok(r) => r,
-            Err(true) => return Ledgered::Boundary(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: e.domain }),
+            Err(true) => return Ledgered::Boundary(self.at_tube(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: e.domain })),
             Err(false) => return refuse(R::Unsigned),
         };
         if let Err(why) = self.signatory(UniverseAct::Anchor, e.domain, reads) {
             return Ledgered::Boundary(why);
+        }
+        if let Err(why) = s.crossing.verify() {
+            return Ledgered::Boundary(self.at_tube(Boundary::Crossing { act: UniverseAct::Anchor, domain: e.domain, why }));
         }
         if !self.final_in_view(&e.point, fin.as_ref()) {
             return refuse(R::NotFinal);
@@ -421,7 +425,7 @@ impl Court {
     }
 
     /// 78.154 — A UNIVERSE'S LEDGER after `u`, as many entries as fit one
-    /// frame. Sealing nothing.
+    /// envelope. Sealing nothing.
     pub fn ledger_page(&self, domain: &[u8; 32], after: u64) -> LedgerPage {
         Atlas::page(self.atlas.ledgers.get(domain), after, ledger_budget())
     }
@@ -467,7 +471,7 @@ impl Court {
 
     /// 78.154 — THE MAPPED PLACE `(id, side)` on `domain`'s map, either kind:
     /// a mouth pair's side mapped there (its place off the tube, its keeper
-    /// the mouth's), or a local throat's end (its place off its frame in the
+    /// the mouth's), or a local throat's end (its place off its pose in the
     /// universe's declared geometry, its keeper inline). `None` where it is
     /// not mapped there.
     pub(crate) fn mapped_place(&self, domain: &[u8; 32], (id, side): &Place) -> Option<MappedPlace> {
@@ -506,7 +510,7 @@ impl Court {
     /// final point: a MOUTH of an open tube on its side in this universe;
     /// a road (tube, core) between two of its mapped places, no keeper; a
     /// THROAT between one mouth's two sides, its own side mapped, its keeper
-    /// the mouth's; a LOCAL THROAT, each frame a versor whose place reads in
+    /// the mouth's; a LOCAL THROAT, each pose a versor whose place reads in
     /// the universe's declared geometry (its two ends then mapped places of
     /// this universe, a throat segment between them kept by its keeper).
     /// Superseded only by a later act on the same id.
@@ -517,13 +521,17 @@ impl Court {
         if self.domains.get(&a.domain).is_none() {
             return refuse(R::UnknownDomain);
         }
-        let reserve = match self.reserve_signed(&a.domain, &a.signed_bytes(), &s.sig) {
+        let Some(bytes) = s.signed_bytes() else { return refuse(R::Unsigned) };
+        let reserve = match self.reserve_signed(&a.domain, &bytes, &s.sig) {
             Ok(r) => r,
-            Err(true) => return Mapped::Boundary(Boundary::NotThroughCore { act: UniverseAct::Map, domain: a.domain }),
+            Err(true) => return Mapped::Boundary(self.at_tube(Boundary::NotThroughCore { act: UniverseAct::Map, domain: a.domain })),
             Err(false) => return refuse(R::Unsigned),
         };
         if let Err(why) = self.signatory_now(UniverseAct::Map, a.domain) {
             return Mapped::Boundary(why);
+        }
+        if let Err(why) = s.crossing.verify() {
+            return Mapped::Boundary(self.at_tube(Boundary::Crossing { act: UniverseAct::Map, domain: a.domain, why }));
         }
         if !self.final_in_view(&a.point, fin.as_ref()) {
             return refuse(R::NotFinal);
@@ -539,7 +547,7 @@ impl Court {
                     return refuse(R::NotThisSide);
                 }
             }
-            MapRecord::LocalThroat { frames: (f0, f1), .. } => {
+            MapRecord::LocalThroat { poses: (f0, f1), .. } => {
                 if [f0, f1].iter().any(|f| f.is_zero() || !crate::transducer::cga::is_versor(f)) {
                     return refuse(R::NotVersor);
                 }
@@ -603,7 +611,7 @@ impl Court {
 
     /// 78.154 — A UNIVERSE'S MAP as read: every record, each mouth with its
     /// place in the universe's own space read off its tube, each local
-    /// throat with its two ends' places read off its frames — every place
+    /// throat with its two ends' places read off its poses — every place
     /// through the one mapped-place reading. Sealing nothing.
     pub fn map_reading(&self, domain: &[u8; 32]) -> Vec<MapEntry> {
         let Some(fibre) = self.atlas.records.fibre_at(domain) else { return Vec::new() };
@@ -627,10 +635,10 @@ impl Court {
     }
 }
 
-/// The bytes a ledger page's entries may take: the frame's body less the
-/// page's own header (D4.6). A frame smaller than the header holds no entry.
+/// The bytes a ledger page's entries may take: the envelope's body less the
+/// page's own header (D4.6). An envelope smaller than the header holds no entry.
 pub(crate) fn ledger_budget() -> usize {
-    match crate::network::wire::frame_budget().checked_sub(crate::anastome::dialogue::atlas::LEDGER_PAGE_HEADER) {
+    match crate::network::wire::BODY_BUDGET.checked_sub(crate::anastome::dialogue::atlas::LEDGER_PAGE_HEADER) {
         Some(b) => b,
         None => 0,
     }

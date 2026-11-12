@@ -245,8 +245,9 @@ impl Contemplation {
     }
 
     /// MU-CLIENT §4.4(1) — THE TWISTS the thoughts that came round again
-    /// carry, drained for the voice to transcribe at its return.
-    pub(crate) fn take_twists(&mut self) -> Vec<crate::transducer::cga::Mv> {
+    /// carry, with the family each thought was perceived under (78.177 §4a(4)),
+    /// drained for the voice to transcribe at its return.
+    pub(crate) fn take_twists(&mut self) -> Vec<(crate::transducer::cga::Mv, Vec<u8>)> {
         std::mem::take(&mut self.twists)
     }
 
@@ -281,18 +282,19 @@ impl Contemplation {
     /// (`work_returned`). Counted as a first close or as a later return of
     /// its winding.
     fn close_thought(&mut self, (grounded, first): (super::well::Grounded, bool), thought: &[u8]) {
-        // MU-CLIENT §4.4(1) — a later return says what changed: the twist its
-        // pull has put on the orbit, transcribed by the voice beside the
-        // thought's own word.
-        if let (false, Some(twist)) = (first, &grounded.twist) {
-            self.twists.push(twist.clone());
-        }
         // E1 — the scene the thought was perceived in rides with its ground,
         // so its word is spoken there.
         let family = match self.wells.get(thought) {
             Some(b) => b.family.clone(),
             None => Vec::new(),
         };
+        // MU-CLIENT §4.4(1), 78.177 §4a(4) — a later return says what changed:
+        // the twist its pull has put on the orbit, carrying the scene the
+        // thought was perceived under, transcribed by the voice beside the
+        // thought's own word.
+        if let (false, Some(twist)) = (first, &grounded.twist) {
+            self.twists.push((twist.clone(), family.clone()));
+        }
         self.closed.push((grounded.ground, family));
         self.came_round.push(thought.to_vec());
         match first {
@@ -474,6 +476,7 @@ impl Contemplation {
             // the ring by its key below and rested until expanded.
             stage: super::carrier::WellStage::default(),
             orbit: None,
+            orbits: Vec::new(),
             spores,
             family,
             moved_k: 0,

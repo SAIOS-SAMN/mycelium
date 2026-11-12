@@ -111,7 +111,7 @@ fn frame_measure_is_product_of_extents() {
     let frame = sample_by(&[2, 3, 4], |_| 0);
     let mu = share_of_enclosure([3, 2, 0, 1], Some(&frame));
     let q = |n: i64, d: i64| crate::core::Q::new(n.into(), d.into());
-    assert_eq!([mu.lane(0), mu.lane(1), mu.lane(2), mu.lane(3)], [&q(3, 24), &q(2, 24), &q(0, 1), &q(1, 1)]);
+    assert_eq!([mu.lane(0), mu.lane(1), mu.lane(2), mu.lane(3)], [q(3, 24), q(2, 24), q(0, 1), q(1, 1)]);
     let y = changed_at(&frame, &[1, 2, 3], 7);
     assert_eq!(record(&frame, &y).share(), q(1, 24));
 }

@@ -11,7 +11,7 @@ use crate::transducer::cga::{base_axis, Clifford};
 use forms::coordinate::{Axis, Key, Plane, Square, DEGREES_PER_TURN};
 use num_bigint::BigInt;
 use num_integer::Integer;
-use num_traits::{One, Signed, ToPrimitive};
+use num_traits::{One, ToPrimitive};
 
 /// THE FIELD'S FRAME PLANES (78.171 §1a): plane `k` is held by its two
 /// units, `e₊ₖ` squaring to +1 and `e₋ₖ` to −1, so the algebra is
@@ -174,7 +174,7 @@ impl PartialEq for TurningPlane {
 impl Eq for TurningPlane {}
 
 /// THE DEGREES OF ONE WHOLE TURN, exact.
-fn whole_turn() -> Q {
+pub(crate) fn whole_turn() -> Q {
     Q::from_integer(BigInt::from(DEGREES_PER_TURN))
 }
 
@@ -232,9 +232,10 @@ impl Turning {
         &self.motion
     }
 
-    /// THE WINDING `K = ⌊|θ| / 360⌋` (LAW-COORDINATE v3 §1), in ℤ.
+    /// THE WINDING `K = trunc(θ / 360)` (LAW-COORDINATE v3 §1), signed in the
+    /// sense of the plane's key, in ℤ.
     pub fn winding(&self) -> BigInt {
-        (self.degrees.abs() / whole_turn()).floor().to_integer()
+        (&self.degrees / whole_turn()).trunc().to_integer()
     }
 
     /// THE MOTION'S ORDER: `ℓ / gcd(t, ℓ)`, read by exact products, `1` for

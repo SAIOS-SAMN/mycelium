@@ -144,6 +144,14 @@ assert!(
     matches!(Court::new().reconstruct(&counted), Err(crate::cognition::RestoreRefusal::Retired { magic: "MYT2", .. })),
     "MYT2 is refused by name"
 );
+
+// THE TRIES WHOSE μ WAS ONE RATIONAL PER LANE ARE REFUSED BY NAME (v0.4.0).
+let mut laned = snap.clone();
+laned[..4].copy_from_slice(crate::cognition::persistence::PRE_MODES_MAGIC);
+assert!(
+    matches!(Court::new().reconstruct(&laned), Err(crate::cognition::RestoreRefusal::Retired { magic: "MYT3", .. })),
+    "MYT3 is refused by name"
+);
 }
 
 /// THE LINE WHOSE BOND CITATIONS CARRIED μ AS COUNTS IS REFUSED BY NAME:

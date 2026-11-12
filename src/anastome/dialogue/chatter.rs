@@ -60,13 +60,16 @@ const SIGNED: &[u8] = b"mycelium chatter v6";
 /// §5.3): the speaker's own known words it reads the ring through — the
 /// perspective it offers, so the hearer reads from its own.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Spoken {
+pub struct SaidWord {
     pub vertex: Vec<u8>,
     pub motion: Mv,
     pub gauge: Vec<(u8, u8)>,
     pub terms: Vec<(Mv, Mv)>,
     pub vantage: Vec<Mv>,
 }
+
+/// Backwards-compatibility alias for [`SaidWord`].
+pub type Spoken = SaidWord;
 
 /// ONE WORD HEARD, as the hearer said it in its own language: the motion and
 /// the hue map its cited generators compose to (`None`: the hearer could not
@@ -123,7 +126,7 @@ pub struct Evidence {
 pub enum Said {
     /// What the speaker stood (`said`, its address), word by word, and its
     /// evidence where it is a word spoken under a scene.
-    Say { said: Vec<u8>, words: Vec<Spoken>, evidence: Option<Evidence> },
+    Say { said: Vec<u8>, words: Vec<SaidWord>, evidence: Option<Evidence> },
     /// What the hearer re-derived of something said, word by word.
     Heard { said: Vec<u8>, words: Vec<HeardWord> },
     /// 78.163 — the speaker's reading of every relation the hearer's thought closed.

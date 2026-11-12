@@ -9,6 +9,7 @@ use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservatio
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, TierFold, Uplinked};
 use crate::economy::tests::Counts;
 use crate::server::cognition::Court;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -93,7 +94,7 @@ fn carry(k: &mut Court, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
         rate: [(1, 1); 4],
     };
     let carrier = TierFold { tier: verifying(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-    match k.hear_uplink(&carrier.sign(&reserve())) {
+    match k.hear_uplink(&carrier.signed(&reserve())) {
         Uplinked::Chained { at, .. } => Ok(FoldAt { stamp: at, path: vec![0] }),
         other => Err(other),
     }
@@ -119,7 +120,7 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
     let (f, _) = lying_fold();
     let at = carry(&mut k, f, 9).expect("carried, the line bonded");
     assert!(k.fold_bonded(&at), "a fold of a bonded tier");
-    let Uplinked::Admitted { at: bare, .. } = k.hear_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: verifying(&reserve()), ..lying_fold().0 }.sign(&reserve())) else {
+    let Uplinked::Admitted { at: bare, .. } = k.hear_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: verifying(&reserve()), ..lying_fold().0 }.signed(&reserve())) else {
         panic!("admitted")
     };
     assert!(!k.fold_bonded(&FoldAt::sealed(bare)), "an unbacked fold reads unbonded");
@@ -157,4 +158,34 @@ fn challenge_slashes_bond_against_exposure_and_withdrawal_waits() {
     assert_eq!(k.treasury.balance_mu(&verifying(&reserve())), crate::economy::Mu::counts([3, 0, 0, 0]).add(&s(49, 12)), "the kept part back to the reserve");
     assert!(k.treasury.audit().is_ok(), "both equations hold through the forfeit");
     assert_eq!(k.bond(&bond(None, 3).sign(&reserve())), Founded::Unbonded);
+}
+
+/// #237 (ruled 2026-11-11) — A CARRIED LINE IS ADMITTED ONLY WHILE ITS BOND
+/// COVERS ITS EXPOSURE ON EVERY LANE, `B_l ≥ X_l`, the exposure the slash
+/// reads of its fold: under it the line is refused `Underbonded`, naming the
+/// first lane short with the bond and the exposure there; topped up to it,
+/// the same line is carried.
+#[test]
+fn carried_line_is_refused_underbonded_until_its_bond_covers_its_exposure() {
+    let mut k = founded();
+    let (f, _) = lying_fold();
+    let x = crate::server::cognition::challenge::exposure_of_nets(&f.rows, &f.declared).lanes();
+    let lane = (0..4).find(|&l| x[l] > crate::core::Q::from_integer(1.into())).expect("the fold moves more than one unit on a lane");
+    let mut one = [0u64; 4];
+    one[lane] = 1;
+    assert!(bonded(k.bond(&bond(Some(one), 1).sign(&reserve()))).is_some(), "one unit posted");
+    let short = (0..4).find(|&l| crate::core::Q::from_integer(one[l].into()) < x[l]).expect("a lane short");
+    let refused = carry(&mut k, f.clone(), 8);
+    assert_eq!(
+        refused,
+        Err(Uplinked::ChildRefused {
+            index: 0,
+            why: crate::anastome::dialogue::uplink::ChildRefusal::Underbonded { lane: short, bond: Box::new(crate::core::Q::from_integer(one[short].into())), exposure: Box::new(x[short].clone()) }
+        }),
+        "one unit of bond never backs the fold's rows"
+    );
+    let cover: [u64; 4] = std::array::from_fn(|l| u64::try_from(x[l].to_integer()).expect("a whole exposure"));
+    let top: [u64; 4] = std::array::from_fn(|l| cover[l].checked_sub(one[l]).expect("the exposure is at least the unit posted on its lane"));
+    assert!(bonded(k.bond(&bond(Some(top), 2).sign(&reserve()))).is_some(), "topped up to the exposure");
+    assert!(carry(&mut k, f, 9).is_ok(), "covered on every lane, the line is carried");
 }

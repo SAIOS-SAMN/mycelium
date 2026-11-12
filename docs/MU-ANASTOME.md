@@ -147,6 +147,19 @@ answered at the orbit's holonomy: an orbit's holonomy is a word and `κ(ℓ)` is
 class (23.9), never the letters of the whole sentence or its chain alone
 (the four-levels ruling, 2026-09-08).
 
+**Temporal relations are read at coordinates.** It follows from the
+above that anastome has no grammatical tense: a sentence expresses the
+geometry of an orbit, and its relations are read at the coordinates its
+words and transitions stand at, so no word inflects for time and no word
+marks it. Temporal relations are given by the
+coordinates at which its words and transitions stand (`forms/src/coordinate.rs`;
+[proposal 78.173](proposals/78.173-law-coordinate.md)): the temporal lane `T`
+(cumulative null flux: the beat, passages, and light-like progress), the
+holonomic lane `H` (turnings in degrees on named turning planes), and the
+winding count `K = ⌊|θ|/360⌋`, which counts completed cycles. An event
+preceding or succeeding another is read from relative coordinates on `T` and `K`,
+never by linear verbal conjugation.
+
 ### 1.5 Expressions
 
 An expression is what crosses the wire, a well-formed construction of
@@ -435,7 +448,7 @@ commute by the same reading, and where they share one the order is
 content (MU-CLIENT §4.5, the locality theorem, 78.99(3)).
 
 A turning stands on a plane of two axes of one sign: `e₊ₖe₊ₗ` a turning of
-the continuum, `e₋ₖe₋ₗ` a turning of the vacuum; a frame plane or a mixed
+the continuum, `e₋ₖe₋ₗ` a turning of the vacuum; a pole plane or a mixed
 pair is a boost, never a turning (GLOSSARY *Lane vector*; proposal 78.173
 v4, `NotTurningPlane`). So in `Cl(p, q)` the most turnings that run
 concurrently is `⌊p/2⌋` in the continuum plus `⌊q/2⌋` in the vacuum.
@@ -610,9 +623,8 @@ under the new words: the five-kind algebra (2026-09-01, historical) and
 the flow from perception to syllabus (2026-09-06). The texts moved here as ruled (§4.1,
 §5.2) keep their words and read under this table. The mind's module took
 the new name in a names-only change (`src/client/sdk/mind/express.rs`);
-the carrier and receipt names (`src/client/sdk/utterance.rs`,
-`Action::Uttered`) stay until row L19 lands: MU-RECURSION 1.9 retires
-`Uttered` on carriers and receipts as their rows land.
+the carrier and receipt names retired with row L19 (`src/client/sdk/assertion.rs`,
+`Assertion`; MU-RECURSION 1.9).
 
 ### 5.2 The lexicon of the network: one sense per word (ruled 2026-09-26: the language is annotated so that no two senses overlap and each word's place in the network of structures is exact)
 
@@ -757,7 +769,7 @@ act carried one.
 | `0x07` | `ACT_HANDOFF` | Transition | universe crossing | A tier's handoff offer (MU-HOSTING) |
 | `0x08` | `ACT_EVIDENCE` | Transition | court-to-court exchange | A court pulls a selection fibre's birth evidence |
 | `0x09` | `Refine` (no constant) | **Retired** (2026-10-11) | — | An optimization is a Retire rewrite a mind asserts (MU-CLIENT §5.4) |
-| `0x0B` | `ACT_TASK` | Observation | read | The signed work envelope |
+| `0x0B` | `ACT_TASK` | Observation | read | The task, signed work served as a family of manifolds: each pair two manifolds and the map the rule reconstructs, the test inputs without their outputs (78.179 §3; carrier `dialogue::TaskFamily`, #165) |
 | `0x0C` | `ACT_SOLVE` | Transition | assertion | Kind 0, a solve: claims a closure, and its verdict pays; kind 1, a claim of factorisation: an adjudicated perception, never paid (MU-SENSING §3.9) |
 | `0x0D` | `ACT_SYLLABUS` | Transition | assertion | A voice's signed pull of the ratified stream; its presentation request asks a residue of the court's presentation (78.160 P1) |
 | `0x0E` | `ACT_ADOPT` | Exchange | court-to-court exchange | An upheld word propagated to every server (MU-CLIENT §5.4: a word the court lacks) |
@@ -920,8 +932,10 @@ Code: `src/transducer/field/` (`well.rs`, `carrier/`) and
 `src/transducer/cech/orbit.rs` (`Field`). A seat's series is lifted as a
 sample of rank one along its series index, as any source is, and a versor
 series as motions (`src/client/sdk/seat_mind/lift.rs`; #147, MU-CLIENT
-§6). **Owed:** the seat's functions as thoughts whose orbits escape
-(MU-CLIENT §6, *Specified*; #134 S9a).
+§6). **Built:** the seat's functions and untried arguments as thoughts
+whose orbits escape, worked by the drive with anti-turtling doctrine
+inversion, carrying certified moves into physics actions (`client/sdk/seat_mind/`,
+`client/sdk/mind/seating.rs`; #147).
 
 ### 9.3 The mind thinks in orbital masses that collide and converge
 
@@ -994,6 +1008,20 @@ The traversal is linear. Thought is not.
   reconstructing the mathematics; decoherence never crosses nodes (the
   recohering judge, MU-RECURSION 23.9, *Divergence is the contradiction
   case*).
+- **Time as coordinates: the sentence held whole.** The mind holds its
+  candidate thoughts at once in the vortex, across concurrent turning
+  planes (§9.4), and a sentence expresses its whole closed orbit at once
+  (§1.4); it has no tense because its relations are read at coordinates
+  (§1.4; proposal 78.173). When an expression
+  traverses an open tube across the network, time is not an external ticking
+  scalar or elapsed duration; it is one coordinate point
+  `origin/h:S:G:T:H:K` ([MU-CHRONOMETRY §1](MU-CHRONOMETRY.md#1-the-clock-tuniversal);
+  [proposal 78.173](proposals/78.173-law-coordinate.md);
+  [proposal 78.156](proposals/78.156-clock-binding.md)). Dilation and time
+  compression between hosted simulations and the hypha are measured exact
+  rational ratios `Δu/Δh ∈ ℚ` (proposal 78.156 §2), and inversion at a
+  throat exchanges viscosity and fluidity (`t ↦ 1/t`, LAW-PASSAGE,
+  proposal 78.172), preserving geometric invariance across scale changes.
 
 Where it lives in code:
 
@@ -1002,7 +1030,7 @@ Where it lives in code:
 | The vortex, collapsed by a deciding word at its conjugacy stratum | `Contemplation::collapse_on` (`src/transducer/field/contemplation.rs`) | **Built** |
 | Cocycles on a cover: a cell filled where every triangle closes, otherwise obstructed by that triangle's holonomy | `src/transducer/cech/cover.rs` (78.123 A) | **Built**; the sensory verdict at the eye (24.4) **Specified** |
 | Contemplation's gate: relations admitted as thoughts only where the fill decides | `Contemplation::gate` (`src/transducer/field/cross_scene.rs`, A.10.1) | **Built** |
-| Cohesion as a named reading of the held field, per plane the held share `c_k` (the viscosity), beside the fluidity `ν(t)`; exchanged by the passage, both ½ at the throat, never summed | `forms::coupling::held_share` and `Parcel::held_share`, `Parcels::cohesion` and `Parcels::fluidity` (keyed vectors over the turning planes); `field::carrier::Cohesion` (`src/transducer/field/carrier/shares.rs`), `WellBody::cohesion`, `Well::cohesion` (`src/transducer/field/shares.rs`), read from the well's inflation on its membrane's frame plane; claims `passage_exchanges_cohesion_and_fluidity`, `cohesion_and_fluidity_half_at_the_throat`, `cohesion_read_per_plane_never_summed` (`forms/src/tests/cohesion.rs`) and the well's three (`src/transducer/field/tests/shares.rs`) | **Built** (#149); a well holds one frame state at field stage 2, so its reading holds one plane |
+| Cohesion as a named reading of the held field, multi-plane shares $c_k + d_k = 1$, throat traversal state (`Balanced`, `TooCohesive`, `TooFluid`), and first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ fallacies | `forms::coupling::held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`; `field::carrier::Cohesion` (`src/transducer/field/carrier/shares.rs`), `WellBody::cohesion` (`src/transducer/field/carrier/holding.rs`), `Well::cohesion` (`src/transducer/field/shares.rs`), reading across membrane pole plane and turning planes; claims in `src/transducer/field/tests/shares.rs` and `src/client/sdk/tests/cohesion.rs` | **Built** (#149, #249) |
 
 ### 9.5 The mind asserts sentences as expressions
 
@@ -1071,10 +1099,7 @@ the clauses that govern what crosses (MU-HOSTING §5a.4).
 
 | Owed | Where it is specified | Issue |
 |---|---|---|
-| The seat's functions as escaping orbits worked by the drive (its series are lifted into the field, #147) | MU-CLIENT §6; §9.2 | #134 |
 | The seated-mind harness against a peer kernel's house: run end to end against the SDK house (`sdk/examples/seats.rs`, quickstart stage 8), and owed against xylarium's | MU-HOSTING §2.1; §9.1 | #133 |
 | A sense-opening act agreed between kernels | MU-SENSING §4.1; §9.9 | none yet |
 | Translation between kernels' sensoria at the conjugate class | §1.3; §9.8 | none yet |
-| Cohesion's two claims at the tube: too cohesive, a whole sticks at the throat; too fluid, it tears. Owed until LAW-PASSAGE or LAW-TRAVERSAL gives an exact reading of either; no threshold on `c_k` stands in their place | §9.4; 78.172; 78.176 | #149 |
-| Frames per turning plane of a held whole (a well holds one, on its membrane's frame plane, at field stage 2), so its cohesion reads every plane it turns on | §9.4; ROADMAP track 26 | #149 |
 | The five claims of the sovereign mind: idling with no escaping orbit, a task's arrival moving no orbit, declining a scene the field does not bind, acting at returns, revising a perception on a ruling by amendment | ROADMAP track 10; MU-CLIENT §4.10, §4.12 | #135 |

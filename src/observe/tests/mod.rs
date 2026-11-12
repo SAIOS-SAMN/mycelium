@@ -1,6 +1,7 @@
 // §8.1 — the observer's readings travel whole and fold axis by axis.
 
 mod acts;
+mod boundary;
 mod carriage;
 mod fixtures;
 mod dispatch;

@@ -65,9 +65,9 @@ fn deep(member: d::samples::Member) -> Result<mycelium::transducer::sample::Samp
 
 fn task() -> Result<String, String> {
     same("the task request", d::decode_task_request(&d::encode_task_request(&voice())), voice())?;
-    let sent = d::TaskEnvelope::of_section(CITATION, &train()?, &tests()?).map_err(|e| format!("the section samples are no samples at their places: {e:?}"))?;
-    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
-    let envelope = d::decode_task_envelope(&bytes).ok_or("the envelope did not decode")?;
+    let sent = d::TaskFamily::of_section(CITATION, &train()?, &tests()?).map_err(|e| format!("the section samples are no samples at their places: {e:?}"))?;
+    let bytes = d::encode_task(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
+    let envelope = d::decode_task(&bytes).ok_or("the envelope did not decode")?;
     same("the envelope's citation", Some(envelope.id), CITATION)?;
     same("the envelope's train pairs", Some(envelope.train.clone()), sent.train.clone())?;
     same("the envelope's tests", Some(envelope.tests.clone()), sent.tests)?;
@@ -75,8 +75,8 @@ fn task() -> Result<String, String> {
     same("the envelope's train pairs on the section", Some(read.train), train()?)?;
     same("the envelope's tests on the section", Some(read.tests), tests()?)?;
     let deep = vec![deep(d::samples::Member::Input)?];
-    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &deep).map_err(|e| format!("the rank-3 envelope does not encode: {e:?}"))?;
-    let envelope = d::decode_task_envelope(&bytes).ok_or("the rank-3 envelope did not decode")?;
+    let bytes = d::encode_task(&CITATION, &sent.train, &deep).map_err(|e| format!("the rank-3 envelope does not encode: {e:?}"))?;
+    let envelope = d::decode_task(&bytes).ok_or("the rank-3 envelope did not decode")?;
     same("the rank-3 test input at width 2", Some(envelope.tests), deep)?;
     Ok("request and envelope decode to the samples sent, of rank 2 and 3".to_string())
 }
@@ -309,10 +309,12 @@ fn domain_origin() -> Result<String, String> {
 }
 
 fn domain_statement() -> Result<String, String> {
-    let stated = d::universe::Stated::Basket(vec![(1, (1, 1)), (8, (2, 3))]);
-    let signed = d::universe::Statement { domain: voice(), stated }.sign(&key());
+    let entry = |element: u16, nuclei: u32, neutrons: u32, bound: u32| d::universe::BasketEntry::of(element, nuclei.into(), neutrons.into(), bound.into());
+    let stated = d::universe::Stated::Basket(vec![entry(1, 1, 0, 1), entry(8, 2, 16, 12)]);
+    let signed = d::universe::Statement { domain: voice(), stated }.sign(super::probes::crossing(voice()), &key()).ok_or("the statement does not sign")?;
     let replies = [dom::Founded::Stated { at: stamp(), receipt: CITATION }, dom::Founded::AlreadyStated, dom::Founded::NotAUniverse];
-    domain_act("the statement", &d::universe::encode_statement(&signed), dom::DomainRequest::State(signed.clone()), &replies)?;
+    let bytes = d::universe::encode_statement(&signed).ok_or("the statement does not encode")?;
+    domain_act("the statement", &bytes, dom::DomainRequest::State(signed.clone()), &replies)?;
     Ok("the basket stated and the answers decode".to_string())
 }
 
@@ -334,7 +336,7 @@ fn domain_origin_reading() -> Result<String, String> {
 
 fn domain_manifest() -> Result<String, String> {
     use d::endowment::{decode_grant_reply, encode_grant_reply, encode_manifest, GrantRefusal, Granted};
-    let signed = super::probes::manifest(voice()).sign(&key()).ok_or("the manifest does not sign")?;
+    let signed = super::probes::manifest(voice()).sign(super::probes::crossing(voice()), &key()).ok_or("the manifest does not sign")?;
     let bytes = encode_manifest(&signed).ok_or("the manifest does not encode")?;
     same("the manifest", dom::decode_domain_request(&bytes), dom::DomainRequest::Manifest(Box::new(signed)))?;
     for g in [Granted::Sealed { mu: share()?, founding: true, at: stamp(), receipt: CITATION }, Granted::Refused(GrantRefusal::Short)] {
@@ -347,7 +349,7 @@ fn domain_universe() -> Result<String, String> {
     use d::universe::{decode_universe_reading, encode_universe_read, encode_universe_reading, UniverseReading};
     same("the universe read", dom::decode_domain_request(&encode_universe_read(voice())), dom::DomainRequest::ReadUniverse(voice()))?;
     let g = super::probes::genesis();
-    let r = UniverseReading { originated: true, geometry: Some(g.geometry), parent: Some(g.parent), basket: vec![(1, (1, 1))] };
+    let r = UniverseReading { originated: true, geometry: Some(g.geometry), parent: Some(g.parent), basket: vec![d::universe::BasketEntry::of(1, 1u8.into(), 0u8.into(), 1u8.into())] };
     same("the universe", decode_universe_reading(&encode_universe_reading(&r)), r)?;
     Ok("the read and the universe decode".to_string())
 }
@@ -433,9 +435,7 @@ fn entries() -> Result<String, String> {
     let upto = Place { k: 3, i: 4 };
     let want = d::EntriesRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
     same("the entries request", d::decode_entries_request(&d::encode_entries_request(&voice(), &CITATION, None, upto, 7)), want)?;
-    // A row carries modes (v0.5.0): the share at each lane's founding mode.
-    let modes = mycelium::economy::Modes::founding(&share()?);
-    let entry = Entry { kind: Kind::Transfer, who: voice(), modes, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
+    let entry = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
     let bytes = d::encode_entries_reply(12, std::slice::from_ref(&entry), mycelium::network::wire::BODY_BUDGET).ok_or("the entries do not encode")?;
     same("the entries", d::decode_entries_reply(&bytes), (12, vec![entry]))?;
     Ok("the span asked and a page of one entry decode".to_string())
@@ -524,7 +524,7 @@ fn observe_query() -> Result<String, String> {
 fn reply_reads(act: &str, reply: &[u8]) -> Option<bool> {
     use d::{endowment, universe};
     Some(match act {
-        "task" => d::decode_task_envelope(reply).is_some(),
+        "task" => d::decode_task(reply).is_some(),
         "solve" => d::decode_solve_verdict(reply).is_some(),
         "laws register" => laws::decode_register_reply(reply).is_some(),
         "laws statement" => d::conformance::decode_statement_reply(reply).is_some(),

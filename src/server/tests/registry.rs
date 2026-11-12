@@ -92,7 +92,7 @@ fn task_address_refuses_ragged_pair() {
     assert_eq!(SectionSample::of_lines(&[vec![1, 1], vec![1]]), Err(Unspelled::Sample(SampleRefusal::Length { expected: 4, found: 3 })), "a ragged raster is no sample");
 }
 
-/// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH FRAMES' FULL CONTENT
+/// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH DELIMITED' FULL CONTENT
 /// WITH THE FOUR PERIODS. `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]`
 /// read one coboundary on `K_lcm`, `{(0,0,1,2), (0,1,1,2)}`, and neither
 /// wrote its frame (one ratio anisotropic, one the identity), so two tasks
@@ -340,7 +340,7 @@ fn task_identity_writes_rank_and_width() {
 /// routes) take nothing of it, and the walks pass it once routed to none.
 #[test]
 fn hypha_serves_a_rank_three_task() {
-    use crate::anastome::dialogue::{decode_task_envelope, encode_task_envelope};
+    use crate::anastome::dialogue::{decode_task, encode_task};
     use crate::transducer::alphabet::AlphabetRank;
     use crate::transducer::sentence::SectionRefusal;
     let posted = crate::server::tests::fixtures::rank_three_task();
@@ -351,8 +351,8 @@ fn hypha_serves_a_rank_three_task() {
     assert_eq!(reg.len(), 1);
     let (served, task) = reg.dispatch().expect("the open task is dispatched whatever its rank");
     assert_eq!(served, id);
-    let sent = task.envelope(id);
-    let env = decode_task_envelope(&encode_task_envelope(&id, &sent.train, &sent.tests).expect("the envelope writes at rank 3")).expect("and reads whole");
+    let sent = task.family(id);
+    let env = decode_task(&encode_task(&id, &sent.train, &sent.tests).expect("the envelope writes at rank 3")).expect("and reads whole");
     assert_eq!(env.id, id);
     assert_eq!(env.train, posted.train, "the train pairs served as posted");
     assert_eq!(env.tests, vec![posted.test[0].0.clone()], "the test input, never the withheld output");
@@ -368,4 +368,34 @@ fn hypha_serves_a_rank_three_task() {
     let reg = registry.lock().expect("a fresh lock");
     assert_eq!(reg.routes(&id).map(|r| r.len()), Some(0), "routed to none, so no walk reads it again");
     assert_eq!(reg.open(&id), Some(true), "and it stays open");
+}
+
+/// #158 — THE WITHHELD PAIRS ARE FIXED BY COORDINATE AT REGISTRATION: each
+/// withheld output's place `[split, pair, member]` is recorded when the task
+/// is posted, a test input with no output withholds nothing, the reader
+/// serves exactly the pairs at those coordinates, and posting the same
+/// content again fixes nothing new.
+#[test]
+fn withheld_pairs_are_fixed_by_coordinate_at_registration() {
+    let task = task_of_lines(
+        vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
+        vec![
+            (vec![vec![0, 1], vec![0, 0]], Vec::new()),
+            (vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]]),
+        ],
+    );
+    let mut reg = TaskRegistry::new();
+    let id = reg.register(task.clone()).expect("the task has an identity");
+    let places = reg.withheld_at(&id).expect("the book holds the task").to_vec();
+    assert_eq!(places.len(), 1, "the test input with no output withholds nothing");
+    let posted = crate::anastome::dialogue::PostedTask::of_section(&task).expect("the samples post");
+    let at = posted.test.iter().find_map(|(_, y)| y.as_ref()).expect("one output posted").place().clone();
+    assert_eq!(places, vec![at.clone()], "fixed at the posted output's own coordinates");
+    let withheld = reg.withheld(&id);
+    assert_eq!(withheld.len(), 1);
+    assert_eq!(withheld[0].1.sample().place(), &at, "the reader serves the pair at that coordinate");
+    assert_eq!(withheld[0].1, vec![vec![0, 0], vec![2, 2]]);
+    assert_eq!(reg.register(task), Some(id));
+    assert_eq!(reg.withheld_at(&id).map(<[_]>::to_vec), Some(places), "registered again, nothing new is fixed");
+    assert!(reg.withheld_at(&[7u8; 32]).is_none(), "a task the book does not hold fixes none");
 }

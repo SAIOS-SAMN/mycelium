@@ -7,14 +7,14 @@
 # `Cl(p, q)`) alone — never on the mind or the court.
 [package]
 name = "forms"
-version = "0.3.0-rc.3"
+version = "0.4.0-rc.1"
 edition = "2021"
 description = "The universal law forms of the Concordance's nested shells: exact over Q, over a universe's own constants, each named with the shell that selects it."
 license = "Apache-2.0"
 rust-version = "1.82"
 
 [dependencies]
-algebra = { path = "../algebra" }
+algebra = { package = "mycelium-algebra", path = "../algebra" }
 num-rational = "0.4"
 num-bigint = "0.4"
 num-traits = "0.2"

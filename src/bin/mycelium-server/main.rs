@@ -29,6 +29,7 @@ mod ledger;
 mod nerve;
 mod offer;
 mod persist;
+mod proofs;
 mod published;
 mod syllabus;
 mod transport;
@@ -77,7 +78,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--minds" || args[i] == "--init" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--proofs" || args[i] == "--minds" || args[i] == "--init" {
             i += 1;
             continue;
         }
@@ -235,7 +236,7 @@ fn check_home(home: &Path) -> ! {
                         // witness page holds: where the cut can land.
                         let chain_vk = scratch.chain().signer();
                         let after = scratch.chain().root().map(|r| r.at);
-                        if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Court::receipts_frame()) {
+                        if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Court::receipts_bounds()) {
                             let page = scratch.receipts_page(&chain_vk, after, top, at_most, bytes);
                             println!("  fold: the witness page holds {} receipts ({at_most} at most, {bytes} bytes)", page.len());
                             for r in scratch.chain().line_between(&chain_vk, after, top, 6) {
@@ -250,6 +251,9 @@ fn check_home(home: &Path) -> ! {
                 // What this build writes of that state must read back: the
                 // restore reshapes the line (a peer's folded line leaves),
                 // so the next persist is not what was just read.
+                // §3.4 — the closure points in this court's cones, and the
+                // concurrent residues among them.
+                println!("  points: {} closure points held, {} concurrent", scratch.points_held(), scratch.concurrent_points().len());
                 let (again, line) = (scratch.snapshot(), scratch.line_image());
                 drop(scratch);
                 let mut back = Court::new();
@@ -350,7 +354,7 @@ fn resolved_bind(local: std::net::SocketAddr) -> String {
     }
 }
 
-/// A percept, gossip, or demand frame handed from the listener to the reflex
+/// A percept, gossip, or demand envelope handed from the listener to the reflex
 /// pool with its open socket: the reply is written by the judging worker.
 struct ReflexJob {
     pub(crate) stream: TcpStream,
@@ -427,6 +431,10 @@ fn main() {
         // 78.94 — the hypha's whole line by action, archive included.
         if args.iter().any(|a| a == "--ledger") {
             ledger::run(&home, flag(&args, "--at"));
+        }
+        // MU-ECONOMY §0, §3.4, §5.3 — the proofs of work over the mesh.
+        if args.iter().any(|a| a == "--proofs") {
+            proofs::run(&home, flag(&args, "--at"));
         }
         // 78.93 B1 — one party's wallet at the hypha.
         if let Some(asked) = flag(&args, "--wallet") {
@@ -883,11 +891,11 @@ fn main() {
     let served: Arc<[std::sync::atomic::AtomicU64; 256]> =
         Arc::new(std::array::from_fn(|_| std::sync::atomic::AtomicU64::new(0)));
     // THE DOOR READS, THEN JUDGES (Phase 1 item 2, 2026-10-01). One pool
-    // read each frame and judged it, so a query queued behind acts whose
+    // read each envelope and judged it, so a query queued behind acts whose
     // workers waited on the court: the console gave up at 0.6 s on a court
     // whose stroke held the lock (c at 00:35:42 on 98fc7f8f, and a and c
     // through epoch 115). READERS take each connection off the listener's
-    // queue and read its one frame — they never touch the court — serving
+    // queue and read its one envelope — they never touch the court — serving
     // an observation there and handing every other act, read, to the
     // WORKERS that judge it. A worker queue that is full defers the act (the
     // honest "come back"), as a full reflex queue did.
@@ -905,36 +913,36 @@ fn main() {
             let Ok(ReflexJob { stream }) = job else { break };
             // One act, then the reader returns — keep-alive must not hold a
             // slot for the client's stroke. The transport deadline bounds
-            // the wait for that one frame. The channel the caller speaks is
+            // the wait for that one envelope. The channel the caller speaks is
             // opened first (MU-PRECURSORS §3.1).
             arm_deadline(&stream);
             let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
-            let Some(frame) = read_delimited(&mut stream) else { continue };
-            if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
-                judge::observe::judge(&mut stream, &frame, &context);
+            let Some(delimited) = read_delimited(&mut stream) else { continue };
+            if mycelium::anastome::dialogue::act_tag(&delimited.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
+                judge::observe::judge(&mut stream, &delimited, &context);
                 mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                 continue;
             }
             // 78.151 — a read that takes no court is answered here.
-            if judge::serve_published(&mut stream, &frame, &context) {
+            if judge::serve_published(&mut stream, &delimited, &context) {
                 continue;
             }
             // 78.146 amended — a seat read with nothing filed past it waits
             // for the court's next event (`hold`), off the judging pool.
-            let Some((stream, frame)) = deferred_reads::offer(stream, frame, &context) else { continue };
-            if let Err(e) = work_tx.try_send((stream, frame)) {
-                let (std::sync::mpsc::TrySendError::Full((mut stream, frame)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, frame))) = e;
+            let Some((stream, delimited)) = deferred_reads::offer(stream, delimited, &context) else { continue };
+            if let Err(e) = work_tx.try_send((stream, delimited)) {
+                let (std::sync::mpsc::TrySendError::Full((mut stream, delimited)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, delimited))) = e;
                 // 78.146 — a mind's own read is served, once per window.
-                if judge::seat::serve_exempt(&mut stream, &frame, &context) {
+                if judge::seat::serve_exempt(&mut stream, &delimited, &context) {
                     continue;
                 }
                 // 78.92 — a why is left for the court stroke, never waited on.
-                if judge::why::serve_left(&mut stream, &frame, &context) {
+                if judge::why::serve_left(&mut stream, &delimited, &context) {
                     continue;
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Delimited { lane: frame.lane, body });
+                answer(&mut stream, Delimited { body });
             }
         });
     }
@@ -947,12 +955,15 @@ fn main() {
                 Ok(r) => r.recv(),
                 Err(_) => break,
             };
-            let Ok((mut stream, frame)) = job else { break };
+            let Ok((mut stream, delimited)) = job else { break };
             // An act with no kind byte is judged (and refused there) but
             // counted under no kind: 0xff was a sentinel standing for a byte
             // that was not read.
-            let kind = mycelium::anastome::dialogue::act_tag(&frame.body);
-            judge::judge(&mut stream, frame, &context);
+            let kind = mycelium::anastome::dialogue::act_tag(&delimited.body);
+            judge::judge(&mut stream, delimited, &context);
+            // #234: a judgement may have moved the court; the idle exchange,
+            // parked until the next motion, reads it.
+            crate::tuniversal::shelf().judged();
             if let Some(kind) = kind {
                 mycelium::observe::note_served(kind);
                 let n = served[kind as usize].fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
@@ -969,7 +980,7 @@ fn main() {
     // stroke, the listener deferred each connection before reading which
     // act it carried, and the console read "no reading" off hyphae b and c
     // for whole epochs (the 43-byte deferral, epoch 113). A full pool now
-    // hands the connection to ONE overflow worker, which reads the frame:
+    // hands the connection to ONE overflow worker, which reads the envelope:
     // an observation is served, every other act gets the deferral it got
     // before. It takes no court lock, so it never queues behind cognition;
     // it is one thread, so a flood spawns nothing. Full too, the listener
@@ -981,30 +992,30 @@ fn main() {
             for ReflexJob { stream } in overflow_rx {
                 arm_deadline(&stream);
                 let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
-                let Some(frame) = read_delimited(&mut stream) else { continue };
-                if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
-                    judge::observe::judge(&mut stream, &frame, &context);
+                let Some(delimited) = read_delimited(&mut stream) else { continue };
+                if mycelium::anastome::dialogue::act_tag(&delimited.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
+                    judge::observe::judge(&mut stream, &delimited, &context);
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                     continue;
                 }
                 // 78.151 — a read that takes no court is answered here.
-                if judge::serve_published(&mut stream, &frame, &context) {
+                if judge::serve_published(&mut stream, &delimited, &context) {
                     continue;
                 }
                 // 78.146 amended — a seat read with nothing filed past it
                 // waits for the court's next event (`hold`).
-                let Some((mut stream, frame)) = deferred_reads::offer(stream, frame, &context) else { continue };
+                let Some((mut stream, delimited)) = deferred_reads::offer(stream, delimited, &context) else { continue };
                 // 78.146 — a mind's own read is served, once per window.
-                if judge::seat::serve_exempt(&mut stream, &frame, &context) {
+                if judge::seat::serve_exempt(&mut stream, &delimited, &context) {
                     continue;
                 }
                 // 78.92 — a why is left for the court stroke, never waited on.
-                if judge::why::serve_left(&mut stream, &frame, &context) {
+                if judge::why::serve_left(&mut stream, &delimited, &context) {
                     continue;
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Delimited { lane: frame.lane, body });
+                answer(&mut stream, Delimited { body });
             }
         });
     }
@@ -1032,7 +1043,7 @@ fn main() {
                 continue;
             };
             let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-            crate::transport::defer_unread(job.stream, &mesh, Delimited { lane: mycelium::network::wire::Lane::Spatial, body });
+            crate::transport::defer_unread(job.stream, &mesh, Delimited { body });
         }
     }
 }

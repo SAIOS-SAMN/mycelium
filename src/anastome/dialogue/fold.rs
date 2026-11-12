@@ -13,13 +13,13 @@ use super::*;
 use crate::chronometry::{Place, Root};
 use crate::economy::Entry;
 
-/// `[ACT_FOLD][after: tag u8 (+ K‖i)][root K‖i ‖ hash 32 ‖ height u64][n u32][(who 32)(modes)…][receipt section]`,
-/// each epoch's net its modes (`Modes::put`, v0.5.0: never four lanes).
+/// `[ACT_FOLD][after: tag u8 (+ K‖i)][root K‖i ‖ hash 32 ‖ height u64][n u32][(who 32)(μ⃗)…][receipt section]`,
+/// each μ⃗ four exact rational lanes (`Mu::put`).
 #[derive(Clone)]
 pub struct FoldProposal {
     pub after: Option<Place>,
     pub root: Root,
-    pub epochs: Vec<([u8; 32], crate::economy::Modes)>,
+    pub epochs: Vec<([u8; 32], crate::economy::Mu)>,
     pub section: ReceiptSection,
 }
 
@@ -34,9 +34,9 @@ pub fn encode_fold(p: &FoldProposal) -> Option<Vec<u8>> {
     }
     p.root.write(&mut out);
     crate::transducer::address::put_u32_count(&mut out, p.epochs.len())?;
-    for (who, net) in &p.epochs {
+    for (who, mu) in &p.epochs {
         out.extend_from_slice(who);
-        net.put(&mut out)?;
+        mu.put(&mut out);
     }
     out.extend_from_slice(&super::encode_receipt_section(&p.section.prefix, &p.section.sig, &p.section.receipt)?);
     Some(out)
@@ -55,16 +55,16 @@ pub fn decode_fold(body: &[u8]) -> Option<FoldProposal> {
     let root = Root::read(body, &mut p)?;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    // An epoch is its key and its modes' four-byte count at the fewest.
-    if n > body.len().checked_sub(p)? / (32 + 4) {
+    // An epoch is its key and four lanes of eleven bytes at the fewest.
+    if n > body.len().checked_sub(p)? / (32 + 44) {
         return None;
     }
     let mut epochs = Vec::with_capacity(n);
     for _ in 0..n {
         let who: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
         p += 32;
-        let net = crate::economy::Modes::take_from(body, &mut p)?;
-        epochs.push((who, net));
+        let mu = crate::economy::Mu::take_from(body, &mut p)?;
+        epochs.push((who, mu));
     }
     let section = super::decode_receipt_section(body, p)?;
     Some(FoldProposal { after, root, epochs, section })

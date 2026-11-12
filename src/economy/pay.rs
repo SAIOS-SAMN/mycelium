@@ -7,25 +7,22 @@
 //! from the payer's balance into the HELD carrier, still the payer's until a
 //! release pays it on or a refund returns it. §6's second equation counts
 //! the held carrier beside the balances and the bonds (`audit`), so both
-//! equations hold through every movement here. An amount asked is a
-//! per-lane reading ([`Mu`]); it is drawn from the payer's modes on each
-//! lane in proportion to their amounts, and the modes drawn travel with the
-//! movement (#169). A movement is whole or refused, named, and a refused
-//! one writes no row.
+//! equations hold through every movement here. Every amount is a per-lane
+//! exact [`Mu`]; a movement is whole or refused, named, and a refused one
+//! writes no row.
 
 use super::*;
-use super::modes::Modes;
 
 /// 78.154a — THE RECYCLED POOL'S KEY: the connection tax a court received,
 /// held by the court, paying its closers' POUW before anything is minted.
 pub const RECYCLED: &[u8] = b"recycled pool";
 
-/// VALUE A PAYER SET ASIDE AGAINST A KEY: whose it is, the modes set aside,
+/// VALUE A PAYER SET ASIDE AGAINST A KEY: whose it is, how much per lane,
 /// and the act it was set aside at.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetAside {
     pub payer: [u8; 32],
-    pub modes: Modes,
+    pub mu: Mu,
     pub anchor: Anchor,
 }
 
@@ -69,35 +66,18 @@ impl Treasury {
     }
 
     /// A transfer whose two rows carry the proof of work it pays (78.154a:
-    /// a POUW paid out of the recycled pool), or none. The amount is drawn
-    /// from the payer's modes in proportion on each lane, and those modes
-    /// are what the payee receives.
+    /// a POUW paid out of the recycled pool), or none.
     fn transfer_paying(&mut self, from: [u8; 32], to: [u8; 32], mu: &Mu, anchor: Anchor, arm: Option<Arm>) -> Result<(), Unpaid> {
         let short = mu.shortfall(&self.balance_mu(&from));
         if !short.is_zero() {
             return Err(Unpaid::Short(short));
         }
-        let drawn = self.debit(from, mu).map_err(|_| Unpaid::Short(short))?;
-        self.transfer_drawn(from, to, drawn, anchor, arm);
+        // The modes drawn travel with the transfer (MU-ECONOMY §2.5).
+        let moved = self.debit(from, mu).map_err(|_| Unpaid::Short(short))?;
+        self.credit(to, &moved);
+        self.write(Entry { kind: Kind::Transfer, who: from, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Transfer, who: to, mu: moved, at: anchor.0, receipt: anchor.1, arm });
         Ok(())
-    }
-
-    /// MODES ALREADY DRAWN FROM `from`, credited to `to`: the two rows of
-    /// one transfer, the debit then the credit.
-    pub(crate) fn transfer_drawn(&mut self, from: [u8; 32], to: [u8; 32], drawn: Modes, anchor: Anchor, arm: Option<Arm>) {
-        self.credit(to, &drawn);
-        self.write(Treasury::row(Kind::Transfer, from, drawn.clone(), anchor, arm));
-        self.write(Treasury::row(Kind::Transfer, to, drawn, anchor, arm));
-    }
-
-    /// THESE MODES, held under a set-aside, paid on from its payer to `to`
-    /// as one transfer: back to the payer, then the two rows.
-    fn pay_on(&mut self, payer: [u8; 32], to: [u8; 32], modes: Modes, anchor: Anchor) {
-        self.credit(payer, &modes);
-        // Just credited, so held whole.
-        if self.debit_modes(payer, &modes).is_ok() {
-            self.transfer_drawn(payer, to, modes, anchor, None);
-        }
     }
 
     /// 78.154a — THE CONNECTION TAX RECEIVED INTO THE RECYCLED POOL: `mu`
@@ -110,10 +90,8 @@ impl Treasury {
             return Err(Unpaid::Nothing);
         }
         let pool = self.held.get(RECYCLED).cloned();
-        if let Some(h) = &pool {
-            if h.payer != court {
-                return Err(Unpaid::Taken);
-            }
+        if pool.as_ref().is_some_and(|h| h.payer != court) {
+            return Err(Unpaid::Taken);
         }
         if from != court {
             self.transfer(from, court, &mu, anchor)?;
@@ -122,54 +100,55 @@ impl Treasury {
         if !short.is_zero() {
             return Err(Unpaid::Short(short));
         }
-        let drawn = self.debit(court, &mu).map_err(|_| Unpaid::Short(short))?;
-        let (now, anchored) = match pool {
-            Some(h) => (h.modes.with(&drawn), h.anchor),
-            None => (drawn.clone(), anchor),
+        let moved = self.debit(court, &mu).map_err(|_| Unpaid::Short(short))?;
+        let anchored = match &pool {
+            Some(h) => h.anchor,
+            None => anchor,
         };
-        self.held.insert(RECYCLED, SetAside { payer: court, modes: now, anchor: anchored });
-        self.write(Treasury::row(Kind::Escrow, court, drawn, anchor, None));
+        let now = match pool {
+            Some(h) => h.mu.add(&moved),
+            None => moved.clone(),
+        };
+        self.held.insert(RECYCLED, SetAside { payer: court, mu: now, anchor: anchored });
+        self.write(Entry { kind: Kind::Escrow, who: court, mu: moved, at: anchor.0, receipt: anchor.1, arm: None });
         Ok(())
     }
 
-    /// 78.154a — what this court's recycled pool holds, read per lane.
+    /// 78.154a — what this court's recycled pool holds, per lane.
     pub fn recycled(&self) -> Mu {
         match self.held.get(RECYCLED) {
-            Some(h) => h.modes.reading(),
+            Some(h) => h.mu.clone(),
             None => Mu::zero(),
         }
     }
 
     /// 78.154a — A PROOF OF WORK PAID FROM THE RECYCLED POOL FIRST: per lane
-    /// the lesser of `mu` and what the pool holds, drawn from the pool's
-    /// modes in proportion and paid to `to` as a transfer carrying `arm`.
-    /// Answers the reading of what the pool paid; nothing where it holds
-    /// nothing.
+    /// the lesser of `mu` and what the pool holds, paid to `to` as a
+    /// transfer carrying `arm`. Answers what the pool paid; nothing where it
+    /// holds nothing.
     pub(crate) fn draw_pool(&mut self, to: [u8; 32], mu: &Mu, anchor: Anchor, arm: Option<Arm>) -> Mu {
         let Some(h) = self.held.get(RECYCLED).cloned() else { return Mu::zero() };
-        let (take, left) = h.modes.split_at(mu);
-        if take.is_empty() {
-            return Mu::zero();
+        let (take, left) = h.mu.split_at(mu);
+        if take.is_zero() {
+            return take;
         }
-        let read = take.reading();
-        match left.is_empty() {
+        match left.is_zero() {
             true => {
                 self.held.remove(RECYCLED);
             }
             false => {
-                self.held.insert(RECYCLED, SetAside { modes: left, ..h.clone() });
+                self.held.insert(RECYCLED, SetAside { mu: left, ..h.clone() });
             }
         }
         self.credit(h.payer, &take);
         if to == h.payer {
-            self.write(Treasury::row(Kind::Revoke, h.payer, take, anchor, arm));
-            return read;
+            self.write(Entry { kind: Kind::Revoke, who: h.payer, mu: take.clone(), at: anchor.0, receipt: anchor.1, arm });
+            return take;
         }
-        if self.debit_modes(h.payer, &take).is_err() {
-            return Mu::zero();
+        match self.transfer_paying(h.payer, to, &take, anchor, arm) {
+            Ok(()) => take,
+            Err(_) => Mu::zero(),
         }
-        self.transfer_drawn(h.payer, to, take, anchor, arm);
-        read
     }
 
     /// 78.154 (4) — A CLAIM DRAWN ON A STAKE: `mu` of `who`'s stake set
@@ -184,23 +163,21 @@ impl Treasury {
         if self.held.contains(key) {
             return Err(Unpaid::Taken);
         }
-        let mut staked = self.staked(&party);
-        let drawn = staked.draw(&mu).map_err(|_| Unpaid::Short(mu.shortfall(&self.staked(&party).reading())))?;
-        self.stakes.insert(party, staked);
+        let staked = match self.stake_of(&party) {
+            Some(s) => s,
+            None => Mu::zero(),
+        };
+        let next = staked.draw(&mu).map_err(|_| Unpaid::Short(mu.shortfall(&staked)))?;
+        self.stakes.insert(party, next);
         self.refresh_bond();
-        // The modes leave the stake and are held as they were staked: the
-        // two rows carry the same modes, so the balance between them holds
-        // exactly what the stake gave up.
-        self.write(Treasury::row(Kind::Unstake, party, drawn.clone(), anchor, None));
-        self.held.insert(key, SetAside { payer: party, modes: drawn.clone(), anchor });
-        self.write(Treasury::row(Kind::Escrow, party, drawn, anchor, None));
-        Ok(())
+        self.credit(party, &mu);
+        self.write(Entry { kind: Kind::Unstake, who: party, mu: mu.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+        self.hold(party, key, mu, anchor)
     }
 
     /// HOLD: `mu` of `payer`'s balance set aside under `key`, whole or
-    /// refused, drawn from the balance's modes in proportion on each lane.
-    /// One `Escrow` row: the value stays the payer's until released, so the
-    /// fold nets it as a movement within one identity.
+    /// refused. One `Escrow` row: the value stays the payer's until released,
+    /// so the fold nets it as a movement within one identity.
     pub fn hold(&mut self, payer: [u8; 32], key: &[u8], mu: impl Into<Mu>, anchor: Anchor) -> Result<(), Unpaid> {
         let mu = mu.into();
         if mu.is_zero() {
@@ -213,16 +190,15 @@ impl Treasury {
         if !short.is_zero() {
             return Err(Unpaid::Short(short));
         }
-        let drawn = self.debit(payer, &mu).map_err(|_| Unpaid::Short(short))?;
-        self.held.insert(key, SetAside { payer, modes: drawn.clone(), anchor });
-        self.write(Treasury::row(Kind::Escrow, payer, drawn, anchor, None));
+        let moved = self.debit(payer, &mu).map_err(|_| Unpaid::Short(short))?;
+        self.held.insert(key, SetAside { payer, mu: moved.clone(), anchor });
+        self.write(Entry { kind: Kind::Escrow, who: payer, mu: moved, at: anchor.0, receipt: anchor.1, arm: None });
         Ok(())
     }
 
     /// RELEASE what `key` holds to `to`: the hold leaves the held carrier
     /// and is paid on as a movement from its payer (the `Transfer` pair).
-    /// Released to its own payer it is a refund. Answers the reading of what
-    /// moved.
+    /// Released to its own payer it is a refund. Answers what moved.
     pub fn release_held(&mut self, key: &[u8], to: [u8; 32], anchor: Anchor) -> Result<Mu, Unpaid> {
         let Some(h) = self.held.get(key).cloned() else { return Err(Unpaid::Unheld) };
         if h.payer == to {
@@ -231,9 +207,9 @@ impl Treasury {
         self.held.remove(key);
         // Back to the payer, then on as one transfer: the rows say who paid
         // whom, and the balances end where the release puts them.
-        let read = h.modes.reading();
-        self.pay_on(h.payer, to, h.modes, anchor);
-        Ok(read)
+        self.credit(h.payer, &h.mu);
+        self.transfer(h.payer, to, &h.mu, anchor)?;
+        Ok(h.mu)
     }
 
     /// MU-ECONOMY §5.2 — DRAW PART of what `key` holds to `to`: per lane the
@@ -246,76 +222,42 @@ impl Treasury {
         if h.payer == to {
             return Err(Unpaid::Oneself);
         }
-        let (take, left) = h.modes.split_at(&mu.into());
-        if take.is_empty() {
+        let (take, left) = h.mu.split_at(&mu.into());
+        if take.is_zero() {
             return Err(Unpaid::Nothing);
         }
-        match left.is_empty() {
+        match left.is_zero() {
             true => {
                 self.held.remove(key);
             }
             false => {
-                self.held.insert(key, SetAside { modes: left, ..h.clone() });
+                self.held.insert(key, SetAside { mu: left, ..h.clone() });
             }
         }
         // Back to the payer, then on as one transfer, as a release moves it.
-        let read = take.reading();
-        self.pay_on(h.payer, to, take, anchor);
-        Ok(read)
-    }
-
-    /// BURN PART of what `key` holds: per lane the lesser of `mu` and what
-    /// is held, drawn from the hold's modes in proportion, leaving
-    /// circulation as one `Burn` row of its payer (a forfeit's retired part,
-    /// 78.129). The hold keeps the rest. Answers the reading of what left.
-    pub fn burn_held(&mut self, key: &[u8], mu: &Mu, anchor: Anchor) -> Result<Mu, Unpaid> {
-        let Some(h) = self.held.get(key).cloned() else { return Err(Unpaid::Unheld) };
-        let (take, left) = h.modes.split_at(mu);
-        if take.is_empty() {
-            return Err(Unpaid::Nothing);
-        }
-        match left.is_empty() {
-            true => {
-                self.held.remove(key);
-            }
-            false => {
-                self.held.insert(key, SetAside { modes: left, ..h.clone() });
-            }
-        }
-        let read = take.reading();
-        self.write(Treasury::row(Kind::Burn, h.payer, take, anchor, None));
-        Ok(read)
+        self.credit(h.payer, &take);
+        self.transfer(h.payer, to, &take, anchor)?;
+        Ok(take)
     }
 
     /// 78.133 — RELEASE what `key` holds IN PARTS, each to its recipient,
     /// whole or refused: the parts must sum to the hold exactly (`Split`),
-    /// so all parts are paid or none. Each part is drawn from the hold's
-    /// modes in proportion on each lane, a `Transfer` pair at `anchor` (the
-    /// act it ties back to). Answers the reading of what moved.
+    /// so all parts are paid or none. Each part a `Transfer` pair at
+    /// `anchor` (the act it ties back to). Answers what moved.
     pub fn release_split(&mut self, key: &[u8], parts: &[([u8; 32], Mu)], anchor: Anchor) -> Result<Mu, Unpaid> {
         let Some(h) = self.held.get(key).cloned() else { return Err(Unpaid::Unheld) };
-        let read = h.modes.reading();
-        if Mu::sum(parts.iter().map(|(_, p)| p)) != read {
+        if Mu::sum(parts.iter().map(|(_, p)| p)) != h.mu {
             return Err(Unpaid::Split);
         }
         self.held.remove(key);
-        let mut left = h.modes.clone();
-        let mut paid = Vec::with_capacity(parts.len());
+        self.credit(h.payer, &h.mu);
         for (to, part) in parts.iter().filter(|(_, p)| !p.is_zero()) {
-            // The parts sum to the hold, so each draws whole from what is left.
-            let drawn = left.draw(part).map_err(|_| Unpaid::Split)?;
-            paid.push((*to, drawn));
-        }
-        self.credit(h.payer, &h.modes);
-        for (to, drawn) in paid {
-            if to == h.payer {
+            if *to == h.payer {
                 continue;
             }
-            if self.debit_modes(h.payer, &drawn).is_ok() {
-                self.transfer_drawn(h.payer, to, drawn, anchor, None);
-            }
+            self.transfer(h.payer, *to, part, anchor)?;
         }
-        Ok(read)
+        Ok(h.mu)
     }
 
     /// REFUND what `key` holds to its payer. One `Revoke` row, netting
@@ -323,10 +265,9 @@ impl Treasury {
     pub fn refund_held(&mut self, key: &[u8], anchor: Anchor) -> Result<Mu, Unpaid> {
         let Some(h) = self.held.get(key).cloned() else { return Err(Unpaid::Unheld) };
         self.held.remove(key);
-        let read = h.modes.reading();
-        self.credit(h.payer, &h.modes);
-        self.write(Treasury::row(Kind::Revoke, h.payer, h.modes, anchor, None));
-        Ok(read)
+        self.credit(h.payer, &h.mu);
+        self.write(Entry { kind: Kind::Revoke, who: h.payer, mu: h.mu.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+        Ok(h.mu)
     }
 
     /// What stands held under `key`, if anything.

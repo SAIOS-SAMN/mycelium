@@ -1,5 +1,5 @@
 // §6 across a fold, 47.3 — ACT_ENTRIES: the ledger entries a witness
-// re-derives a fold over, a page from a cursor within the frame budget.
+// re-derives a fold over, a page from a cursor within the body budget.
 
 use crate::context::Context;
 use crate::transport::answer;
@@ -7,13 +7,13 @@ use mycelium::anastome::dialogue;
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(req) = dialogue::decode_entries_request(&frame.body) else { return };
-    // The frame's whole body: `encode_entries_reply` counts its own header
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(req) = dialogue::decode_entries_request(&delimited.body) else { return };
+    // The envelope's whole body: `encode_entries_reply` counts its own header
     // against it, and the entries the page can hold are the body less that
     // header over an entry's fewest bytes (D4.6); the reply keeps those that
     // fit at each entry's own length, and says how many it carries.
-    let budget = mycelium::network::wire::frame_budget();
+    let budget = mycelium::network::wire::BODY_BUDGET;
     let Some(entries_room) = budget.checked_sub(dialogue::ENTRIES_REPLY_HEADER) else {
         return;
     };
@@ -28,5 +28,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         eprintln!("  entries reply refused: the page's count passes its u32");
         return;
     };
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

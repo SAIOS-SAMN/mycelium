@@ -52,7 +52,7 @@ fn hold_releases_to_payee_or_refunds_and_conserves() {
     let e = t.economy(&[0; 32]).expect("the reading adds up");
     let [a] = e.accounts.as_slice() else { panic!("one identity: {:?}", e.accounts) };
     assert_eq!((a.who, a.balance.clone().n(), a.held.clone().n()), (A, [5, 2, 0, 5], [5, 2, 0, 1]));
-    assert_eq!(t.held_of(b"task").map(|h| (h.payer, h.modes.reading().n())), Some((A, [5, 2, 0, 1])));
+    assert_eq!(t.held_of(b"task").map(|h| (h.payer, h.mu.clone().n())), Some((A, [5, 2, 0, 1])));
     assert_eq!(t.release_held(b"task", B, at(3, [7; 32])).n(), Ok([5, 2, 0, 1]));
     assert_eq!((t.balance_mu(&A), t.balance_mu(&B)).n(), ([5, 2, 0, 5], [5, 2, 0, 1]), "paid on to B");
     assert!(t.held_of(b"task").is_none(), "the hold is gone");
@@ -77,8 +77,7 @@ fn nets_of_nets_payments_and_holds() {
     t.hold(A, b"k", [2, 0, 0, 0], at(3, [7; 32])).expect("held");
     t.release_held(b"k", B, at(4, [6; 32])).expect("released");
     let nets = crate::economy::nets_of(t.entries()).expect("the rows net exactly");
-    let rows: Vec<([u8; 32], Mu)> = nets.rows.iter().map(|(w, m)| (*w, m.reading())).collect();
-    assert_eq!(rows.n(), vec![(A, [7, 3, 0, 5]), (B, [3, 1, 0, 1])], "each identity's net is its balance");
+    assert_eq!(nets.rows.n(), vec![(A, [7, 3, 0, 5]), (B, [3, 1, 0, 1])], "each identity's net is its balance");
     assert!(t.entries().iter().any(|e| e.kind == Kind::Escrow), "the hold stands as its row");
 }
 

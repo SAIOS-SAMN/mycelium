@@ -41,7 +41,7 @@ impl Court {
         &self,
         s: &Element,
     ) -> Option<crate::transducer::address::Address> {
-        let env = s.receipts();
+        let env = s.stalk();
         for e in &env.nerve {
             if !self.ruled_contains(e.target.as_bytes()) {
                 return Some(e.target.clone());
@@ -82,7 +82,7 @@ impl Court {
                 self.awaiting.insert(form.clone(), vec![entry]);
             }
         }
-        // 76 — A SENTENCE WAITING ON A WORD IS THAT WORD'S PRESSURE: a frame
+        // 76 — A SENTENCE WAITING ON A WORD IS THAT WORD'S PRESSURE: an envelope
         // is transported to the word's escrow and the word is carried again,
         // where this court holds it in flight.
         self.press(form.as_bytes());
@@ -142,7 +142,7 @@ impl Court {
 
     /// 2026-10-14 — THE WORDS THIS COURT'S WAITING SENTENCES NEED: every
     /// address a sentence waits on that this court has not ruled, in key
-    /// order (content, rule 15), as many as one ask frames — `room` addresses
+    /// order (content, rule 15), as many as one ask envelopes — `room` addresses
     /// within `bytes`. What a court asks its peers for by address, in place
     /// of every stratum's whole lack.
     pub fn awaited_citations(&self, room: usize, bytes: usize) -> Vec<crate::transducer::address::Address> {
@@ -152,7 +152,7 @@ impl Court {
             if out.len() >= room {
                 break;
             }
-            // A ruled form, or one past the two-byte length `put_address` frames
+            // A ruled form, or one past the two-byte length `put_address` envelopes
             // an address in (the wall, never widened), is not asked.
             if self.ruled_contains(&form) || form.len() > usize::from(u16::MAX) {
                 continue;

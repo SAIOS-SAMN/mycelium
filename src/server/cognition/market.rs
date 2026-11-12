@@ -56,10 +56,10 @@ impl Court {
     pub fn settle_solve(
         &mut self,
         voice: [u8; 32],
-        modes: crate::economy::Modes,
+        mu: crate::economy::Mu,
         anchor: crate::economy::Anchor,
     ) -> crate::economy::Mu {
-        self.treasury.settle_solve(voice, modes, anchor)
+        self.treasury.settle_solve(voice, mu, anchor)
     }
 
     /// EC1 — A RETIREMENT IS A RULING, sealed as `Ruling(Retired)` citing
@@ -299,8 +299,8 @@ impl Court {
     /// shared — a thousand unrelated descriptions (I34). A body already
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
-    pub fn intake(&mut self, chain: &[crate::transducer::sentence::SectionLink], frame: &crate::transducer::element::Reperiod) -> bool {
-        self.intake_prepared(&prepare_intake(chain, frame))
+    pub fn intake(&mut self, chain: &[crate::transducer::sentence::SectionLink], reperiod: &crate::transducer::element::Reperiod) -> bool {
+        self.intake_prepared(&prepare_intake(chain, reperiod))
     }
 
     /// THE COMMIT HALF OF THE INTAKE: pieces already read — each residue
@@ -331,14 +331,14 @@ impl Court {
 /// refusal that travels: never listed and never counted (U14).
 pub fn prepare_intake(
     chain: &[crate::transducer::sentence::SectionLink],
-    frame: &crate::transducer::element::Reperiod,
+    reperiod: &crate::transducer::element::Reperiod,
 ) -> Vec<(Element, crate::transducer::stalk::Invariant)> {
     if chain.is_empty() {
         return Vec::new();
     }
     crate::transducer::sentence::pieces(chain)
         .into_iter()
-        .filter_map(|body| element::from_residue_framed(&body, frame))
+        .filter_map(|body| element::from_residue_framed(&body, reperiod))
         .map(|residue| {
             let chart = crate::transducer::stalk::invariant_of(&residue);
             (residue, chart)

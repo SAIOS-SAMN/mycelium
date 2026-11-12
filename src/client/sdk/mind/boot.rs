@@ -34,10 +34,16 @@ impl Mind {
     }
 
     /// Ask the bootstrap hypha for the rest of the nerve, one peer per spend,
-    /// on the carrier.
+    /// on the carrier. One discovery is in flight at a time.
     pub fn discover(&mut self) {
+        if self.board.court.discovering {
+            return;
+        }
+        self.board.court.discovering = true;
         let mut budget = self.physics.stroke();
-        self.ask(move |s| s.discover_budgeted(&mut budget), |_, ()| {});
+        self.ask(move |s| s.discover_budgeted(&mut budget), |entity, ()| {
+            entity.board.court.discovering = false;
+        });
     }
 
     /// THE MIND OPENED toward the hypha at `endpoint`: its carrier discovers the
@@ -94,6 +100,7 @@ impl Mind {
             comprehending: crate::network::nerve::Keyed::new(),
             comprehended_after: Vec::new(),
             genome_persisted: None,
+            amendments: Vec::new(),
             sealed: crate::network::nerve::Keyed::new(),
             contractions: crate::network::nerve::Keyed::new(),
             contracted: Vec::new(),
@@ -109,6 +116,7 @@ impl Mind {
             field: Default::default(),
             remembered: crate::network::nerve::Keyed::new(),
             questions: crate::network::nerve::Keyed::new(),
+            closed_answers: crate::network::nerve::Keyed::new(),
             scenes: Default::default(),
         }
     }

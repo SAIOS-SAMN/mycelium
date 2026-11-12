@@ -8,7 +8,8 @@
 //! `house <house home> <hypha address>`
 //!
 //! 1. Identity — the house's Ed25519 key, read from `<house home>/voice.key`
-//!    or minted there.
+//!    or minted there; its session inside Noise on the home's static key
+//!    (`Session::with_noise`, the hyphae pinned in `<house home>/noise.pins`).
 //! 2. The Concordance — its clause register read (`ACT_LAWS` mode 7), each
 //!    clause's fixtures reconstructed here (`house::sign_concordance`) and
 //!    the readings signed by the key, presented to the hypha (mode 8), which
@@ -22,7 +23,9 @@
 //!    universal core tube (`ACT_UPLINK`): the hypha rebuilds it under the
 //!    universal laws and admits it, the reserve having signed every network
 //!    clause in step 2 (track 24 B3, B4).
-//! 6. Conformance — `conformance::run(endpoint, key, &[Profile::Kernel])`:
+//! 6. The basket — the reserve states its survival basket (#238), each
+//!    element's portion by whole counts, and reads it back from its universe.
+//! 7. Conformance — `conformance::run(endpoint, key, &[Profile::Kernel])`:
 //!    every MUST act of the kernel profile, checked by decoded exact values;
 //!    an act the hypha deferred is reported deferred, with its deficit.
 //!
@@ -106,7 +109,16 @@ fn main() -> ExitCode {
     let (voice, key) = mycelium_sdk::voice::load_or_mint(&format!("{home}/voice.key"));
     let domain = key.verifying_key().to_bytes();
     println!("house {}", hex32(&domain));
-    let session = Session::open(endpoint, voice);
+    // Every act inside Noise where the hypha speaks it, on the house home's
+    // static key, the hyphae pinned beside it (MU-PRECURSORS §3.1).
+    let noise = match mycelium_sdk::session::NoiseHome::open(std::path::Path::new(home)) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("{home}: the Noise home does not open: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let session = Session::open(endpoint, voice).with_noise(noise);
 
     let served = match session.speak(encode_concordance_request()) {
         Ok(reply) => decode_concordance_reply(&reply),
@@ -170,11 +182,12 @@ fn main() -> ExitCode {
         },
     }
     let crossed = reserve_and_cross(&session, &key);
+    let basket = state_basket(&session, &key);
 
     println!("\nconformance, kernel profile ({endpoint}):");
     let report = run(endpoint, &key, &[Profile::Kernel]);
     print!("{report}");
-    match report.conforms() && crossed {
+    match report.conforms() && crossed && basket {
         true => ExitCode::SUCCESS,
         false => ExitCode::from(1),
     }
@@ -191,12 +204,60 @@ fn lawful() -> Option<Transition> {
     Some(Transition { motion: turn, heights: (7, 8), bodies: vec![(BodyState { nucleus, body }, after)], hues: Default::default(), fluxes: Vec::new() })
 }
 
+/// #238 — THE RESERVE STATES ITS SURVIVAL BASKET, each element's
+/// person-year portion held as its dipole by whole counts (water's oxygen and
+/// hydrogen, here), then reads its universe back: whether the basket the
+/// court holds is the basket stated. A basket stated already stands, never
+/// an edit.
+fn state_basket(session: &Session, key: &mycelium_sdk::prelude::SigningKey) -> bool {
+    use mycelium_sdk::forms::{Crossing, Place};
+    use mycelium_sdk::house::tuniversal::{Origin, TPoint};
+    use mycelium_sdk::house::{
+        decode_domain_reply, decode_universe_reading, encode_universe_read, encode_universe_statement, BasketEntry, BigUint, Stated,
+        UniverseStatement,
+    };
+    let domain = key.verifying_key().to_bytes();
+    let count = |n: u32| BigUint::from(n);
+    let basket = vec![BasketEntry::of(1, count(110), count(0), count(110)), BasketEntry::of(8, count(55), count(440), count(110))];
+    let at = TPoint { origin: Origin { genesis: domain, epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    let crossing = Crossing::still(Place { at, parents: Vec::new() }, vec![1]);
+    let Some(frame) = UniverseStatement { domain, stated: Stated::Basket(basket.clone()) }.sign(crossing, key).and_then(|s| encode_universe_statement(&s)) else {
+        println!("basket: the statement does not write");
+        return false;
+    };
+    match session.speak(frame).map(|r| decode_domain_reply(&r)) {
+        Ok(Some(f)) => println!("basket: {f:?}"),
+        Ok(None) => println!("basket: a reply this build does not read"),
+        Err(e) => println!("basket: {e}"),
+    }
+    match session.speak(encode_universe_read(domain)).map(|r| decode_universe_reading(&r)) {
+        Ok(Some(read)) if read.basket == basket => {
+            println!("basket: held as stated, {} elements", read.basket.len());
+            true
+        }
+        Ok(Some(read)) => {
+            println!("basket: the court holds another basket, {} elements", read.basket.len());
+            false
+        }
+        Ok(None) => {
+            println!("basket: a universe reading this build does not read");
+            false
+        }
+        Err(e) => {
+            println!("basket: {e}");
+            false
+        }
+    }
+}
+
 /// TRACK 24 B3, B4 — THE HOUSE CROSSES ITS UNIVERSAL CORE TUBE: its one
 /// tier designated its sitting reserve where it is none yet, then a fold of
 /// the reserve stating a lawful transition, which the hypha rebuilds under
 /// the universal laws and admits only while the reserve converses on every
 /// network clause it signed above. Whether it crossed.
 fn reserve_and_cross(session: &Session, key: &mycelium_sdk::prelude::SigningKey) -> bool {
+    use mycelium_sdk::forms::{Crossing, Place};
+    use mycelium_sdk::house::tuniversal::{Origin, TPoint};
     use mycelium_sdk::house::uplink::{decode_uplink_reply, encode_uplink, TierFold, Uplinked};
     let domain = key.verifying_key().to_bytes();
     if !matches!(session.reserve_reading(domain), Ok(r) if r.current == Some(domain)) {
@@ -219,7 +280,16 @@ fn reserve_and_cross(session: &Session, key: &mycelium_sdk::prelude::SigningKey)
         handoffs: Vec::new(),
         transitions: vec![transition],
     };
-    match session.speak(encode_uplink(&fold.sign(key))) {
+    // X1 (#160) — the fold carries its crossing through the core tube: here
+    // one that moves no body of its own (the transition carries the body),
+    // at the zero point of the domain's origin, over one phase of period 1.
+    let at = TPoint { origin: Origin { genesis: domain, epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    let crossing = Crossing::still(Place { at, parents: Vec::new() }, vec![1]);
+    let Some(frame) = fold.sign_crossed(crossing, key).and_then(|f| encode_uplink(&f)) else {
+        println!("crossing: the record does not write");
+        return false;
+    };
+    match session.speak(frame) {
         Ok(reply) => match decode_uplink_reply(&reply) {
             Some(Uplinked::Admitted { at, receipt }) => {
                 println!("crossing: a lawful transition through the universal core tube, admitted at height {}, receipt {}", at.h, hex32(&receipt));

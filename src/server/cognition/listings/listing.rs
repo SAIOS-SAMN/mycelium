@@ -175,7 +175,7 @@ impl Court {
         // because it refuses an element whose action is the identity, and
         // a form's action is carried by its tape and not by its chain.
         let addr_owned = addr.clone();
-        // 78.149 (c): A LETTER NAMES NO BODY — it stands at no frame and
+        // 78.149 (c): A LETTER NAMES NO BODY — it stands at no enclosure and
         // closes nothing on any family — so it is escrowed at its discharge,
         // which measures nothing. Its magnitude (the demand's bodies, or the
         // holonomic unit) is its existence as a word, never μ.
@@ -224,7 +224,7 @@ impl Court {
             let mu = crate::economy::price(&discharge, &self.physics.pressure);
             let anchor = self.anchor();
             self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu.clone(), anchor);
-            // A voice arriving on the word escrows its price: that frame is
+            // A voice arriving on the word escrows its price: that enclosure is
             // the flux reaching it (78.37 (3)).
             self.note_flux(addr.as_bytes(), &mu);
             return Outcome::GermPending;

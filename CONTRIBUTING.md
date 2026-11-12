@@ -13,7 +13,7 @@ take part and the standards the tree is held to.
 ## Getting started
 
 1. Check the tree with the two commands of
-   [AGENTS › Definition of done](AGENTS.md#definition-of-done), which also
+   [AGENTS › Checks](AGENTS.md#checks), which also
    says when `scripts/quickstart` is required and where the ARC-AGI-2
    corpus is read from. The core library reads no corpus: it is read only
    by its decoder, the workspace crate `sources/arc-agi`, and the hyphae
@@ -54,10 +54,9 @@ Part I.
    operator's approval.
 3. **Branch and pull request.** One phase of work per pull request: the
    code, its tests and its documentation together, a CHANGELOG fragment
-   under `changes/` ([AGENTS › Definition of done](AGENTS.md#definition-of-done)),
-   and the template filled in. The
-   [Definition of done](AGENTS.md#definition-of-done) holds; CI's
-   `definition of done / clippy and tests` runs it on every pull request.
+   under `changes/` ([AGENTS › Checks](AGENTS.md#checks)), and the
+   template filled in. The [Checks](AGENTS.md#checks) pass; CI's
+   `clippy and tests` runs the two commands on every pull request.
 4. **Review and merge.** A review reads the code against the
    specification and cites the section it holds the code to; a maintainer
    merges once conversations are resolved. History on `main` is never
@@ -68,8 +67,7 @@ Part I.
 Releases are SemVer tags `vX.Y.Z` with a GitHub Release whose notes are the
 CHANGELOG section ([`docs/MU-RELEASE.md`](docs/MU-RELEASE.md) Part II). The
 release checklist:
-- the [Definition of done](AGENTS.md#definition-of-done) green on the
-  tagged tree;
+- the [Checks](AGENTS.md#checks) green on the tagged tree;
 - the CHANGELOG section final, assembled from the fragments under
   `changes/` (which are then removed), every API, wire and ledger change
   named;
@@ -142,7 +140,7 @@ essentials:
 
 The gate is the workspace crate `gate/`: its tests read the source tree
 for what the compiler cannot, and run with every other test. How it is
-run is [AGENTS › Definition of done](AGENTS.md#definition-of-done); what
+run is [AGENTS › Checks](AGENTS.md#checks); what
 each check refuses is [MU-STANDARDS 4.1](docs/MU-STANDARDS.md#4-the-gate).
 
 A warning is a defect with a line number. Where a denied lint fires on a

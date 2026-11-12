@@ -128,7 +128,7 @@ pub(crate) struct Board {
     /// by cognition.
     pub(crate) tasks: crate::network::nerve::Keyed<super::perceive::TaskRead>,
     /// EACH COURT TASK'S SAMPLES PERCEIVED AT THE SAMPLES' OWN RANK, by its
-    /// citation (`perceive_envelope`; track 26 S4b): the bodies, the ground
+    /// citation (`perceive_task`; track 26 S4b, 78.179 §3): the bodies, the ground
     /// and each pair's vortex of factorisations, one entry per task, the
     /// corpus its bound.
     pub(crate) percepts: crate::network::nerve::Keyed<crate::transducer::family::transduce::TaskPercept>,
@@ -141,6 +141,10 @@ pub(crate) struct Board {
     /// and rewrites the restore left out): the file is written again at the
     /// first stroke, whatever the genome's length.
     pub(crate) genome_unwritten: bool,
+    /// Scenes whose orbits returned while the wire was occluded, held so
+    /// their outflow leaves on the first open stroke.
+    pub(crate) returned_scenes: Vec<Vec<u8>>,
+    pub(crate) returned_while_occluded: bool,
 }
 
 /// WHAT ONE WINDING MOVED: the lanes its outcome moved (a winding that moved
@@ -202,9 +206,13 @@ impl Mind {
             let _ = self.save_kept_genome();
         }
         let court = &mut self.board.court;
-        for d in court.dwell_remaining.iter_mut() {
+        court.dwell_elapsed = false;
+        for (l, d) in court.dwell_remaining.iter_mut().enumerate() {
             if let Some(next) = d.checked_sub(1) {
                 *d = next;
+                if next == 0 && l != crate::transducer::rewrite::LANE_TEMPORAL {
+                    court.dwell_elapsed = true;
+                }
             }
         }
         let mut outcome = StrokeOutcome::default();
@@ -297,7 +305,11 @@ impl Mind {
         let lanes_short = self.physics().reserve_shortfall(moved);
         let wait: [bool; 4] = std::array::from_fn(|l| lanes_short[l] > 0);
         let pressure = self.board.court.pressure();
-        self.board.court.dwell_remaining = self.physics().dwell(&pressure, wait);
+        let dwell = self.physics().dwell(&pressure, wait);
+        let court = &mut self.board.court;
+        for (l, d) in court.dwell_remaining.iter_mut().enumerate() {
+            *d = (*d).max(dwell[l]);
+        }
         self.at_law("between windings");
         Wound { moved, returns }
     }
@@ -338,7 +350,17 @@ impl Mind {
             }
             self.lapse_offers();
         }
-        if returns > 0 && open {
+        if returns > 0 {
+            for s in scenes {
+                if !self.board.returned_scenes.contains(&s) {
+                    self.board.returned_scenes.push(s);
+                }
+            }
+            self.board.returned_while_occluded = true;
+        }
+        if open && self.board.returned_while_occluded {
+            self.board.returned_while_occluded = false;
+            let scenes = std::mem::take(&mut self.board.returned_scenes);
             self.act_at_return(&scenes);
         }
         returns
@@ -397,7 +419,7 @@ impl Mind {
         // MU-CLIENT §5.4 (E1) — each under the scene its thought was
         // perceived in.
         for (word, family) in thoughts {
-            let _ = self.speak_word_on(&word, &[], &family);
+            let _ = self.assert_word_on(&word, &[], &family);
         }
         // MU-CLIENT §4.4(3) — what each returned thought holds against its
         // orbit (its slips) is worked at its return.

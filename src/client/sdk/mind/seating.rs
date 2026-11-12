@@ -581,7 +581,7 @@ impl Mind {
         if !seat.hold.held {
             return;
         }
-        let choice = match self.with_seat_mind(seat.at, |m| m.decide()) {
+        let mut choice = match self.with_seat_mind(seat.at, |m| m.decide()) {
             Decision::Call(choice) => choice,
             Decision::NothingToCall => {
                 met(&mut seat.met.passed);
@@ -593,6 +593,17 @@ impl Mind {
         // beat: a solve, or its declination.
         if choice.fn_id == FN_SOLVE || choice.fn_id == FN_DECLINE {
             return;
+        }
+        if choice.certificate.is_none() {
+            if let Some(cert) = self.contemplation.wells.scoped().find_map(|(_, w)| {
+                w.certificates
+                    .scoped()
+                    .next()
+                    .map(|(_, c)| Box::new(c.clone()))
+                    .or_else(|| w.vortex.scoped().find_map(|(_, inner)| inner.scoped().next().map(|(_, c)| Box::new(c.clone()))))
+            }) {
+                choice.certificate = Some(cert);
+            }
         }
         let mut encoded = Vec::new();
         let encodes = crate::anastome::dialogue::seat::put_args(&mut encoded, &choice.args).is_some();
@@ -642,9 +653,9 @@ impl Mind {
             }
             // Track 26 S4b: perceived at its own rank, then the alphabet's
             // section for the word path; a task off it stops perceived and
-            // is answered (`perceive_envelope`).
-            let Some(envelope) = dialogue::decode_task_envelope(&body) else { return unread(entity) };
-            let Some(env) = entity.perceive_envelope(&envelope, super::perceive::SceneKind::Task) else {
+            // is answered (`perceive_task`).
+            let Some(envelope) = dialogue::decode_task(&body) else { return unread(entity) };
+            let Some(env) = entity.perceive_task(&envelope, super::perceive::SceneKind::Task) else {
                 entity.with_body_seat(at, |seat| {
                     let _ = seat.unpulled.remove(&id);
                     seat.answered.insert(id, ());
@@ -769,6 +780,7 @@ impl Mind {
         if self.file_seat_solve(key, id, &outs, &crossed, &ground).is_err() {
             return Some(Stop::Unsubmitted);
         }
+        self.contemplation.release_scene(id);
         let (at, key, id, addr) = (seat.at, key.clone(), *id, crossed.address().as_bytes().to_vec());
         met(&mut seat.met.calls);
         let posted = args.clone();
@@ -807,5 +819,23 @@ impl Mind {
         ground: &crate::transducer::family::transduce::Ground<u8>,
     ) -> io::Result<()> {
         self.submit_solve_signed(key, id, &[], outputs, rule, ground)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn solve_before_first_seat(
+        &mut self,
+        id: &[u8; 32],
+        train: Vec<crate::transducer::family::TrainPair>,
+        tests: Vec<crate::transducer::family::SectionSample>,
+    ) {
+        let Some(mut seating) = self.board.seating.take() else { return };
+        let key = seating.key.clone();
+        let mut field = std::mem::take(&mut self.field);
+        if let Some(seat) = seating.seats.first_mut() {
+            seat.hold.held = true;
+            field.think(|| self.solve_before(seat, &key, id, train, tests));
+        }
+        self.field = field;
+        self.board.seating = Some(seating);
     }
 }

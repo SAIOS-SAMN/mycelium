@@ -1,8 +1,8 @@
-// 23.8, 26 — THE DISPATCH: which act a frame is, and which judge it goes to.
+// 23.8, 26 — THE DISPATCH: which act an envelope is, and which judge it goes to.
 //
 //! The percept, the gossiped percept, the demand and the routed demand are
 //! retired acts (law 8, ruled 2026-09-10): a court hears sentences and
-//! nothing else, so a frame carrying one is refused at the door with
+//! nothing else, so an envelope carrying one is refused at the door with
 //! `REFUSE_NOT_A_SENTENCE` and nothing of it reaches the court. An act
 //! this dispatch does not know is not answered.
 

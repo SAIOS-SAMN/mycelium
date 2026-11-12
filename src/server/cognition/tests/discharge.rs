@@ -69,8 +69,9 @@ fn mint_sentence_escrows_discharge_not_span() {
     let read = crate::transducer::family::form_deflation_read(&held, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());
     assert_eq!(read.mu, mu, "the discharge is d over the frame's 2·4 sites");
     let escrow = k.treasury().escrow_of(stood.address().as_bytes()).map(|e| e.mu.clone()).expect("escrowed");
-    assert_eq!(escrow, crate::economy::price(&mu, &k.physics().pressure), "escrowed at price(μ), exactly");
-    assert_eq!(k.discharge_of(stood.address().as_bytes(), &stood), mu, "the one reader reads the same discharge");
+    let discharge = k.discharge_of(stood.address().as_bytes(), &stood);
+    assert_eq!(discharge.lanes(), mu.lanes(), "the one reader reads the same discharge, lane by lane");
+    assert_eq!(escrow, crate::economy::price(&discharge, &k.physics().pressure), "escrowed at price(μ), exactly, holding the discharge's modes");
 }
 
 /// 78.149 (b) — A CLOSURE PAYS EACH CLAIM THE CLOSER'S MEASURED DISCHARGE,
@@ -105,7 +106,7 @@ fn pay_solve_pays_discharge_capped_by_escrow() {
 
     // Not the task's first closure: the solver is not paid, so every row
     // minted is a released claim.
-    let _ = k.pay_solve(&task, [9; 32], &rule, pay.clone(), &crate::economy::Modes::new(), false);
+    let _ = k.pay_solve(&task, [9; 32], &rule, pay.clone(), false);
     assert_eq!(k.treasury().balance_mu(&rich), pay, "an escrow above the discharge pays the discharge");
     assert_eq!(k.treasury().balance_mu(&poor), held_below, "an escrow below it caps it");
     let minted = k.treasury().minted();
@@ -172,4 +173,61 @@ fn list_sentence_callus_escrows_and_pays_nothing() {
     assert!(k.apply_verdict(addr.as_bytes(), crate::anastome::dialogue::RULING_UPHELD), "upheld");
     assert_eq!(k.treasury().balance_mu(&voice), [0; 4], "and is paid nothing");
     assert_eq!(k.treasury().minted(), [0; 4], "nothing is minted");
+}
+
+/// MU-ECONOMY §2.5 — A CITATION CARRIES THE CITED WORD'S CLOSURE MODES. A
+/// carried rule cited by a listing bound to its family is measured there as
+/// its local discharge, lane by lane, held on the modes its closure moves on
+/// that family (`Mu::carried_by`): the share POWC and a citation mint, never
+/// the founding mode on a lane the closure moves.
+#[test]
+fn cited_deflation_holds_the_cited_closure_modes() {
+    use crate::transducer::alphabet::Word;
+    crate::transducer::raster::stand_on(0);
+    let mut k = Court::new();
+    let family = carried();
+    let rule = rule_over(&family);
+    let (task, citer) = ([5u8; 32], Address::from_bytes([43u8; 32]));
+    k.bind_task_family(task, family.clone());
+    k.bind_listing_task(&citer, task);
+    let here = Word::identity();
+    let share = k.cited_deflation(citer.as_bytes(), &rule, &here);
+    let held = from_element_form(&rule).expect("a form");
+    let local = crate::transducer::family::local::form_local(&held, &family, &k, &here).mu;
+    let closure = crate::transducer::family::form_deflation_read(&held, &family, &k, &here).modes;
+    assert!(!share.is_zero(), "the cited rule closes something on the citer's family");
+    assert_eq!(share.lanes(), local.lanes(), "the share reads the local discharge, lane by lane");
+    assert_eq!(share, crate::economy::Mu::carried_by(&local, &closure), "held on the closure's modes");
+    let moved: Vec<usize> = share.occupied().into_iter().filter(|&l| u8::try_from(l).is_ok_and(|l| closure.on_lane(l).next().is_some())).collect();
+    assert!(!moved.is_empty(), "the closure moves a mode on a lane the share holds");
+    for l in moved {
+        let lane = u8::try_from(l).expect("a lane index");
+        let founding = crate::economy::modes::Mode::founding(lane).expect("a base lane");
+        assert!(share.modes().amount_of(&founding).is_none(), "lane {l} is held on the closure's modes, never the founding mode");
+    }
+}
+
+/// MU-ECONOMY §2.5 — POWR READS THE MODES OF THE FAMILY A REWRITE ABSORBS:
+/// a rewrite retiring a held rule bound to its family reads the modes that
+/// rule's closure moves there; a rewrite retiring a word not held reads none.
+#[test]
+fn absorbed_modes_read_the_retired_word_closure() {
+    use crate::transducer::rewrite::{mint, RewriteKind, RewritePayload};
+    crate::transducer::raster::stand_on(0);
+    let mut k = Court::new();
+    let family = carried();
+    let rule = rule_over(&family);
+    let task = [6u8; 32];
+    k.bind_task_family(task, family.clone());
+    k.bind_listing_task(rule.address(), task);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    k.basis_push(rule.clone(), [1; 32], &mut budget);
+    let refine = || RewritePayload::Refine { chart: crate::transducer::stalk::Invariant::counts(&[3]), axis: 0 };
+    let after = Address::from_bytes([44u8; 32]);
+    let rw = mint(RewriteKind::Refine, &[rule.address()], after.clone(), refine(), [1, 0, 0, 0]).expect("a rewrite");
+    let expected = k.measured_discharge_read(&rule, &family).1;
+    assert!(!expected.is_empty(), "the retired rule's closure moves modes on its family");
+    assert_eq!(k.absorbed_modes(&rw), expected, "the rewrite carries the absorbed family's modes");
+    let unheld = mint(RewriteKind::Refine, &[Address::from_bytes([45u8; 32])], after, refine(), [1, 0, 0, 0]).expect("a rewrite");
+    assert!(k.absorbed_modes(&unheld).is_empty(), "a retired word not held absorbs no modes");
 }

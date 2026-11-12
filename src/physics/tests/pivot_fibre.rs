@@ -220,26 +220,28 @@ fn shape_of_survives_every_switch() {
     assert_eq!(shape_of(&[on(5, 0), on(5, 0), on(0, 5)], 2), Shape::Open, "a repeated pivot fixes nothing new");
 }
 
-/// 78.74 — A TETHER IS MEASURED, NEVER A BOOL. Two tethers to one node C:
-/// A–C (masses 2, 3, length 5) and B–C (masses 4, 3, length 10). Strength,
-/// the inverse square, reads A–C stronger (6/25 against 12/100); capacity,
-/// the switch's square, reads B–C larger (12·100 against 6·25); and
-/// strength × capacity is the mass product squared, exactly. Torque: the
+/// 78.74 (amended) — A TETHER IS MEASURED, NEVER A BOOL. Two tethers to one node C:
+/// A–C (masses 2, 3, reach 7) and B–C (masses 4, 3, reach 14). Strength,
+/// the first-degree held share, reads A–C stronger (5/12 against 4/12 = 1/3);
+/// fluidity, the open share, reads B–C more fluid (2/3 against 7/12); and
+/// strength + fluidity = 1 identically on every tether. Torque: the
 /// twist about the tether's axis puts a positive squared torque on it, a
 /// level step (pure field) puts none.
 #[test]
-fn fibre_reads_strength_capacity_and_torque_exactly() {
+fn fibre_reads_strength_fluidity_and_torque_exactly() {
     let c = cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
     let a = cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
     let b = cga::point_at(&[q(6, 1), q(8, 1), q(0, 1)]);
     let ac = PivotFibre::new(a, c.clone(), q(2, 1), q(3, 1)).expect("A–C");
     let bc = PivotFibre::new(b, c, q(4, 1), q(3, 1)).expect("B–C");
-    assert_eq!((ac.length2(), bc.length2()), (q(25, 1), q(100, 1)), "d², exact");
-    assert_eq!((ac.strength(), bc.strength()), (q(6, 25), q(12, 100)), "m m / d²");
+    assert_eq!((ac.reach(), bc.reach()), (q(7, 1), q(14, 1)), "L1 reach, exact");
+    assert_eq!((ac.pole(), bc.pole()), (q(7, 5), q(14, 7)), "t = r / (m_i + m_j)");
+    assert_eq!((ac.strength(), bc.strength()), (q(5, 12), q(1, 3)), "c = 1 / (1 + t)");
     assert!(ac.strength() > bc.strength(), "A–C binds harder");
-    assert_eq!((ac.capacity(), bc.capacity()), (q(150, 1), q(1200, 1)), "S² = m m d²");
-    assert!(bc.capacity() > ac.capacity(), "B–C reaches further");
-    assert_eq!(ac.strength() * ac.capacity(), q(36, 1), "strength × capacity = (m m)²");
+    assert_eq!((ac.fluidity(), bc.fluidity()), (q(7, 12), q(2, 3)), "d = t / (1 + t)");
+    assert!(bc.fluidity() > ac.fluidity(), "B–C is more fluid");
+    assert_eq!(ac.strength() + ac.fluidity(), q(1, 1), "c + d = 1 identically");
+    assert_eq!(bc.strength() + bc.fluidity(), q(1, 1), "c + d = 1 identically");
     let f = fibre(2, 1);
     let twist_gen = twist().grade(2);
     assert!(f.torque2(&twist_gen) > q(0, 1), "a twist about the axis: torque");
@@ -358,21 +360,21 @@ fn sliver_composes_by_parameter_and_keeps_manifold() {
     }
 }
 
-/// 78.74 — THE FIBRE'S FIBRATION: `π` places a point by the ratio of the two
-/// pivots' pulls on it. On the fibre from the origin to (3, 4, 0), the point
-/// (6, 8, 0) stands 10 from `Pᵢ` and 5 from `Pⱼ`: at equal masses `π = 25/100
-/// = 1/4`, `Pⱼ` pulling harder; at masses 4 and 1 it stands on the switch,
-/// `π = 1`, the pulls balanced. A point equidistant from both pivots stands
-/// on the switch at equal masses. The pivots have no level. The field line
-/// through (6, 8, 0) is the fibre's own line: (−3, −4, 0) stands on it, (0, 0,
-/// 5) does not.
+/// 78.74 (amended) — THE FIBRE'S FIBRATION: `π` places a point by the ratio of the two
+/// pivots' first-degree reach poles on it: `μ = (m_i · r_{jX}) / (m_j · r_{iX})`.
+/// On the fibre from the origin to (3, 4, 0), the point (6, 8, 0) stands reach 14 from
+/// `P_i` and 7 from `P_j`: at equal masses `π = 7/14 = 1/2`, `P_j` pulling harder;
+/// at masses 2 and 1 it stands on the switch, `π = 1`, the pulls balanced.
+/// A point equidistant in L1 reach from both pivots stands on the switch at equal masses.
+/// The pivots have no level. The field line through (6, 8, 0) is the fibre's own line:
+/// (−3, −4, 0) stands on it, (0, 0, 5) does not.
 #[test]
 fn project_places_point_by_pivot_pulls() {
     let point = |x: i64, y: i64, z: i64| cga::point_at(&[q(x, 1), q(y, 1), q(z, 1)]);
     let far = point(6, 8, 0);
-    assert_eq!(fibre(1, 1).project(&far), Some(q(1, 4)), "Pⱼ pulls four times harder");
-    assert_eq!(fibre(4, 1).project(&far), Some(q(1, 1)), "the masses balance it on the switch");
-    let even = cga::point_at(&[q(11, 2), q(-1, 1), q(0, 1)]);
+    assert_eq!(fibre(1, 1).project(&far), Some(q(1, 2)), "Pⱼ pulls twice as hard");
+    assert_eq!(fibre(2, 1).project(&far), Some(q(1, 1)), "the masses balance it on the switch");
+    let even = cga::point_at(&[q(0, 1), q(7, 2), q(0, 1)]);
     assert_eq!(fibre(1, 1).project(&even), Some(q(1, 1)), "equidistant: on the switch");
     let f = fibre(1, 1);
     assert_eq!(f.project(&f.pi), None, "a pivot has no level");

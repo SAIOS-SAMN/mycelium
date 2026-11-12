@@ -10,7 +10,7 @@
 
 use super::fixtures::*;
 use crate::transducer::alphabet::Word;
-use crate::transducer::element::{NerveEdge, ReceiptsEnvelope};
+use crate::transducer::element::{NerveEdge, WordStalk};
 use crate::transducer::sentence::*;
 
 fn leaf(plane: (u8, u8)) -> Form {
@@ -46,15 +46,15 @@ fn receipts_survives_element_record() {
     host.reindex();
 
     let e = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
-    assert_eq!(e.receipts().nerve.len(), 1, "one citation is one 1-simplex");
-    assert_eq!(e.receipts().nerve[0].target, a_at, "the edge names the cited form");
+    assert_eq!(e.stalk().nerve.len(), 1, "one citation is one 1-simplex");
+    assert_eq!(e.stalk().nerve[0].target, a_at, "the edge names the cited form");
 
     let bytes = e.to_bytes().expect("the record writes");
     let mut p = 0usize;
     let back = crate::transducer::element::Element::from_bytes(&bytes, &mut p).expect("record");
     assert_eq!(
-        back.receipts(),
-        e.receipts(),
+        back.stalk(),
+        e.stalk(),
         "the envelope is the same object on both sides of the record"
     );
     assert_eq!(back.address(), e.address(), "and the address did not move for it");
@@ -67,7 +67,7 @@ fn receipts_survives_element_record() {
 /// pivots would rename its own expression and orphan every citation of it,
 /// which is the argument that moved the filing at `df1eeaa`.
 #[test]
-fn set_receipts_keeps_address() {
+fn set_stalk_keeps_address() {
     let a = leaf((0, 1));
     let a_at = address_of(&a);
     let mut host = Form::default();
@@ -78,13 +78,13 @@ fn set_receipts_keeps_address() {
 
     let plain = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
     let mut loaded = plain.clone();
-    let mut env = plain.receipts().clone();
+    let mut env = plain.stalk().clone();
     env.certificates.push(cert(Axis::Placement, [1, 0, 0, 0]));
-    loaded.set_receipts(env);
+    loaded.set_stalk(env);
 
     assert_ne!(
-        plain.receipts(),
-        loaded.receipts(),
+        plain.stalk(),
+        loaded.stalk(),
         "the two words attest different things"
     );
     assert_eq!(
@@ -118,7 +118,7 @@ fn nerve_edge_carries_citation_slip_of_screw() {
     host.reindex();
 
     let e = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
-    let [edge] = e.receipts().nerve.as_slice() else {
+    let [edge] = e.stalk().nerve.as_slice() else {
         panic!("one citation is one edge");
     };
     let screw = edge.screw().expect("a translator splits");
@@ -172,7 +172,7 @@ fn nerve_edge_host_ignores_glue_order() {
         host.orbits = Form::orbits_of(&host.faces, &host.vertices);
         host.reindex();
         let e = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
-        e.receipts().nerve.iter().map(NerveEdge::host).collect::<Vec<_>>()
+        e.stalk().nerve.iter().map(NerveEdge::host).collect::<Vec<_>>()
     };
     let forward = sites((&a, a_at.clone()), (&b, b_at.clone()));
     let backward = sites((&b, b_at), (&a, a_at));
@@ -297,15 +297,15 @@ fn nerve_round_refuses_chart_off_hyperboloid() {
 fn receipts_envelope_writes_empty_and_refuses_zero_length() {
     let f = leaf((0, 1));
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("mint");
-    assert!(e.receipts().is_empty(), "a leaf cites nothing and pivots nothing");
+    assert!(e.stalk().is_empty(), "a leaf cites nothing and pivots nothing");
 
     let mut block = Vec::new();
-    ReceiptsEnvelope::default().to_block(&mut block).expect("the envelope writes");
+    WordStalk::default().to_block(&mut block).expect("the envelope writes");
     assert_eq!(block.len(), 4 + 56, "len prefix and seven zero u64 counts (78.55: the witnesses)");
     let mut p = 0usize;
     assert_eq!(
-        ReceiptsEnvelope::from_block(&block, &mut p),
-        Some(ReceiptsEnvelope::default()),
+        WordStalk::from_block(&block, &mut p),
+        Some(WordStalk::default()),
         "and it reads back as the empty envelope"
     );
     assert_eq!(p, block.len(), "the block's own length bounds the parse");
@@ -317,7 +317,7 @@ fn receipts_envelope_writes_empty_and_refuses_zero_length() {
     // empty-carrier collapse, and it is refused rather than caught later.
     let mut p = 0usize;
     assert_eq!(
-        ReceiptsEnvelope::from_block(&0u32.to_le_bytes(), &mut p),
+        WordStalk::from_block(&0u32.to_le_bytes(), &mut p),
         None,
         "an envelope that did not serialize is not an envelope with nothing in it"
     );
@@ -369,7 +369,7 @@ fn form_vertex_key_joins_hosts_citing_two_forms() {
     let ea = as_element_form(&ha, [1, 0, 0, 0]).expect("mint");
     let eb = as_element_form(&hb, [1, 0, 0, 0]).expect("mint");
     assert_eq!(ea.address(), eb.address(), "one address");
-    assert_ne!(ea.receipts(), eb.receipts(), "two covers");
+    assert_ne!(ea.stalk(), eb.stalk(), "two covers");
 }
 
 /// A CITATION COSTS THE SAME WHATEVER IT CITES, AND THAT IS WHAT SEVERS
@@ -428,19 +428,19 @@ fn form_vertex_key_ignores_size_of_cited_form() {
 #[test]
 fn receipts_envelope_round_trips_wide_address() {
     let wide = crate::transducer::address::Address::new(vec![7u8; 70_000]);
-    let env = ReceiptsEnvelope {
+    let env = WordStalk {
         derivations: vec![crate::transducer::element::DerivationCite {
             vertex: wide.clone(),
             generators: vec![(wide.clone(), wide.clone(), 1)],
             residue: Word::identity(),
             conjugator: None,
         }],
-        ..ReceiptsEnvelope::default()
+        ..WordStalk::default()
     };
     let mut block = Vec::new();
     env.to_block(&mut block).expect("the envelope writes");
     let mut p = 0usize;
-    let back = ReceiptsEnvelope::from_block(&block, &mut p).expect("a wide address round-trips");
+    let back = WordStalk::from_block(&block, &mut p).expect("a wide address round-trips");
     assert_eq!(back, env, "the 70 000-byte address survives, whole");
     assert_eq!(p, block.len(), "and the block is consumed exactly");
 }
@@ -454,21 +454,21 @@ fn receipts_envelope_round_trips_wide_address() {
 #[test]
 fn receipts_envelope_round_trips_conjugator() {
     let addr = crate::transducer::address::Address::new(vec![5u8; 40]);
-    let plain = ReceiptsEnvelope {
+    let plain = WordStalk {
         derivations: vec![crate::transducer::element::DerivationCite {
             vertex: addr.clone(),
             generators: vec![(addr.clone(), addr.clone(), 1)],
             residue: Word::identity(),
             conjugator: None,
         }],
-        ..ReceiptsEnvelope::default()
+        ..WordStalk::default()
     };
     let mut before = Vec::new();
     plain.to_block(&mut before).expect("the envelope writes");
     // The last field of the record as it was: the witness count, zero.
     assert_eq!(&before[before.len() - 8..], &0u64.to_le_bytes(), "an untransported record ends at its witness count");
     let mut p = 0usize;
-    assert_eq!(ReceiptsEnvelope::from_block(&before, &mut p).expect("reads"), plain);
+    assert_eq!(WordStalk::from_block(&before, &mut p).expect("reads"), plain);
     let g = Word::from_letters(&[(crate::transducer::alphabet::LetterId::turn_90((1, 3)).expect("a 90° turn"), false)]).rotor();
     let mut moved = plain.clone();
     moved.derivations[0].conjugator = Some(g.clone());
@@ -476,7 +476,7 @@ fn receipts_envelope_round_trips_conjugator() {
     moved.to_block(&mut after).expect("the envelope writes");
     assert!(after.len() > before.len(), "the conjugator rides after the record");
     let mut p = 0usize;
-    let back = ReceiptsEnvelope::from_block(&after, &mut p).expect("a transported cite reads back");
+    let back = WordStalk::from_block(&after, &mut p).expect("a transported cite reads back");
     assert_eq!(back, moved, "with its conjugator");
     assert_eq!(p, after.len(), "the block is consumed exactly");
 }

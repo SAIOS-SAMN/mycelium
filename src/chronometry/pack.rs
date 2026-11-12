@@ -2,7 +2,7 @@
 // and references for what its neighbours already hold, read back by
 // re-deriving the rest.
 //
-//! A packed node is its signer and operator by index, its kind and frame,
+//! A packed node is its signer and operator by index, its kind and measure,
 //! its predecessor — the last node of its own line already written, or the
 //! full citation where the stream does not carry it — its parents and its
 //! citations. Its stamp is re-derived (the signer from its index, the place

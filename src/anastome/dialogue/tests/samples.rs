@@ -33,9 +33,9 @@ fn task_round_trips_samples_of_rank_n() {
                 sample(extents, width, at(Split::Train, 0, Member::Output)),
             )];
             let tests = vec![sample(extents, width, at(Split::Test, 0, Member::Input))];
-            let body = encode_task_envelope(&[7; 32], &train, &tests).expect("the envelope writes");
-            let env = decode_task_envelope(&body).expect("the envelope reads");
-            assert_eq!(env, TaskEnvelope { id: [7; 32], train: train.clone(), tests: tests.clone() }, "rank {rank}, width {width}");
+            let body = encode_task(&[7; 32], &train, &tests).expect("the envelope writes");
+            let env = decode_task(&body).expect("the envelope reads");
+            assert_eq!(env, TaskFamily { id: [7; 32], train: train.clone(), tests: tests.clone() }, "rank {rank}, width {width}");
             assert_eq!(env.tests[0].rank(), rank);
             assert_eq!(env.tests[0].width(), width);
 
@@ -59,13 +59,13 @@ fn task_round_trips_samples_of_rank_n() {
     // Read whole or refused: a byte short, a byte over, a place off its
     // position.
     let train = vec![(sample(&[2], 1, at(Split::Train, 0, Member::Input)), sample(&[2], 1, at(Split::Train, 0, Member::Output)))];
-    let body = encode_task_envelope(&[1; 32], &train, &[]).expect("writes");
-    assert!(decode_task_envelope(&body[..body.len() - 1]).is_none(), "a cut envelope is none");
+    let body = encode_task(&[1; 32], &train, &[]).expect("writes");
+    assert!(decode_task(&body[..body.len() - 1]).is_none(), "a cut envelope is none");
     let mut longer = body.clone();
     longer.push(0);
-    assert!(decode_task_envelope(&longer).is_none(), "nothing after the last test input");
+    assert!(decode_task(&longer).is_none(), "nothing after the last test input");
     let swapped = vec![(train[0].1.clone(), train[0].0.clone())];
-    assert_eq!(encode_task_envelope(&[1; 32], &swapped, &[]), Err(SampleWire::PlaceOffPosition), "written only at its position");
+    assert_eq!(encode_task(&[1; 32], &swapped, &[]), Err(SampleWire::PlaceOffPosition), "written only at its position");
 }
 
 /// MU-SENSING §6 — AN EXTENT PAST ITS FIELD IS REFUSED, NEVER WIDENED: an
@@ -86,7 +86,7 @@ fn extent_past_its_field_is_refused_never_widened() {
     assert_eq!(p, tape.len(), "read whole");
     // The envelope refuses it too, rather than send a smaller task.
     let train = vec![(sample(&[past], 1, at(Split::Train, 0, Member::Input)), sample(&[1], 1, at(Split::Train, 0, Member::Output)))];
-    assert_eq!(encode_task_envelope(&[0; 32], &train, &[]), Err(SampleWire::ExtentPastField { axis: 0, extent: past }));
+    assert_eq!(encode_task(&[0; 32], &train, &[]), Err(SampleWire::ExtentPastField { axis: 0, extent: past }));
 }
 
 /// A header read off the wire: the rank, the extents, the width and an
@@ -107,7 +107,7 @@ fn header(extents: &[u16], width: u16) -> Vec<u8> {
 /// sample's name before any byte is read or allocated; a count the tape
 /// does not carry is short.
 #[test]
-fn symbol_bytes_overflow_is_refused_by_name() {
+fn symbol_bytes_refuses_overflow() {
     let max = u16::MAX;
     let sites = |extents: &[u16]| extents.iter().try_fold(1usize, |n, &e| n.checked_mul(usize::from(e)));
     // The axis at which the sites pass the machine word.

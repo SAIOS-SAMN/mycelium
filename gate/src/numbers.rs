@@ -1,6 +1,7 @@
 // MU-DERIVATIONS D1.4, MU-STANDARDS 2.12 — THE NUMBERS GATE: every numeric
 // item that carries a literal is classified, and every underived one is named
-// in the open-physics register (`physics::axioms::OPEN_PHYSICS`).
+// in the open-physics register (`physics::axioms::OPEN_PHYSICS`) or its
+// sibling, the engineering register (`OPEN_ENGINEERING`).
 //
 //! The gate reads the tree's items with `syn` (never raw lines), under the
 //! rules N1–N5 of MU-DERIVATIONS D1.4:
@@ -61,8 +62,9 @@ const CODECS: [&str; 6] = ["put", "take", "encode", "decode", "write", "read"];
 /// The register's file, relative to the repository root.
 pub const REGISTER: &str = "src/physics/axioms/founding.rs";
 
-/// The register's carrier.
-const REGISTER_ITEM: &str = "OPEN_PHYSICS";
+/// The register's carriers: the physical invariants and their sibling,
+/// the engineering numbers (D1.4 O2), read alike.
+const REGISTER_ITEMS: [&str; 2] = ["OPEN_PHYSICS", "OPEN_ENGINEERING"];
 
 /// One numeric item of N1, as the gate reads it.
 #[derive(Debug, Clone)]
@@ -255,9 +257,9 @@ impl Collector {
             Some(o) => format!("{}::{o}::{name}", self.file),
             None => format!("{}::{name}", self.file),
         };
-        if self.file == REGISTER && name == REGISTER_ITEM {
+        if self.file == REGISTER && REGISTER_ITEMS.contains(&name.as_str()) {
             if let Some(e) = expr {
-                self.register = register_of(e);
+                self.register.extend(register_of(e));
             }
         }
         self.items.push(NumericItem {

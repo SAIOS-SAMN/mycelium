@@ -33,6 +33,7 @@ mod reach;
 mod reads;
 pub use reads::HELD_KINDS;
 mod persistence;
+mod points;
 mod reduce;
 mod room;
 pub mod seat;
@@ -49,6 +50,7 @@ pub use court::catchup::RootAdoption;
 pub use lease::LeaseReading;
 pub use court::fold::Proposal;
 pub use court::syllabus::{Asker, PageEnd, ServedPage};
+pub use court::selection::TaskJudgement;
 pub use court::task::{stated_ground, stated_ground_of, SolveVerdict, StatedGroundRefusal};
 pub use persistence::RestoreRefusal;
 pub use state::Court;
@@ -62,7 +64,7 @@ pub use language::{
     Outcome, Priced, Rank,
 };
 pub use reduce::{cohesion_over, normal_form, quote_incidence, rank_over, Ask, BookView};
-pub use wire::{frame_of, outcome_code};
+pub use wire::{outcome_code, reperiod_of};
 
 use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};

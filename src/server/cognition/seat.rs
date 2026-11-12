@@ -9,7 +9,7 @@
 //! past the relay's last sequence reads from the start. Per addressee, a
 //! READ-MAIL's `after` acknowledges — and drops — everything at or below it,
 //! and what is held never passes `MAIL_BOUND` bytes as a reply writes them:
-//! the frame budget less the reply's count, so one READ-MAIL always carries a
+//! the body budget less the reply's count, so one READ-MAIL always carries a
 //! whole box. Past it the oldest piece is dropped and counted (`dropped`); the
 //! reader sees the gap in the sequence.
 //!
@@ -21,11 +21,11 @@
 use crate::anastome::dialogue::seat::{Mail, MailRead, Post, ReadMail, Refusal, Signer, SignedPost};
 use crate::network::nerve::Keyed;
 
-/// THE BOUND ON ONE ADDRESSEE'S MAIL, in reply bytes: the frame budget less
+/// THE BOUND ON ONE ADDRESSEE'S MAIL, in reply bytes: the body budget less
 /// the reply's head before its pieces — v1.4's `[1][epoch][seq][count]`,
 /// which covers v1.3's `[count]` — derived, not declared.
 pub fn mail_bound() -> usize {
-    crate::network::wire::frame_budget() - MailRead::HEAD
+    crate::network::wire::BODY_BUDGET - MailRead::HEAD
 }
 
 /// A LISTING'S COORDINATES: `[0][domain]` in the domain's own universe,
@@ -97,7 +97,7 @@ pub struct SeatRelay {
     /// by kind, refused by reason (`observe::Relay`). Bounded by the domains
     /// founded.
     posts: Keyed<([u64; 6], [u64; 3])>,
-    /// Posts naming a domain with no reserve here, and seat frames that did
+    /// Posts naming a domain with no reserve here, and seat acts that did
     /// not read far enough to name one: each one count.
     unknown: u64,
     unread: u64,
@@ -176,7 +176,7 @@ impl SharedRelay {
         self.lock().dropped
     }
 
-    /// A seat frame that did not read far enough to name a domain.
+    /// A seat act that did not read far enough to name a domain.
     pub fn note_unread(&self) {
         let mut r = self.lock();
         r.unread = r.unread.wrapping_add(1);
@@ -409,7 +409,7 @@ impl super::Court {
         drop(relay);
         // Two runs, each in sequence order, merged by sequence: the relay's
         // own order, never a measurement. The reply holds both boxes, so
-        // where both are near the bound it is cut at the frame budget and the
+        // where both are near the bound it is cut at the body budget and the
         // rest stands for the next read.
         let mut out = Vec::with_capacity(to_mind.len() + house.len());
         let (mut a, mut b) = (to_mind.into_iter().peekable(), house.into_iter().peekable());

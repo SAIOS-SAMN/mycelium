@@ -545,7 +545,7 @@ assert_eq!(ends(Incidence::Contact), vec![(1, 3)], "one contact face for one bod
 assert_eq!(ends(Incidence::Site), vec![(1, 2), (3, 4)], "each side's occupants chained on the side's site");
 }
 
-/// C2, 70.6 — A BODY MOVING BETWEEN FRAMES TOUCHES THE BODY THAT STOOD.
+/// C2, 70.6 — A BODY MOVING BETWEEN DELIMITED TOUCHES THE BODY THAT STOOD.
 /// One body stood at `(0, 0)` in frame 0. The other stands at `(0, 2)` in
 /// frame 0 and reaches `(0, 1)` in frame 1, beside where the first stood.
 /// In no single frame do the two share an edge or a corner. Across frames,
@@ -907,4 +907,26 @@ fn of_family_refuses_site_without_plane() {
     assert_eq!(SectionSite::of_family(&Site::of([4, 5, 0])), Some(SectionSite::on_plane([4, 5])), "a site of n = 3 has its section site");
     assert_eq!(SectionSite::of_family(&Site::of([4])), None, "a site of n = 1 has no sensor plane");
 }
+
+/// PairBodies is elevated from a card-catalogue tuple into carrier coordinates,
+/// projecting bodies to charts and transitions on the field carrier.
+#[test]
+fn pair_bodies_carries_carrier_charts_and_transitions() {
+    crate::transducer::raster::stand_on(0);
+    let sample_a = digits(&["11", "11"]);
+    let sample_b = digits(&["22", "22"]);
+    let frames = perceive_family(&[(sample_a, sample_b)]);
+    assert_eq!(frames.len(), 1);
+    let pair = &frames[0];
+    let in_charts = pair.input_charts();
+    let out_charts = pair.output_charts();
+    assert_eq!(in_charts.len(), 1);
+    assert_eq!(out_charts.len(), 1);
+    assert_eq!(in_charts[0], out_charts[0], "same shape class invariant coordinates form the same chart");
+    let transitions = pair.transitions(&crate::transducer::field::carrier::FieldMotion::identity());
+    assert_eq!(transitions.len(), 1);
+    assert_eq!(transitions[0].from, in_charts[0]);
+    assert_eq!(transitions[0].to, out_charts[0]);
+}
+
 

@@ -50,8 +50,8 @@ fn task_by_citation_round_trips_with_envelope() {
     longer.push(0);
     assert_eq!(decode_task_by_citation(&longer), None, "a byte left over is no request");
     // The door's answer: the task the citation names, its test inputs only.
-    let sent = reg.task(&cite).expect("held").envelope(cite);
-    let env = decode_task_envelope(&encode_task_envelope(&cite, &sent.train, &sent.tests).expect("writes")).expect("reads");
+    let sent = reg.task(&cite).expect("held").family(cite);
+    let env = decode_task(&encode_task(&cite, &sent.train, &sent.tests).expect("writes")).expect("reads");
     assert_eq!(env.id, cite, "the envelope names the task by its citation");
     let read = env.section().expect("rank 2 at width 1");
     assert_eq!(read.train, toy().train);
@@ -81,11 +81,11 @@ fn citation_names_task_past_u16_wall() {
 fn task_envelope_refuses_trailing_bytes_and_deferral() {
     let cite = [3u8; 32];
     let tests = vec![toy().test[0].0.clone()];
-    let sent = TaskEnvelope::of_section(cite, &toy().train, &tests).expect("samples");
-    let mut longer = encode_task_envelope(&cite, &sent.train, &sent.tests).expect("writes");
+    let sent = TaskFamily::of_section(cite, &toy().train, &tests).expect("samples");
+    let mut longer = encode_task(&cite, &sent.train, &sent.tests).expect("writes");
     longer.push(0);
-    assert!(decode_task_envelope(&longer).is_none(), "a byte left over is no envelope");
+    assert!(decode_task(&longer).is_none(), "a byte left over is no envelope");
     let deferral = encode_deferral(PENDING_CODE, &[0; 4]);
-    assert!(decode_task_envelope(&deferral).is_none(), "a deferral is no envelope");
+    assert!(decode_task(&deferral).is_none(), "a deferral is no envelope");
     assert!(is_deferral(&deferral, PENDING_CODE));
 }

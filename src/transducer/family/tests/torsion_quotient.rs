@@ -95,9 +95,9 @@ fn aligned_checks_versor_carries_pivot_onto_output() {
 /// - `b` and `d` move alike — rigid across two classes agrees: 2/2 certain.
 ///
 /// Two certain pairs conflict through the 1/2 of `a`–`d`; THE STRONGER HOLDS
-/// (78.74). `b`–`d` is bound at 4/25 + 4/20 = 9/25 (masses 2·2 over d² 25,
-/// then 20), `a`–`b` at 4/25 + 4/25 = 8/25: `b`–`d` merges, and `a`–`b` is
-/// the merge refused. Three algorithms from four classes; `d`, beyond `b`,
+/// (78.74, amended). `b`–`d` is bound at 4/11 + 2/5 = 42/55 (masses 2+2=4 over
+/// reach 7, then 6), `a`–`b` at 4/11 + 4/11 = 40/55: `b`–`d` merges, and `a`–`b`
+/// is the merge refused. Three algorithms from four classes; `d`, beyond `b`,
 /// turns free.
 #[test]
 fn read_pieces_merges_only_where_every_fibre_agreed() {
@@ -119,11 +119,11 @@ fn read_pieces_merges_only_where_every_fibre_agreed() {
     assert_eq!(s(b"b", b"d"), Some((2, 2)), "moving alike: rigid agrees");
     assert_eq!(said(&quo, b"a", b"d").and_then(|s| s.certainty()), Some(BigRational::new(1.into(), 2.into())), "certainty exact");
     let bind = |a: &[u8], b: &[u8]| said(&quo, a, b).map(|s| s.bind_agree);
-    assert_eq!((bind(b"a", b"b"), bind(b"b", b"d")), (Some(q(8, 25)), Some(q(9, 25))), "binding, exact");
-    // a–d agrees on its far fibre (d² 100: binding 1/25) and disagrees on
-    // its near one (d² 1: binding 4): counted 1/2, bound 1/101 — the
-    // disagreement holds a hundred times harder, and the measure says so.
-    assert_eq!(said(&quo, b"a", b"d").and_then(|s| s.binding_certainty()), Some(q(1, 101)), "the partial pair's binding certainty");
+    assert_eq!((bind(b"a", b"b"), bind(b"b", b"d")), (Some(q(8, 11)), Some(q(42, 55))), "binding, exact");
+    // a–d agrees on its far fibre (reach 14: binding 2/9) and disagrees on
+    // its near one (reach 1: binding 4/5): counted 1/2, bound 5/23 — the
+    // disagreement holds stronger, and the first-degree measure says so.
+    assert_eq!(said(&quo, b"a", b"d").and_then(|s| s.binding_certainty()), Some(q(5, 23)), "the partial pair's binding certainty");
     let groups: Vec<Vec<&[u8]>> = quo.groups.iter().map(|g| g.iter().map(Vec::as_slice).collect()).collect();
     assert_eq!(groups, vec![vec![&b"a"[..]], vec![&b"b"[..], &b"d"[..]], vec![&b"c"[..]]], "the stronger b–d holds; a is not merged across a–d's disagreement");
     assert_eq!(quo.free, vec![b"d".to_vec()], "d turns free beyond b; b carries the charge");

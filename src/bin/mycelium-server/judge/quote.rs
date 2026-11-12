@@ -1,9 +1,9 @@
 // 23.8, 26 — ACT_QUOTE: the market view, what this book has open in rank
-// order, for as much of it as one frame carries.
+// order, for as much of it as one envelope carries.
 //
 //! The view leaves under a brief lock; pricing and the cohesion witness
 //! compute over the snapshot with no lock held. Items ride in rank order
-//! until the next would not fit the frame budget.
+//! until the next would not fit the body budget.
 
 use crate::context::Context;
 use crate::transport::answer;
@@ -13,10 +13,10 @@ use mycelium::network::channel::Channel;
 
 
 /// The market view for one voice, over the charts it named (23.8).
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
     let court = &context.court;
 
-    let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };
+    let Some((qvoice, charts)) = dialogue::decode_quote_request(&delimited.body) else { return };
     let Some(quoted) = mycelium::synthesis::quote(court, qvoice, &charts) else {
         return;
     };
@@ -37,14 +37,14 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
             })
         })
         .collect();
-    // The frame budget bounds what one contact carries: items ride in
+    // The body budget bounds what one contact carries: items ride in
     // rank order until the next would not fit.
     let Some(body) = dialogue::encode_quote_reply_within(
         height,
         &surface,
         k_step,
         &items,
-        mycelium::network::wire::frame_budget(),
+        mycelium::network::wire::BODY_BUDGET,
     ) else {
         eprintln!("  quote refused: the page does not fit the lengths it writes");
         return;
@@ -69,6 +69,6 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
         items.len(),
         body.len()
     );
-    let reply = Delimited { lane: frame.lane, body };
+    let reply = Delimited { body };
     answer(stream, reply);
 }

@@ -19,7 +19,7 @@ use super::turning::{FramePlanes, Meeting, Turning, TurningPlane};
 use crate::core::Q;
 use crate::transducer::cga::Clifford;
 use forms::coordinate::{Axis, Key, Square, DEGREES_PER_TURN};
-use forms::passage::{Frame, Poles};
+use forms::passage::{PassageState, Poles};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, Signed};
@@ -318,12 +318,12 @@ impl FieldMotion {
             }
         }
         let half = algebra::multivector::half();
-        poles.state(&Frame { hold: (&whole + &span) * &half, reach: (whole - span) * half }).map_err(FieldRefusal::Passage)
+        poles.state(&PassageState { hold: (&whole + &span) * &half, reach: (whole - span) * half }).map_err(FieldRefusal::Passage)
     }
 
     /// A POINT CARRIED (78.171 §2, a point): each phase a vector at its angle
-    /// `θ` on its plane, from the plane's first unit toward its second,
-    /// carried by every generator in turn. A turning on its own plane adds
+    /// `θ` on its plane, the plane's second unit turned by `θ` (the phase
+    /// origin, `carry_vector`), carried by every generator in turn. A turning on its own plane adds
     /// its angle (subtracts, reversed), a disjoint one keeps it; any other
     /// carries the plane's two units; a re-period of its axis scales its
     /// degrees by `from/to`. The image stands on one of the point's own
@@ -353,13 +353,20 @@ impl FieldMotion {
     }
 }
 
-/// ONE PHASE, A VECTOR `cos θ·u₁ + sin θ·u₂` ON ITS PLANE, CARRIED BY `g`:
-/// the slot (the axis whose plane holds its image) and the image's degrees
-/// on that slot's plane. With `u₁ ↦ s₁·U₁`, `u₂ ↦ s₂·U₂` onto a slot
-/// `(A, L)`: where `U₁ = A`, the image is `θ`, `−θ`, `180° − θ` or
-/// `180° + θ` by the signs; where `U₁ = L`, the coordinates exchange and it
-/// is `90° − θ`, `θ − 90°`, `90° + θ` or `270° − θ`. Exact in degrees, the
-/// winding kept.
+/// ONE PHASE CARRIED BY `g`: the slot (the axis whose plane holds its
+/// image) and the image's degrees on that slot's plane.
+///
+/// THE PHASE ORIGIN (78.171 §8, the convention agreed 2026-11-06 with
+/// netstratum docs/117 §11.6): a phase `θ` on the plane `u₁u₂` is the
+/// plane's second unit turned by `θ`, `cos θ·u₂ − sin θ·u₁`. On a lifted
+/// axis `i` the plane is `e₊ᵢe₊₍ₙ₊₁₎`, so phase 0 lies on the lift's own
+/// unit `e₊₍ₙ₊₁₎`, shared by every axis, and the flip of `e₊ᵢ` alone is the
+/// reversal `θ ↦ −θ`, leaving every other axis fixed.
+///
+/// With `u₁ ↦ s₁·U₁` and `u₂ ↦ s₂·U₂` onto a slot `(A, L)`: where `U₁ = A`
+/// the image is `θ`, `−θ`, `180° − θ` or `180° + θ` by the signs
+/// `(s₁, s₂)`; where `U₁ = L` the two units exchange and it is `270° − θ`,
+/// `90° + θ`, `θ − 90°` or `90° − θ`. Exact in degrees, the winding kept.
 fn carry_vector(g: &Generator, phase: &Turning, slots: &[(Unit, Unit)]) -> Result<(usize, Q), FieldRefusal> {
     let key = phase.plane().key().clone();
     let theta = phase.degrees().clone();
@@ -392,18 +399,18 @@ fn carry_vector(g: &Generator, phase: &Turning, slots: &[(Unit, Unit)]) -> Resul
             slot,
             match (s1, s2) {
                 (true, true) => theta,
-                (true, false) => -theta,
-                (false, true) => deg(180) - theta,
+                (true, false) => deg(180) - theta,
+                (false, true) => -theta,
                 (false, false) => deg(180) + theta,
             },
         )),
         Some((slot, false)) => Ok((
             slot,
-            match (s2, s1) {
-                (true, true) => deg(90) - theta,
-                (true, false) => theta - deg(90),
-                (false, true) => deg(90) + theta,
-                (false, false) => deg(270) - theta,
+            match (s1, s2) {
+                (true, true) => deg(270) - theta,
+                (true, false) => deg(90) + theta,
+                (false, true) => theta - deg(90),
+                (false, false) => deg(90) - theta,
             },
         )),
         None => Err(unnamed(&key)),

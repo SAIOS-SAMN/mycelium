@@ -8,7 +8,7 @@ use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::identity_versor;
 use crate::transducer::element::residue::from_connection;
-use std::io::{Read, Write};
+use std::io::Write;
 
 /// A connection word spelled by `letters` at the identity carriage.
 fn word(letters: &[(LetterId, bool)]) -> crate::transducer::element::Element {
@@ -30,20 +30,8 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
     std::thread::spawn(move || {
         for conn in listener.incoming() {
             let Ok(mut s) = conn else { continue };
-            loop {
-                let mut head = [0u8; 5];
-                if s.read_exact(&mut head).is_err() {
-                    break;
-                }
-                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
-                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-                let mut body = vec![0u8; len];
-                if s.read_exact(&mut body).is_err() {
-                    break;
-                }
-                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
-                let reply = crate::network::wire::Delimited { lane, body: dialogue::encode_speech_reply(&[]).expect("a reply") };
-                let _ = s.write_all(&reply.encode().expect("framed"));
+            while let Some(body) = super::fixtures::read_act(&mut s) {
+                let _ = s.write_all(&super::fixtures::reply_bytes(&dialogue::encode_speech_reply(&[]).expect("a reply")));
                 if let Some(act) = dialogue::decode_speech(&body) {
                     if keep(&act) {
                         let _ = tx.send(act);
@@ -192,7 +180,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     let [tape] = act.sentences.as_slice() else { panic!("one word") };
     let mut p = 0usize;
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
-    let [cite] = spoken.receipts().derivations.as_slice() else { panic!("one derivation") };
+    let [cite] = spoken.stalk().derivations.as_slice() else { panic!("one derivation") };
     assert!(
         matches!(cite.generators.as_slice(), [(form, _, 2)] if *form == slide.address()),
         "the remainder spoken as the ruled slide at exponent 2: {:?}",
@@ -236,7 +224,7 @@ fn compose_or_construct_speaks_conjugate_as_transported_word() {
     let mut p = 0usize;
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads, its conjugator with it");
     let f = crate::transducer::sentence::from_element_form(&spoken).expect("a form");
-    let env = spoken.receipts();
+    let env = spoken.stalk();
     let [cite] = env.derivations.as_slice() else { panic!("one derivation") };
     assert!(matches!(cite.generators.as_slice(), [(form, _, 1)] if *form == letter.address()), "citing the held letter once");
     assert!(cite.conjugator.is_some(), "with the conjugator that carries it");
@@ -288,7 +276,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
     let f = crate::transducer::sentence::from_element_form(&spoken).expect("a form");
     assert!(f.faces.is_empty(), "a word, not a sentence");
-    let env = spoken.receipts();
+    let env = spoken.stalk();
     let [cite] = env.derivations.as_slice() else { panic!("one derivation: {:?}", env.derivations) };
     assert!(
         matches!(cite.generators.as_slice(), [(form, _, 2)] if *form == slide.address()),

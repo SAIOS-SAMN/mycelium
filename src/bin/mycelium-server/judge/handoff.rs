@@ -9,8 +9,8 @@ use mycelium::anastome::dialogue::handoff::{decode_handoff_request, encode_hando
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(request) = decode_handoff_request(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(request) = decode_handoff_request(&delimited.body) else { return };
     let body = match crate::court_lock::held!(context.court) {
         Ok(mut held) => held.run(|k, _| match request {
             HandoffRequest::Signed(h) => encode_handoff_reply(&k.handoff(&h)),
@@ -24,5 +24,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

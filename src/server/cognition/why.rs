@@ -66,7 +66,7 @@ impl Court {
             (k, _) if k > 0 => Some(Place { k: k - 1, i: u64::MAX }),
             _ => None,
         };
-        let (_, bytes) = Court::receipts_frame()?;
+        let (_, bytes) = Court::receipts_bounds()?;
         match self.receipts_page(signer, before, p, 1, bytes).as_slice() {
             [r] if r.stamp.place() == p => Some(r.clone()),
             _ => None,

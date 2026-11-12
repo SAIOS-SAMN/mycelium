@@ -26,7 +26,7 @@ use crate::verdict::{
 pub struct Proposal {
     pub after: Option<Place>,
     pub root: Root,
-    pub epochs: Vec<([u8; 32], crate::economy::Modes)>,
+    pub epochs: Vec<([u8; 32], crate::economy::Mu)>,
 }
 
 /// What a fold did, read for the line 34.2 writes.

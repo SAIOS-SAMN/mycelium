@@ -3,21 +3,10 @@
 //
 //! Every entry is a movement with an anchor; the balance is derived from
 //! the entries and never stored beside them. `audit` re-derives the supply
-//! from the ledger and refuses if the two disagree.
-//!
-//! EVERY HOLDING IS ITS MODES (v0.5.0; 78.174 §1 item 2; #169 ruled
-//! 2026-11-06): a balance, a bond, value held and every row of the journal
-//! carry [`Modes`], the exact motions that moved them. A genesis allocation
-//! sits at the founding mode of each lane; a bond holds the modes it was
-//! staked from; a mint carries the modes of the motion its proof cites, or
-//! the founding mode where it cites none. A per-lane amount (a price, a
-//! cover, a slash, a fee) is a reading: it is drawn from the modes on its
-//! lane in proportion to their amounts, and the modes drawn travel with
-//! the transfer (`Modes::draw`). The [`Mu`] each reader answers is the
-//! reading per lane of those modes, never the holding. Both equations of §6
-//! hold mode by mode, exactly over ℚ.
+//! from the ledger and refuses if the two disagree. Every amount is a
+//! [`Mu`]: an exact rational per lane, so no sum passes a carrier and both
+//! equations of §6 hold over ℚ.
 
-use super::modes::Modes;
 use super::Mu;
 
 /// THE ACT A LEDGER ROW STANDS AT (78.24): the stamp of the court's head
@@ -71,31 +60,34 @@ pub enum Kind {
 impl Kind {
     /// Which side of `supply = genesis + mint − burn` this row falls on.
     /// Exhaustive: a kind that moved the supply and was not named here
-    /// would not compile. An `epoch` row stands for the net of the issued
-    /// and burned rows it replaced, so it reads on the issued side.
+    /// would not compile. An `epoch` row is the net of the balances the
+    /// rows it replaced moved, and moves no supply (§6.1): what those rows
+    /// issued and burned is read at the fold's checkpoint
+    /// ([`super::fold::FoldedIssuance`]), so the epoch row reads on neither
+    /// side.
     pub(crate) fn issues(&self) -> Option<bool> {
         match self {
-            Kind::Genesis | Kind::Mint | Kind::Epoch => Some(true),
+            Kind::Genesis | Kind::Mint => Some(true),
             Kind::Burn | Kind::Slash => Some(false),
             Kind::Stake
             | Kind::Unstake
             | Kind::Transfer
             | Kind::Escrow
             | Kind::Release
-            | Kind::Revoke => None,
+            | Kind::Revoke
+            | Kind::Epoch => None,
         }
     }
 }
 
-/// A settlement receipt (below-boundary storage — a Vec, not a map): the
-/// modes it moved, chronometrically anchored.
+/// A settlement receipt (below-boundary storage — a Vec, not a map): a
+/// polytonic μ⃗ amount, chronometrically anchored.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry {
     pub kind: Kind,
     pub who: [u8; 32],
-    /// The modes the row moved, each with its exact amount — never a
-    /// scalar and never one number per lane.
-    pub modes: Modes,
+    /// The per-lane amount, exact — never a scalar.
+    pub mu: Mu,
     /// The stamp of the act the row stands at (78.24).
     pub at: crate::chronometry::Stamp,
     /// That act's chain hash (the unforgeable temporal binding).
@@ -187,18 +179,21 @@ pub struct Treasury {
     /// `restore` folds the journal once
     /// at load, which is the one O(journal) pass the doctrine sanctions.
     /// Exact over ℚ: a sum of amounts has no carrier to pass.
-    pub(crate) issued: Modes,
-    pub(crate) burned: Modes,
+    pub(crate) issued: Mu,
+    pub(crate) burned: Mu,
+    /// §6.1 — THE ISSUANCE EVERY FOLD CHECKPOINTED, by source: what the
+    /// folded rows issued and burned, which their epoch rows do not carry.
+    /// Written only by `fold`; persisted with the carriers.
+    pub(crate) folded: super::fold::FoldedIssuance,
     /// Sum of live identity bonds. Escrowed awards are `escrowed`, never this.
-    pub(crate) bond_total: Modes,
-    /// Enrolled identities and the modes each staked, keyed by identity: a
-    /// bond holds the modes it was staked from.
-    pub(crate) stakes: crate::network::nerve::Keyed<Modes>,
+    pub(crate) bond_total: Mu,
+    /// Enrolled identities and the μ⃗ each staked, keyed by identity.
+    pub(crate) stakes: crate::network::nerve::Keyed<Mu>,
     /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
     /// keyed by germ address. Only the court's verdict releases or revokes.
     pub(crate) escrowed: crate::network::nerve::Keyed<super::escrow::Escrowed>,
     /// Per-voice balances, updated on every entry. Never a scan of the ledger.
-    pub(crate) balances: crate::network::nerve::Keyed<Modes>,
+    pub(crate) balances: crate::network::nerve::Keyed<Mu>,
     /// E3 — value payers set aside, keyed by what it is held against, until
     /// released or refunded (`pay.rs`). A carrier of supply, unlike an
     /// award in escrow: it was issued, and it is the payer's until it moves.
@@ -231,8 +226,7 @@ pub enum Touched {
     Parties(crate::network::nerve::Keyed<()>),
 }
 
-/// One party's account at its court: balance, bond and holds, each the
-/// reading per lane of its modes.
+/// One party's account at its court: balance, bond and holds, per lane.
 pub type Holdings = (Mu, Mu, Mu);
 
 /// Written out rather than derived: a fresh ledger has issued and burned
@@ -241,9 +235,10 @@ impl Default for Treasury {
     fn default() -> Self {
         Treasury {
             entries: Vec::new(),
-            issued: Modes::new(),
-            burned: Modes::new(),
-            bond_total: Modes::new(),
+            issued: Mu::zero(),
+            burned: Mu::zero(),
+            folded: super::fold::FoldedIssuance::default(),
+            bond_total: Mu::zero(),
             stakes: crate::network::nerve::Keyed::new(),
             escrowed: crate::network::nerve::Keyed::new(),
             balances: crate::network::nerve::Keyed::new(),
@@ -260,44 +255,28 @@ impl Treasury {
         Treasury::default()
     }
 
-    /// CREDIT: `modes` added to `party`'s balance, exactly. An exact sum has
-    /// no carrier to pass, so a credit always lands.
-    pub(crate) fn credit(&mut self, party: [u8; 32], modes: &Modes) {
-        let b = self.balance_of(&party).with(modes);
+    /// CREDIT: `mu` added to `party`'s balance, exactly. An exact sum has no
+    /// carrier to pass, so a credit always lands.
+    pub(crate) fn credit(&mut self, party: [u8; 32], mu: &Mu) {
+        let b = self.balance_of(&party).add(mu);
         self.balances.insert(party, b);
         self.touch(&party);
     }
 
-    /// DEBIT, WHOLE OR REFUSED: the per-lane amount `mu` drawn from
-    /// `party`'s balance in proportion to the modes on each lane (#169), the
-    /// modes drawn answered; or the first lane the balance is short on,
-    /// named, and nothing moved (§2.3, law 5).
+    /// DEBIT, WHOLE OR REFUSED: `mu` drawn from `party`'s balance, each
+    /// lane from that lane's modes in proportion (MU-ECONOMY §2.5), and the
+    /// modes drawn returned to travel with the transfer; or the first lane
+    /// the balance is short on, named, and nothing moved (§2.3, law 5).
     ///
     /// Every caller clamps to the balance before asking, so a refusal is a
     /// broken clamp; it is returned rather than floored because a floor
     /// burns the difference against §6's equation.
-    pub(crate) fn debit(&mut self, party: [u8; 32], mu: &Mu) -> Result<Modes, Box<super::LaneShort>> {
-        let mut held = self.balance_of(&party);
-        let drawn = held.draw(mu)?;
-        self.balances.insert(party, held);
+    pub(crate) fn debit(&mut self, party: [u8; 32], mu: &Mu) -> Result<Mu, super::MuRefusal> {
+        let mut left = self.balance_of(&party);
+        let drawn = left.draw_out(mu)?;
+        self.balances.insert(party, left);
         self.touch(&party);
         Ok(drawn)
-    }
-
-    /// DEBIT THESE MODES, WHOLE OR REFUSED: every mode held in at least its
-    /// amount, or nothing moves and the mode short is named.
-    pub(crate) fn debit_modes(&mut self, party: [u8; 32], modes: &Modes) -> Result<(), Box<super::modes::Short>> {
-        let mut held = self.balance_of(&party);
-        held.take(modes)?;
-        self.balances.insert(party, held);
-        self.touch(&party);
-        Ok(())
-    }
-
-    /// A ROW: `kind` of `who`, the modes it moved, at `anchor`, paying
-    /// `arm`.
-    pub(crate) fn row(kind: Kind, who: [u8; 32], modes: Modes, anchor: Anchor, arm: Option<Arm>) -> Entry {
-        Entry { kind, who, modes, at: anchor.0, receipt: anchor.1, arm }
     }
 
     /// 78.151 — `party`'s account moved: named for the next publisher.
@@ -332,14 +311,14 @@ impl Treasury {
     /// 78.151 — THE ACCOUNTS OF `parties`, read as `account` reads one, the
     /// holds summed over ONE walk of the held carrier for all of them.
     pub(crate) fn accounts_of(&self, parties: &crate::network::nerve::Keyed<()>) -> Vec<([u8; 32], Holdings)> {
-        let mut held: crate::network::nerve::Keyed<Modes> = crate::network::nerve::Keyed::new();
+        let mut held: crate::network::nerve::Keyed<Mu> = crate::network::nerve::Keyed::new();
         crate::trie_tape::persist(&self.held, |_, h| {
             if !parties.contains(&h.payer) {
                 return;
             }
             let sum = match held.get(&h.payer) {
-                Some(s) => s.with(&h.modes),
-                None => h.modes.clone(),
+                Some(s) => s.add(&h.mu),
+                None => h.mu.clone(),
             };
             held.insert(h.payer, sum);
         });
@@ -348,10 +327,10 @@ impl Treasury {
             .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
             .map(|party| {
                 let holds = match held.get(&party) {
-                    Some(s) => s.reading(),
+                    Some(s) => s.clone(),
                     None => Mu::zero(),
                 };
-                (party, (self.balance_of(&party).reading(), self.staked(&party).reading(), holds))
+                (party, (self.balance_of(&party), self.staked(&party), holds))
             })
             .collect()
     }
@@ -364,7 +343,7 @@ impl Treasury {
         let held = self.staked(&party);
         // The top-up IS the shortfall of what is staked against the bond,
         // and that reading already exists: zero where the lane meets it.
-        let asked = bond.into().shortfall(&held.reading());
+        let asked = bond.into().shortfall(&held);
         // BOND IS μ AT RISK, STAKED FROM A BALANCE (§4). This inserted the
         // stake and wrote a "stake" row without debiting anything, so bond
         // existed that was never issued and §6's second equation --
@@ -378,15 +357,12 @@ impl Treasury {
         // short (STD1: the arm that read a short debit could not fire).
         let add = asked.capped(&bal);
         if !add.is_zero() {
-            // A BOND HOLDS THE MODES IT WAS STAKED FROM (#169): the top-up is
-            // drawn from the balance's modes, lane by lane in proportion, and
-            // those modes are what the bond holds.
-            let Ok(drawn) = self.debit(party, &add) else {
-                debug_assert!(false, "add ≤ bal, debited against it");
-                return Mu::zero();
-            };
-            self.stakes.insert(party, held.with(&drawn));
-            self.write(Treasury::row(Kind::Stake, party, drawn, anchor, None));
+            // A bond holds the modes it was staked from (§2.5).
+            let Ok(moved) = self.debit(party, &add) else { return Mu::zero() };
+            self.stakes.insert(party, held.add(&moved));
+            self.write(Entry { kind: Kind::Stake, who: party, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+            self.refresh_bond();
+            return moved;
         } else if self.stakes.get(&party).is_none() {
             self.stakes.insert(party, held);
         }
@@ -402,33 +378,26 @@ impl Treasury {
     /// of one identity, exactly as staking it did.
     pub fn unstake(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         let (back, next) = self.staked(&party).split_at(&mu.into());
-        if back.is_empty() {
-            return Mu::zero();
+        if back.is_zero() {
+            return back;
         }
-        let read = back.reading();
         self.credit(party, &back);
         self.stakes.insert(party, next);
-        self.write(Treasury::row(Kind::Unstake, party, back, anchor, None));
+        self.write(Entry { kind: Kind::Unstake, who: party, mu: back.clone(), at: anchor.0, receipt: anchor.1, arm: None });
         self.refresh_bond();
-        read
+        back
     }
 
-    /// The sum of live stakes, re-read, exactly, mode by mode.
+    /// The sum of live stakes, re-read, exactly.
     pub(crate) fn refresh_bond(&mut self) {
-        let mut total = Modes::new();
-        crate::trie_tape::persist(&self.stakes, |_, m| total.add(m));
+        let mut total = Mu::zero();
+        crate::trie_tape::persist(&self.stakes, |_, mu| total.step(mu));
         self.bond_total = total;
     }
 
-    /// Bond recorded for an identity, if enrolled, read per lane. None is
-    /// unbonded.
+    /// Bond recorded for an identity, if enrolled. None is unbonded.
     pub fn bond_of(&self, party: &[u8; 32]) -> Option<Mu> {
-        self.stakes.get(party).map(Modes::reading)
-    }
-
-    /// The modes an identity's bond holds, if enrolled.
-    pub fn bond_modes(&self, party: &[u8; 32]) -> Option<&Modes> {
-        self.stakes.get(party)
+        self.stakes.get(party).cloned()
     }
 
     /// Bond recorded for an identity, if enrolled.
@@ -436,9 +405,9 @@ impl Treasury {
         self.bond_of(party)
     }
 
-    /// Sum of live stakes, read per lane.
-    pub fn bond_total(&self) -> Mu {
-        self.bond_total.reading()
+    /// Sum of live stakes.
+    pub fn bond_total(&self) -> &Mu {
+        &self.bond_total
     }
 
     /// A STAKE OUTSIDE THE LIVE GENESIS IS BURNED (§4: bond is μ⃗ at risk;
@@ -451,10 +420,10 @@ impl Treasury {
     /// hypha of the 2026-09-08 soak (I38).
     pub fn bind_live(&mut self, live: &[[u8; 32]], anchor: Anchor) -> Vec<([u8; 32], Mu)> {
         let mut drop: Vec<([u8; 32], Mu)> = Vec::new();
-        crate::trie_tape::persist(&self.stakes, |party, m| {
+        crate::trie_tape::persist(&self.stakes, |party, mu| {
             let Ok(w) = <[u8; 32]>::try_from(party) else { return };
             if !live.contains(&w) {
-                drop.push((w, m.reading()));
+                drop.push((w, mu.clone()));
             }
         });
         let mut burned = Vec::with_capacity(drop.len());
@@ -477,15 +446,7 @@ impl Treasury {
     /// does not add up is not a smaller supply, it is a ledger that does
     /// not describe the mesh (rule 11).
     pub fn supply(&self) -> Option<Mu> {
-        self.supply_modes().map(|m| m.reading())
-    }
-
-    /// THE SUPPLY MODE BY MODE: what was issued of each mode less what was
-    /// burned of it. `None` where a mode was burned beyond its issue.
-    pub fn supply_modes(&self) -> Option<Modes> {
-        let mut left = self.issued.clone();
-        left.take(&self.burned).ok()?;
-        Some(left)
+        self.issued.draw(&self.burned).ok()
     }
 
     /// EVERY LEDGER ROW GOES THROUGH HERE, and the two supply sums are
@@ -512,19 +473,20 @@ impl Treasury {
                 return;
             }
         };
-        into.add(&e.modes);
+        into.step(&e.mu);
         self.entries.push(e);
     }
 
-    /// Fold the supply from the journal in one pass. `restore` reads the
-    /// rows off disk directly, so this is where the two sums come back —
-    /// the one O(journal) pass the doctrine sanctions, at load.
+    /// Fold the supply from the journal in one pass, on the issuance every
+    /// fold checkpointed. `restore` reads the rows off disk directly, so
+    /// this is where the two sums come back — the one O(journal) pass the
+    /// doctrine sanctions, at load.
     pub(crate) fn refold_supply(&mut self) {
-        let (mut issued, mut burned) = (Modes::new(), Modes::new());
+        let (mut issued, mut burned) = (self.folded.issued(), self.folded.burned());
         for e in &self.entries {
             match e.kind.issues() {
-                Some(true) => issued.add(&e.modes),
-                Some(false) => burned.add(&e.modes),
+                Some(true) => issued.step(&e.mu),
+                Some(false) => burned.step(&e.mu),
                 None => {}
             }
         }
@@ -532,22 +494,26 @@ impl Treasury {
         self.burned = burned;
     }
 
-    /// 78.152 TU-1 — WHAT THIS LEDGER ISSUED, per lane, cumulative: genesis,
-    /// mint and the epoch rows that stand for them across a fold — the
-    /// discharge it booked as mint on the genesis it stood on. It only rises
-    /// (a burn leaves supply, never issuance), and a fold keeps it exactly.
-    /// The reading per lane of the issued modes.
-    pub fn issued(&self) -> Mu {
-        self.issued.reading()
+    /// 78.152 TU-1 — WHAT THIS LEDGER ISSUED, per lane, cumulative: genesis
+    /// and mint, the folded ones read at the checkpoint — the discharge it
+    /// booked as mint on the genesis it stood on. It only rises (a burn
+    /// leaves supply, never issuance), and a fold keeps it exactly.
+    pub fn issued(&self) -> &Mu {
+        &self.issued
     }
 
     /// EARNED supply alone: the mint rows, without the genesis allocations
     /// §6 keeps separable from them. "Nothing was minted" is a claim about
     /// verified work and must not be read off `supply()`, which includes
     /// seeded value by construction — a testnet differs from the beta only
-    /// in that term.
+    /// in that term. The folded mints are read at the checkpoint.
     pub fn minted(&self) -> Mu {
-        Modes::sum(self.entries.iter().filter(|e| e.kind == Kind::Mint).map(|e| &e.modes)).reading()
+        self.folded.minted().add(&Mu::sum(self.entries.iter().filter(|e| e.kind == Kind::Mint).map(|e| &e.mu)))
+    }
+
+    /// The issuance every fold checkpointed, by source (§6.1).
+    pub fn folded(&self) -> &super::fold::FoldedIssuance {
+        &self.folded
     }
 
     /// LD3-a — A LINE REBOUND BEFORE ITS FIRST ACT MOVES ITS ORIGIN: the
@@ -576,8 +542,9 @@ impl Treasury {
     /// A mint of an arm is paid; a burn of an arm is burned. A POWC use is
     /// ONE transfer written as TWO equal rows, its debit and its credit, so
     /// the arm's transfer rows read in pairs and the paid is one of each pair
-    /// — exact, since every pair is two equal vectors. `None` where a flow's
-    /// row count passes its carrier (rule 11).
+    /// — exact, since every pair is two equal vectors. The folded rows are
+    /// read at the fold's checkpoint (§6.1). `None` where a flow's row count
+    /// passes its carrier (rule 11).
     ///
     /// THE FLOWS by kind and the TUITION `court` was paid read off the same
     /// rows: a transfer's two rows are one flow, its debit first and its
@@ -609,13 +576,13 @@ impl Treasury {
                 if credit {
                     credit = false;
                     if row.arm.is_none() && &row.who == court {
-                        e.tuition.add(&row.modes.reading())?;
+                        e.tuition.add(&row.mu)?;
                     }
                     continue;
                 }
                 credit = true;
             }
-            e.flows.get_mut(flow)?.add(&row.modes.reading())?;
+            e.flows.get_mut(flow)?.add(&row.mu)?;
         }
         for row in &self.entries {
             let Some(arm) = row.arm else { continue };
@@ -625,7 +592,15 @@ impl Treasury {
                 Kind::Transfer => &mut moved[arm.index()],
                 _ => continue,
             };
-            into.step(&row.modes.reading());
+            into.step(&row.mu);
+        }
+        // §6.1 — what the folded rows paid and burned, read at the
+        // checkpoint: a fold removes nothing a proof was paid.
+        for arm in Arm::ALL {
+            let slot = usize::from(Arm::byte(Some(arm)));
+            e.paid[arm.index()].step(&self.folded.minted[slot]);
+            e.burned[arm.index()].step(&self.folded.burned[slot]);
+            moved[arm.index()].step(&self.folded.transferred[slot]);
         }
         for (paid, pairs) in e.paid.iter_mut().zip(&moved) {
             paid.step(&pairs.part(2)?);
@@ -642,9 +617,9 @@ impl Treasury {
             f(&mut a);
             accounts.insert(party, a);
         };
-        crate::trie_tape::persist(&self.balances, |party, m| at(party, &mut |a| a.balance = m.reading()));
-        crate::trie_tape::persist(&self.stakes, |party, m| at(party, &mut |a| a.bond = m.reading()));
-        crate::trie_tape::persist(&self.held, |_, h| at(&h.payer, &mut |a| a.held.step(&h.modes.reading())));
+        crate::trie_tape::persist(&self.balances, |party, mu| at(party, &mut |a| a.balance = mu.clone()));
+        crate::trie_tape::persist(&self.stakes, |party, mu| at(party, &mut |a| a.bond = mu.clone()));
+        crate::trie_tape::persist(&self.held, |_, h| at(&h.payer, &mut |a| a.held.step(&h.mu)));
         e.accounts = accounts.scoped().map(|(_, a)| a.clone()).collect();
         Some(e)
     }
@@ -652,50 +627,41 @@ impl Treasury {
     /// A finite, signed allocation at genesis. Its own kind, never a mint:
     /// §6 requires seeded value and earned value to stay separable, and a
     /// testnet differs from the beta only in this term.
-    ///
-    /// THE ALLOCATION SITS AT THE FOUNDING MODE (#169, ruled 2026-11-06):
-    /// each lane's amount is held at that lane's identity motion, stated
-    /// explicitly as the mode, never left empty.
     pub fn genesis(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        let modes = Modes::founding(&mu.into());
-        if modes.is_empty() {
-            return Mu::zero();
+        let mu = mu.into();
+        if mu.is_zero() {
+            return mu;
         }
-        let read = modes.reading();
-        self.credit(party, &modes);
-        self.write(Treasury::row(Kind::Genesis, party, modes, anchor, None));
-        read
+        self.credit(party, &mu);
+        self.write(Entry { kind: Kind::Genesis, who: party, mu: mu.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+        mu
     }
 
     /// Forfeiture: μ⃗ leaves circulation (47.4). Bond first, then balance,
-    /// on each lane, each drawn from its modes in proportion; supply falls
-    /// by exactly the modes that left, so §6 holds through it (R9). Returns
-    /// the reading of what was actually burned — never more than was held,
-    /// and nothing is redistributed.
+    /// on each lane; supply falls by exactly what left, so §6 holds through
+    /// it (R9). Returns the vector actually burned — never more than was
+    /// held, and nothing is redistributed.
     pub fn burn(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         let mu = mu.into();
         let (from_bond, next) = self.staked(&party).split_at(&mu);
         // from_bal ≤ bal on every lane: it is the rest of the ask divided at
         // the balance just read, and it is debited against that same balance.
-        let rest = mu.shortfall(&from_bond.reading());
-        let mut balance = self.balance_of(&party);
-        let (from_bal, kept) = balance.split_at(&rest);
-        let took = from_bond.with(&from_bal);
-        if took.is_empty() {
-            return Mu::zero();
+        let rest = mu.shortfall(&from_bond);
+        let (from_bal, _) = self.balance_mu(&party).split_at(&rest);
+        let took = from_bond.add(&from_bal);
+        if took.is_zero() {
+            return took;
         }
-        if !from_bond.is_empty() {
+        if !from_bond.is_zero() {
             self.stakes.insert(party, next);
             self.refresh_bond();
         }
-        if !from_bal.is_empty() {
-            balance = kept;
-            self.balances.insert(party, balance);
-            self.touch(&party);
+        if !from_bal.is_zero() {
+            let drawn = self.debit(party, &from_bal);
+            debug_assert!(drawn.is_ok(), "from_bal ≤ bal, debited against it");
         }
-        let read = took.reading();
-        self.write(Treasury::row(Kind::Burn, party, took, anchor, None));
-        read
+        self.write(Entry { kind: Kind::Burn, who: party, mu: took.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+        took
     }
 
     /// THE INVARIANT (§6), both equations, on every lane:
@@ -714,45 +680,33 @@ impl Treasury {
     /// checked is not a compression, it is a loss.
     pub fn audit(&self) -> Result<Mu, String> {
         let issued = self
-            .supply_modes()
-            .ok_or_else(|| "supply does not add up on some mode".to_string())?;
+            .supply()
+            .ok_or_else(|| "supply does not add up on some lane".to_string())?;
         // R9's equation. Every escrow is a claim on issuance (§3.1): it
         // holds μ⃗ that does not exist yet, and a ruling mints it rather
         // than moving it, so no escrow is a carrier of supply. Both sums are
-        // exact over ℚ, and they are compared mode by mode.
-        let mut held = Modes::new();
-        crate::trie_tape::persist(&self.balances, |_, m| held.add(m));
-        crate::trie_tape::persist(&self.stakes, |_, m| held.add(m));
-        crate::trie_tape::persist(&self.held, |_, h| held.add(&h.modes));
+        // exact over ℚ.
+        let mut held = Mu::zero();
+        crate::trie_tape::persist(&self.balances, |_, mu| held.step(mu));
+        crate::trie_tape::persist(&self.stakes, |_, mu| held.step(mu));
+        crate::trie_tape::persist(&self.held, |_, h| held.step(&h.mu));
         if held != issued {
             return Err(format!(
-                "supply {} is not the carriers {}: balances + bond + held must be what was issued, mode by mode",
-                issued.print(),
-                held.print()
+                "supply {issued} is not the carriers {held}: balances + bond + held must be what was issued"
             ));
         }
-        Ok(issued.reading())
+        Ok(issued)
     }
 
-    /// A MINT to `party` of the modes the motion its proof cites moved
-    /// (#169), standing at the act that minted it and carrying the proof of
-    /// work it pays (78.33). A mint whose proof cites no motion is minted
-    /// at the founding mode ([`Treasury::mint_founding`]), never with empty
-    /// modes. Answers the reading of what was paid.
-    pub(crate) fn mint_to(&mut self, party: [u8; 32], modes: Modes, anchor: Anchor, arm: Option<Arm>) -> Mu {
-        let paid = self.mint_to_paying(party, modes, anchor, arm);
+    /// A MINT to `party`, standing at the act that minted it and carrying the
+    /// proof of work it pays (78.33) — none for a subsidy.
+    pub(crate) fn mint_to(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor, arm: Option<Arm>) -> Mu {
+        let paid = self.mint_to_paying(party, mu.into(), anchor, arm);
         // E4 — a proof of work paid is a payment the growth grant counts.
         if matches!(arm, Some(Arm::Pouw) | Some(Arm::Powc)) && !paid.is_zero() {
             self.paid_out.push((party, paid.clone()));
         }
         paid
-    }
-
-    /// A MINT WHOSE PROOF CITES NO MOTION (a subsidy, a door's mint with no
-    /// closure): the per-lane amount at each lane's founding mode, as
-    /// genesis is (#169).
-    pub(crate) fn mint_founding(&mut self, party: [u8; 32], mu: &Mu, anchor: Anchor, arm: Option<Arm>) -> Mu {
-        self.mint_to(party, Modes::founding(mu), anchor, arm)
     }
 
     /// MU-CLIENT §5.6 (E4) — the proof-of-work payments made since the last
@@ -761,11 +715,10 @@ impl Treasury {
         std::mem::take(&mut self.paid_out)
     }
 
-    fn mint_to_paying(&mut self, party: [u8; 32], modes: Modes, anchor: Anchor, arm: Option<Arm>) -> Mu {
-        if modes.is_empty() {
-            return Mu::zero();
+    fn mint_to_paying(&mut self, party: [u8; 32], mu: Mu, anchor: Anchor, arm: Option<Arm>) -> Mu {
+        if mu.is_zero() {
+            return mu;
         }
-        let mu = modes.reading();
         // 78.154a — A CLOSER'S POUW IS PAID FIRST FROM THE RECYCLED POOL:
         // what the universes returned as connection tax pays the closure,
         // and only what the pool cannot cover is minted.
@@ -774,64 +727,60 @@ impl Treasury {
             _ => Mu::zero(),
         };
         // pooled ≤ mu on every lane: the pool pays at most what was asked.
-        // The rest is the closure's own modes, each lane scaled to what the
-        // pool did not cover.
-        let rest = mu.shortfall(&pooled);
+        // What is minted keeps the mint's own modes (§2.5): the pool's part
+        // drawn from them in proportion, the rest held as the proof moved it.
+        let rest = match mu.draw(&pooled) {
+            Ok(rest) => rest,
+            Err(_) => mu.shortfall(&pooled),
+        };
         if rest.is_zero() {
             return pooled;
         }
-        let minted = modes.capped(&rest);
-        self.credit(party, &minted);
-        self.write(Treasury::row(Kind::Mint, party, minted, anchor, arm));
+        self.credit(party, &rest);
+        self.write(Entry { kind: Kind::Mint, who: party, mu: rest, at: anchor.0, receipt: anchor.1, arm });
         mu
     }
 
-    /// THE BALANCE READ PER LANE: on each lane what the balance's modes
-    /// hold. A reading, never the holding.
+    /// The POLYTONIC BALANCE — per-lane exact amounts; there is no scalar
+    /// balance. Mint grows supply; the stake bond is independent.
     pub fn balance_mu(&self, party: &[u8; 32]) -> Mu {
-        self.balance_of(party).reading()
-    }
-
-    /// THE MODES A PARTY'S BALANCE HOLDS.
-    pub fn balance_modes(&self, party: &[u8; 32]) -> Modes {
         self.balance_of(party)
     }
 
     /// THE READING OF ABSENCE (0.11c): a party the ledger has never seen
-    /// holds no mode, and that is a measurement of the carrier rather than
-    /// a value put in place of one. Every balance, stake and escrow read
-    /// passes through here.
-    pub(crate) fn balance_of(&self, party: &[u8; 32]) -> Modes {
+    /// holds nothing on every lane, and that zero is a measurement of the
+    /// carrier rather than a value put in place of one. Every balance,
+    /// stake and escrow read passes through here.
+    fn balance_of(&self, party: &[u8; 32]) -> Mu {
         match self.balances.get(party) {
             Some(b) => b.clone(),
-            None => Modes::new(),
+            None => Mu::zero(),
         }
     }
 
     /// The stake this party holds, or nothing where the ledger has not
     /// seen it — the same reading of absence. `stake_of` above answers
-    /// WHETHER there is a bond; this answers WHICH MODES, and an unseen
-    /// party holds none.
-    pub(crate) fn staked(&self, party: &[u8; 32]) -> Modes {
+    /// WHETHER there is a bond; this answers HOW MUCH, and an unseen party
+    /// holds zero on every lane.
+    fn staked(&self, party: &[u8; 32]) -> Mu {
         match self.stakes.get(party) {
             Some(s) => s.clone(),
-            None => Modes::new(),
+            None => Mu::zero(),
         }
     }
 
     /// 78.93 B1 — ONE PARTY'S ACCOUNT, read at the question off the carriers
     /// themselves, as `economy` reads every account: its balance, its bond,
-    /// and what it holds against keys, each read per lane. A party the
-    /// ledger has never seen holds zero on every lane — the reading of
-    /// absence.
+    /// and what it holds against keys, per lane. A party the ledger has never
+    /// seen holds zero on every lane — the reading of absence.
     pub fn account(&self, party: &[u8; 32]) -> Holdings {
-        let mut held = Modes::new();
+        let mut held = Mu::zero();
         crate::trie_tape::persist(&self.held, |_, h| {
             if &h.payer == party {
-                held.add(&h.modes);
+                held.step(&h.mu);
             }
         });
-        (self.balance_of(party).reading(), self.staked(party).reading(), held.reading())
+        (self.balance_of(party), self.staked(party), held)
     }
 
     pub fn entries(&self) -> &[Entry] {

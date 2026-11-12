@@ -6,8 +6,8 @@
 // holds a word of its own on the same scene, another vertex with the same
 // section, the court seals the CONVERGENCE: two constructions, one conclusion.
 //
-//! What the court checks: the frame opens under the signature of the mind it
-//! names (78.161's chatter frame), it is a HOLD, it names exactly this word,
+//! What the court checks: the chatter opens under the signature of the mind it
+//! names (78.161's chatter), it is a HOLD, it names exactly this word,
 //! the mind is not the speaker, this court holds the word — ruled, or
 //! provisional on its docket — and the word is TRUE ON ITS SCENE: decompressed
 //! by its own letters onto the family it is bound to (`family::local::
@@ -42,12 +42,12 @@ pub struct Attested {
 }
 
 /// Every pair's section empty: the word changed nothing true there.
-fn empty(l: &Local) -> bool {
+pub(super) fn empty(l: &Local) -> bool {
     l.sites.iter().all(crate::network::nerve::Keyed::is_empty)
 }
 
 /// A word the court measures by its own section (`Court::discharge_on`, W).
-fn sectioned(word: &Element) -> bool {
+pub(super) fn sectioned(word: &Element) -> bool {
     word.is_connection() && !word.is_colour_word()
 }
 
@@ -56,12 +56,12 @@ impl Court {
     /// on the evidence and sealed, with the convergences it carries.
     pub fn attest_agreements(&mut self, act: &crate::anastome::dialogue::SpeechAct) -> Vec<Attested> {
         let mut sealed = Vec::new();
-        for (tape, frame) in act.sentences.iter().zip(&act.agreements) {
-            let Some(frame) = frame else { continue };
+        for (tape, held) in act.sentences.iter().zip(&act.agreements) {
+            let Some(held) = held else { continue };
             let mut p = 0usize;
             let Some(e) = Element::from_bytes(tape, &mut p) else { continue };
             let address = e.address();
-            let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::verify(frame) else { continue };
+            let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::verify(held) else { continue };
             if said.as_slice() != address.as_bytes() || peer == act.voice {
                 continue;
             }
@@ -144,7 +144,7 @@ impl Court {
 }
 
 /// An attestation's key: the word's address, then the attesting mind.
-fn attestation_key(address: &[u8], peer: &[u8; 32]) -> Vec<u8> {
+pub(super) fn attestation_key(address: &[u8], peer: &[u8; 32]) -> Vec<u8> {
     let mut k = Vec::with_capacity(address.len() + 32);
     crate::transducer::address::put_key_bytes(&mut k, address);
     k.extend_from_slice(peer);

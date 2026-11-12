@@ -113,7 +113,8 @@ fn domain_origin(session: &Speaker, key: &SigningKey) -> Result<String, String> 
 /// that is the court's standing (what it has earned, a grant made or in
 /// flight), never the house's act.
 fn domain_manifest(session: &Speaker, key: &SigningKey) -> Result<String, String> {
-    let signed = super::probes::manifest(key.verifying_key().to_bytes()).sign(key).ok_or("the manifest does not sign")?;
+    let domain = key.verifying_key().to_bytes();
+    let signed = super::probes::manifest(domain).sign(super::probes::crossing(domain), key).ok_or("the manifest does not sign")?;
     let reply = spoken(session, endowment::encode_manifest(&signed).ok_or("the manifest does not encode")?)?;
     match endowment::decode_grant_reply(&reply).ok_or_else(|| undecoded(&reply, "a grant"))? {
         Granted::Sealed { mu, founding, .. } => Ok(format!("granted μ {mu}, founding {founding}")),

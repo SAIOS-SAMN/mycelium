@@ -211,7 +211,7 @@ impl Court {
             .filter_map(|(k, l)| {
                 let id = <[u8; 32]>::try_from(k.as_slice()).ok()?;
                 let held = match self.treasury.held_of(&hold_key(&id)) {
-                    Some(h) => h.modes.reading(),
+                    Some(h) => h.mu.clone(),
                     None => Mu::zero(),
                 };
                 Some(LeaseReading { id, payer: l.payer, provider: l.provider, jobs: l.jobs.len(), until: l.until, held })

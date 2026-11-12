@@ -210,14 +210,14 @@ pub(crate) fn level_in(space: &Geometry, mass: &num_rational::BigRational) -> Op
 /// with its RATIO `r / π`, the UPPER bound, which a fitting throat keeps below
 /// `1`. `(level, ratio)`; `None` for a non-positive mass or radius.
 pub fn sphere_throat(m: &num_rational::BigRational, radius: &num_rational::BigRational) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-    use crate::core::certified::{cos, pi, Encl};
+    use crate::core::certified::{cos, pi, Certified};
     use num_traits::Signed;
     if !m.is_positive() || !radius.is_positive() {
         return None;
     }
     let r = num_rational::BigRational::from_integer(2.into()) * m / radius;
-    let level = cos(&Encl::exact(r.clone()), THROAT_LEVEL_BITS).lo;
-    let ratio = Encl::exact(r).div(&pi(THROAT_LEVEL_BITS))?.hi;
+    let level = cos(&Certified::Exact(r.clone()), THROAT_LEVEL_BITS).lo().clone();
+    let ratio = Certified::Exact(r).div(&pi(THROAT_LEVEL_BITS))?.hi().clone();
     Some((level, ratio))
 }
 
@@ -241,7 +241,7 @@ pub fn throat_level(m: &num_rational::BigRational, curvature: &num_rational::Big
         return None;
     }
     let r = num_rational::BigRational::from_integer(2.into()) * m / curvature;
-    Some(crate::core::certified::cosh(&crate::core::certified::Encl::exact(r), THROAT_LEVEL_BITS).hi)
+    Some(crate::core::certified::cosh(&crate::core::certified::Certified::Exact(r), THROAT_LEVEL_BITS).hi().clone())
 }
 
 /// 78.140 — A THROAT IN A FLAT TORUS FACE: the horizon is the sphere of
@@ -330,7 +330,7 @@ impl Court {
         th.feeders
             .iter()
             .filter_map(|f| {
-                let s = self.treasury.held_of(&throat_key(mouth, f))?.modes.lane_amount(crate::economy::modes::S);
+                let s = self.treasury.held_of(&throat_key(mouth, f))?.mu.lane(0).clone();
                 s.is_integer().then(|| u64::try_from(s.to_integer()).ok()).flatten().map(|n| (*f, n))
             })
             .collect()
@@ -581,7 +581,7 @@ impl Court {
             let _ = self.treasury.release_held(&key, m.keeper, anchor);
             return;
         };
-        let charge = self.treasury.held_of(&key).map(|h| h.modes.reading());
+        let charge = self.treasury.held_of(&key).map(|h| h.mu.clone());
         let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash.bytes())));
         match (charge.and_then(|c| tariff.parts(&m.keeper, &c)), traverse) {
             (Some(parts), Some((at, receipt))) => {
@@ -624,6 +624,9 @@ impl Court {
                 if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Mouth, dx) {
                     return Handed::Boundary(why);
                 }
+                if let Err(why) = crate::anastome::dialogue::crossing_record::verify_carried(h.crossing.as_deref()) {
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::Mouth, domain: dx, why }));
+                }
                 // 78.136 — THE LINES BUILD, THE RESERVE KEEPS (as ruled):
                 // the offerer is any tier of its
                 // domain — a builder LINE building a road, or the reserve;
@@ -645,7 +648,7 @@ impl Court {
                     return refuse(R::Degenerate);
                 }
                 // 78.134 — A MOUTH IS A TUBE between two places, never two
-                // free frames: its mass and spaces well formed, each frame a
+                // free poses: its mass and spaces well formed, each pose a
                 // motion of its own end's space (78.140: `ℍ³` or a torus),
                 // its throat fitting both faces, and a mouth it supersedes an
                 // open untethered one of the same pair.
@@ -687,10 +690,10 @@ impl Court {
                     // Track 24 B4 — a core tube is the universe's act: only
                     // its sitting reserve offers one, through its vertex.
                     if self.reserve_of(&dx) != Some(m.from_tier) {
-                        return Handed::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                        return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::NotThroughCore {
                             act: crate::court::admission::UniverseAct::Mouth,
                             domain: dx,
-                        });
+                        }));
                     }
                     if m.keeper != m.from_tier {
                         return refuse(R::NotKeeper);

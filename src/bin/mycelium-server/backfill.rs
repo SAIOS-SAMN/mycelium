@@ -2,7 +2,7 @@
 // is asked, and how. The chase itself is `mycelium::server::backfill`,
 // one loop for the server and the tests (ACT1-hold-b).
 //
-//! A gap is not a refusal: the frame that reported it is admitted again
+//! A gap is not a refusal: the envelope that reported it is admitted again
 //! once the chain reaches it, and nothing back-filled is cited as a
 //! parent. The pages of one gap are paced by the exchange's own stroke —
 //! one spend per page — so a peer whose K outruns one page per ask still

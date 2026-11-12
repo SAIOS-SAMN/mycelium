@@ -5,7 +5,7 @@
 //! planes that share a unit wherever both motions are rational.
 
 use super::super::*;
-use super::fixtures::{frame, plane, turning};
+use super::fixtures::{frame, plane, three_charts, turning};
 use crate::core::Q;
 use crate::transducer::cga::Clifford;
 use forms::coordinate::{Key, Square};
@@ -114,4 +114,61 @@ fn motion_refuses_wound_turnings_and_three_planes_as_uncommuted() {
         disjoint.then(&arriving),
         Err(FieldRefusal::NotExact { residue: Residue::Uncommuted { held: p34.key().clone(), arriving: p23.key().clone() } })
     );
+}
+
+/// A rate-held [`Rotor`] counts signed revolutions `K` on its invariant plane
+/// when `1 + ⟨B₁ B₂⟩₀ ≤ 0` is reached or crossed. At the 180° pole
+/// (`1 + ⟨B₁ B₂⟩₀ = 0`), the residual rate is `B = 0` and `K = ±1`; across the
+/// pole (`1 + ⟨B₁ B₂⟩₀ < 0`) and back to `R = 1` (`B₁ = 2, B₂ = 3, B₃ = 1`),
+/// `LocalOrbit::precession` reads `RotorPrecession::Resonant` with `K = ±1`
+/// kept, whereas a flat path (`B = 0, K = 0`) is refused `Unbound`.
+#[test]
+fn rotor_counts_signed_revolutions_and_local_orbit_reads_resonance() {
+    let f = frame(4);
+    let (p12, p34) = (plane(&f, 1, 2), plane(&f, 3, 4));
+    let canon12 = p12.bivector().multivector().canonical().expect("canonical plane");
+
+    // Two quarter turns (`t = 1` then `t = 1`) land on the pole `1 - 1·1 = 0`:
+    // residual B = 0 and K = +1; reversed (`t = -1` then `t = -1`), K = -1.
+    let q_pos = Rotor::of(rate(&f, &p12, q(1, 1))).expect("rate +1");
+    let q_neg = Rotor::of(rate(&f, &p12, q(-1, 1))).expect("rate -1");
+    let pole_pos = q_pos.then(&q_pos).expect("pole reached");
+    assert!(pole_pos.is_resonant(), "residual rate B = 0 at the pole");
+    assert_eq!(pole_pos.winding_on(&canon12), BigInt::from(1));
+    let pole_neg = q_neg.then(&q_neg).expect("negative pole reached");
+    assert!(pole_neg.is_resonant(), "residual rate B = 0 at the pole");
+    assert_eq!(pole_neg.winding_on(&canon12), BigInt::from(-1));
+
+    // Three rational steps `t = 2, 3, 1` cross `1 - 2·3 = -5 < 0` and close at
+    // `R = 1` (`(-1 + 1)/2 = 0`) with signed `K = +1` (and `-1` when negated).
+    let (_, charts) = three_charts();
+    let [c1, c2, c3] = charts.as_slice() else { panic!("three charts") };
+    let r2 = Rotor::of(rate(&f, &p12, q(2, 1))).expect("rate 2");
+    let r3 = Rotor::of(rate(&f, &p12, q(3, 1))).expect("rate 3");
+    let r1 = Rotor::of(rate(&f, &p12, q(1, 1))).expect("rate 1");
+    let orbit = LocalOrbit::of_steps(vec![(c1.clone(), r1), (c2.clone(), r2), (c3.clone(), r3)]).expect("bound revolution");
+    match orbit.precession().expect("revolution closes") {
+        RotorPrecession::Resonant(h) => assert_eq!(h.winding_on(&canon12), BigInt::from(1)),
+        other => panic!("expected Resonant(K = 1), got {other:?}"),
+    }
+
+    // A single-line orbit stands attached and refuses revolution readings with
+    // `NotRevolution { at: 1 }`; a flat path (`B = 0, K = 0`) refuses `Unbound`.
+    let single = LocalOrbit::of_steps(vec![(c1.clone(), q_pos.clone())]).expect("single-line orbit kept");
+    assert_eq!(single.steps().len(), 1);
+    assert_eq!(single.precession(), Err(FieldRefusal::NotRevolution { at: 1 }));
+    let id = Rotor::identity(f.negatives()).expect("identity");
+    assert_eq!(
+        LocalOrbit::of_steps(vec![(c1.clone(), id.clone()), (c2.clone(), id)]),
+        Err(FieldRefusal::Unbound { charts: vec![c1.clone(), c2.clone()] })
+    );
+
+    // Rate shear between local orbits on orthogonal planes (`p12` and `p34`)
+    // returns the neighbour's rate drag; on the same plane it returns `None`.
+    let r34 = Rotor::of(rate(&f, &p34, q(3, 5))).expect("rate 3/5 on p34");
+    let ortho = LocalOrbit::of_steps(vec![(c1.clone(), r34.clone()), (c2.clone(), q_pos)]).expect("bound");
+    let single_34 = LocalOrbit::of_steps(vec![(c3.clone(), r34.clone())]).expect("single on p34");
+    assert_eq!(single.rate_shear(&single_34).expect("shear read"), Some(r34.rate().multivector().grade(2)));
+    assert_eq!(single.rate_shear(&orbit).expect("same plane"), None);
+    let _ = ortho;
 }

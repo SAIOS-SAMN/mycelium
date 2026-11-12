@@ -49,7 +49,7 @@
 //! let (voice, key) = mycelium_sdk::voice::load_or_mint("home/voice.key");
 //! let session = Session::open("127.0.0.1:7500", voice);
 //! let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()));
-//! let Some(samples) = reply.ok().and_then(|r| task::decode_task_envelope(&r)) else { return };
+//! let Some(samples) = reply.ok().and_then(|r| task::decode_task(&r)) else { return };
 //! // The envelope carries samples of any rank; the rule seam spells the
 //! // alphabet's section.
 //! let Ok(envelope) = samples.section() else { return };
@@ -89,8 +89,14 @@ pub mod voice;
 pub mod wallet;
 
 /// The law forms of the Concordance's nested shells (the `forms` crate),
-/// exact over ℚ.
-pub use ::forms;
+/// exact over ℚ, and (ROADMAP track 25 X1, #160) the crossing record every
+/// universe act carries through the universal core tube. The record lives
+/// in the library, since the `forms` crate sits below `Mv` and `Turn`; it is
+/// placed here beside the forms it is read under.
+pub mod forms {
+    pub use ::forms::*;
+    pub use mycelium::anastome::dialogue::crossing_record::{crossed, put_address_only, verify_carried, Body, Clauses, Content, Crossing, CrossingRefusal, Motion, Place, Ring, TurnBody};
+}
 
 // MU-PRECURSORS §4.2 — THE WIRE COMPATIBILITY STATEMENT: the wire version
 // the SDK speaks and every act it may send, by the library's own codes. An

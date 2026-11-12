@@ -1,9 +1,9 @@
 // The economy's tests, one file per ORGAN they prove. Each file's header
 // names the chapter of MU-RECURSION the claim comes from.
 
+mod converged;
 mod fold;
 mod forfeit;
-mod holdings;
 mod ledger;
 mod modes;
 mod mu;
@@ -69,13 +69,6 @@ impl<A: Counts, B: Counts, C: Counts> Counts for (A, B, C) {
     }
 }
 
-/// A MEASURED AMOUNT AT EACH LANE'S FOUNDING MODE: the modes a claim's
-/// fixture mints where the claim is about the treasury's arithmetic and no
-/// motion is read (#169: a mint whose proof cites no motion).
-pub(crate) fn founding(m: impl Into<crate::economy::Mu>) -> crate::economy::Modes {
-    crate::economy::Modes::founding(&m.into())
-}
-
 /// A word's address, as an award is filed under it.
 pub(super) fn word(b: impl AsRef<[u8]>) -> crate::transducer::address::Address {
     crate::transducer::address::Address::from_bytes(b)
@@ -97,7 +90,7 @@ pub(super) fn round_trip(t: &crate::economy::Treasury) -> Option<crate::economy:
     let mut tries = Vec::new();
     t.put_tries(&mut tries);
     let mut pos = 0usize;
-    let (stakes, balances, held) = crate::economy::Treasury::take_tries(&tries, &mut pos)?;
+    let (stakes, balances, held, folded) = crate::economy::Treasury::take_tries(&tries, &mut pos)?;
     if pos != tries.len() {
         return None;
     }
@@ -108,7 +101,7 @@ pub(super) fn round_trip(t: &crate::economy::Treasury) -> Option<crate::economy:
         let mut p = 0usize;
         rows.push(crate::economy::Entry::read(&tape, &mut p).filter(|_| p == tape.len())?);
     }
-    Some(crate::economy::Treasury::from_parts(stakes, balances, held, rows))
+    Some(crate::economy::Treasury::from_parts(stakes, balances, held, folded, rows))
 }
 
 /// THE PLACE OF ACT `k` while every act closes its orbit: a fold's head.

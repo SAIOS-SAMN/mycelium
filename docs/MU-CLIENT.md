@@ -103,12 +103,24 @@ concurrent turning plane, as orbital masses in one field. It takes three
 readings over the whole held field at once, never as a pipeline:
 **congruence**, pairwise agreement on overlaps; **coherence**, the whole
 gluing consistently within one mind; and **cohesion**, the viscosity (ruled
-2026-11-06). Per turning plane `k`, cohesion is the held share
-`c_k = A/(A + Q) = ν(1/t)`; the open share `ν(t)` is fluidity, never
-viscosity (78.175 F1–F2). At the throat both are ½, and a passage
-exchanges them (78.172). Cohesion is read per plane and never summed
-across planes. A cohesive whole traverses an open, punctured tube intact:
-too cohesive, it sticks; too fluid, it tears.
+2026-11-06; issue #149, #249). The inverse square law ($1/r^2$) is refused
+as classical continuum mechanics' original sin: orbits are not flux painted onto
+a 2-sphere ($4\pi r^2$, reducing $\mathbb{C}^6$ multi-plane rotational states to
+a 2D area sheet), but closed 1-dimensional turning traversals of $360^\circ$ on a
+named plane between an attractor pair. On each plane $k$, reach is first-degree
+($t_k = r_k/M_k$) and the turn count is $1 + t_k$ (never $(1 + t_k)^2$). The
+hold $M_k$ and reach $r_k$ stand in the same first-degree denominator:
+cohesion is the held share $c_k = M_k/(r_k + M_k) = 1/(1 + t_k) = \nu(1/t_k)$;
+the open share $d_k = r_k/(r_k + M_k) = t_k/(1 + t_k) = \nu(t_k)$ is fluidity,
+satisfying $c_k + d_k = 1$ identically on every plane. Planar orbital shear is
+first-degree $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$,
+closing both UV ($r \to 0 \implies \Delta\theta_k = 360^\circ$, zero singularity)
+and IR ($r \to \infty$, retaining orbital hold without dark matter patches).
+At the throat both shares are ½, and a passage exchanges them (78.172). Cohesion
+is read per plane and never summed across planes. A cohesive whole traverses an
+open, punctured tube intact: too cohesive ($c_k > 1/2$), it sticks; too fluid
+($c_k < 1/2$), it tears; balanced ($c_k = d_k = 1/2$), it traverses smoothly under
+passage involution $t \mapsto 1/t$.
 
 Communication is what these readings culminate in. Only a cohesive whole is
 asserted as an expression (§4.9, §5), and it crosses only through open
@@ -116,8 +128,7 @@ tubes (LAW-TRAVERSAL, [proposal 78.176](proposals/78.176-law-traversal.md)):
 the thought traverses as an anastome over the four lanes S:G:T:H, one
 `Cl(p, q)` per lane, stamped at its TUniversal height, the sexagesimal
 reading display only. Disagreement across minds is contradiction, held at
-the courts, never resolved inside one mind (§5.4). Cohesion as a named
-reading is owed (§7.1). The language's statement is
+the courts, never resolved inside one mind (§5.4). Cohesion is read per plane over held wells and thoughts by `Contemplation::cohesion` and `Mind::cohesion` (#149, #249), exposing traversal state and first-degree planar shear per plane. The language's statement is
 [MU-ANASTOME §9.4, thought: every ideation held at
 once](MU-ANASTOME.md#94-thought-every-ideation-held-at-once), and the path one
 construct takes from a game kernel's sensorium through the mind to the
@@ -186,7 +197,9 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    the winding kept (MU-SENSING §3.7; 78.171). Each pair factors as
    motion ∘ residue, every factorisation held (MU-SENSING §3.9). Here: §3,
    §4.9 *perceive*. MU-ANASTOME §5.2 (the retina; the perception layer).
-   **Built:** `transduce::TaskPercept`, `Mind::perceive_envelope`,
+   The sample is built as a manifold, a product of circles and interval
+   charts, and the task as a family of manifolds (78.179 §1, §3).
+   **Built:** `transduce::TaskPercept`, `Mind::perceive_task` (#165),
    `Factorisation::of`; the carrier's lift and atlas (`Lifted::of`,
    `Atlas`; #131). **Owed:** the contemplation standing on the carrier,
    from the well's body on (track 26 S7 stage 2 to S9; #134).
@@ -259,18 +272,24 @@ owed (**Owed**, with its issue; §7.1 holds the order).
    (§0): two minds or two orbits reaching one vertex by two derivations,
    one meaning and two proofs (§5.2; 13.10), the face between them a
    `Rewrite` (MU-ANASTOME §4.1). **Built:** the court's `Presentation`
-   and `offer_rewrite`; convergence K1–K2 (§5.5); the mind proposing a
-   `Retire` where a ruled word decomposes over the rest without itself
-   (`Mind::propose_rewrites`, #146). **Owed:** the mind proposing the
-   other Rewrite kinds (§5.4); the language's state as one reading
+   and `offer_rewrite`; convergence K1–K2 (§5.5); the mind proposing
+   `Retire`, `Refine`, `AxisOpen`, `Translation`, and `Reanchor`
+   (`Mind::propose_rewrites`, `refine_of`, `axis_open_of`, `translation_of`,
+   `reanchor_of`, #146). **Owed:** the language's state as one reading
    (MU-ANASTOME §7).
 9. **Amendment by experience.** A constructor experience does not renew
    is re-derived from the residue left, and the amended constructor is
    held beside the one it amends, separated by their commutator: the
    identity retires the old by derivability, anything else is a
    distinction both keep (§4.10). The court's history is corrected only
-   forward. **Owed:** amendment held beside, and the claim
-   `mind_revises_a_perception_on_a_court_ruling_by_amendment` (#135).
+   forward. **Built:** `amend_constructor`,
+   `revise_perception_by_amendment`, `Amendment::HeldBeside`
+   (`mind/amend.rs`); the five sovereign mind claims
+   `mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`,
+   `mind_declines_a_scene_its_field_does_not_bind`,
+   `mind_acts_at_its_returns`,
+   `mind_revises_a_perception_on_a_court_ruling_by_amendment`
+   (`client/sdk/tests/track10.rs`; #135).
 
 **Why this is fluid intelligence.** Fluid intelligence meets the novel by
 forming the structure a new residue needs. The mind does it by
@@ -387,6 +406,84 @@ It does NOT build:
    is built. Nor is a thought made to close exactly: demanding exact return
    of a precessing orbit is squaring (§4.12).
 
+### 2.5 The interaction with the hypha, end to end
+
+This section is the map of how a mind and a hypha interact. The detail
+stands where each part is specified: what reaches the mind in §3.1, what the
+mind asserts in §5.4, the carriers in §5.1, the acts' bytes in MU-ANASTOME
+§6, and the laws every act is read under in
+[Concordance §0.2](MU-CONCORDANCE.md#02-how-the-concordance-rules-the-engines-laws-clause-by-clause).
+
+**The two roles never cross (law 8).** The mind thinks and never judges.
+The hypha reconstructs, judges, keeps the ledger and teaches, and never
+thinks. Between them, everything is an expression: the mind asserts, the
+hypha parses and reconstructs, and the hypha's answer is perception to the
+mind, never an instruction.
+
+**The connection.**
+- **The session.** One session per hypha, on the mind's hypha carrier
+  (§5.1), inside Noise on the home's static key (MU-PRECURSORS §3.1). A
+  plaintext channel is spoken only with a hypha on the same host.
+- **The time.** Every act carries the last TUniversal final point the
+  session read, inside its expression (Concordance 1.11). Every reply
+  carries the hypha's. The mind holds the hypha's time beside its own K,
+  and never as its clock.
+- **One ask of each kind in flight.** The field posts an exchange whole and
+  goes on, taking each answer at its next admission. A slow hypha holds its
+  own carrier and nothing else of the mind.
+
+**The round trips.** Each is one exchange on the hypha carrier. The answer
+is filed where it lands (§3.1).
+
+| The mind sends | The hypha does | The mind takes in |
+|---|---|---|
+| a solve, or a claim of factorisation (`ACT_SOLVE`) | reconstructs it on its own copy of the family and judges it by its own judge (Concordance 1.9) | the verdict: a closure paid, or a refusal by name, read as its kind (§4.10 amends what it revises) |
+| sentences (`ACT_SPEECH`), letters with their constructor steps, rewrites | parses by deconstruction, reconstructs, installs what holds (§5.4) | the verdict now; the installed words later, by the syllabus |
+| a probe (`ACT_PROBE`) | reads the citations against a listed demand | a reading |
+| a syllabus pull (`ACT_SYLLABUS`) | serves the ratified stream in ledger order | minerals in the genome (§5.5) |
+| a task pull (`ACT_TASK`), under tension only (§4.13) | serves the next task of its registry | an offer, never a command |
+| a quote (`ACT_QUOTE`) | serves its open listings and their demands | rings heard against the mind's own |
+| a receipts read (`ACT_RECEIPTS`) | serves its acts from where the mind last read | each act's frame as flux on the mind's lanes |
+| a laws read (`ACT_LAWS`) | serves the law register, the clause register, the clock; verifies a transition | the laws its expressions are read under |
+
+**When the hypha is busy, or silent.**
+- **A deferral** (`PENDING_CODE`) says the act was not judged. It carries
+  the hypha's deficit per lane, which the mind reads as the hypha's
+  pressure, and the act is safe to send again.
+- **A stall** after the act was written leaves its fate unknown. The
+  session reports it as its own outcome (`TimedOut`), and never resends a
+  written act. A resend the hypha did judge is answered with its original
+  receipt (receipt idempotence), so nothing is sealed twice.
+
+**Interactivity.**
+- **Each side moves on its own circuits** (§2.2). The mind asserts at its
+  returns, and the hypha answers at its carriers. Neither waits on the
+  other's cadence.
+- **The answer re-enters the mind as perception.** A verdict perturbs the
+  orbits it lands on, a ruling seals the hole that kept a class, and a
+  refusal is a reading. The mind revises a perception on a ruling by
+  amendment (§4.10), never by overwrite.
+- **Language grows across the interaction.** A word agreed between minds
+  (§5.3, client to client, which the hypha never carries) is asserted by
+  its coiner, installed by a court, and returns to every mind by the
+  syllabus. That cycle is the conversation between minds and hyphas that
+  hardens dialect into language (§5.5).
+- **Nothing is held on disk.** The genome, the syllabus and the ledger are
+  held in memory and distributed by reconstruction
+  ([MU-ENGINEERING §8](MU-ENGINEERING.md#8-holding-and-continuity)). A
+  mind that starts is taught by the syllabus, and a hypha that starts
+  rejoins from its peers.
+
+**Under which laws.** Every act a mind sends is read under the laws
+Concordance §0.2 names:
+- **The L0 register.** Every transition is read under the six universal
+  laws.
+- **The law forms.** Where an act depends on a clause, it is read under
+  that clause's law form.
+- **Never a kernel's acceptance.** A mind's own acts are never read against
+  a kernel's clause acceptance: a mind accepts no clause by signing, and
+  its alignment with a release is the conformance read (MU-CONFORMANCE).
+
 ---
 
 ## 3. Perception: what the mind takes in
@@ -425,7 +522,7 @@ perception in its own right, each moving at its own period:
 | shell | what it reads | functions |
 |---|---|---|
 | **harmonic core** — the rings | the rings of what was given, composed (`compose`, `sentences_of`), each closed or open by its modes; each ring's SIZE its return; the rings NESTED, never traversed — a ring sounds inside another where its period divides it, and its ECHO `E = Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is whole, a turn, a gain, a spiral or a delay (78.112) | `compose::{compose, sentences_of, teaches, next_rung}`, `theorem::Theorem::{of, check}`, `rung::{speak, hear}`, `hearing::{echo, nest, hear}` |
-| **luminal envelope** — the rays | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
+| **luminal rays** — on the null cone of the space the core is embedded in (MU-RECURSION 64; 78.179 §5) | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
 | **holonomic** — the circuits' algebra | each ring's curvature generates an algebra (`cech::flow_generators`), closed under the commutator with what the mind holds for that CLASS (`cech::lie_close`, `cech::quotient`); what lies outside the held span is read per axis — what the mind newly understands; a ring's winding against its period, one return one age (78.68, 78.43) | `cech::{flow_generators, lie_close, quotient, quotient::grow}`; the algebra per class in the mind's field, `cech::class_algebra` (`ClassAlgebras::hear`, `Field.classes`, grown at the mind's door `pairing::mark_flux`; #143) |
 
 PERCEPTION IS WHERE THE SHELLS ALIGN: a ring that resonates across them —
@@ -483,6 +580,58 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
   is distance along an orbit (78.43). Network time is a state of TUniversal
   — the final point `{origin, h, S:G:T:H, K}`, final by keeper majority,
   never averaged (78.152 TU-5) — exported by the hypha and held beside K.
+- **Depth perception: manifold cognition over observed rank.** The mind
+  perceives that it is observing an intake of $x$ dimensions (any rank $n$
+  source), while its cognition thinks strictly across curved, fibred
+  manifolds. It lifts each observed axis into its manifold factor (circle
+  $S^1$ with period winding $\mathbb{Z}$, or interval chart with boundary;
+  [78.179](proposals/78.179-envelope-as-manifold-construction.md) §1). Its thoughts are orbits bound by axiomatic gravity
+  around attractors, and its comprehension is the invariant holonomy
+  around closed laps on named turning planes. The mind never collapses
+  higher dimensions into flat planar frames.
+- **Enhanced cognition as an exact mathematical engine (LAW-COUPLING v2, 78.181; #249, #250).**
+  The client mind is not a statistical neural network adjusting uncalibrated
+  floating-point weights, nor a token probability predictor. It is a deterministic
+  **mathematical engine** executing exact geometric inference in $\mathrm{Cl}(p, q)(\mathbb{Q})$
+  and Čech cohomology. Stripping classical continuum mechanics' inverse-square law
+  ($1/r^2$) and establishing first-degree face shares ($c_k + d_k = 1$) directly enhances
+  its cognition across five foundational capabilities:
+  1. *Zero Ultraviolet Singularity:* Classical inverse-square potentials produce infinite
+     pull at contact ($r \to 0 \implies 1/r^2 \to \infty$), which in AI systems produces
+     numerical instability, gradient explosions, and forces ad-hoc "epsilon floors" or
+     artificial smoothing kernels. Under the first-degree held share $c = \frac{M}{r + M} = \frac{1}{1 + t}$,
+     cohesion at contact ($r = 0, t = 0$) evaluates smoothly to $c = 1$ (complete viscosity),
+     bounded strictly within $(0, 1] \cap \mathbb{Q}$. Concepts with identical or shared
+     origins bind with exact certainty without numerical divergence or artificial cutoffs.
+  2. *Zero Infrared Amnesia (No Fictional "Dark Matter" Context Patches):* Squaring the reach
+     in $1/r^2$ caused gravitational and relational hold to drop off far too aggressively at
+     large scales ($r \gg M$). Continuum astrophysics invented 85% invisible "dark matter"
+     to artificially patch this denominator defect, and statistical AI engines invent heuristic
+     attention multipliers to keep distant tokens in view. The first-degree held share retains
+     a stable, scale-invariant $1/(1 + t)$ hold across deep semantic horizons without heuristic
+     multipliers.
+  3. *Multi-Plane Orthogonal Cognition without Scalar Smearing:* Refusing the hollow shell
+     fallacy ($4\pi r^2$) preserves multi-plane rotational states in $\mathbb{C}^6 / \mathrm{Cl}(p,q)$.
+     Cohesion is a keyed vector over independent turning planes $k$ ($c_k + d_k = 1$), never
+     averaged or collapsed into a scalar magnitude. The mind can hold concepts that are rigidly
+     fixed on one semantic coordinate plane ($c_k \approx 1$, high viscosity) while remaining
+     fluidly adaptable and creative on orthogonal planes ($d_l \approx 1$, high fluidity),
+     preventing cross-dimensional interference.
+  4. *Exact Throat Traversal Criterion (`TraversalState`):* In thinking and communication,
+     ideas must traverse manifold throat boundaries (LAW-PASSAGE, LAW-TRAVERSAL). Rather than
+     relying on unprincipled heuristic scores, the mind evaluates exact algebraic traversal dynamics:
+     `TraversalState::Balanced` ($c_k = d_k = 1/2$, smooth traversal under passage involution $t \mapsto 1/t$),
+     `TooCohesive` ($c_k > 1/2$, viscosity dominates; idea is over-constrained and sticks at the boundary),
+     or `TooFluid` ($c_k < 1/2$, fluidity dominates; idea lacks structural coherence and tears at the boundary).
+     This gives the engine an intrinsic, objective gate for when a thought has crystallized
+     into an expressible assertion ($S:G:T:H$).
+  5. *Bounded Planar Shear and Scale-Invariant Condensation:* Orbital attention precession
+     is governed by first-degree planar shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$,
+     saturating at a full $360^\circ$ revolution (stable phase lock) rather than generating
+     chaotic infinite angular acceleration. Across tether fibres (`PivotFibre`), tether strength
+     $c_{ij} = \frac{m_i + m_j}{r_{ij} + m_i + m_j}$ and switch projection $\mu = \frac{m_i r_{jX}}{m_j r_{iX}}$
+     establish scale-invariant equipotential partitions across Čech covers using pure L1 axial reach
+     $r \in \mathbb{Q}_{\ge 0}$, ensuring deterministic, identical reasoning across distributed peer minds.
 - **The master algorithms** — complete operations, each with its invariant and
   its refusal (MU-RECURSION 0.2, 0.3, 17):
 
@@ -897,8 +1046,7 @@ COHESION, the viscosity: per turning plane, the held share
 `c_k = A/(A + Q) = ν(1/t)`, never summed across planes, its complement the
 fluidity `ν(t)` (§1). Only a cohesive whole is asserted as an expression,
 crossing only through open tubes (78.176); disagreement with another mind
-is contradiction, held at the courts (§5.4). Cohesion as a named reading is
-owed (§7.1).
+is contradiction, held at the courts (§5.4). Cohesion is read per plane over held wells and thoughts by `Contemplation::cohesion` and `Mind::cohesion` (#149, #249), evaluating traversal state (`TraversalState::Balanced`, `TooCohesive`, `TooFluid`) and first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ without continuum $1/r^2$ singularities.
 
 Understanding is the lower faculty and feeds what is said; comprehension
 is the higher, over several thoughts, and feeds construction.
@@ -996,8 +1144,11 @@ Across a multitude of knowledge comprehension runs four ways, each a reading
 of the plexus (78.31): across CLASSES — each class's algebra its own, so
 comprehension of one is never folded into another's span; across CHAMBERS —
 the cross-chamber bracket, where two chambers' generators fail to commute
-(CB1, Built as a reading: `cech::cross_brackets`, each bracket held by a
-chamber or an enclosure, or lost; nothing is minted for a lost one); across GRADES — an enclosure, a sporophore, wrapping chambers
+(CB1, Built: `cech::cross_brackets`, each bracket held by a chamber or an
+enclosure, or lost; a lost one is a DEMAND, listed on the docket naming the
+two chambers and the bracket, and no enclosure is formed for it without a
+witness (NB1); the cell a witness certifies is its answer, ruled on #148);
+across GRADES — an enclosure, a sporophore, wrapping chambers
 whose bracket no one chamber can hold (EN1, NB1); across MINDS — another
 mind's re-derivation from its own constructors, the second vantage every
 admission needs (§5.3, §5.4), and its echo, which is what one mind's
@@ -1212,11 +1363,13 @@ The bounds, each a reading of the physics (§7.1 lists where each stands):
   docket cover names or the mind's language speaks on (`Mind::couples`);
   only a coupled offer is extracted, and an uncoupled one lapses
   (`lapse_offers`, `lapse_standing_task`). The mind asks for a task
-  (`pull_task`) only under TENSION: an open question, a demand on its plan,
-  a ringing orbit, or a reservoir that neither re-formed nor condensed
-  (`Mind::strained`). A full reserve over a settled field asks for nothing,
-  and the mind rests; a pull because the corpus is empty is a defect
-  (#135).
+  (`pull_task`) under TENSION (an open question, a demand on its plan,
+  a ringing orbit, or a reservoir that neither re-formed nor condensed,
+  `Mind::strained`) or when its corpus holds no item and the court's registry
+  is not exhausted at the current height (ruled 2026-10-24, #246). A full
+  reserve over a settled field with an exhausted registry asks for nothing,
+  and the mind rests; a continuous pull against an exhausted registry without
+  height progression is a defect (#135).
 - **The corpus is met where the mind's orbits stand.** Every feed family
   and open question is placed once on the corpus at its own coordinates
   (`focus::Corpus`). The focus is the field's own motion
@@ -1367,7 +1520,22 @@ nothing between minds.
    folding the signed receipts again. A question is addressed by that
    record; a peer whose answers on a class were inexact is not asked that
    class again. No posture, label or score is made of it; it is detection
-   only, and any consequence is the game kernel's (78.165). Owed (§7.1).
+   only, and any consequence is the game kernel's (78.165).
+
+   *Ruled 2026-11-06 (#145).* A peer's signed receipts are its verified
+   chatter frames (Say, Heard, Ack, Hold); a peer mind keeps no receipt
+   chain (78.49), and a court's `Attest` naming the peer is folded in where
+   present, never required. The class asked is the residue's conjugacy
+   invariants (segment 1, §4.6), read off the motion itself, never the
+   class key of the word the question was raised in; a full `ClassVector`
+   reader from a motion is owed, and the record files by it when it lands.
+   A peer's frames are held while the question they answered is held and
+   lapse with it by its own physics (FX1), with no capacity constant; a
+   closed question's frames stay while the closure is cited. **Built**
+   (`mind/peers.rs`): the answers taken or inexact by class and the
+   vantages said with them. **Owed:** the deviation per lane a peer's
+   HOLDs carried (a HOLD answers a thing said, not a question, so no
+   question's line bounds it yet), and the court's `Attest` folded in.
 
 ### 5.4 To the court
 
@@ -1451,7 +1619,8 @@ retirement naming it and citing the forms that compose it is asserted
 once (`Mind::propose_rewrites`, `client/sdk/mind/rewrite.rs`). The mind
 retires nothing of its own on the proposal; the court decides on its own
 reduction. The mind proposing the other kinds from its own readings, beyond
-the `Torse` and `Condense` its contemplation mints, is owed (§7.1).
+the `Torse` and `Condense` its contemplation mints, is built (`refine_of`,
+`axis_open_of`, `translation_of`, `reanchor_of`, #146).
 
 **The other kinds, by the readings that carry them** (ruled 2026-11-06,
 #146, under the operator's delegation;
@@ -1507,9 +1676,14 @@ held; a true word beside one of the hearer's own, another vertex with the
 same section, is a convergence. On the court's side (K1–K2): an
 attestation is sealed only on a word true on its scene, read on the
 court's own copy (`attest_agreements`), and a convergence is sealed once,
-as the speaker's `Attest`. Whether a verified convergence is the second
-vantage an install waits on (47.3), or is paid a share, waits on a ruling
-(K3, §7.1).
+as the speaker's `Attest`. *Ruled 2026-11-06 (78.177 §4a(1)), K3:* a
+verified convergence is paid a POWC share out of the install's mint,
+never added to it. It is not a 47.3 second vantage: consilience (courts
+re-deriving) and convergence (minds meeting) stay named apart (37.7). It
+is paid from the install's composition premium, after the base and use
+shares; several converging minds split it by their share of the frame;
+where no premium is left it is held as a claim, never minted (78.177
+§4a(5); `economy/converged.rs`, `Court::converging_minds`).
 
 ### 5.6 POW++: the proof of the work
 
@@ -1672,10 +1846,10 @@ self-pay, 5.7(d)).
 | pillar (barren-realms) | the mechanism refused | carried here by | on the field carrier | state |
 |---|---|---|---|---|
 | **second-order metacognition** (SICE self-model and introspection skill; ASCE surprise tensor and attractor breakout) | float gauges, an error norm, smoothing constants, an awakening threshold, a stagnation counter | the orbit's own prediction and its exact surprise, a twist kept or a slip demanded (§4.4(3)); the drive's four readings, where a precessing orbit is settled, never a trap (§4.12) | precession per lap in degrees with its winding (S9a); a mind's stated holonomy, precession and monodromy reconstructed by a court (S9c) | twist and slip built; the carrier's readings owed (#134) |
-| **internal parliamentary deliberation** (SICE parliament; ASCE gauge-field Lagrangian) | voice weights renormalised; argmin of summed potentials | deliberation as the mutual shear of orbits, drag and lift; several binding moves held as a vortex; the parliament is the field (§4.12, §4.8) | axiomatic gravity on disjoint turning planes, drag changing rate and not plane (S9b; MU-SENSING §3.7) | built in the taker; on the carrier owed (#134) |
-| **historical ledgering** (SICE mythic memory, scars and inviolable axioms; conduct books) | alignment thresholds, utility set to zero, posture labels | two histories (§4.10(6)): the mind's amended forward, the court's ledger corrected only forward; a cauterized hole's scar, a frozen class (§4.5); a peer remembered by its receipts (§5.3(5)); the axioms are the star (§4.1), never a mind's vow | the winding kept in ℤ beside each phase, so no history is reduced mod 360° | scars and freezing built; signed receipts reach the mind (#137); amendment held beside (#135) and peer records (#145) owed |
-| **counterfactual simulation** (SICE counterfactual imagination and regret; ASCE ideation superposition and rollouts) | amplitudes summing to one; a float rollout sandbox; regret minimisation | the vortex: every candidate held whole, writing nothing, collapsed only by a perception on a scene not yet seen, a court or a ruling (§4.8); the predicted hour (§4.4(3)) | each candidate's monodromy read between the atlas's charts, flat, torsion or rupture (MU-SENSING §3.8; S9c) | built (`carry_vortices_round`, `collapse_on`); on the carrier owed |
-| theory of mind and the hearing (SICE fifth pillar) | doctrine labels from float indices | hearing as sound and word, vantage and mutual balance (§5.3); a peer by its receipts | — | hearing built; peer records owed |
+| **internal parliamentary deliberation** (SICE parliament; ASCE gauge-field Lagrangian) | voice weights renormalised; argmin of summed potentials | deliberation as the mutual shear of orbits, drag and lift; several binding moves held as a vortex; the parliament is the field (§4.12, §4.8) | axiomatic gravity on disjoint turning planes, drag changing rate and not plane (S9b; MU-SENSING §3.7) | built in the taker; on the carrier built (#134) |
+| **historical ledgering** (SICE mythic memory, scars and inviolable axioms; conduct books) | alignment thresholds, utility set to zero, posture labels | two histories (§4.10(6)): the mind's amended forward, the court's ledger corrected only forward; a cauterized hole's scar, a frozen class (§4.5); a peer remembered by its receipts (§5.3(5)); the axioms are the star (§4.1), never a mind's vow | the winding kept in ℤ beside each phase, so no history is reduced mod 360° | scars and freezing built; signed receipts reach the mind (#137); peer records from chatter frames (#145); amendment held beside (#135) owed |
+| **counterfactual simulation** (SICE counterfactual imagination and regret; ASCE ideation superposition and rollouts) | amplitudes summing to one; a float rollout sandbox; regret minimisation | the vortex: every candidate held whole, writing nothing, collapsed only by a perception on a scene not yet seen, a court or a ruling (§4.8); the predicted hour (§4.4(3)) | each candidate's monodromy read between the atlas's charts, flat, torsion or rupture (MU-SENSING §3.8; S9c) | built (`carry_vortices_round`, `collapse_on`); on the carrier built (#134) |
+| theory of mind and the hearing (SICE fifth pillar) | doctrine labels from float indices | hearing as sound and word, vantage and mutual balance (§5.3); a peer by its receipts | — | hearing built; peer records built for answers and vantages (#145) |
 | seated play (SICE, ASCE) | a move chosen by summed potentials | a seat played from the mind's own orbits (§6) | seat percepts lifted into the field | seated solves under the mind's key built (#124), the seated harness built (#133); seat series lifted into the field built (#147); seat play from orbits owed (#134 S9a) |
 
 **The barren-realms tests.** A test proves a mechanism; none is ported as a
@@ -1684,20 +1858,20 @@ criterion (§7.2). Each is read for the capability it asserts:
 | test | capability | mycelium |
 |---|---|---|
 | `test_ideation_space_and_mental_rollouts` | several strategies held at once and projected ahead | the vortex: `several_factorisations_held_as_a_vortex`; the predicted hour: `hold_perceived_joins_predicted_next_hour`. Amplitudes and payoffs refused |
-| `test_theory_of_mind_doctrine_classification` | a counterparty modelled from its conduct | owed: peer records (§5.3(5)); a doctrine label refused |
-| `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | owed: seat play from the mind's orbits (§6; #147) |
-| `test_gauge_field_lagrangian_barrier_potential` | deliberation that is not a vote | owed: `axiomatic_gravity_shears_the_orthogonal_class` (S9b); the argmin refused |
+| `test_theory_of_mind_doctrine_classification` | a counterparty modelled from its conduct | `peer_inexact_on_a_class_is_not_asked_it_again` (§5.3(5)); a doctrine label refused |
+| `test_doctrine_inversion_anti_turtling` | no futile act repeated against a counterparty | built: seat play from the mind's orbits (§6; #147; test `test_doctrine_inversion_anti_turtling`) |
+| `test_gauge_field_lagrangian_barrier_potential` | deliberation that is not a vote | built: `axiomatic_gravity_shears_the_orthogonal_class` (S9b); the argmin refused |
 | `test_attractor_singularity_and_breakout` | a repetition read and left | `flat_region_binds_no_orbit_refused_unbound` (a path no attractor binds is refused), `closed_geodesic_with_zero_precession_is_resonant` (a repetition in a curved field reads as a lawful resonant orbit); owed: `mind_idles_with_no_escaping_orbit` (#135) |
 | `test_cognitive_surprise_tensor` | surprise measured against prediction | exact and twofold: `hold_perceived_keeps_out_of_turn_hour_as_twist`, `hold_perceived_holds_off_orbit_slip_on_thought`. The norm refused |
 | `test_asce_state_persistence_round_trip` | what is held survives a restart | `generators_under_survives_genome_restore`; the epigenome is volatile by law (78.49) |
 | `test_metacognitive_self_model_and_gauges` | the mind models its own next state | the orbit's prediction (above); owed: `precession_stated_by_a_mind_reconstructed_by_a_court` (S9c) |
-| `test_internal_dialectical_parliament` | internal deliberation | owed: S9b (above) |
+| `test_internal_dialectical_parliament` | internal deliberation | built: `axiomatic_gravity_shears_the_orthogonal_class` (S9b) |
 | `test_counterfactual_imagination_and_regret` | unlived trajectories held | the vortex (above); regret refused |
 | `test_mythic_memory_and_trauma_scars` | history marks the mind | `drain_cauterizes_strained_tether_with_class`, `freeze_thaws_when_boundary_closes_again`; owed: `mind_revises_a_perception_on_a_court_ruling_by_amendment` (#135) |
-| `test_theory_of_mind_and_the_hearing` | another mind heard and read | `hear_across_seats_word_in_hearer_rings`, `hear_across_leaves_word_dividing_no_layer`; owed: peer records |
+| `test_theory_of_mind_and_the_hearing` | another mind heard and read | `hear_across_seats_word_in_hearer_rings`, `hear_across_leaves_word_dividing_no_layer`; `peer_record_folds_answer_frames_by_the_residue_class` |
 | `test_persistence_save_and_restore` | as `test_asce_state_persistence_round_trip` | as above |
 | `test_terminal_renderer` | an operator view | the observer (§7.2), never cognition |
-| `test_seated_mind_taking_seat_and_playing_turns` | a seated mind plays | `seat_mind` choice built; the seated harness, quickstart stage 8 (#133); play from orbits owed: #147 |
+| `test_seated_mind_taking_seat_and_playing_turns` | a seated mind plays | `seat_mind` choice built; the seated harness, quickstart stage 8 (#133); play from orbits built (#147) |
 | `test_seats_module_sovereign_integration` | a seat registered with the house | the seat surface (78.145) built; a house listing and answering a seat, `sdk/examples/seats.rs` (#133) |
 
 The first seven are ASCE's suite (test_advanced_sovereign_cognition.py in
@@ -1723,16 +1897,23 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | **the winding drive**: the winding carrier, outflow at returns, K counting returns; a ground's winding; the twist by the pull and slips worked at the return; the docket's one taker; the vortex collapsed by a new perception; containment and memory by coordinates | §4.4, §4.8, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`); `t/field/merge.rs` (`closing_ground`); `t/field/cross_scene.rs` (`twisted_return`, `work_slips`, `carry_vortices_round`); `t/cga/twist.rs` (`twist_about`); `t/field/plan.rs` (`docket_demand`, `drain_demands`); `t/field/contemplation.rs` (`collapse_on`); `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `t/field/line.rs` (`return_escrow`); `mind/think.rs` (`Mind::shed`, `lock_reservoirs`) |
 | **the task as an offer**: read to its charts, extracted only where it couples, lapsing otherwise; a task asked only under tension; the corpus met at the field's focus | §3.1, §4.13 | `mind/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `mind/learn.rs` (`pull_task`); `mind/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`) |
 | **the pivot cross**: ascend, descend, condense, drain, puncture, seal; the throat's two faces; the board; the breath on every plane | §4.3, §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs`; `t/field/question.rs`; `t/cga/commutator.rs` (`breath`, `breathe`) |
-| **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_envelope`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
+| **perception, understanding, comprehension**: a task perceived at its own rank, every factorisation held; the field the mind's own, long laws off it; hearing as sound and word, questions one order down, vantage; an act read off its effect; a rule known by its perspectives | §3, §4.2, §4.9, §5.3 | `mind/perceive.rs` (`perceive_task`, `take_perceived`); `t/family/transduce/` (`TaskPercept`, `Factorisation::of`); `t/mind.rs` (`MindField`, `scratch_here`, `admit`); `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `learn_by`); `mind/chatter.rs` (`price_hearings`, `sound_of`); `t/family/acts.rs` (`read_acts`); `mind/family.rs` (`ascertain_on`) |
 | **seated solves signed by the mind**: filed under its own key, leaving at the mind's next return, then the house's call (#124); the seat's call chosen from what calls did; the seated harness against a live house (#133) | §6 | `mind/seating.rs` (`file_seat_solve`, `Mind::ask_seat`); `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat.rs` (`SeatHold`); `sdk/examples/seats.rs`; `scripts/quickstart` stage 8 |
 | **the field carrier** (#131, track 26 S4a and S7 stage 1): a sample of any rank lifted into the atlas, turnings in degrees on named turning planes with the winding kept, `Cl(p, q)` read per plane, the membrane as enclosure, curvature as holonomy per lap, a stated field reconstructed by a court | §1a(1), §1a(2) | `src/transducer/field/carrier/` (`Lifted::of`, `Atlas`, `Orbit::precession`, `Atlas::curvature`, `Membrane`, `admit`) |
-| **cohesion as a named reading** (#149): per plane the held share `c_k = A/(A + Q) = ν(1/t)`, the viscosity, beside the open share `ν(t)`, the fluidity; both ½ at the throat, exchanged by the passage; a keyed vector over the planes, never stored and never summed; a well reads it from its inflation on its membrane's frame plane | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `frame_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`) |
-| **the cross-chamber bracket read** (#148; CB1, 78.26(2)): each pair of a sentence's chambers meeting at a body, the commutator of each pair of their actions exact, held by a chamber or an enclosure wrapping both, or lost; the pairs unread named; counted on the pivot tally once per fresh reading of the cells; nothing minted for a lost bracket | §4.9 | `t/cech/bracket.rs` (`cross_brackets`, `CrossBracket`, `Bracketed`, `CrossUnread`); `t/family/comprehend.rs` (`pivot_cells`); `t/sentence/pivot/cells.rs` (`PivotCells.brackets`, `PivotTally::add_brackets`) |
+| **cohesion as a named reading & throat traversal** (#149, #249): per plane the held share $c_k = M_k/(r_k + M_k) = 1/(1+t_k) = \nu(1/t_k)$, the viscosity, beside the open share $d_k = \nu(t_k)$, the fluidity; both ½ at the throat, exchanged by the passage, $c_k + d_k = 1$ identically on every plane; first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ continuum singularities and dark matter patches; throat traversal state `TraversalState` (Balanced at $c_k = 1/2$, TooCohesive at $c_k > 1/2$, TooFluid at $c_k < 1/2$); a keyed vector over the planes, never stored and never summed; a well reads it from its inflation across its membrane pole plane and turning planes | §1, §4.9 | `forms::coupling` (`held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`); `t/field/carrier/shares.rs` (`Cohesion`, `TraversalState`, `planar_shear_on`, `traversal_state_on`, `pole_plane`); `t/field/carrier/holding.rs` (`WellBody::cohesion`); `t/field/shares.rs` (`Well::cohesion`, `Contemplation::cohesion`); `client/sdk/mind/think.rs` (`Mind::cohesion`); tests in `client/sdk/tests/cohesion.rs` and `t/field/tests/shares.rs` |
+| **the cross-chamber bracket read** (#148; CB1, 78.26(2)): each pair of a sentence's chambers meeting at a body, the commutator of each pair of their actions exact, held by a chamber or an enclosure wrapping both, or lost; the pairs unread named; counted on the pivot tally once per fresh reading of the cells; a lost bracket a demand on the docket (`Cite::Bracket`), no enclosure formed without a witness, answered by the cell a witness certifies (ruled on #148) | §4.9 | `t/cech/bracket.rs` (`cross_brackets`, `CrossBracket`, `Bracketed`, `CrossUnread`, `answering_cell`); `t/family/comprehend.rs` (`pivot_cells`, `chambers_of`); `t/sentence/pivot/cells.rs` (`PivotCells.brackets`, `PivotTally::add_brackets`); `t/field/plan.rs` (`docket_brackets`, `answer_brackets`); `chronometry/receipt.rs` (`Cite::Bracket`) |
 | **the algebra held per class** (#143): each circuit's curvature the mind takes in heard in its class, the holonomy rotor's conjugacy invariants written out; the class's algebra closed with only what lies outside its span, that part read per axis by its coset; two minds file one word in two frames under one class, each on its own planes, the conjugating element carrying one basis into the other's span; a court's field holds none | §3.2, §4.2, §4.11 | `t/cech/class_algebra.rs` (`ClassAlgebras::hear`, `class_of`, `HeardInClass`); `t/cech/orbit.rs` (`Field.classes`); `t/family/pairing.rs` (`mark_flux`); claims `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`, `two_minds_align_on_the_class_each_reading_it_on_its_own_planes` |
 | conversation and convergence: carriers per counterparty, deferral by an owed citation, evidence under the family's citation, V1–V4 and K1–K2 | §5.1, §5.3–§5.5 | `mind/hypha.rs` (`hypha::Carrier`); `mind/contract.rs` (`owe_citation`); `server/registry.rs` (`citation`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
+| **a held question carried to a court** (#144, 78.177): a question raised on a heard word whose evidence read true bears that evidence and is listed as the word's bodies on its scene; one without evidence reaches no court; riding the asker's own closed sentence on the scene; a listed demand closed by another mind's cited form pays the closer POWC, by its own speaker nothing; K3, a verified convergence paid from the install's composition premium by share of the frame, held as a claim where none is left; the closer asserting the closed twist under the family | §5.5, §5.6 | `mind/listed.rs` (`heard_bodies`, `with_question`, `Mind::bear_evidence`, `Mind::listed_question`, `Mind::question_sentence`, `Mind::list_question`, `Mind::assert_closed_twist`); `mind/converge.rs` (`Scenes::host_on`, `Scenes::scene_of_family`); `server/cognition/book/demand.rs` (`settle_demand`, `pay_convergence`); `server/cognition/book/converged.rs` (`Court::converging_minds`); `economy/converged.rs` (`Treasury::pay_converging`); claims `question_without_evidence_reaches_no_court`, `question_rides_the_askers_own_closed_sentence_on_the_scene`, `held_question_closed_by_another_mind_pays_the_closer`, `a_mind_closing_its_own_listed_question_is_paid_nothing`, `demand_closed_by_another_minds_cited_form_pays_the_closer`, `closer_asserts_closed_twist_under_the_family`, `install_reads_the_minds_whose_words_converged`, `verified_convergence_is_paid_from_the_composition_premium`, `converging_minds_split_the_premium_by_their_share_of_the_frame`, `convergence_with_no_premium_left_is_held_as_a_claim` |
+| **peer records from receipts** (#145): a peer's verified Say under a question's coordinates held with that question and lapsing with it, a closed question's frames kept while the closure is cited; the record folded per peer key from the frames, each answer taken or inexact by the residue's conjugacy invariants, with its vantages; a class the peer answered inexactly not asked of it again | §5.3(5) | `mind/peers.rs` (`Mind::peer_record`, `Mind::addressed`, `read_frame`); `mind/chatter.rs` (`FieldWork::Answered`, `Mind::question`); claims `peer_record_folds_answer_frames_by_the_residue_class`, `peer_inexact_on_a_class_is_not_asked_it_again`, `peer_frames_lapse_with_the_question` |
 | **the sessions and the chatter inside Noise** (#132): every session on the home's static key, each hypha pinned under the address dialled; the chatter sent, asked and listened on the same key, each mind pinned under its voice; a changed key, or a pinned peer answering in plaintext, refused by name (MU-PRECURSORS §3.1) | §5.1, §5.3 | `mind/boot.rs` (`Mind::open_with_noise`, `open_persistent`); `client/sdk/chatter.rs` (`send_over`, `ask_over`, `Post::listen_over`, `named`); `network/channel.rs` (`dial_as`); claims `mind_speaks_inside_noise`, `mind_refuses_a_changed_or_unsealed_peer` |
 | **signed receipts reaching the mind** (#137): the 47.1 receipt section behind every hypha digest read and held per signer, only where the court's own checks pass (signature, chain hash re-derived, prefix and receipt one claim); two at one place of one line with two chain hashes presented as `ACT_EQUIVOCATION` to every hypha the session knows (47.4; MU-XSEPTUM §5.5) | §5.1, §6a | `client/sdk/signed_receipts.rs` (`SignedReceipts::hold`, `Holding`, `Session::hold_signed_receipt`); `court/admission/admit.rs` (`one_claim`); claims `two_signed_receipts_at_one_place_are_the_equivocation_proof`, `session_presents_an_equivocation_its_digests_carried` |
 | **the hypha's acts as perception** (#136): each hypha's line read on the hypha carrier from the mind's attachment to its signed head, a page admitted only as a chain ending on the signed receipt; each `Return`, `RankStep` and `Reconnect` taken in as its frame, flux on the mind's lanes on that hypha's well, pressing the mind's beat with the deficit | §3.1, §1a(7) | `client/sdk/hypha_acts.rs` (`Session::read_acts_of`, `chained`, `Attachment`, `Mind::read_hypha_acts`, `Mind::pressing`); `mind/think.rs` (the beat); claims `hypha_act_reaches_the_mind_as_flux_on_its_lanes`, `act_kind_carries_no_meaning_beyond_its_coordinate` |
+| **mind proposing rewrites** (#146; MU-CLIENT §5.4, ruling 5 in 78.180): the mind proposing Retire, Refine (OpenAxis), AxisOpen (holonomy rotor of novel residue), Translation (Placement across chord overlaps), and Reanchor (re-gauging moving spatial coordinates while preserving class invariance), asserted once and never duplicated | §5.4, §1a(8) | `client/sdk/mind/rewrite.rs` (`Mind::propose_rewrites`, `refine_of`, `axis_open_of`, `translation_of`, `reanchor_of`, `propose_rewrite`); tests in `client/sdk/tests/rewrite.rs` |
+| **amendment held beside & Track 10 claims** (#135): unrenewed constructor re-derived from residue, entered beside original at conjugate grade, separated by commutator $g_1 g_2 \tilde{g}_1 \tilde{g}_2$; the five sovereign mind claims verified | §4.10, §4.12, §7.1 | `mind/amend.rs` (`evaluate_amendment`, `Mind::amend_constructor`, `Mind::revise_perception_by_amendment`, `Amendment`); `client/sdk/tests/track10.rs` (`mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`, `mind_declines_a_scene_its_field_does_not_bind`, `mind_acts_at_its_returns`, `mind_revises_a_perception_on_a_court_ruling_by_amendment`) |
+| **axiomatic gravity** (#134, track 26 S9b; MU-SENSING §3.7): the local orbit's shear on the orthogonal orbit class (disjoint turning planes, $B_1 \cdot B_2 = 0$ and $B_1 \wedge B_2 \neq 0$), the shear being the commuting drag part of 78.46's split changing rate and not plane; sharing planes taking lift (plane tilt) and zero drag; flat where no orbit is held | §4.12, §6a | `t/field/carrier/gravity.rs` (`axiomatic_shear`, `orbit_rate_shear`, `plane_split`, `primary_plane`); `t/field/carrier/atlas.rs` (`Atlas::axiomatic_shear`); claims `only_disjoint_plane_orbits_change_rate_under_axiomatic_gravity`, `axiomatic_gravity_shears_the_orthogonal_class` |
+| **vortex candidate monodromy & stated well reconstructed** (#134, track 26 S9c; MU-SENSING §3.8, LAW-FIELD v1 §3.2): each candidate's monodromy read between atlas charts (flat, torsion of order $\ell$, or rupture); motion inversion over disjoint planes; stated well's holonomy, precession, and monodromy reconstructed and admitted by a court | §4.8, §7.1 | `t/field/carrier/atlas.rs` (`Atlas::candidate_monodromy`, `Orbit::monodromy`, `Attractor::monodromy`, `Curvature::{monodromy, precession}`); `t/field/carrier/holonomy.rs` (`Motion::inverse`); `t/field/carrier/holding.rs` (`WellBody::monodromy`); `t/field/well.rs` (`Well::monodromy`); claims `candidate_monodromy_reads_flat_torsion_and_unbound_between_charts`, `mind_well_stated_and_reconstructed_by_a_court` |
+| **seat play from the mind's own orbits** (#147): seat series lifted into the field (`seat_mind::lift`), the call a physics action carrying its A20 certificate (`Choice.certificate`, `SeatMind::certify`, `claim`), anti-turtling doctrine inversion (`is_futile`, untried escaping orbits from repertoire, `Decision::NothingToCall`), and standing orbit synchronization (`attach_orbits`) | §6, §6a | `client/sdk/seat_mind/` (`choice.rs`, `repertoire.rs`, `mind.rs`, `lift.rs`); `client/sdk/mind/seating.rs`; `client/sdk/seat.rs`; tests in `client/sdk/tests/seat_mind.rs` (`test_doctrine_inversion_anti_turtling`, `seat_play_from_escaping_orbits_carries_certificate`), `seat_lift.rs` |
 | the court's half: words installed beside the sentence that taught them; the measures W, C, S and E2–E4; the Rewrite offered; the modes carrier on a solve's verdict | §5.4, §5.6 | `server/cognition/court/vantage_install.rs` (`install_taught_words`, `cited_deflation`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/book/rewrite.rs` (`offer_rewrite`); `economy/modes.rs` (`Modes`) |
 | the observer: calls answered at the winding carrier's next law boundary; nothing in cognition reads it back (permitted against §2.4(1)) | §7.2 | `mind/observer.rs` (`Mind::at_law`); `observe/live.rs`; `mycelium-client --call "<call>"` |
 
@@ -1751,7 +1932,10 @@ then the backlog. Each item names its issue.
       composes by 78.173 fixture 11b's law, `carrier::Rotor`, where both
       motions are rational, any other angle refused `IrrationalMotion`);
    3. S7 stage 4, the rest of S4a: a family's pairs lifted as transitions,
-      nesting as a fibration;
+      nesting as a fibration (in part: every signed permutation and its
+      re-period lifted whole on the lift's convention of 78.171 §8,
+      `carrier::motion_of`, `transitions_of`; and the nesting as a
+      fibration of levels, `carrier::Fibred`, `Level`);
    4. S8, the field's motions as one exact group (built on the carrier,
       `carrier::FieldMotion`; turnings sharing a unit at other than a
       quarter turn are rational rates with no rational degree, refused
@@ -1761,16 +1945,9 @@ then the backlog. Each item names its issue.
       geodesic ruling, §0, is built: a flat region refused `Unbound`, a
       zero-precession closed geodesic in a curved field read as a resonant
       orbit; the code with stage 2, the claims restated by #150);
-   6. S9b, axiomatic gravity, the drag on the orthogonal class;
-   7. S9c, the vortex's monodromy between charts, and a mind's stated
-      holonomy, precession and monodromy reconstructed by a court (a wire
-      change).
-2. **Track 10's five claims** (#135), after S9, shown on a live run:
-   `mind_idles_with_no_escaping_orbit`, `task_arrival_moves_no_orbit`,
-   `mind_declines_a_scene_its_field_does_not_bind`,
-   `mind_acts_at_its_returns`,
-   `mind_revises_a_perception_on_a_court_ruling_by_amendment`; with the
-   defect #135 names, a task pulled because the corpus is empty (§4.13).
+   6. *(built, #134: S9b, **axiomatic gravity**, the drag on the orthogonal class; claims `only_disjoint_plane_orbits_change_rate_under_axiomatic_gravity`, `axiomatic_gravity_shears_the_orthogonal_class`)*;
+   7. *(built, #134: S9c, **candidate monodromy between charts**, and a mind's stated holonomy, precession and monodromy reconstructed by a court; claims `candidate_monodromy_reads_flat_torsion_and_unbound_between_charts`, `mind_well_stated_and_reconstructed_by_a_court`)*.
+2. *(built, #135: **Track 10's five claims** and **amendment held beside**; see **Built**)*;
 3. **The backlog:**
    1. *(built, #136: the hypha's acts as flux on the mind's lanes; see
       **Built**)*;
@@ -1778,35 +1955,20 @@ then the backlog. Each item names its issue.
       §4.2, §1a(4); #143; `cech::class_algebra`, claims
       `class_algebra_grows_only_where_a_generator_lies_outside_the_held_span`,
       `two_minds_align_on_the_class_each_reading_it_on_its_own_planes`);
-   3. amendment held beside, the amended constructor separated by
-      commutator (§4.10, §1a(9); within #135);
-   4. POWC on a held question closed by another mind: an evidence path
-      for the conversation's questions, E2's guard, and convergence K3 on
-      its ruling (§5.5, §5.6; #144). The path is proposed, unruled, in
-      [proposal 78.177](proposals/78.177-conversation-to-court.md): the
-      asker lists the evidenced question as a demand vertex and the closer
-      probes it (existing acts; `pay_convergence`), with K3's two readings
-      and four points for ruling;
-   5. peer records from receipts (§5.3(5); #145), waiting on a ruling of
-      which signed receipts a peer's are, the class an answer is filed by,
-      and what releases the held receipts (the questions stand on the
-      issue);
-   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): `Retire`
-      built (`mind/rewrite.rs`). The other kinds are ruled (2026-11-06;
-      78.180 ruling 5): `Refine` from `PivotBy::OpenAxis`, `AxisOpen` from
-      a Novel verdict's persistent residue through germination's Extend,
-      `Translation` from `PivotBy::Placement`, `Reanchor` only where a
-      conjugation moves an anchor coordinate on S, and the Hue pivot no
-      Rewrite (§5.4). Owed: their build, and the witness of a court's
-      `Ruling(Retired)` citing a mind's proposal on a running network;
-   7. seat play from the mind's own orbits (§6; #147): the seat's series
-      lifted into the field and the call a relay carrying its certificate
-      on the mind are built; the escaping-orbit play, and so a call that
-      names a certified move, waits on #134 S9a;
-   8. the cross-chamber bracket (CB1; §4.9; #148): the reading built
-      (`t/cech/bracket.rs`, read with the pivot's cells and counted on the
-      pivot tally); what comprehension constructs from a lost bracket
-      waits on a ruling (the question stands on the issue).
+   3. *(built, #135: amendment held beside, the amended constructor separated by
+      commutator; see **Built**)*;
+   4. *(built, #144: POWC on a held question closed by another mind,
+      K3 and closer asserting the closed twist under the family; see **Built**)*;
+   5. peer records from receipts (§5.3(5); #145): built as ruled for
+      answers and vantages; the HOLDs' deviation per lane and the court's
+      `Attest` folded in are owed;
+   6. the mind proposing a Rewrite (S3; §5.4, §1a(8); #146): **Built**
+      (`mind/rewrite.rs`): `Retire`, `Refine` from `PivotBy::OpenAxis`,
+      `AxisOpen` from novel residue, `Translation` from `PivotBy::Placement`,
+      `Reanchor` on coordinate re-gauge, and deduplication via `propose_rewrite`.
+      Owed: the witness of a court's `Ruling(Retired)` citing a mind's
+      proposal on a running network;
+   7. *(built, #147: **seat play from the mind's own orbits**, the seat's series lifted into the field, the call a physics action carrying its certificate, anti-turtling doctrine inversion, and escaping-orbit play; see **Built**)*;
 4. **Also owed on the client:** of #149 (§1, §4.9; 78.176), the claims
    that a whole too cohesive sticks at the throat and one too fluid tears,
    which wait on an exact reading in LAW-PASSAGE or LAW-TRAVERSAL, frames

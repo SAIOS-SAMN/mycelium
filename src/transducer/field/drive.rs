@@ -211,6 +211,7 @@ impl Contemplation {
             };
             let horizon = b.horizon.clone();
             let bundle = b.bundle.clone();
+            let cover = b.cover.clone();
             // A well marked above this clock has no measurable extent, and
             // the pivot orbit is not paced by a count that went backwards.
             let Some(t) = super::well::held_since(self.now_k, b.moved_k) else {
@@ -224,8 +225,13 @@ impl Contemplation {
                 let cells = super::well::cells_for_pivot(&mut memo, &form, budget);
                 // CB1 — the cells' cross-chamber brackets, counted once per
                 // fresh reading of the form's cells, never per pivot on a memo.
+                // Ruled on #148: a lost bracket is a demand on the docket, and
+                // a cell a witness certified that holds one answers it.
                 if memo.as_ref().map(|(at, _)| at) != read_before.as_ref() {
                     self.pivots.add_brackets(&cells.brackets);
+                    let chambers = crate::transducer::family::chambers_of(&form, &cells);
+                    self.answer_brackets(&chambers);
+                    self.docket_brackets(&cells.brackets, &chambers, &cover);
                 }
                 if let Some(b) = self.wells.get_mut(bk) {
                     b.cells_read = memo;

@@ -77,7 +77,7 @@ impl Form {
         Some(FacePlace { carriage, gauge, edge, refraction: None })
     }
 
-    /// THE FRAMES A MEMBER STANDS ON: its own, held on it (AT1, ruled) —
+    /// THE DELIMITED A MEMBER STANDS ON: its own, held on it (AT1, ruled) —
     /// every section of the chart's, since two sections of one chart stand
     /// on different frames and are told apart by them. In the frames' own
     /// order; empty where the vertex does not act on the chart.

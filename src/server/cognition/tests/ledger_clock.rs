@@ -325,7 +325,7 @@ let before = k.keeper_tick().expect("the court has acted");
 let q = |n: i64, d: i64| crate::core::Q::new(n.into(), d.into());
 let share = Mu::of([q(1, 900), q(0, 1), q(0, 1), q(0, 1)]).expect("non-negative");
 let at = k.anchor_pub();
-k.treasury.mint_to([3; 32], crate::economy::Modes::founding(&share), at, None);
+k.treasury.mint_to([3; 32], share.clone(), at, None);
 speak_pair(&mut k, &a, &[(0, 0, 5), (0, 1, 5)], [2; 32]);
 let after = k.keeper_tick().expect("the court has acted");
 assert!(after.h > before.h, "the head rose");

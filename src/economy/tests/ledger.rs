@@ -2,7 +2,7 @@
 // a stake moves value and never creates it, and the audit survives genesis,
 // mint and burn — exactly, over ℚ.
 
-use super::{at, founding, word, Counts};
+use super::{at, word, Counts};
 use crate::economy::escrow::Revocation;
 use crate::economy::*;
 
@@ -17,9 +17,9 @@ fn supply_sums_minted_deflations() {
     t.escrow_award(&word([8; 32]), vec![[1; 32], [2; 32]], d1, at(1, [1; 32]));
     t.escrow_award(&word([9; 32]), vec![[1; 32], [2; 32]], d2, at(2, [2; 32]));
     let h1 = t.release_award(&[8; 32]).expect("d1");
-    t.mint_claim(&h1.voices, founding(h1.mu), h1.anchor);
+    t.mint_claim(&h1.voices, h1.mu, h1.anchor);
     let h2 = t.release_award(&[9; 32]).expect("d2");
-    t.mint_claim(&h2.voices, founding(h2.mu), h2.anchor);
+    t.mint_claim(&h2.voices, h2.mu, h2.anchor);
     let expect: [u64; 4] = std::array::from_fn(|l| d1[l] + d2[l]);
     assert_eq!(t.supply().expect("supply adds up"), expect);
 }
@@ -136,7 +136,7 @@ fn bind_live_burns_stake_outside_live_genesis() {
     assert!(
         t.entries()
             .iter()
-            .any(|e| e.kind == Kind::Burn && e.who == [1; 32] && e.modes.reading() == [6, 10, 0, 10]),
+            .any(|e| e.kind == Kind::Burn && e.who == [1; 32] && e.mu == [6, 10, 0, 10]),
         "one burn row names what left"
     );
     assert_eq!(
@@ -157,7 +157,7 @@ fn release_award_carries_escrowed_amount_unchanged() {
     let mut t = Treasury::new();
     t.escrow_award(&word([7u8; 32]), vec![[2; 32]], [4, 1, 0, 3], at(1, [1; 32]));
     let held = t.release_award(&[7u8; 32]).expect("the claim stood");
-    t.mint_claim(&held.voices, founding(held.mu.clone()), at(6, [6; 32]));
+    t.mint_claim(&held.voices, held.mu.clone(), at(6, [6; 32]));
     assert_eq!(held.mu, [4, 1, 0, 3], "no lane grew while it waited");
     assert_eq!(t.balance_mu(&[2; 32]), [4, 1, 0, 3]);
 }
@@ -179,7 +179,7 @@ fn escrow_award_keeps_claim_out_of_supply_until_minted() {
     // The claim, released, MINTS — supply rises by what the ruling
     // measured, which is E1's whole mechanism.
     let held = t.release_award(&[7u8; 32]).expect("the claim stood");
-    t.mint_claim(&held.voices, founding(held.mu), held.anchor);
+    t.mint_claim(&held.voices, held.mu, held.anchor);
     let after = t.audit().expect("a ruling conserves");
     assert!(
         after.lane_moves(&seeded).iter().any(|m| matches!(m, LaneMove::Rose(_))),
@@ -307,16 +307,15 @@ fn supply_fold_agrees_with_journal_read() {
     t.revoke_award(&[7u8; 32], Revocation::Slash(at(6, [0; 32]))); // slash
 
     // The whole read this replaced, recomputed here from the rows themselves.
-    let (mut issued, mut burned) = (Modes::new(), Modes::new());
+    let (mut issued, mut burned) = (Mu::zero(), Mu::zero());
     for e in t.entries() {
         match e.kind.issues() {
-            Some(true) => issued.add(&e.modes),
-            Some(false) => burned.add(&e.modes),
+            Some(true) => issued.step(&e.mu),
+            Some(false) => burned.step(&e.mu),
             None => {}
         }
     }
-    issued.take(&burned).expect("the burns were issued");
-    let read_whole = issued.reading();
+    let read_whole = issued.draw(&burned).expect("the burns were issued");
     assert_eq!(t.supply(), Some(read_whole), "the fold is the whole read, on every kind");
     assert!(t.audit().is_ok(), "and the carriers agree with it");
 

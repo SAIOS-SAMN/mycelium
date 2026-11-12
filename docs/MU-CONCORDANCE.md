@@ -87,6 +87,97 @@ Reading the map:
   the outcomes are observations (MU-SENSING §0).
   The ladder above it is the game's.
 
+### 0.2 How the Concordance rules the engine's laws, clause by clause
+
+This section is the one description of how the agreement becomes the law
+the engine applies. MU-HOSTING §5a.4 gives the build status of each part;
+[MU-CONFORMANCE](MU-CONFORMANCE.md) gives the client's read of it.
+
+**1. A clause is a law form.** Each clause the hypha adjudicates is a law
+form of the `forms` crate (2.10's innermost shell), named by its law id and
+version, with its joint-read fixtures as exact inputs. The name and the
+fixtures together are the clause's content address; the clause's prose is
+its statement, never its identity. The register the hypha serves
+(`physics::laws::clauses::register`, `ACT_LAWS` mode 7) holds, at the
+time of writing:
+
+| Clause | Law form | Standing | Why |
+|---|---|---|---|
+| 2.11 (draft 5, held) | `FORMS-PASSAGE` v4 | Network | adopted by both operators, 2026-11-05 |
+| the coordinate (LAW-COORDINATE v4) | `FORMS-COORDINATE` v4 | Kernel | stands vetoable until its fixtures are joint-read agreed |
+| the coupling (LAW-COUPLING v1) | `FORMS-COUPLING` v1 | Kernel | likewise (78.175) |
+| the turning (fixture 11b) | `FORMS-TURNING` v1 | Kernel | likewise (78.173) |
+
+A clause becomes a Network clause only when every kernel has read its
+fixtures alike. A clause whose fixtures no other kernel has read is never
+made unvetoable.
+
+**2. Acceptance is per clause, by reconstruction.** A kernel accepts the
+agreement one clause at a time (§0 CLAUSE BY CLAUSE):
+- **To accept a clause,** a kernel reconstructs each of the clause's
+  fixtures in its own code and presents the objects it reached, signed
+  under its key (`ACT_LAWS` mode 8). The hypha reconstructs the same
+  fixtures with the same `forms` code and admits the acceptance only where
+  the two reach the same exact objects.
+- **To refuse a clause,** a kernel vetoes it. A Kernel clause may be
+  vetoed. A Network clause cannot be: a veto of one is refused
+  `NetworkVetoed`.
+- **A kernel that cannot read a clause** is refused `NotSignatory`, naming
+  the clause and the fixture. Both objects, the kernel's and the hypha's,
+  are kept as the residue.
+- **Every acceptance, veto and refusal is an event** on the hypha's ledger
+  (`Cite::Signing`), at the TUniversal point it was read. Nothing is a
+  stored flag, and a re-acceptance is a new event.
+
+**3. The engine reads the acceptance, never a flag.** What a kernel accepted
+is a reading of the ledger, the alignment (`Court::alignment`, `ACT_LAWS`
+mode 9): per kernel and per clause version it **converses** (accepted,
+every fixture reached), is **vetoed**, **collides** (refused, the residue
+held), or is **unread**. Every hypha that holds the events reads the same
+alignment.
+
+**4. Where the laws are applied.** The engine applies a clause at the
+points where an act depends on it, and nowhere else:
+- **At the universal core tube** (4.1). A universe's act crosses only while
+  its domain's sitting reserve converses on every Network clause of the
+  register served; otherwise it is refused `NotSignatory`. A Kernel clause
+  the reserve vetoed bounds only the acts that clause governs (`Bounded`,
+  named), and never refuses anything else.
+- **In the reconstruction of what crosses.** The hypha reconstructs a
+  crossing under the law forms with the same `forms` code the kernel
+  accepted (MU-HOSTING §5a.10), and refuses it by the law's name where it
+  does not hold. The kernel's computation and the hypha's check are the
+  same code, so an accepted clause cannot drift between them.
+- **In the L0 verifier.** A transition a kernel or a mind puts to the court
+  (`ACT_LAWS`, verify or batch) is read under the six universal laws of
+  L0's register (Conformal, Momentum, Rigidity, Time, Reservoir,
+  Continuity; `physics::laws`), at the register's law version.
+- **An act is read under the clauses it depends on.** A clause unchanged
+  since the kernel accepted it is read normally. A changed clause is read
+  under the version accepted, and the divergence is held and named until
+  the kernel accepts the new version, forward and never reverted. No
+  acceptance lapses on a timer. (**Specified**: MU-HOSTING §5a.9, B2.)
+
+**5. Who accepts, and who is bound.**
+- **A kernel** accepts through its house, under the kernel's key. Its
+  domain's sitting reserve's alignment is what the tube reads.
+- **A hypha** serves the register it can itself read: a clause whose
+  fixtures the hypha cannot reconstruct is refused at its own register,
+  and never served.
+- **A client** accepts nothing by signing. The Network clauses bind it
+  because the hypha applies them to every act, and its alignment with a
+  release is the conformance read (MU-CONFORMANCE §1). A key's own acts
+  (a solve, a speech, a probe) are judged by the court's own judge under
+  the laws, and are never read against a kernel's alignment (6.2a).
+- **Kernel-kept clauses** (0.1) are attested in each kernel and never
+  checked by a court.
+
+**6. Amending the engine's law.** A change to a law form is a new version
+of its clause, with its fixtures (§0 AMENDING). It enters the register at a
+signed release (MU-RELEASE §3a), and binds a kernel when that kernel
+accepts the new version. Until then, that kernel's acts are read under the
+version it accepted.
+
 ## 1. Principles
 
 1.1 FLUIDITY. Nothing is rigid and nothing runs in straight lines. Space is spheres, manifolds and tubes; bodies keep nested orbits (moons about worlds, worlds about stars, stars about galactic cores); connections are fibres, strings and tethers.
@@ -109,7 +200,7 @@ Reading the map:
     WORLD forbids a comparison deciding an outcome (a winner-take-all ward, a
     majority deciding agreement), that is a law of the world, ruled as such,
     never a coding standard (ruled 2026-10-08).
-1.11 TUNIVERSAL, THE ONE CLOCK (ruled 2026-10-09). TU-1..7 as approved: three keepers on distinct hyphae sign parent-linked readings; a point is final on a 2-of-3 quorum of verified signatures; disagreement is kept as a residue, never averaged. Every court, server, client, kernel and sub-universe keeps time on the hyphae's TUniversal and on nothing else. A full coordinate is origin/h:S:G:T:H:K. Every act, percept and mail carries the last final point read. With two keepers down, time does not advance. The mesh synchronises on TUniversal and on nothing else: a client act carries the last final point its session read, behind its body on the frame (MU-RECURSION 78.152).
+1.11 TUNIVERSAL, THE ONE CLOCK (ruled 2026-10-09). TU-1..7 as approved: three keepers on distinct hyphae sign parent-linked readings; a point is final on a 2-of-3 quorum of verified signatures; disagreement is kept as a residue, never averaged. Every court, server, client, kernel and sub-universe keeps time on the hyphae's TUniversal and on nothing else. A full coordinate is origin/h:S:G:T:H:K. Every act, percept and mail carries the last final point read. With two keepers down, time does not advance. The mesh synchronises on TUniversal and on nothing else: a client act carries the last final point its session read, inside its expression behind the act, never on the frame's envelope (MU-RECURSION 78.152; the v0.5.0 recut, MU-ENGINEERING §9.1).
 1.12 COMPACT UNTIL OBSERVED (ruled 2026-10-09). Worlds and orbits are each deterministic from its laws and origin. A kernel keeps an unobserved world compact — laws, origin, last-read coordinate, nothing stepped — and uncompacts it at the coordinate an observer reads it. Observing never changes what a world is. A living people is always observed.
 1.13 STATE IS ADDRESSED BY COORDINATE (ruled 2026-10-09). DERIVED values are never stored. PATH-DEPENDENT state is stored only at checkpoints — a universe's LEDGER entries (MU-RECURSION 78.154) — keyed by coordinate. INPUTS (decisions, calls, takes, crossings) are stored as events at (TPoint, u). A ledger entry's commitment covers only what cannot be derived: its record keys are each entity's coordinate path within its universe. An entry also carries the digest of the input events since its parent entry, so the parent plus those events, reconstructed, is checked against the root.
 1.14 UNIVERSAL LAWS FROM THE HYPHA; EACH UNIVERSE ITS OWN FOUNDING; THE BOUNDARY CARRIES READINGS (ruled 2026-10-15; restored to the canonical text 2026-10-20 as A8, agreed by every kernel).

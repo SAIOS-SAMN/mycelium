@@ -299,16 +299,13 @@ impl Court {
         let own_vk = self.identity;
         self.append_step(crate::chronometry::ActKind::Return, key, own_vk);
         let anchor = self.anchor();
-        // OWED (#169): the ring's draws and torsions are minted at each lane's
-        // founding mode; the fill's motion is not read as modes here.
         for d in std::mem::take(&mut w.draws) {
-            let share = crate::economy::Modes::founding(&crate::economy::Mu::counts(d.share));
             for v in &d.parties {
-                let _ = self.treasury.draw_escrow(&d.listing, *v, &share, anchor);
+                let _ = self.treasury.draw_escrow(&d.listing, *v, d.share, anchor);
             }
         }
         for (who, mag) in std::mem::take(&mut w.torse) {
-            let _ = self.treasury.settle_torse(who, crate::economy::Modes::founding(&crate::economy::Mu::counts(mag)), anchor);
+            let _ = self.treasury.settle_torse(who, mag, anchor);
         }
         self.winding_tally.returns += 1;
     }

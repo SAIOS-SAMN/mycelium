@@ -103,7 +103,7 @@ impl Element {
             f.chord.put(&mut out);
         }
         // THE RECEIPTS ENVELOPE (54.5 Road (d)). The GEN3 record is
-        // `Key → ⟨μ⃗, ReceiptsEnvelope⟩` as ruled 2026-09-20: the form
+        // `Key → ⟨μ⃗, WordStalk⟩` as ruled 2026-09-20: the form
         // is the manifold and its address IS its structure, but an
         // expression is a speech act and carries the evidence to prove
         // itself. The genome is a client's cache of adjudicated
@@ -114,7 +114,7 @@ impl Element {
         // Written but not yet read back into the readers (B1/B2 of the
         // glide path); `from_bytes` below restores it, and the three
         // verifiers take it at B3.
-        self.receipts.to_block(&mut out)?;
+        self.stalk.to_block(&mut out)?;
         for m in &self.mag {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -151,12 +151,22 @@ impl Element {
                 None => out.push(0),
             }
         }
-        match &self.anchor {
-            Some(t) => {
+        // THE ANCHOR FIBRE: `0` ⊤, `1` one term, `2` a superposition, its
+        // count and every term in key order (D3.3, #158). One term is
+        // written as it always was.
+        match self.anchor.as_slice() {
+            [] => out.push(0),
+            [t] => {
                 out.push(1);
                 t.to_bytes(&mut out);
             }
-            None => out.push(0),
+            terms => {
+                out.push(2);
+                put_u32_count(&mut out, terms.len())?;
+                for t in terms {
+                    t.to_bytes(&mut out);
+                }
+            }
         }
         put_u32_count(&mut out, self.transitions.len())?;
         for Transition { asg: a, gauge: g, fibre } in &self.transitions {
@@ -264,9 +274,9 @@ impl Element {
                 crate::transducer::sentence::FiledOrbit { sigma, periods, chord },
             );
         }
-        // THE RECEIPTS ENVELOPE (54.5 Road (d)), framed, so a malformed one
+        // THE WORD'S STALK (54.5 Road (d); 78.179 §2, #165), framed, so a malformed one
         // refuses the record rather than eating the fields after it.
-        let receipts = crate::transducer::element::ReceiptsEnvelope::from_block(b, pos)?;
+        let stalk = crate::transducer::element::WordStalk::from_block(b, pos)?;
         let mut mag = [0u64; 4];
         for m in &mut mag {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -363,13 +373,27 @@ impl Element {
         let anchor = match b.get(*pos) {
             Some(1) => {
                 *pos += 1;
-                Some(crate::transducer::anchor::Selection::from_bytes(b, pos)?)
+                vec![crate::transducer::anchor::Selection::from_bytes(b, pos)?]
+            }
+            // A superposition of fewer than two terms is not this tag's: it
+            // is refused, never read as ⊤ or as one term.
+            Some(2) => {
+                *pos += 1;
+                let n = u32_at(b, pos)? as usize;
+                if n < 2 {
+                    return None;
+                }
+                let mut terms = Vec::with_capacity(n.min(b.len()));
+                for _ in 0..n {
+                    terms.push(crate::transducer::anchor::Selection::from_bytes(b, pos)?);
+                }
+                terms
             }
             Some(0) => {
                 *pos += 1;
-                None
+                Vec::new()
             }
-            _ => None,
+            _ => Vec::new(),
         };
         // A tape that ends here carries no transitions; the count is read
         // or it is absent, never a zero put in place of one.
@@ -441,7 +465,7 @@ impl Element {
             sections,
             torsion,
             filing,
-            receipts,
+            stalk,
             transitions,
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),

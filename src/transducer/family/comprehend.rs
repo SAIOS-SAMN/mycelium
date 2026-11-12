@@ -80,10 +80,22 @@ pub(crate) fn pivot_cells(form: &Form, budget: &mut crate::physics::Budget) -> c
     }
     // 78.26(2), CB1 — the cells read together: where two cells meeting at a
     // body carry generators that fail to commute, their bracket, held or lost.
-    let chambers: Vec<(&[Vec<u8>], &ChamberAlgebra)> =
-        form.cells.scoped().zip(&algebras).map(|((_, cell), a)| (cell.bodies.as_slice(), a)).collect();
-    let brackets = crate::transducer::cech::cross_brackets(&chambers, budget);
+    let brackets = crate::transducer::cech::cross_brackets(&chambers_on(form, &algebras), budget);
     crate::transducer::sentence::PivotCells { algebras, by_chord, brackets }
+}
+
+/// CB1 — A FORM'S CHAMBERS AS THE BRACKET IS READ OVER THEM: each certified
+/// cell by its bodies' coordinates, beside its orbit algebra, in the cells'
+/// own key order (the places a `CrossBracket` names).
+pub(crate) fn chambers_of<'a>(
+    form: &'a Form,
+    cells: &'a crate::transducer::sentence::PivotCells,
+) -> Vec<(&'a [Vec<u8>], &'a ChamberAlgebra)> {
+    chambers_on(form, &cells.algebras)
+}
+
+fn chambers_on<'a>(form: &'a Form, algebras: &'a [ChamberAlgebra]) -> Vec<(&'a [Vec<u8>], &'a ChamberAlgebra)> {
+    form.cells.scoped().zip(algebras).map(|((_, cell), a)| (cell.bodies.as_slice(), a)).collect()
 }
 
 /// EVERY CERTIFIED CELL OF `form`, READ AS ITS ORBIT ALGEBRA, under the

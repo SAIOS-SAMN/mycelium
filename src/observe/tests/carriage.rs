@@ -6,13 +6,13 @@ use super::fixtures::*;
 #[test]
 fn carriage_files_by_carrier_and_kind_and_round_trips() {
     let mut c = CarrierTally::default();
-    c.add(CARRIER_FRAME, 0x0d, 40);
+    c.add(CARRIER_DELIMITED, 0x0d, 40);
     c.add(CARRIER_DELTA, 12, 900);
     c.add(CARRIER_DELTA, 12, 100);
     c.add(CARRIER_AWARD, 0, 120);
     assert_eq!(
         c.rows.iter().map(|r| (r.carrier, r.kind, r.records, r.bytes, r.largest)).collect::<Vec<_>>(),
-        [(CARRIER_AWARD, 0, 1, 120, 120), (CARRIER_DELTA, 12, 2, 1000, 900), (CARRIER_FRAME, 0x0d, 1, 40, 40)]
+        [(CARRIER_AWARD, 0, 1, 120, 120), (CARRIER_DELTA, 12, 2, 1000, 900), (CARRIER_DELIMITED, 0x0d, 1, 40, 40)]
     );
     reads_back(&[Reading::Carriage(c)]);
 }
@@ -38,8 +38,8 @@ fn treasury_carriage_measures_award_flat_in_word() {
     assert_eq!((award.records, award.largest, award.bytes), (2, field, 2 * field), "flat in the word's size");
     let mut tries = Vec::new();
     t.put_tries(&mut tries);
-    let (stakes, balances, held) = crate::economy::Treasury::take_tries(&tries, &mut 0).expect("the tries read back");
-    let back = crate::economy::Treasury::from_parts(stakes, balances, held, t.entries().to_vec());
+    let (stakes, balances, held, folded) = crate::economy::Treasury::take_tries(&tries, &mut 0).expect("the tries read back");
+    let back = crate::economy::Treasury::from_parts(stakes, balances, held, folded, t.entries().to_vec());
     assert!(back.escrow_of(&[7u8; 3]).is_none(), "the award rides its word's node, not the treasury's tries");
 }
 

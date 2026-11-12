@@ -108,7 +108,7 @@ impl crate::transducer::family::Crystal for Court {
 impl Court {
     /// What a rule discharges by speaking every train pair, its cited forms
     /// resolved through this court's ruled cover, as μ: each closed pair's
-    /// share of its frame (`DeflationRead::mu`, O1 ruled 2026-11-01). Any
+    /// share of its enclosure (`DeflationRead::mu`, O1 ruled 2026-11-01). Any
     /// miss is zero: association with a listing is not a mint.
     pub(crate) fn measured_discharge(&self, form: &Element, family: &crate::transducer::family::Family) -> Mu {
         self.measured_discharge_read(form, family).0
@@ -120,7 +120,9 @@ impl Court {
         match crate::transducer::sentence::from_element_form(form) {
             Some(f) => {
                 let r = crate::transducer::family::form_deflation_read(&f, family, self, &crate::transducer::alphabet::Word::identity());
-                (r.mu, r.modes)
+                // §2.5 — the discharge holds the modes the closing form
+                // moved, each lane at its ruled share.
+                (Mu::carried_by(&r.mu, &r.modes), r.modes)
             }
             None => (Mu::zero(), crate::economy::modes::Modes::new()),
         }
@@ -142,7 +144,7 @@ impl Court {
     ///   discharge)` (`Treasury::release_discharged`), and nothing above the
     ///   discharge is minted;
     /// - (c) zero for a word that names no body: a letter or a callus stands
-    ///   at no frame and closes nothing on any family, so it measures
+    ///   at no enclosure and closes nothing on any family, so it measures
     ///   nothing here. Its magnitude's holonomic unit is its EXISTENCE as a
     ///   word (`as_element_form` refuses an all-zero magnitude), never μ.
     ///
@@ -152,9 +154,9 @@ impl Court {
     /// a sentence with none discharges nothing measurable here, which is a
     /// reading and not a floor.
     ///
-    /// μ IS A SHARE OF THE FRAME (MU-RECURSION 78.170 O1, ruled 2026-11-01):
-    /// a discharge read on a family is each pair's share of its own frame
-    /// (`transduce::share_of_enclosure`); a discharge with no frame — a
+    /// μ IS A SHARE OF THE ENCLOSURE (MU-RECURSION 78.170 O1, ruled 2026-11-01):
+    /// a discharge read on a family is each pair's share of its own enclosure
+    /// (`transduce::share_of_enclosure`); a discharge with no enclosure — a
     /// rewrite's magnitude, a listing bound to no family — keeps its own
     /// measure as `n/1`.
     pub(crate) fn discharge_on(
@@ -191,7 +193,7 @@ impl Court {
     /// g̃`, 78.166 1c) and the cite is one this court holds. `None` for any
     /// word that is not a conjugate of a held word.
     pub(crate) fn conjugate_of(&self, word: &Element) -> Option<crate::transducer::address::Address> {
-        let env = word.receipts();
+        let env = word.stalk();
         let cite = env.derivations.iter().find(|d| d.conjugator.is_some())?;
         let [(form, _, _)] = cite.generators.as_slice() else { return None };
         crate::transducer::family::Crystal::by_address(self, form.as_bytes()).map(|_| form.clone())
@@ -199,7 +201,7 @@ impl Court {
 
     /// C — WHAT A CONJUGATOR ADDED ON `family` (MU-CLIENT §5.6 C, as the spec
     /// reads): the conjugate's local discharge less the cited word's own, both
-    /// read by the one local reader, each in its own frame, LANE BY LANE AS THE
+    /// read by the one local reader, each in its own enclosure, LANE BY LANE AS THE
     /// SHORTFALL — a lane the transport did not raise pays nothing, never a
     /// negative. A conjugate that discharges no more than its word is paid
     /// nothing; W's discoverer keeps W's use (the D2′ share, read locally).
@@ -245,6 +247,29 @@ impl Court {
         glued.on_lanes(|l| l != t).add(&whole.on_lanes(|l| l == t))
     }
 
+    /// POWR — THE MODES OF THE FAMILY A REWRITE ABSORBS (MU-ECONOMY §2.5: a
+    /// reduction's mint carries the modes of the family it absorbs): each
+    /// word the rewrite retires, reconstructed on the family it is bound to,
+    /// its closure's modes (`measured_discharge_read`), summed mode by mode.
+    /// A retired word bound to no family, not held here, or not a sentence
+    /// adds none; a rewrite's yield on a lane no absorbed mode reaches stays
+    /// at the founding mode (`Mu::carried_by`).
+    pub(crate) fn absorbed_modes(&self, rewrite: &Element) -> crate::economy::modes::Modes {
+        let mut absorbed = crate::economy::modes::Modes::new();
+        let Some(r) = crate::transducer::rewrite::Rewrite::from_element(rewrite) else { return absorbed };
+        for addr in &r.before {
+            let Some(w) = self.basis.get(addr).map(|e| (**e).clone()) else { continue };
+            if !w.is_sentence() {
+                continue;
+            }
+            let task = self.speech_task.get(addr.as_bytes()).or_else(|| self.listing_task.get(addr.as_bytes()));
+            if let Some(f) = task.and_then(|t| self.task_family.get(t.as_bytes())) {
+                absorbed.add(&self.measured_discharge_read(&w, f).1);
+            }
+        }
+        absorbed
+    }
+
     /// [`Court::discharge_on`] over the family the word is BOUND to — the
     /// task it was spoken for, or the listing it answers — which is the
     /// family its install measures.
@@ -252,40 +277,5 @@ impl Court {
         let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address));
         let family = task.and_then(|t| self.task_family.get(t.as_bytes()));
         self.discharge_on(address, word, family.map(Vec::as_slice))
-    }
-
-    /// THE MODES A WORD'S CLOSURE MOVED on the family it is bound to (#169:
-    /// a mint carries the modes of the motion its proof cites): a sentence's
-    /// modes as its reconstruction on the family reads them
-    /// (`measured_discharge_read`); a rewrite's, the modes of the family it
-    /// absorbs (each word it retires, read on its own family). No modes
-    /// where the word is bound to no family or its motions read none.
-    pub(crate) fn closure_modes_of(&self, address: &[u8], word: &Element) -> crate::economy::Modes {
-        if word.is_rewrite() {
-            let mut absorbed = crate::economy::Modes::new();
-            if let Some(r) = crate::transducer::rewrite::Rewrite::from_element(word) {
-                for addr in &r.before {
-                    if let Some(w) = self.basis.get(addr) {
-                        absorbed.add(&self.closure_modes_of(addr.as_bytes(), w));
-                    }
-                }
-            }
-            return absorbed;
-        }
-        let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address));
-        match (word.is_sentence(), task.and_then(|t| self.task_family.get(t.as_bytes()))) {
-            (true, Some(f)) => self.measured_discharge_read(word, f).1,
-            _ => crate::economy::Modes::new(),
-        }
-    }
-
-    /// THE DISCHARGE AND THE MODES ITS MINT CARRIES: the measured discharge
-    /// ([`Court::discharge_of`]), and the closure's modes, or, where its
-    /// motions read none, the discharge at each lane's founding mode
-    /// (`Modes::cited_or_founding`).
-    pub(crate) fn discharge_read(&self, address: &[u8], word: &Element) -> (Mu, crate::economy::Modes) {
-        let mu = self.discharge_of(address, word);
-        let modes = crate::economy::Modes::cited_or_founding(&self.closure_modes_of(address, word), &mu);
-        (mu, modes)
     }
 }

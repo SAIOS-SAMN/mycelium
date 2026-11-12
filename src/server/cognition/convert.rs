@@ -374,13 +374,16 @@ impl Court {
                 // its sitting reserve converts, through its vertex.
                 let Some(domain) = self.tier_domain.get(&c.tier).copied() else { return refuse(R::Unbound) };
                 if h.who != c.tier || !self.is_reserve(&c.tier) {
-                    return Handed::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::NotThroughCore {
                         act: crate::court::admission::UniverseAct::ConversionOut,
                         domain,
-                    });
+                    }));
                 }
                 if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::ConversionOut, domain) {
                     return Handed::Boundary(why);
+                }
+                if let Err(why) = crate::anastome::dialogue::crossing_record::verify_carried(h.crossing.as_deref()) {
+                    return Handed::Boundary(self.at_tube(crate::court::admission::Boundary::Crossing { act: crate::court::admission::UniverseAct::ConversionOut, domain, why }));
                 }
                 // 78.139 — the reserve unit is the reserve's basket: none
                 // converted until it is stated.
@@ -495,7 +498,7 @@ impl Court {
     /// escrowed in its name (zero where none is posted).
     pub fn bond_of(&self, tier: &[u8; 32]) -> crate::economy::Mu {
         match self.treasury.held_of(&bond_key(tier)) {
-            Some(h) => h.modes.reading(),
+            Some(h) => h.mu.clone(),
             None => crate::economy::Mu::zero(),
         }
     }
@@ -534,7 +537,7 @@ impl Court {
         let key = bond_key(&b.tier);
         let held = self.treasury.held_of(&key).cloned();
         let kept = match held.as_ref().filter(|h| h.payer == b.reserve) {
-            Some(h) => h.modes.reading(),
+            Some(h) => h.mu.clone(),
             None => crate::economy::Mu::zero(),
         };
         let after = match &b.mu {
@@ -584,22 +587,24 @@ impl Court {
     /// exposure on a default, so a default pays half), and the rest is
     /// RETIRED from supply (POWR). Drawn from whoever posted the bond;
     /// nothing where the tier stands unbonded (`economy::forfeit`).
-    ///
-    /// The bounty and the retired part are drawn from the bond's own modes
-    /// in proportion on each lane (#169), and what is kept stays held as it
-    /// was posted.
     pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], exposure: &crate::economy::Mu, defect: &crate::economy::Mu, anchor: crate::economy::Anchor) -> crate::economy::Mu {
         use crate::economy::Mu;
         let key = bond_key(tier);
         let Some(held) = self.treasury.held_of(&key).cloned() else { return Mu::zero() };
-        let crate::economy::Forfeit { cut, bounty, retired, .. } = crate::economy::forfeit(&held.modes.reading(), exposure, defect);
+        let crate::economy::Forfeit { cut, bounty, retired, kept } = crate::economy::forfeit(&held.mu, exposure, defect);
         if cut.is_zero() {
             return cut;
         }
-        if !bounty.is_zero() {
-            let _ = self.treasury.draw_held(&key, challenger, bounty, anchor);
+        if self.treasury.refund_held(&key, anchor).is_err() {
+            return Mu::zero();
         }
-        let _ = self.treasury.burn_held(&key, &retired, anchor);
+        if !bounty.is_zero() {
+            let _ = self.treasury.pay(held.payer, challenger, bounty, anchor);
+        }
+        let _ = self.treasury.burn(held.payer, retired, anchor);
+        if !kept.is_zero() {
+            let _ = self.treasury.hold(held.payer, &key, kept, anchor);
+        }
         self.mark_persist();
         cut
     }

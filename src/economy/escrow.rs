@@ -5,7 +5,6 @@
 //! on retirement.
 
 use super::*;
-use super::modes::Modes;
 
 /// WHAT A REVOCATION DID, read per lane and per voice — never a bool. The
 /// three outcomes a caller must tell apart are the escrow dropped with
@@ -97,18 +96,14 @@ impl Treasury {
     /// Answers the payment released to the voices, per lane, split among
     /// them as `mint_claim` splits it; `None` where the address held no
     /// escrow.
-    ///
-    /// The payment carries the re-traversed closure's modes (#169): the
-    /// discharge's modes, each lane scaled in proportion to the claim where
-    /// the claim caps it.
-    pub fn release_discharged(&mut self, address: &[u8], discharge: &Modes, at: Anchor) -> Option<Mu> {
+    pub fn release_discharged(&mut self, address: &[u8], discharge: impl Into<Mu>, at: Anchor) -> Option<Mu> {
         let Escrowed { voices, mu, .. } = self.release_award(address)?;
         // The discharge capped by the claim is the payment — lane-wise the
-        // lesser of the two; what the claim held above it is never issued.
-        let paid = discharge.capped(&mu);
-        let read = paid.reading();
-        self.mint_claim(&voices, paid, at);
-        Some(read)
+        // lesser of the two, holding the discharge's modes (MU-ECONOMY §2.5);
+        // what the claim held above it is never issued.
+        let paid = discharge.into().capped(&mu);
+        self.mint_claim(&voices, paid.clone(), at);
+        Some(paid)
     }
 
     /// Clear the listing claim. Payment is a mint of the same vector, done
@@ -126,13 +121,13 @@ impl Treasury {
     /// `.first()` that looks like rule 15's tie-break by arrival order even
     /// where, as here, the one voice is the only voice. The shape says
     /// which case it is.
-    pub fn mint_claim(&mut self, voices: &[[u8; 32]], modes: Modes, anchor: Anchor) {
+    pub fn mint_claim(&mut self, voices: &[[u8; 32]], mu: impl Into<Mu>, anchor: Anchor) {
         match voices {
             [] => {}
             [one] => {
-                self.mint_to(*one, modes, anchor, Some(Arm::Pouw));
+                self.mint_to(*one, mu, anchor, Some(Arm::Pouw));
             }
-            _ => self.settle_consilience(voices, &modes, anchor),
+            _ => self.settle_consilience(voices, mu, anchor),
         }
     }
 
@@ -171,21 +166,21 @@ impl Treasury {
             Revocation::Slash(at) => at,
         };
         for who in voices {
-            let held = self.staked(&who);
-            let short = mu.shortfall(&held.reading());
-            // The slash is drawn from the bond's modes in proportion on each
-            // lane (#169), and those modes leave circulation.
+            let held = match self.stakes.get(&who) {
+                Some(h) => h.clone(),
+                None => Mu::zero(),
+            };
+            let short = mu.shortfall(&held);
             let (took, next) = held.split_at(&mu);
             if !short.is_zero() {
                 out.short.push((who, short));
             }
-            if took.is_empty() {
+            if took.is_zero() {
                 continue;
             }
-            let read = took.reading();
             self.stakes.insert(who, next);
-            self.write(Treasury::row(Kind::Slash, who, took, anchor, None));
-            out.slashed.push((who, read));
+            self.write(Entry { kind: Kind::Slash, who, mu: took.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+            out.slashed.push((who, took));
         }
         if !out.slashed.is_empty() {
             self.refresh_bond();
@@ -195,11 +190,10 @@ impl Treasury {
 
     pub fn stakes(&self) -> Vec<([u8; 32], Mu)> {
         // One entry per staking key: the whole of it is what "the stakes"
-        // means, and the bond is refreshed from all of them. Each read per
-        // lane.
+        // means, and the bond is refreshed from all of them.
         self.stakes
             .scoped()
-            .filter_map(|(w, m)| <[u8; 32]>::try_from(w.as_slice()).ok().map(|who| (who, m.reading())))
+            .filter_map(|(w, mu)| <[u8; 32]>::try_from(w.as_slice()).ok().map(|who| (who, mu.clone())))
             .collect()
     }
 
@@ -210,21 +204,19 @@ impl Treasury {
     /// Draw a verified-solve payment from an escrowed listing award, so
     /// reduction and solve share one ledger. Remaining escrow stays for
     /// consilience release.
-    /// The payment carries the solve's modes, capped lane-wise by the claim.
-    pub fn draw_escrow(&mut self, address: &[u8], voice: [u8; 32], modes: &Modes, anchor: Anchor) -> Mu {
+    pub fn draw_escrow(&mut self, address: &[u8], voice: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         let Some(row) = self.escrowed.get_mut(address) else {
             return Mu::zero();
         };
-        let take = modes.capped(&row.mu);
-        if take.is_empty() {
-            return Mu::zero();
+        let (take, kept) = row.mu.split_at(&mu.into());
+        if take.is_zero() {
+            return take;
         }
-        let (_, kept) = row.mu.split_at(&take.reading());
         row.mu = kept;
         self.mint_to(voice, take, anchor, Some(Arm::Pouw))
     }
 
-    /// A CARRIAGE OF A PROVISIONAL WORD DRAWS ITS OWN FRAME from its escrow
+    /// A CARRIAGE OF A PROVISIONAL WORD DRAWS ITS OWN MEASURE from its escrow
     /// (78.42 (3), 65.5): the energy a transition carries leaves the escrow,
     /// per lane, exactly. `None` where no escrow stands; `Err` with the
     /// shortfall per lane where the escrow cannot pay the draw — the word is
@@ -241,7 +233,7 @@ impl Treasury {
         Some(Ok(row.mu.clone()))
     }
 
-    /// PRESSURE ARRIVING: a frame transported to a provisional word (a
+    /// PRESSURE ARRIVING: a measure transported to a provisional word (a
     /// sentence that cites it) is credited to its escrow, per lane. `None`
     /// where no escrow stands.
     pub fn credit_escrow(&mut self, address: &[u8], mu: impl Into<Mu>) -> Option<Mu> {

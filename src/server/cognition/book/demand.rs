@@ -15,7 +15,7 @@ impl Court {
     /// SETTLE A PROBE AGAINST ONE DEMAND VERTEX.
     ///
     /// `at` is the listing; `demand` is the key 50.5 files the vertex
-    /// under. The court resolves the vertex on the listed sentence, frames
+    /// under. The court resolves the vertex on the listed sentence, sets
     /// the demand's own bodies as a scene (`scene_at_of_chain`, 50.6 seam
     /// 1 — both sides at one corner), and SPEAKS THE CITED FORM onto the
     /// before side with `apply_form`. What the form says is measured
@@ -194,10 +194,7 @@ impl Court {
         if mu.is_zero() {
             return;
         }
-        // POWC carries the converging orbits' class (#169): the cited word's
-        // closure modes on the listing's family, where the two lineages met.
-        let modes = self.cited_modes(at, &word, &mu);
-        let paid = self.treasury.settle_convergence(closer, modes, anchor);
+        let paid = self.treasury.settle_convergence(closer, mu, anchor);
         self.acts.pay("demands closed by another mind", paid);
         self.grow_grants_by_paid();
     }

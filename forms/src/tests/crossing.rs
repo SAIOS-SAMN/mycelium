@@ -207,7 +207,7 @@ fn cross_keeps_span_size_and_cancels_flux_on_return() {
     }
 }
 
-/// A frame state off the plane is refused `NotFrame` with the blades it
+/// A passage state off the plane is refused `NotOnPolePlane` with the blades it
 /// holds there: another plane's unit, a scalar, a bivector of the plane,
 /// and the zero, which holds none.
 #[test]
@@ -216,14 +216,14 @@ fn read_refuses_state_off_plane() {
     let x = frame(&p, q(1, 1), q(2, 1));
     let other = unit(positive(2));
     let off = x.sum(&word(2, q(1, 1), &[other])).expect("one signature");
-    assert_eq!(p.swap(&off).err(), Some(PassageRefusal::NotFrame { blades: vec![other] }));
+    assert_eq!(p.swap(&off).err(), Some(PassageRefusal::NotOnPolePlane { blades: vec![other] }));
     let scalar = word(2, q(3, 1), &[]);
-    assert_eq!(p.cross(&scalar, &q(0, 1)).err(), Some(PassageRefusal::NotFrame { blades: vec![0] }));
+    assert_eq!(p.cross(&scalar, &q(0, 1)).err(), Some(PassageRefusal::NotOnPolePlane { blades: vec![0] }));
     let plane = unit(positive(1)) | unit(negative(1));
     let bivector = word(2, q(1, 1), &[unit(positive(1)), unit(negative(1))]);
-    assert_eq!(p.read(&bivector).err(), Some(PassageRefusal::NotFrame { blades: vec![plane] }));
+    assert_eq!(p.read(&bivector).err(), Some(PassageRefusal::NotOnPolePlane { blades: vec![plane] }));
     let zero = x.difference(&x).expect("one signature");
-    assert_eq!(p.read(&zero).err(), Some(PassageRefusal::NotFrame { blades: vec![] }));
+    assert_eq!(p.read(&zero).err(), Some(PassageRefusal::NotOnPolePlane { blades: vec![] }));
 }
 
 /// A riding state holding both parities is refused `MixedParity` with the

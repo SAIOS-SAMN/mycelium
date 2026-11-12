@@ -48,7 +48,7 @@ assert!(
     !home.treasury().minted().is_zero(),
     "release mints the priced vector"
 );
-assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bond");
+assert_eq!(home.treasury().bond_total(), &bond, "mint does not debit the stake bond");
 }
 
 /// A stood sentence that closes no listing returns its escrow and mints nothing.
@@ -173,21 +173,17 @@ k.rule_all_provisionals();
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
-// THE MINT CARRIES THE CLOSURE'S MODES (#169, ruled 2026-11-06): what the
-// form's motions moved on the family it closed, each mode at its share of
-// the frame (78.174 §1 item 9), never the per-lane measure read beside
-// them, each lane capped by the claim escrowed at that measure (78.149
-// (b)); where its motions read no mode, the measure at the founding mode.
-let measured = crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes");
-let family_of = k.task_family.get(task.as_bytes()).cloned().expect("bound");
-let (_, modes) = k.measured_discharge_read(&spoken, &family_of);
-let carried = crate::economy::Modes::cited_or_founding(&modes, &measured).capped(&measured);
-assert!(!carried.is_empty(), "the closure moved modes the claim pays");
+// μ IS A SHARE OF THE FRAME (78.170 O1): every frame is 2×4, so S, G and
+// 𝒯 (the flux over the carried mass) are each over 8 sites, and H, the
+// shell count, stands as it is.
 assert_eq!(
-    k.treasury().minted(),
-    carried.reading(),
-    "mint is the modes the form's closure moved over its family — not a bound listing's magnitude"
+    k.treasury().minted().lanes(),
+    crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes").lanes(),
+    "mint is what the form measured over its family — the coboundary and the ground it covered — not a bound listing's magnitude"
 );
+// MU-ECONOMY §2.5 — the mint holds the closure's modes, the voices' gluing
+// and their rest included, never a founding mode.
+assert!(k.treasury().minted().modes().modes().all(|(m, _)| !matches!(m, crate::economy::modes::Mode::Founding { .. })), "held on the closure's modes");
 }
 
 /// §6, on a court that has actually moved value rather than a treasury in
@@ -384,10 +380,13 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     // μ IS A SHARE OF THE FRAME (78.170 O1): the frame is 18×12, so the
     // three recolours' S, G and 𝒯 are over 216 sites and H stands.
     assert_eq!(
-        k.treasury().minted(),
-        crate::economy::Mu::counts(three_closed_deflation).over([216, 216, 216, 1]).expect("non-zero wholes"),
+        k.treasury().minted().lanes(),
+        crate::economy::Mu::counts(three_closed_deflation).over([216, 216, 216, 1]).expect("non-zero wholes").lanes(),
         "the amount is the deflation those three closed and nothing else"
     );
+    // MU-ECONOMY §2.5 — held on the three recolours' hue moves, never a
+    // founding mode.
+    assert!(k.treasury().minted().modes().modes().all(|(m, _)| !matches!(m, crate::economy::modes::Mode::Founding { .. })), "held on the closure's modes");
 }
 
 /// A SENTENCE IS TAUGHT AT ITS LEARNER'S EXPENSE (ruled
@@ -553,5 +552,7 @@ crate::transducer::raster::stand_on(0);
     // every residue is read on, so S, G and 𝒯 are over 16 sites and H stands.
     assert_eq!(read.mu, crate::economy::Mu::counts(read.pay).over([16, 16, 16, 1]).expect("non-zero wholes"), "the client's μ: the deflation over 4·4 sites");
     let tape = crate::transducer::sentence::as_element_form(&rule.form, read.pay).expect("the form has a tape");
-    assert_eq!(Court::new().measured_discharge(&tape, &family), read.mu, "the court reconstructs the client's μ");
+    // MU-ECONOMY §2.5 — the court's discharge holds the modes the client's
+    // closure moved, each lane at the client's share.
+    assert_eq!(Court::new().measured_discharge(&tape, &family), crate::economy::Mu::carried_by(&read.mu, &read.modes), "the court reconstructs the client's μ, mode by mode");
 }

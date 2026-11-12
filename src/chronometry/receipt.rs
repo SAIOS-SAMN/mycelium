@@ -1,5 +1,5 @@
 // 45, 78.24 — THE RECEIPT: one act at its stamp, the parents it cites by
-// stamp, the frame it measured, and the words it names by coordinates.
+// stamp, the measure it took, and the words it names by coordinates.
 
 use crate::court::admission::{Commitment, Predecessor};
 use crate::transducer::address::Address;
@@ -452,6 +452,25 @@ pub enum Cite {
     /// TUniversal point the act was read at. The alignment reading is
     /// derived from these events (`clauses::read_alignment`).
     Signing { kernel: [u8; 32], reserve: Option<[u8; 32]>, verdict: Box<crate::physics::laws::clauses::Verdict> },
+    /// CB1, 78.26(2) (ruled on #148, 2026-11-06) — THE DOCKET'S LOST
+    /// BRACKET, a demand: the typed vertex naming the two chambers, each by
+    /// its bodies' coordinates (KB1), and their bracket `A∘B − B∘A`, exact,
+    /// which no cell of the sentence holds; and its cover, as a demand's. No
+    /// enclosure is formed for it (NB1: a cell is minted only at a witness);
+    /// a witness certifying a cell that wraps both chambers and holds the
+    /// bracket is its answer. Volatile on the plan, as every docket entry.
+    Bracket {
+        chambers: Box<[Vec<Vec<u8>>; 2]>,
+        bracket: Box<crate::transducer::cga::LinearFunction>,
+        cover: Option<Vec<Vec<u8>>>,
+    },
+    /// MU-ECONOMY §3.4, §11.4 F2b — A CLOSURE AS ITS POINT: the task's
+    /// citation and the closing rule's address, written out, sealed on the
+    /// act that settles a first closure. Every court back-fills the receipt,
+    /// so the point is in the cones of every court that holds it, and a
+    /// court that holds it judges a later closure of it again (one closure,
+    /// one point).
+    Closure { task: Vec<u8>, rule: Vec<u8> },
 }
 
 impl Cite {
@@ -479,6 +498,7 @@ impl Cite {
             Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
             Cite::Class { .. }
             | Cite::Demand { .. }
+            | Cite::Bracket { .. }
             | Cite::Refusal { .. }
             | Cite::Uplink { .. }
             | Cite::Chained { .. }
@@ -490,14 +510,15 @@ impl Cite {
             | Cite::Origin { .. }
             | Cite::Stated { .. }
             | Cite::Window { .. }
-            | Cite::Signing { .. } => None,
+            | Cite::Signing { .. }
+            | Cite::Closure { .. } => None,
         }
     }
 
     /// A docket entry's cover, where it is one and its cover read.
     pub fn cover(&self) -> Option<&[Vec<u8>]> {
         match self {
-            Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
+            Cite::Class { cover, .. } | Cite::Demand { cover, .. } | Cite::Bracket { cover, .. } => cover.as_deref(),
             Cite::Word { .. }
             | Cite::Root { .. }
             | Cite::Refusal { .. }
@@ -511,7 +532,8 @@ impl Cite {
             | Cite::Origin { .. }
             | Cite::Stated { .. }
             | Cite::Window { .. }
-            | Cite::Signing { .. } => None,
+            | Cite::Signing { .. }
+            | Cite::Closure { .. } => None,
         }
     }
 
@@ -645,18 +667,24 @@ impl Cite {
                     | Cite::Origin { .. }
                     | Cite::Stated { .. }
                     | Cite::Window { .. }
-                    | Cite::Signing { .. } => {}
+                    | Cite::Signing { .. }
+                    | Cite::Bracket { .. }
+                    | Cite::Closure { .. } => {}
                 }
-                match cover {
-                    None => rec.push(0),
-                    Some(charts) => {
-                        rec.push(1);
-                        crate::transducer::address::put_u32_count(&mut rec, charts.len())?;
-                        for c in charts {
-                            crate::transducer::address::put_bytes(&mut rec, c)?;
-                        }
-                    }
+                put_cover(&mut rec, cover)?;
+            }
+            Cite::Closure { task, rule } => {
+                rec.push(18);
+                crate::transducer::address::put_bytes(&mut rec, task)?;
+                crate::transducer::address::put_bytes(&mut rec, rule)?;
+            }
+            Cite::Bracket { chambers, bracket, cover } => {
+                rec.push(17);
+                for bodies in chambers.iter() {
+                    put_key_list(&mut rec, bodies)?;
                 }
+                bracket.put_canonical(&mut rec);
+                put_cover(&mut rec, cover)?;
             }
         }
         out.append(&mut rec);
@@ -735,6 +763,11 @@ impl Cite {
                 *p += 64;
                 Some(Cite::Reserve { domain, tier })
             }
+            18 => {
+                let task = crate::transducer::address::take_bytes(b, p)?;
+                let rule = crate::transducer::address::take_bytes(b, p)?;
+                Some(Cite::Closure { task, rule })
+            }
             11 => {
                 let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 let tier: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
@@ -800,35 +833,68 @@ impl Cite {
                     }
                     _ => None,
                 };
-                let cover = match *b.get(*p)? {
-                    0 => {
-                        *p += 1;
-                        None
-                    }
-                    1 => {
-                        *p += 1;
-                        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
-                        *p += 4;
-                        // Each chart is at least its length; a count the body
-                        // cannot hold refuses before anything is reserved.
-                        if n > b.len().checked_sub(*p)? / 4 {
-                            return None;
-                        }
-                        let mut charts = Vec::with_capacity(n);
-                        for _ in 0..n {
-                            charts.push(crate::transducer::address::take_bytes(b, p)?);
-                        }
-                        Some(charts)
-                    }
-                    _ => return None,
-                };
+                let cover = take_cover(b, p)?;
                 Some(match rotor {
                     Some(rotor) => Cite::Class { class, rotor, cover },
                     None => Cite::Demand { class, residue, cover },
                 })
             }
+            17 => {
+                let chambers = Box::new([take_key_list(b, p)?, take_key_list(b, p)?]);
+                let bracket = Box::new(crate::transducer::cga::LinearFunction::take_canonical(b, p)?);
+                let cover = take_cover(b, p)?;
+                Some(Cite::Bracket { chambers, bracket, cover })
+            }
             _ => None,
         }
+    }
+}
+
+/// Keys written out in turn, their count first, each by its length.
+fn put_key_list(rec: &mut Vec<u8>, keys: &[Vec<u8>]) -> Option<()> {
+    crate::transducer::address::put_u32_count(rec, keys.len())?;
+    for k in keys {
+        crate::transducer::address::put_bytes(rec, k)?;
+    }
+    Some(())
+}
+
+/// The inverse of [`put_key_list`].
+fn take_key_list(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
+    let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+    *p += 4;
+    // Each key is at least its length; a count the body cannot hold refuses
+    // before anything is reserved.
+    if n > b.len().checked_sub(*p)? / 4 {
+        return None;
+    }
+    let mut keys = Vec::with_capacity(n);
+    for _ in 0..n {
+        keys.push(crate::transducer::address::take_bytes(b, p)?);
+    }
+    Some(keys)
+}
+
+/// A docket entry's cover: absent (its enclosure owed), or its charts' keys.
+fn put_cover(rec: &mut Vec<u8>, cover: &Option<Vec<Vec<u8>>>) -> Option<()> {
+    match cover {
+        None => rec.push(0),
+        Some(charts) => {
+            rec.push(1);
+            put_key_list(rec, charts)?;
+        }
+    }
+    Some(())
+}
+
+/// The inverse of [`put_cover`].
+fn take_cover(b: &[u8], p: &mut usize) -> Option<Option<Vec<Vec<u8>>>> {
+    let flag = *b.get(*p)?;
+    *p += 1;
+    match flag {
+        0 => Some(None),
+        1 => Some(Some(take_key_list(b, p)?)),
+        _ => None,
     }
 }
 
@@ -844,7 +910,7 @@ pub struct KStepReceipt {
     pub stamp: Stamp,
     /// The act admitted (45.1).
     pub kind: ActKind,
-    /// THE FRAME, `S:G:T:H` (45.1, 45.9, 78.21): what the act measured,
+    /// THE MEASURE, `S:G:T:H` (45.1, 45.9, 78.21): what the act measured,
     /// per lane, never summed and never compared across lanes (law 5). The
     /// zero vector is a reading, not an absence.
     pub mu: [u64; 4],
@@ -883,7 +949,7 @@ pub fn operator_hash(voice: &[u8; 32], court_head: &[u8; 32]) -> [u8; 32] {
 }
 
 impl KStepReceipt {
-    /// The least tape one node takes: its stamp, kind, frame, no
+    /// The least tape one node takes: its stamp, kind, measure, no
     /// predecessor, no parent, no citation, and the two hashes — what a
     /// reader allots one node when it bounds an untrusted count.
     /// FORMAT: least tape length of one node.
@@ -922,7 +988,7 @@ impl KStepReceipt {
     }
 
     /// THE NODE'S CANONICAL COORDINATES (78.24 (c)): its stamp, kind,
-    /// frame, predecessor, parents, citations and operator, in that order.
+    /// measure, predecessor, parents, citations and operator, in that order.
     fn put_body(&self, out: &mut Vec<u8>) -> Option<()> {
         self.stamp.put_canonical(out);
         out.push(self.kind.byte());
@@ -1014,7 +1080,7 @@ impl KStepReceipt {
         Some(KStepReceipt { stamp, kind, mu, prev, parents, cites, operator_hash, chain_hash: Predecessor::of_bytes(chain_hash) })
     }
 
-    /// CK1 — THE STAMP AS IT PRINTS, `h:S:G:T:H:K.i`: the tick, the frame
+    /// CK1 — THE STAMP AS IT PRINTS, `h:S:G:T:H:K.i`: the tick, the measure
     /// the act measured, the signer's orbit and the act's place in it.
     pub fn print(&self) -> String {
         let [s, g, t, h] = self.mu;
@@ -1023,7 +1089,7 @@ impl KStepReceipt {
 }
 
 /// 78.124 — THE CORE CLOCK'S STAMP, `h:S:G:T:H:K.i`: the tick (TUniversal's
-/// height), the frame the act measured on the four lanes `{S, G, T, H}`, the
+/// height), the measure the act took on the four lanes `{S, G, T, H}`, the
 /// signer's orbit and the act's place in it — what keeps the cores of
 /// domains and universes aligned, and what a kernel's own step clock is
 /// held to (ruled 2026-10-07: the server tracks time in TUniversal, a

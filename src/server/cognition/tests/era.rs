@@ -169,7 +169,7 @@ let mut broken = Court::new();
 broken.append_step(ActKind::List, [1; 32], [2; 32]);
 broken.orbit();
 // A credit with no row: the carriers pass what the journal issued.
-broken.treasury.credit([9; 32], &crate::economy::tests::founding([1, 0, 0, 0]));
+broken.treasury.credit([9; 32], &[1, 0, 0, 0].into());
 assert_eq!(broken.propose_fold().err(), Some(REFUSE_FOLD_INEXACT), "a ledger that does not conserve proposes nothing");
 assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 }
@@ -483,7 +483,7 @@ fn propose_fold_at_close_cuts_long_orbit_at_close() {
     let p = k.propose_fold().expect("a final prefix proposes");
     k.commit_fold([3; 64], &co_sign("w", p.root)).expect("two signatures seal the fold");
     k.orbit();
-    let (at_most, _) = Court::receipts_frame().expect("a frame");
+    let (at_most, _) = Court::receipts_bounds().expect("a page");
     // The long orbit changes the algorithm, as b's did (15 670 installs): a
     // generator enters the presentation, then more than a page of lists.
     k.append_step(ActKind::Install, [1; 32], [2; 32]);

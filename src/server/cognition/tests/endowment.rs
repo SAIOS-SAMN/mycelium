@@ -45,7 +45,7 @@ fn manifest(nonce: u8) -> Manifest {
 }
 
 fn signed(m: Manifest, by: u8) -> SignedManifest {
-    m.sign(&key(by)).expect("the manifest writes")
+    m.sign(crate::anastome::dialogue::crossing_record::still(), &key(by)).expect("the manifest writes")
 }
 
 /// THE MANIFEST AND ITS READING TRAVEL WHOLE: a manifest of astronomical
@@ -156,12 +156,11 @@ fn growth_size_sums_closures_in_universe() {
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "no closure judged: no growth grant");
     let rule = crate::transducer::element::from_residue(&vec![crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 2)]).expect("a rule");
     let line = verifying(&key(47));
-    let none = crate::economy::Modes::new();
-    let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1].into(), &none, true);
+    let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");
-    let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9].into(), &none, true);
+    let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
-    let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0].into(), &none, true);
+    let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
     let booted = Court::new().reconstruct(&k.snapshot()).expect("a clean reconstruction").into_object();
     assert_eq!(booted.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "the size survives a restart");
@@ -185,14 +184,13 @@ fn grow_grants_by_paid_grows_universe_grant() {
     let domain = reserve_domain();
     let line = verifying(&key(47));
     let anchor = k.anchor();
-    use crate::economy::tests::founding;
-    let _ = k.treasury.settle_convergence(line, founding([2, 0, 0, 1]), anchor);
+    let _ = k.treasury.settle_convergence(line, [2, 0, 0, 1], anchor);
     k.grow_grants_by_paid();
     assert_eq!(k.growth_size(&domain).n(), Ok([2, 0, 0, 1]), "a POWC mint to a key of the universe");
-    k.treasury.mint_claim(&[line, [0xee; 32]], founding([4, 2, 0, 0]), anchor);
+    k.treasury.mint_claim(&[line, [0xee; 32]], [4, 2, 0, 0], anchor);
     k.grow_grants_by_paid();
     assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 0, 1]), "a claim split two ways: the universe's key's half, exactly");
-    let _ = k.treasury.settle_convergence([0xee; 32], founding([9, 9, 9, 9]), anchor);
+    let _ = k.treasury.settle_convergence([0xee; 32], [9, 9, 9, 9], anchor);
     k.grow_grants_by_paid();
     assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 0, 1]), "a key no domain names grows nothing here");
 }

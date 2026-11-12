@@ -59,7 +59,7 @@ fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Court {
 fn hear(k: &mut Court, frame: &[u8]) -> Vec<u8> {
     let act = dialogue::decode_speech(frame).expect("the frame decodes");
     // 78.153: a stroke that holds the frame's reconstructions.
-    match k.hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
+    match k.hear_act_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
         Ok(adjudicated) => {
             dialogue::encode_speech_reply(&adjudicated).expect("the reply fits its count")
         }

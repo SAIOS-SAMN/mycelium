@@ -3,7 +3,7 @@ use super::super::*;
 /// THE OBSERVER'S CALL (ruled 2026-10-15): a call travels whole, is
 /// left for the winding carrier, and is answered at the next law boundary
 /// the carrier passes — the asker reads the carrier's standing beside the
-/// answer; its lines travel whole, and lines past the frame are said by
+/// answer; its lines travel whole, and lines past the envelope are said by
 /// count and where to ask from.
 #[test]
 fn live_call_is_answered_at_next_boundary() {
@@ -30,8 +30,8 @@ fn live_call_is_answered_at_next_boundary() {
     let all = live::encode_lines(&lines, usize::MAX).expect("the lines write");
     assert_eq!(live::decode_lines(&all), Some(lines.clone()), "the lines read back whole");
     let cut = live::decode_lines(&live::encode_lines(&lines, 200).expect("the lines write")).expect("they read");
-    assert!(cut.len() < lines.len(), "a frame of 200 bytes holds fewer");
-    assert!(matches!(cut.as_slice(), [.., l] if l.contains("lines past the frame") && l.contains("from")), "and says what it left: {cut:?}");
+    assert!(cut.len() < lines.len(), "an envelope of 200 bytes holds fewer");
+    assert!(matches!(cut.as_slice(), [.., l] if l.contains("lines past the envelope") && l.contains("from")), "and says what it left: {cut:?}");
 }
 
 /// THE ASKER WAITS WHILE THE CARRIER WORKS (ruled 2026-10-24). A call asked

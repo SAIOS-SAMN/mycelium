@@ -11,58 +11,63 @@
 //! the base, exactly as before.
 
 use crate::cognition::*;
-use crate::economy::{Modes, Mu};
+use crate::economy::Mu;
 
 impl Court {
     /// THE VERIFICATION OF A RELEASE PAID to `organs`, the courts whose
     /// reconstruction verified it (this court, and the witness or peer that
     /// re-derived it where there is one): each is minted its share of
-    /// `base`'s modes as POWV at `at`, the lane's factor scaling each mode
-    /// on it (§5.1). Duplicate organs are one organ. Answers the modes the
-    /// organs took together — none where this court is at rest or its
-    /// surface cannot be read.
-    pub(crate) fn pay_verification(&mut self, base: &Modes, organs: &[[u8; 32]], at: crate::economy::Anchor) -> Modes {
+    /// `base` as POWV at `at`. Duplicate organs are one organ. Answers what
+    /// the organs took together, per lane — zero where this court is at
+    /// rest or its surface cannot be read.
+    pub(crate) fn pay_verification(&mut self, base: &Mu, organs: &[[u8; 32]], at: crate::economy::Anchor) -> Mu {
         let mut distinct: Vec<[u8; 32]> = Vec::with_capacity(organs.len());
         for o in organs {
             if !distinct.contains(o) {
                 distinct.push(*o);
             }
         }
-        let Some(strain) = crate::economy::yield_surface(&self.physics) else { return Modes::new() };
-        let each = crate::economy::verification_modes(base, &strain, self.physics.capacity(), distinct.len());
-        if each.is_empty() {
+        let Some(strain) = crate::economy::yield_surface(&self.physics) else { return Mu::zero() };
+        let each = crate::economy::verification_share(base, &strain, self.physics.capacity(), distinct.len());
+        if each.is_zero() {
             return each;
         }
         // Each organ's share is at most `base / n` on its lane, so the sum
         // of n of them is at most `base`.
-        let mut taken = Modes::new();
+        let mut taken = Mu::zero();
         for organ in &distinct {
-            let _ = self.treasury.settle_verification(*organ, each.clone(), at);
-            taken.add(&each);
+            let paid = self.treasury.settle_verification(*organ, each.clone(), at);
+            taken.step(&paid);
         }
-        if !taken.is_empty() {
-            self.acts.pay("verifications", taken.reading());
+        if !taken.is_zero() {
+            self.acts.pay("verifications", taken.clone());
         }
         taken
     }
 
     /// A CLAIM RELEASED WITH ITS VERIFIERS PAID: the base the closer is owed
-    /// (the re-traversed closure's modes, `discharge`, capped lane-wise by
-    /// the escrow), the verifying courts' POWV taken from it, and the rest
-    /// released to the claim's voices as POUW (`Treasury::release_discharged`).
-    /// `None` where `address` holds no escrow.
+    /// (the escrow capped lane-wise at `discharge`), the verifying courts'
+    /// POWV taken from it, and the rest released to the claim's voices as
+    /// POUW (`Treasury::release_discharged`). `None` where `address` holds no
+    /// escrow.
     pub(crate) fn release_verified(
         &mut self,
         address: &[u8],
-        discharge: &Modes,
+        discharge: Mu,
         organs: &[[u8; 32]],
         at: crate::economy::Anchor,
     ) -> Option<Mu> {
-        let base = discharge.capped(&self.treasury.escrow_of(address)?.mu);
+        // 78.149 (b): the closer's discharge, capped lane-wise by what the
+        // escrow held, keeping the discharge's modes (MU-ECONOMY §2.5).
+        let held = self.treasury.escrow_of(address)?.mu.clone();
+        let base = discharge.capped(&held);
         let taken = self.pay_verification(&base, organs, at);
-        // taken ≤ base mode by mode: the organs' shares sum to at most it.
-        let mut rest = base;
-        let _ = rest.take(&taken);
-        self.treasury.release_discharged(address, &rest, at)
+        // taken ≤ base on every lane: the organs' shares sum to at most it;
+        // the rest keeps the discharge's modes.
+        let rest = match base.draw(&taken) {
+            Ok(rest) => rest,
+            Err(_) => base.shortfall(&taken),
+        };
+        self.treasury.release_discharged(address, rest, at)
     }
 }

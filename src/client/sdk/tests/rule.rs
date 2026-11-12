@@ -294,7 +294,7 @@ fn would_judge_refuses_citation_no_court_admitted() {
         .expect("the family extracts");
     let spoken = crate::transducer::family::mint_sentence_why(&rule, &family, &dialect, 0).expect("and mints");
     assert!(
-        spoken.receipts().cited_addresses().iter().any(|a| *a == cited.address()),
+        spoken.stalk().cited_addresses().iter().any(|a| *a == cited.address()),
         "the word cites the form the mind stood"
     );
     let court_words = |a: &[u8]| dialect.court_word(a).and_then(|w| w.form().cloned());

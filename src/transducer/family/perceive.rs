@@ -170,11 +170,69 @@ pub fn perceive_parts(sample: &SectionSample) -> Vec<Body> {
     by_hue.scoped().flat_map(|(_, ls)| bodies_of(ls)).collect()
 }
 
-/// A FAMILY'S FRAMES, PERCEIVED: each pair's input bodies and output bodies,
-/// frame `k` at `k`.
-pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;
+/// A PAIR'S PERCEPTION ON THE CARRIER: the perceived bodies of an input/output
+/// observation, carrying coordinates on the carrier (Grassmann turning planes,
+/// exact degrees, winding class K) sheared by gravitational resonance.
+///
+/// Elevates the former flat tuple alias `(Vec<Body>, Vec<Body>)` from a discrete
+/// 2D card catalogue into first-class carrier observation semantics.
+#[derive(Clone, Debug)]
+pub struct PairBodies {
+    pub input: Vec<Body>,
+    pub output: Vec<Body>,
+}
 
-/// THE FAMILY'S FRAMES PERCEIVED ONCE (rule 10, ruled 2026-09-26): each
+impl PairBodies {
+    /// Constructs perceived pair bodies from input and output components.
+    pub fn new(input: Vec<Body>, output: Vec<Body>) -> PairBodies {
+        PairBodies { input, output }
+    }
+
+    /// The charts of the input bodies on the carrier.
+    pub fn input_charts(&self) -> Vec<crate::transducer::field::carrier::Chart> {
+        self.input.iter().map(|b| crate::transducer::field::carrier::Chart::of_invariant(&b.moduli)).collect()
+    }
+
+    /// The charts of the output bodies on the carrier.
+    pub fn output_charts(&self) -> Vec<crate::transducer::field::carrier::Chart> {
+        self.output.iter().map(|b| crate::transducer::field::carrier::Chart::of_invariant(&b.moduli)).collect()
+    }
+
+    /// The carrier transitions between input and output charts under field motion `motion`.
+    pub fn transitions(&self, motion: &crate::transducer::field::carrier::FieldMotion) -> Vec<crate::transducer::field::carrier::PairTransition> {
+        self.input_charts()
+            .into_iter()
+            .zip(self.output_charts())
+            .map(|(from, to)| crate::transducer::field::carrier::PairTransition { from, to, motion: motion.clone() })
+            .collect()
+    }
+
+    /// References to input and output bodies as a pair tuple.
+    pub fn as_tuple(&self) -> (&[Body], &[Body]) {
+        (&self.input, &self.output)
+    }
+}
+
+impl From<(Vec<Body>, Vec<Body>)> for PairBodies {
+    fn from((input, output): (Vec<Body>, Vec<Body>)) -> Self {
+        PairBodies { input, output }
+    }
+}
+
+impl From<PairBodies> for (Vec<Body>, Vec<Body>) {
+    fn from(p: PairBodies) -> Self {
+        (p.input, p.output)
+    }
+}
+
+/// A FAMILY'S BODIES ACROSS ITS PAIRS: pair `k` at index `k`.
+pub type FamilyBodies = Vec<PairBodies>;
+
+/// Legacy alias for [`FamilyBodies`]: in open-dimensional cognition, a pair of
+/// observations is an open-dimensional enclosure of bodies, never a flat 2D frame.
+pub type Frames = FamilyBodies;
+
+/// THE FAMILY'S DELIMITED PERCEIVED ONCE (rule 10, ruled 2026-09-26): each
 /// frame's bodies read by its components, the one reading an extraction's
 /// stroke is sized by ([`super::extraction_spend`]) and the percept then
 /// reads, so no frame's components are read a second time to size the draw.
@@ -183,7 +241,7 @@ pub fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Frames {
         family
             .iter()
             .enumerate()
-            .map(|(k, (a, b))| (perceive_at(a, k as i64), perceive_at(b, k as i64)))
+            .map(|(k, (a, b))| PairBodies::new(perceive_at(a, k as i64), perceive_at(b, k as i64)))
             .collect()
     })
 }

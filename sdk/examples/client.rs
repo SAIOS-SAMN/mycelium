@@ -91,7 +91,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
     if let Some(d) = read_deferral(&reply) {
         return Ok(vec![(String::new(), Outcome::Deferred(d))]);
     }
-    let Some(samples) = task::decode_task_envelope(&reply) else {
+    let Some(samples) = task::decode_task(&reply) else {
         return Err(format!("the court answered the task request with {} bytes that are no task envelope", reply.len()));
     };
     // The envelope carries samples of any rank (track 26 S5); this client's
@@ -140,7 +140,13 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
             Err(why) => Outcome::NoRule(why),
             Ok((outputs, tape)) => match claim(session, key, &envelope.id, &outputs, &tape, stated(&ground).as_deref())? {
                 Ok(o) => o,
-                Err(d) => return Ok(vec![(named, Outcome::Deferred(d))]),
+                // Nothing was ruled on this claim. The claims of this task
+                // already judged stand, a closure among them paid, so they
+                // are answered with it; no further claim is sent.
+                Err(d) => {
+                    outcomes.push((named, Outcome::Deferred(d)));
+                    return Ok(outcomes);
+                }
             },
         };
         outcomes.push((named, outcome));

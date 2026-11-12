@@ -1,7 +1,12 @@
 /// THE LAYOUT'S ONE MAGIC (78.27): the mind as keyed tries, its line and
-/// its eras on disk beside it (45.8), every μ an exact rational per lane
-/// (`economy::Mu`).
-pub const MAGIC: &[u8; 4] = b"MYT3";
+/// its eras on disk beside it (45.8), every μ a holding of modes
+/// (`economy::Mu` over `economy::modes::Modes`, MU-ECONOMY §9).
+pub const MAGIC: &[u8; 4] = b"MYT4";
+
+/// THE TRIES WHOSE μ WAS ONE RATIONAL PER LANE, refused BY NAME and never
+/// migrated: every holding, row and award carried one value per lane where
+/// the layout now carries its modes. The recut is the road.
+pub const PRE_MODES_MAGIC: &[u8; 4] = b"MYT3";
 
 /// THE TRIES WHOSE μ WAS FOUR `u64` COUNTS, refused BY NAME and never
 /// migrated: every holding, row and award carried counts where the layout
@@ -69,6 +74,10 @@ pub const LEAF_CLOSED: u8 = 11;
 /// version 4, whose windows close by version 4.
 /// FORMAT: court-tree leaf position for the window book.
 pub const LEAF_WINDOWS: u8 = 12;
+/// MU-ECONOMY §3.4, §11.4 F2b — the closure points in this court's cones, each
+/// with the stamp that sealed it first here; absent where none is held.
+/// FORMAT: court-tree leaf position for closure points.
+pub const LEAF_POINTS: u8 = 13;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.
@@ -124,7 +133,7 @@ pub const MEMBER_SPOKEN: u8 = 16;
 /// keyed by its root's stamp `h‖signer‖K‖i`: the root's height and place
 /// and the signer are the key; its hash, its witness, the two signatures,
 /// the identities it named, its first place and count, and its payload are
-/// the leaves. A filed era is its own frame in the cold segment and is not
+/// the leaves. A filed era is its own record in the cold segment and is not
 /// written here.
 pub const ERAS_TRIE: &str = "eras";
 pub const LEAF_ROOT_HASH: u8 = 1;

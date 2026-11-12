@@ -110,7 +110,11 @@ impl Session {
 
     /// The channel this session dials `endpoint` on.
     fn dial(&self, endpoint: &str) -> io::Result<Channel> {
-        crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Blocking).map_err(|why| match why {
+        // Law 9 — every wait here is denominated in strokes (#221).
+        // Polled pace waits up to a stroke budget (an aperture power of strokes),
+        // reporting silence as a stall while accommodating solve verification holds.
+        let budget = std::num::NonZeroUsize::new(crate::physics::aperture_cycle() as usize * 4096);
+        crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Polled(budget)).map_err(|why| match why {
             crate::network::noise::NoiseRefusal::Io(e) => e,
             why => io::Error::new(io::ErrorKind::ConnectionRefused, why),
         })
@@ -527,8 +531,8 @@ impl Session {
             // and the door's deficit as the surface, so the arm dwells on
             // the lanes the judge named (23.8, S13.4), and as the deficit,
             // the gravity the mind's field feels (MU-CLIENT §4.13).
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
-                // A would-block that carries no deferral names no lanes,
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut => {
+                // A would-block or timeout that carries no deferral names no lanes,
                 // and no surface is read off one.
                 let lanes = match deferral_of(&e) {
                     Some(d) => d.deficit,
@@ -638,29 +642,23 @@ impl Session {
     }
 
     pub(crate) fn exchange_inner(&self, endpoint: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let frame = Delimited { lane: Lane::Spatial, body: act_body };
         // A body past the wire's one budget is refused here, by name, before
         // a byte is sent (78.125): a large publication is streamed in parts.
-        let len = frame.body.len();
-        // 78.152 TU-7: every act carries the last final point this session
-        // read — and before it has read one, the zero point, which says only
-        // "this speaker reads points": the door answers a pointed speaker with
-        // its own point and an unpointed one (a mind before 78.152) as it
-        // always did, so a session that never pointed would never learn one.
-        let carried = match self.tuniversal() {
-            Some(p) => p,
-            None => crate::chronometry::tuniversal::TPoint::default(),
-        };
-        let bytes = frame.encode_at(Some(&carried)).ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, format!("act body {len} bytes is over the wire budget of {} bytes", crate::network::wire::BODY_BUDGET))
-        })?;
+        let len = act_body.len();
+        let over = || io::Error::new(io::ErrorKind::InvalidData, format!("act body {len} bytes is over the wire budget of {} bytes", crate::network::wire::BODY_BUDGET));
+        // 78.152 TU-7: every act is an expression carrying the last final
+        // point this session read, none before it has read one; every door
+        // reply carries the door's.
+        let expression = crate::anastome::dialogue::Expression::of(act_body, self.tuniversal());
+        let frame = Delimited { body: expression.write().ok_or_else(over)? };
+        let bytes = frame.encode().ok_or_else(over)?;
         // A SEALING ACT IS NEVER SENT TWICE (ruling 78.125): a pooled stream is retried on a fresh one only where the
         // WRITE failed — the court cannot have read the act. Once the act is
         // written, a lost reply is an error to the caller, never a resend:
         // the first may have sealed, and a resend would seal it again.
         let mut pool = self.streams.borrow_mut();
         if let Some(s) = pool.get_mut(endpoint.as_bytes()) {
-            match self.write_act(s, &frame, &carried, &bytes) {
+            match self.write_act(s, &frame, &bytes) {
                 Ok(()) => {
                     let read = self.read_reply(s);
                     if read.is_err() {
@@ -685,7 +683,7 @@ impl Session {
                 return Err(e);
             }
         };
-        let body = match self.write_act(&mut s, &frame, &carried, &bytes).and_then(|()| self.read_reply(&mut s)) {
+        let body = match self.write_act(&mut s, &frame, &bytes).and_then(|()| self.read_reply(&mut s)) {
             Ok(b) => b,
             Err(e) => {
                 self.rtt_timeout(endpoint);
@@ -696,44 +694,50 @@ impl Session {
         Ok(body)
     }
 
-    /// One act written on the channel: inside Noise, the frame and its point
-    /// sealed (`NoiseStream::write_delimited`); in plaintext, its encoded bytes.
-    fn write_act(&self, s: &mut Channel, frame: &Delimited, carried: &crate::chronometry::tuniversal::TPoint, bytes: &[u8]) -> io::Result<()> {
+    /// One act written on the channel: inside Noise, the frame sealed
+    /// (`NoiseStream::write_delimited`); in plaintext, its encoded bytes.
+    fn write_act(&self, s: &mut Channel, frame: &Delimited, bytes: &[u8]) -> io::Result<()> {
         match s {
-            Channel::Noise(n) => n.write_delimited(frame, Some(carried)).map_err(io::Error::other),
+            Channel::Noise(n) => n.write_delimited(frame).map_err(io::Error::other),
             Channel::Plain(p) => p.write_all(bytes),
         }
     }
 
-    /// One reply frame's body, read whole; the door's final point it carries
-    /// (78.152 TU-7) is heard and leaves the body.
+    /// One reply's act, read whole; the door's final point its expression
+    /// carries (78.152 TU-7) is heard and leaves the act.
     fn read_reply(&self, s: &mut Channel) -> io::Result<Vec<u8>> {
-        let s = match s {
+        let body = match s {
             Channel::Noise(n) => {
-                let (frame, point) = n.read_delimited().map_err(|why| match why {
-                    crate::network::noise::NoiseRefusal::Io(e) => e,
-                    why => io::Error::new(io::ErrorKind::InvalidData, why),
-                })?;
-                self.hear_point(point);
-                return Ok(frame.body);
+                n.read_delimited()
+                    .map_err(|why| match why {
+                        crate::network::noise::NoiseRefusal::Io(e) => e,
+                        why => io::Error::new(io::ErrorKind::InvalidData, why),
+                    })?
+                    .body
             }
-            Channel::Plain(p) => p,
+            Channel::Plain(p) => {
+                let mut head = [0u8; crate::network::wire::HEAD];
+                p.read_exact(&mut head)?;
+                let Some(len) = crate::network::wire::delimited_len(head) else {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "frame too large"));
+                };
+                let mut body = vec![0u8; len];
+                p.read_exact(&mut body)?;
+                body
+            }
         };
-        let mut head = [0u8; 5];
-        s.read_exact(&mut head)?;
-        let Some((_, pointed)) = crate::network::wire::read_lane(head[0]) else {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply frame names no lane"));
+        // #235 — a reply at a wire version this session does not speak is
+        // refused by name, before its act is read.
+        let e = match crate::anastome::dialogue::Expression::heard(body) {
+            Ok(e) => e,
+            Err(crate::anastome::dialogue::Unheard::Version { spoken, served }) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, format!("the door speaks wire {spoken:#06x}; this session speaks {served:#06x}")));
+            }
+            Err(crate::anastome::dialogue::Unheard::Malformed) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply is no expression: its version, count or point does not read"));
+            }
         };
-        let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-        if len > crate::network::wire::BODY_BUDGET + crate::chronometry::tuniversal::TPoint::TRAILER_MAX {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "frame too large"));
-        }
-        let mut body = vec![0u8; len];
-        s.read_exact(&mut body)?;
-        let Some((body, point)) = crate::network::wire::split_point(body, pointed) else {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "a pointed reply is shorter than its point"));
-        };
-        self.hear_point(point);
-        Ok(body)
+        self.hear_point(e.point);
+        Ok(e.act)
     }
 }

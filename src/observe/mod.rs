@@ -10,6 +10,7 @@
 //! on its own post (`MindReading`), read straight from the running binary.
 
 mod acts;
+mod boundary;
 mod carriage;
 mod carriers;
 mod channels;
@@ -28,6 +29,7 @@ mod tests;
 mod tuniversal;
 
 pub use acts::*;
+pub use boundary::*;
 pub use carriage::*;
 pub use carriers::*;
 pub use channels::*;

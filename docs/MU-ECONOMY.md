@@ -91,47 +91,31 @@ on the lane its kind names, each with an exact rational amount:
 - on H, a rotation on a named plane (its generator's ray), its angle the
   exact degrees `360°·t/ℓ` the motion traversed (MU-EQUATIONS §6.11).
 
+Two further modes hold what a closure moves that no motion names (ruled
+2026-11-11, #256; 78.182 item 2):
+- on S, a **symbol created from the ground**,
+  `SymbolCreation { from_ground, to_symbol, forward }`: the move between
+  the ground and a symbol, `forward` a creation and its reverse an erasure,
+  as G holds a hue move;
+- on H, a **shell by its boundary class**,
+  `ShellBoundary { boundary_class }`: the closed shell's signature, its
+  components and its boundary's length, at the shell count it changed.
+
+Live closures are never held at the founding mode, which is for genesis
+and bootstrap endowment only (§2.5). A closure's S and H shares are set on
+these modes (`element::chain_modes`, `Mu::carried_by`).
+
 A holding holds its modes, each keyed by its canonical coordinates (A21).
 A payment adds modes; a draw removes modes or is refused naming the mode
 it lacks. A per-lane draw takes that lane's modes in proportion to their
 amounts, and never another lane's (§2.5). Nothing is projected to a count (MU-RECURSION 78.162). The carrier
 is `economy::modes::Modes` (`src/economy/modes.rs`): add, a draw refused
 naming the mode short (`Short`), the modes of a motion
-(`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), and the
-canonical codec. `economy::Mu`, four scalars with one per lane, is the
+(`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), the founding
+mode of a lane (`Mode::Founding`, `Modes::founding`; §2.5), the per-lane
+draw in proportion (`Modes::draw_lane`; §2.5), and the canonical codec. `economy::Mu`, four scalars with one per lane, is the
 projection this paragraph forbids. It is built today and retired in
 v0.5.0 (§9).
-
-**Holdings that no motion made, and draws by lane (ruled 2026-11-06,
-#169).**
-- **The founding mode.** Each lane has a founding mode: the lane's
-  identity motion, stated explicitly as the mode and never left empty
-  (`Mode::Founding`). A genesis allocation is held at it, with its amount
-  as its share of the frame. A mint whose proof cites no motion (a
-  subsidy, a door's mint with no closure) is minted at it too, never with
-  empty modes.
-- **A mint carries the modes of the motion its proof cites:** a solve's
-  closure modes; a word's use or citation share, the cited word's closure
-  modes; POWR and a rewrite, the modes of the family the reduction
-  absorbs; POWC, the converging orbits' class; a consilience release
-  (POWV), the re-traversed closure's; a torse or a recall, its own
-  motion's.
-- **A bond holds the modes it was staked from,** carried unchanged into
-  the bond.
-- **Reserves, deficits, rooms and prices are readings,** never holdings.
-  They are read off holdings and motions when needed, carry no modes of
-  their own, and are never stored.
-- **A per-lane amount is drawn from the modes on its lane** in
-  proportion to their amounts, exactly in ℚ (`Modes::draw`). No choice is
-  hidden in the payer and nothing is rounded. A lane is never paid from
-  another lane's modes; where the lane holds too little, the draw is
-  refused by name (`LaneShort`). The modes drawn travel with the
-  transfer: tuition, gas, tolls, conversion, a stake's top-up, a partial
-  slash, a lease's hold.
-
-The treasury holds every balance, bond, held value and journal row as
-`Modes` (`economy::Treasury`, v0.5.0); its per-lane answers are readings of
-those modes.
 
 **μ is the metabolic cost of traversal** (ruled 2026-11-04; MU-SENSING
 §3.7). It is the advance of each lane by the motion that carried the work.
@@ -154,11 +138,11 @@ family) keeps its own measure as `n/1`. The readers are
 `DeflationRead::mu`, `Local::mu`, `transduce::share_of_enclosure` and
 `Transduction::lane_shares`. A word's magnitude, a family's metabolism, a
 demand's ask and a stroke's size stay counts and are not μ. A mode's
-amount is its share of the frame, never the mass carried (78.174 §1 item
-9; §12 item 4): a closure's motion modes are read at the share of the
-output frame its carried mass covers, and its hue modes at the pair's G
-share, so a recolour pays G by its share (`DeflationRead::modes`,
-`Modes::of_motion`, `Modes::of_gauge`).
+amount is its share of the enclosure, never the mass carried (78.174 §1 item
+9; §12 item 4; MU-ENGINEERING §9.3): a closure's motion modes are read at
+the share of the output enclosure its carried mass covers (its measure at
+rank `n`), and its hue modes at the pair's G share, so a recolour pays G by
+its share (`DeflationRead::modes`, `Modes::of_motion`, `Modes::of_gauge`).
 
 **Lanes are open-dimensional** (ruled 2026-11-05). S, G, T and H are the
 network's base lanes. μ, the coordinate and the Concordance are
@@ -563,6 +547,20 @@ organ that took it (47.3). A payout is never proven by a stored balance.
 A re-traversal reads the cone between the payment and its closure. A
 folded prefix is read at its checkpoint (§6.1).
 
+**Read today** (`mycelium-server --console --proofs`,
+`src/bin/mycelium-server/proofs.rs`): a reading over the running mesh,
+never stored. Per payment on each court's journal that carries a proof:
+the proof, the payee, the amount per lane and the act it stands at; the
+words that act names; the level read off them (§12's pay by level: a
+named sentence, named words, or unread, since no served reading tells a
+letter from a word or names a conjugate class); and each other court's
+reading of the same act at its stamp, the same act and words read off its
+own copy (the same point) or a residue naming what differs. It also names
+every task paid as a first closure more than once as an equivocation of
+the advance (§3.4). The re-traversal of this section through the release
+and its verifications to the closure's reconstruction needs the payment
+to cite its causes, which is v0.5.0's (§9).
+
 ### 5.4 Between courts: the Note
 
 A transfer between voices homed at different courts is the xSEPTUM Note
@@ -626,6 +624,23 @@ Both equations hold before and after it, and a witness re-derives the
 nets before it co-signs. A fold that does not conserve is refused
 `REFUSE_FOLD_INEXACT` and writes nothing. Heights continue across a fold,
 and install receipts survive it.
+
+**Built** (`economy::fold::FoldedIssuance`). The epoch rows carry only the
+balances' nets. What the folded rows issued and burned is kept beside them
+as the fold's checkpoint, gross and by source. Each source is the row's own
+coordinate `[kind tag, arm byte]`: genesis, mints, transfers and burns by
+the proof each carried, and slashes. So every reading stays the same across
+a fold: issued and burned, each apart from the other; the earned supply,
+apart from genesis (§6); and what each proof paid and burned (§0). A fold
+that would move issued or burned refuses `REFUSE_FOLD_INEXACT`. The
+checkpoint is persisted with the carriers (the `folded` trie). Claims:
+`economy::tests::fold` (`fold_keeps_what_each_proof_paid`,
+`fold_keeps_genesis_apart_from_the_earned`,
+`fold_keeps_issued_and_burned_each`,
+`second_fold_reads_the_first_folds_issuance_once`,
+`checkpoint_source_at_no_coordinate_is_refused`,
+`restored_fold_keeps_its_issuance`). Owed: a witness re-derives the nets it
+co-signs, not the checkpoint, which no fold receipt signs yet.
 
 ## 7. Metabolism and money
 
@@ -698,7 +713,11 @@ are ratios the physics already reads, studied off the wire and never tuned
 on it:
 - price against pressure: a listing's price is its own measure, and the
   court's read price per unit of gas is `1 + y_l/R` (§7.1);
-- bond against cover room;
+- bond against exposure (ruled 2026-11-11, #237; 78.182 item 1): a carried
+  line is admitted only while its tier's bond covers its exposure on every
+  lane, `B_l ≥ X_l`, the `X` the slash reads, and is refused
+  `Underbonded { lane, bond, exposure }` otherwise; the bond's strain reads
+  the same `X`;
 - verification's share of a release, `y/(y + R)` per lane (§5.1);
 - slash against bond: a falsified fold's tier forfeits `B·X/(B + X)` per
   lane, its exposure `X` against its bond `B`, and the challenger is paid
@@ -713,16 +732,16 @@ lane. It is the implementation v0.5.0 replaces, part by part:
 
 | Built today | Where | v0.5.0 |
 |---|---|---|
-| `economy::Mu`: four exact non-negative rationals, one per lane, for every amount. Exact add, a draw refused naming the first short lane (`MuRefusal::Short`), shortfall, cap, `split_at`, `part`, `lane_moves`, `Mu::counts` for `n/1`. Codec `Mu::put`/`Mu::take` (a sign byte, then numerator and denominator limbs; a negative lane or one not in lowest terms refused), used by the entries, the snapshot and every wire field carrying μ (`WIRE_VERSION` `0x0200`) | `src/economy/mu.rs` | Retired: every amount is `Modes`, and the wire and snapshot carry the `Modes` codec |
+| `economy::Mu` over `economy::modes::Modes` (#169 step 3): every amount holds its modes, the lanes' vectors by their components. What no motion made sits at each lane's founding mode (§2.5). A lane's whole (`Mu::lane`) and every comparison against an ask, a room or a cap (`shortfall`, `capped`, `lane_moves`) are readings. A draw takes each lane from that lane's modes in proportion, and the modes drawn travel with the transfer (`Mu::draw_out`, `Treasury::debit`). Codec: the `Modes` codec, on the entries, the snapshot (`MYT4`), the keeper record (v3) and every wire field carrying μ | `src/economy/mu.rs`, `src/economy/modes.rs` | The name `Mu` retires into `Modes` once mints carry their proofs' modes (step 3b) and the readings stand apart (step 2) |
 | `economy::modes::Modes`: the modes of a closure (`DeflationRead::modes`), carried behind a paid solve verdict (`encode_solve_verdict`) | `src/economy/modes.rs`, `src/transducer/family/deflation.rs`, `src/anastome/dialogue/percept.rs` | The carrier of every holding's lanes (§1, §2.2) |
-| `Treasury`: the journal `entries`, keyed `balances`, `stakes`, `escrowed` and `held`, the folded `issued` and `burned`, and `bond_total`; `balance_mu`, `account`, `bond_of`, `stake_of` | `src/economy/treasury.rs` | Holdings as coordinates on the signers' lines; balances read over the cones, never stored (§2, §6). The v0.5.0 draft holds every carrier and row as `Modes` (§1, #169) |
+| `Treasury`: the journal `entries`, keyed `balances`, `stakes`, `escrowed` and `held`, the folded `issued` and `burned`, and `bond_total`; `balance_mu`, `account`, `bond_of`, `stake_of` | `src/economy/treasury.rs` | Holdings as coordinates on the signers' lines; balances read over the cones, never stored (§2, §6) |
 | `Entry { kind, who, mu, at, receipt, arm }`, its `Anchor` (a stamp and its chain hash), and `Kind`'s eleven entry kinds: `Genesis`, `Mint`, `Stake`, `Unstake`, `Transfer`, `Escrow`, `Release`, `Revoke`, `Slash`, `Burn`, `Epoch`; persisted by `Entry::write` and `Entry::read` | `src/economy/treasury.rs`, `src/economy/persist.rs` | Events with cited causes (§2.4); what an entry kind names becomes what the event cites |
 | `Arm`: POUW, POWC, POWR, POWV as bytes 1–4 on a payment | `src/economy/treasury.rs` | The proof is the relation the event's causes show (§0) |
 | `Treasury::supply`, `issued`, `minted` and `audit` (both equations of §6 over ℚ, checked before a snapshot persists) | `src/economy/treasury.rs` | Readings at a height over the cones; two readers converse or collide (§6) |
 | Claims: `escrow_award`, `release_award`, `revoke_award`, `release_discharged`, `mint_claim`, `draw_escrow`, `carry_escrow`, `credit_escrow` | `src/economy/escrow.rs` | A claim as a pending advance (§3.1) |
 | Held value and transfer: `Treasury::pay`, `hold`, `release_held`, `draw_held`, `refund_held` | `src/economy/pay.rs` | Events on the payer's line citing the payer's act (§5) |
-| Settlement: `settle_use`, `settle_convergence`, `settle_recursive`, `settle_rewrite`, `release_rewrite`, `settle_solve`, `settle_verification`, `settle_consilience`, `settle_torse`, `settle_recall`, `settle_door` (the assembly, condense and refine arms retired) | `src/economy/settle.rs` | Each an advance with its causes cited |
-| POWV: `verification_share`, `Court::pay_verification`, `Court::release_verified` | `src/economy/verify.rs`, `src/server/cognition/court/verify.rs` | The share applied per mode (§5.1) |
+| Settlement: `settle_use`, `settle_convergence`, `settle_recursive`, `settle_rewrite`, `release_rewrite`, `settle_solve`, `settle_verification`, `settle_consilience`, `settle_torse`, `settle_recall`, `settle_door` (the assembly, condense and refine arms retired). The mints carry the modes their proofs cite (§2.5): a use or citation share and POWC the cited word's closure modes on the citer's family (`Court::cited_deflation`), POWR and a rewrite the modes of the family it absorbs (`Court::absorbed_modes`) | `src/economy/settle.rs`, `src/server/cognition/court/vantage_install.rs`, `src/server/cognition/identity.rs` | Each an advance with its causes cited |
+| POWV: `verification_share`, the lane's factor scaling each mode of the base (§5.1); `Court::pay_verification`, `Court::release_verified`. A release's and an install's base is the discharge capped lane-wise by the escrow, keeping the discharge's modes | `src/economy/verify.rs`, `src/server/cognition/court/verify.rs`, `src/server/cognition/court/vantage_install.rs` | The share applied per mode, as built (§5.1) |
 | The fold: `nets_of`, `Folded`, `Inexact` | `src/economy/fold.rs` | A checkpoint of a line's prefix, per mode (§6.1) |
 | The tier slash: `economy::forfeit` | `src/economy/forfeit.rs` | Per mode |
 | Equivocation: act 0x35, `Court::accept_equivocation`, `Court::burn_equivocation` | `src/anastome/dialogue/equivocation.rs`, `src/server/cognition/state.rs` | Unchanged in kind; a second mint of one closure joins it (§3.4) |
@@ -898,7 +917,7 @@ mint found when partitions rejoin is burned (§3.4). Tests:
 **F3. The frontier reading** (Medium; reading only; track 9).
 `ACT_OBSERVE` reading `frontier`: per open task, its citation, its ask
 per lane and its obstruction kind if a refusal stands on it, paged to the
-frame budget; served by the SDK as `Session::frontier()`. No μ and no
+body budget; served by the SDK as `Session::frontier()`. No μ and no
 admission effect. Tests: `frontier_lists_open_tasks_by_lane`,
 `frontier_omits_closed_tasks`, `frontier_pages_to_frame_budget`.
 
@@ -937,7 +956,11 @@ for its lessee for one window.
    2026-11-05; proposal 78.174 §1 item 9: a mode's amount is its share of
    the frame, never S mass; a recolour pays G by its share).* Today each
    mode is read at its closed pair's carried mass (`DeflationRead::modes`);
-   v0.5.0 reads it as the share of the frame (§1).
+   v0.5.0 reads it as the share of the frame (§1). The genesis bond is
+   read the same way at v0.5.0: since track 26 S4 it holds lane counts
+   read at the samples' own rank (`family::magnitude`; ruled 2026-11-06 on
+   #32), and its move to the share of the frame goes with the `Mu` →
+   `Modes` stages, not before.
 5. **Room over modes.** *Closed (coordinator, 2026-11-06, under the
    operator's delegation; #169; 78.180 ruling 3).* Room is a reading, never
    a holding: it is read per lane and per mode over the bond's modes it

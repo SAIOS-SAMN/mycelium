@@ -11,7 +11,7 @@ use mycelium::anastome::dialogue;
 use mycelium::network::channel::{self, Kind, Pace, Side};
 use mycelium::network::nerve::{HomeTrie, Keyed};
 use mycelium::network::noise::{NoiseHome, NoiseRefusal, KEY_LEN};
-use mycelium::network::wire::{Lane, Delimited};
+use mycelium::network::wire::Delimited;
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -42,11 +42,11 @@ fn door(home: Option<NoiseHome>, connections: usize, reply: Vec<u8>) -> (String,
             };
             let (kind, caller) = (ch.kind(), ch.remote_static());
             match read_delimited(&mut ch) {
-                Some(frame) => {
-                    answer(&mut ch, Delimited { lane: Lane::Spatial, body: reply.clone() });
-                    heard.push(Ok((kind, caller, frame.body)));
+                Some(delimited) => {
+                    answer(&mut ch, Delimited { body: reply.clone() });
+                    heard.push(Ok((kind, caller, delimited.body)));
                 }
-                None => heard.push(Err(String::from("no frame read"))),
+                None => heard.push(Err(String::from("no envelope read"))),
             }
         }
         heard
@@ -84,7 +84,7 @@ fn client_and_hypha_speak_inside_noise() {
         let mut ch = accept_with(tcp, Some(&hypha_home), Pace::Blocking).expect("the channel");
         let kind = ch.kind();
         let _ = read_delimited(&mut ch);
-        answer(&mut ch, Delimited { lane: Lane::Spatial, body: dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit) });
+        answer(&mut ch, Delimited { body: dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit) });
         kind
     });
     let session = mycelium::sdk::Session::open(&addr, mycelium::sdk::Voice::from_voice([5; 32])).with_noise(client);
@@ -144,7 +144,7 @@ fn hypha_peers_speak_inside_noise() {
     let deferring = std::thread::spawn(move || {
         let (tcp, _) = listener.accept().expect("accept");
         let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-        defer_unread_with(tcp, &m, Delimited { lane: Lane::Spatial, body }, Some(&b_home));
+        defer_unread_with(tcp, &m, Delimited { body }, Some(&b_home));
     });
     let (reply, _) = tell_peer_over(&addr, vec![0x10], Stall::Beyond, Some(&a)).expect("the deferral");
     deferring.join().expect("the listener");
@@ -186,7 +186,7 @@ fn pinned_key_mismatch_refused() {
         }
         other => panic!("expected PinnedAnsweredPlain, read {:?}", other.map(|ch| ch.kind())),
     }
-    assert_eq!(served.join().expect("the door"), vec![Err(String::from("no frame read"))], "the opening alone, refused as a plaintext head");
+    assert_eq!(served.join().expect("the door"), vec![Err(String::from("no envelope read"))], "the opening alone, refused as a plaintext head");
     assert!(!met(&addr, Kind::Plain, Side::Dialled), "never dialled in plaintext");
 }
 
@@ -223,4 +223,26 @@ fn plaintext_peer_named_not_hidden() {
     let back = mycelium::observe::Reading::take(&out, &mut p).expect("and reads back");
     assert_eq!(back, mycelium::observe::Reading::Channels(Box::new(reading)));
     assert_eq!(p, out.len());
+}
+
+/// #235 — AN ACT AT ANOTHER WIRE VERSION IS REFUSED BY NAME AT THE DOOR,
+/// before its act is read: the door reads no act, answers refused at its own
+/// version, and closes; the speaker's reader hears that answer, which names
+/// the door's version.
+#[test]
+fn door_refuses_an_act_at_another_wire_version() {
+    use std::io::{Read, Write};
+    let (addr, served) = door(None, 1, vec![0x01]);
+    let mut act = mycelium::anastome::dialogue::Expression::of(vec![0x53, 1, 2], None).write().expect("an expression");
+    let n = act.len();
+    act[n - 2..].copy_from_slice(&0x0200u16.to_le_bytes());
+    let mut tcp = std::net::TcpStream::connect(&addr).expect("dial");
+    tcp.write_all(&Delimited { body: act }.encode().expect("an envelope")).expect("written");
+    let mut reply = Vec::new();
+    tcp.read_to_end(&mut reply).expect("the door answers and closes");
+    let (envelope, _) = Delimited::decode(&reply).expect("one envelope");
+    let heard = dialogue::Expression::heard(envelope.body).expect("the refusal is spoken at the door's version");
+    let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
+    assert_eq!(heard.act, dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]), "answered refused");
+    assert_eq!(served.join().expect("the door"), vec![Err(String::from("no envelope read"))], "no act was read");
 }

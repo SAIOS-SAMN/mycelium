@@ -11,6 +11,7 @@
 //! MAP 14, READ-MAP 15, TRAVERSE 16 (`crossing.rs`). The ruled bytes are
 //! otherwise exactly as ruled.
 
+use super::crossing_record::{crossed, Crossing};
 use crate::chronometry::tuniversal::TPoint;
 
 /// ACT_DOMAIN's sub-kind mark (as `domain.rs` writes it).
@@ -115,10 +116,13 @@ impl LedgerEntry {
         crate::chronometry::payload_hash(&self.signed_bytes())
     }
 
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedLedger {
+    /// Signed by the reserve with the crossing the anchor carries (X1,
+    /// #160): the signature is over [`SignedLedger::signed_bytes`]. `None`
+    /// where a turn of the record cannot be written.
+    pub fn sign(self, crossing: Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedLedger> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedLedger { entry: self, sig }
+        let sig = key.sign(&crossed(self.signed_bytes(), &crossing)?).to_bytes();
+        Some(SignedLedger { entry: self, crossing, sig })
     }
 
     /// The body as stored and served: `[u][commitment][events][point]
@@ -145,14 +149,26 @@ impl LedgerEntry {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedLedger {
     pub entry: LedgerEntry,
+    /// X1 (#160) — the crossing the anchor carries through the universal
+    /// core tube.
+    pub crossing: Crossing,
     pub sig: [u8; 64],
 }
 
+impl SignedLedger {
+    /// THE BYTES THE SIGNATURE IS OVER: the entry's own, then its crossing
+    /// written out whole. The entry's hash stays its own bytes'.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        crossed(self.entry.signed_bytes(), &self.crossing)
+    }
+}
+
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][12][u u64 LE][commitment 32][events
-/// 32][cited final TPoint 84][parent entry 32][nonce 32][sig 64]`, then —
-/// only where it applied crossings — `[count][(crossing 32, u_applied u64
-/// LE) …]`, signed.
-pub fn encode_ledger(s: &SignedLedger) -> Vec<u8> {
+/// 32][cited final TPoint 84][parent entry 32][nonce 32][crossing][sig 64]`,
+/// then — only where it applied crossings — `[count][(crossing 32,
+/// u_applied u64 LE) …]`, signed. `None` where a turn of the record cannot
+/// be written.
+pub fn encode_ledger(s: &SignedLedger) -> Option<Vec<u8>> {
     let e = &s.entry;
     let mut out = head(&e.domain, KIND_LEDGER);
     out.extend_from_slice(&e.u.to_le_bytes());
@@ -161,11 +177,12 @@ pub fn encode_ledger(s: &SignedLedger) -> Vec<u8> {
     e.point.put(&mut out);
     out.extend_from_slice(&e.parent);
     out.extend_from_slice(&e.nonce);
+    s.crossing.put(&mut out)?;
     out.extend_from_slice(&s.sig);
     if !e.applied.is_empty() {
         put_applied(&mut out, &e.applied);
     }
-    out
+    Some(out)
 }
 
 /// The entry after the sub-kind byte, read whole; an empty applied list is
@@ -175,13 +192,14 @@ pub(crate) fn take_ledger(domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<S
     let (commitment, events) = (key32(b, p)?, key32(b, p)?);
     let point = TPoint::take(b, p)?;
     let (parent, nonce) = (key32(b, p)?, key32(b, p)?);
+    let crossing = Crossing::take(b, p).ok()?;
     let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
     *p += 64;
     let applied = match *p < b.len() {
         true => Some(take_applied(b, p)?).filter(|a| !a.is_empty())?,
         false => Vec::new(),
     };
-    Some(SignedLedger { entry: LedgerEntry { domain, u, commitment, events, point, parent, applied, nonce }, sig })
+    Some(SignedLedger { entry: LedgerEntry { domain, u, commitment, events, point, parent, applied, nonce }, crossing, sig })
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][13][after u u64 LE]`.
@@ -356,7 +374,7 @@ pub fn dilation(u: (u64, u64), h: (u64, u64)) -> Option<(u64, u64)> {
 }
 
 /// A READ-LEDGER ANSWER: the entries after `u`, in chain order, as many as
-/// fit one frame, and whether more stand.
+/// fit one pose, and whether more stand.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct LedgerPage {
     pub entries: Vec<HeldEntry>,
@@ -451,14 +469,14 @@ pub fn local_record_citation(domain: &[u8; 32], local: &[u8; 32]) -> [u8; 32] {
 /// road toll itself is in-universe, never here). A LOCAL THROAT: an
 /// in-universe throat (a line's tube, core to galaxy, a long haul) —
 /// its throat key, its keeper (the builder line's key, carried inline),
-/// its two ends' FRAMES and its `N`; both ends stand in the posting
-/// universe, each place read off its frame in the universe's declared
+/// its two ends' DELIMITED and its `N`; both ends stand in the posting
+/// universe, each place read off its pose in the universe's declared
 /// geometry. No 78.128 act and no court bond: the map record is all of it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MapRecord {
     Mouth { place: Place, freshness: u64 },
     Segment { kind: Segment, a: Place, b: Place, span: (u64, u64), keeper: Option<[u8; 32]> },
-    LocalThroat { throat: [u8; 32], keeper: [u8; 32], frames: (crate::transducer::cga::Mv, crate::transducer::cga::Mv), freshness: u64 },
+    LocalThroat { throat: [u8; 32], keeper: [u8; 32], poses: (crate::transducer::cga::Mv, crate::transducer::cga::Mv), freshness: u64 },
 }
 
 fn put_place(out: &mut Vec<u8>, (m, side): &Place) {
@@ -493,23 +511,23 @@ impl MapRecord {
                     }
                 }
             }
-            MapRecord::LocalThroat { throat, keeper, frames, freshness } => {
+            MapRecord::LocalThroat { throat, keeper, poses, freshness } => {
                 out.push(2);
                 out.extend_from_slice(throat);
                 out.extend_from_slice(keeper);
-                frames.0.to_bytes(out);
-                frames.1.to_bytes(out);
+                poses.0.to_bytes(out);
+                poses.1.to_bytes(out);
                 out.extend_from_slice(&freshness.to_le_bytes());
             }
         }
     }
 
-    /// A local throat's two ends read off its frames in `space`; `None`
-    /// for any other record, or where a frame is no motion of that space.
+    /// A local throat's two ends read off its poses in `space`; `None`
+    /// for any other record, or where a pose is no motion of that space.
     pub fn local_places(&self, space: &crate::anastome::dialogue::universe::Geometry) -> Option<(crate::transducer::cga::Mv, crate::transducer::cga::Mv)> {
         use crate::anastome::dialogue::tube::place_in;
         match self {
-            MapRecord::LocalThroat { frames: (f0, f1), .. } => Some((place_in(space, f0)?, place_in(space, f1)?)),
+            MapRecord::LocalThroat { poses: (f0, f1), .. } => Some((place_in(space, f0)?, place_in(space, f1)?)),
             MapRecord::Mouth { .. } | MapRecord::Segment { .. } => None,
         }
     }
@@ -532,7 +550,7 @@ impl MapRecord {
                 let (throat, keeper) = (key32(b, p)?, key32(b, p)?);
                 let f0 = crate::transducer::cga::Mv::from_bytes(b, p)?;
                 let f1 = crate::transducer::cga::Mv::from_bytes(b, p)?;
-                MapRecord::LocalThroat { throat, keeper, frames: (f0, f1), freshness: u64_at(b, p)? }
+                MapRecord::LocalThroat { throat, keeper, poses: (f0, f1), freshness: u64_at(b, p)? }
             }
             _ => return None,
         })
@@ -583,40 +601,55 @@ impl MapAct {
         out
     }
 
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedMap {
+    /// Signed by the reserve with the crossing the map carries (X1, #160).
+    /// `None` where a turn of the record cannot be written.
+    pub fn sign(self, crossing: Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedMap> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedMap { act: self, sig }
+        let sig = key.sign(&crossed(self.signed_bytes(), &crossing)?).to_bytes();
+        Some(SignedMap { act: self, crossing, sig })
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedMap {
     pub act: MapAct,
+    /// X1 (#160) — the crossing the map carries.
+    pub crossing: Crossing,
     pub sig: [u8; 64],
+}
+
+impl SignedMap {
+    /// THE BYTES THE SIGNATURE IS OVER: the act's own, then its crossing
+    /// written out whole.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        crossed(self.act.signed_bytes(), &self.crossing)
+    }
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][14][point 84][record][nonce 32][sig
 /// 64]`; a record `[0][mouth 32][side u8][N u64 LE]` or `[1][kind u8][mouth
 /// 32][side u8][mouth 32][side u8][span n u64][span d u64][0 | 1 keeper 32]`
 /// or a local throat `[2][throat key 32][keeper 32][frame_0 Mv][frame_1
-/// Mv][N u64 LE]`.
-pub fn encode_map(s: &SignedMap) -> Vec<u8> {
+/// Mv][N u64 LE]`. X1 (#160): the crossing between the nonce and the
+/// signature. `None` where a turn of the record cannot be written.
+pub fn encode_map(s: &SignedMap) -> Option<Vec<u8>> {
     let mut out = head(&s.act.domain, KIND_MAP);
     s.act.point.put(&mut out);
     s.act.record.put(&mut out);
     out.extend_from_slice(&s.act.nonce);
+    s.crossing.put(&mut out)?;
     out.extend_from_slice(&s.sig);
-    out
+    Some(out)
 }
 
 pub(crate) fn take_map(domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<SignedMap> {
     let point = TPoint::take(b, p)?;
     let record = MapRecord::take(b, p)?;
     let nonce = key32(b, p)?;
+    let crossing = Crossing::take(b, p).ok()?;
     let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
     *p += 64;
-    Some(SignedMap { act: MapAct { domain, point, record, nonce }, sig })
+    Some(SignedMap { act: MapAct { domain, point, record, nonce }, crossing, sig })
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][15]`.
@@ -650,12 +683,12 @@ pub enum MapRefusal {
     Behind,
     /// 13 — the court's line could not take it.
     LineRefused,
-    /// 14 — a local throat's frame is zero or no versor.
+    /// 14 — a local throat's pose is zero or no versor.
     NotVersor,
     /// 15 — a local throat in a universe that declared no geometry.
     NoGeometry,
     /// 16 — a local throat's end does not read a place in its universe's
-    /// geometry (its frame no motion of that space).
+    /// geometry (its pose no motion of that space).
     Unplaced,
 }
 
@@ -765,7 +798,7 @@ impl HeldRecord {
 /// universe's own space, derived at the read and never stored beside it — a
 /// mouth's one place off its tube (78.140: a point of the curved space or of
 /// the torus's fundamental domain), a local throat's two ends off its
-/// frames in the universe's declared geometry (side 0, then side 1); none
+/// poses in the universe's declared geometry (side 0, then side 1); none
 /// for a segment, or where a place does not read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MapEntry {

@@ -96,12 +96,12 @@ fn retrieve_round_trips_as_domain_sub_kind_19() {
     assert!(matches!(decode_retrieve_reply(&refused), Some(RetrieveReply::Refused(RetrieveRefusal::Short))));
 }
 
-/// A RETRIEVAL IS PRICED AND REFUSED BY NAME: served at the tick, one unit on
+/// A RETRIEVAL IS PRICED AND REFUSED: served at the tick, one unit on
 /// H per receipt claimed on the stake; refused unsigned, for an unknown
 /// domain, at two origins or above the cited point, not final, or resent
 /// with the same nonce.
 #[test]
-fn retrieve_claims_read_price_and_refuses_by_name() {
+fn retrieve_claims_reads_price_and_refuses_unpaid() {
     let (mut k, _) = court("retrieve-price");
     let h = k.chain.head_height();
     let s = ask(h, h, 1).sign(&key(60));

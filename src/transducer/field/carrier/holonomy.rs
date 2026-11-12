@@ -85,6 +85,17 @@ impl Motion {
         held.sort_by(|a, b| a.plane().key().cmp(b.plane().key()));
         Ok(Motion { turnings: held })
     }
+
+    /// THE INVERSE MOTION: each turning on its plane reversed (-degrees),
+    /// exact since disjoint planes commute.
+    pub fn inverse(&self) -> Result<Motion, FieldRefusal> {
+        let turnings = self
+            .turnings
+            .iter()
+            .map(|t| Turning::of(t.plane().clone(), -t.degrees().clone()))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Motion { turnings })
+    }
 }
 
 /// THE MONODROMY OF A CANDIDATE (78.171 §3.2; MU-SENSING §3.8): flat (order

@@ -71,7 +71,7 @@ fn sign_tick_needs_no_digest() {
         "a's 10 is final: a signed it, b cites it"
     );
 
-    // This court's own ring, and a frame that does not read, are refused.
+    // This court's own ring, and an envelope that does not read, are refused.
     let own = encode_tick(&va, &[]).expect("writes");
     assert_eq!(hear_tick(&m, &own), Err(TickRefusal::Stranger));
     let mut long = body.clone();

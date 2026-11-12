@@ -57,10 +57,15 @@ pub const TAG_JUDGED: u8 = 25;
 /// plaintext) and side.
 /// FORMAT: channels reading tag byte.
 pub const TAG_CHANNELS: u8 = 26;
+/// MU-HOSTING §5a.7, track 24 B4 — the refusals a court answered at its
+/// universes' core tubes, by domain, act and name.
+/// FORMAT: boundary reading tag byte.
+pub const TAG_BOUNDARY: u8 = 27;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 17] = [
+pub const READING_NAMES: [(&str, u8); 18] = [
+    ("boundary", TAG_BOUNDARY),
     ("channels", TAG_CHANNELS),
     ("asked", TAG_ASKED),
     ("dispatched", TAG_DISPATCHED),
@@ -370,8 +375,8 @@ pub const BODY_FAULTS: [&str; 8] = [
     "no versor",
     "carries nowhere",
     "no compartment",
-    "before the frame",
-    "past the frame",
+    "before the enclosure",
+    "past the enclosure",
     "wrong hue",
     "image reached in part",
     "gauge ambiguous",
@@ -476,15 +481,15 @@ impl CourtReading {
 pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("parent", "receipts admitted from a digest, cited as a parent"),
     ("backfill", "receipts admitted by back-fill, page by page"),
-    ("gap", "frames that reported a hole in a chain (the back-fill chases it)"),
-    ("stale", "frames at a K already held with the same hash"),
+    ("gap", "heads that reported a hole in a chain (the back-fill chases it)"),
+    ("stale", "heads at a K already held with the same hash"),
     ("equivocation", "two hashes at one K on one chain (47.4)"),
     ("refused_origin", "receipts of another genesis"),
     ("refused_signature", "receipts whose signature did not verify"),
     ("refused_receipt", "receipts refused on the receipts' chain"),
     ("no_section", "digests carrying no receipt section"),
     ("malformed", "receipt sections that did not parse whole"),
-    ("no_origin", "frames heard before this court adopted an origin"),
+    ("no_origin", "heads heard before this court adopted an origin"),
     ("digest_unreadable", "digests that were not one cover digest"),
     ("digest_signature", "digests whose cover signature did not verify"),
     // ACT1-hold-b (45.2, LD0's defect 3b): what the chase of a gap did.
@@ -542,7 +547,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // isolation): a citation of another signer's receipt this court does not
     // hold is counted apart from a hole in the signer's own line, and a
     // back-fill page that stops on one says so, under the CITED signer.
-    ("missing_parent", "frames citing another signer's receipt this court does not hold (the back-fill chases it)"),
+    ("missing_parent", "heads citing another signer's receipt this court does not hold (the back-fill chases it)"),
     ("backfill_missing_parent", "back-fill pages stopped on a cited receipt of this signer that this court does not hold"),
     ("backfill_missing_unrooted", "of them, citations of a signer whose fold root this court does not hold (no era proof can run)"),
     ("missing_depth", "the cited orbit against the head held for this signer at the last such stop (a level, not a count)"),
@@ -680,7 +685,7 @@ pub mod replication {
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
 /// with what it did with that signer's receipts on every axis of
-/// [`REPLICATION_AXES`]; and the frames no signer could be read off,
+/// [`REPLICATION_AXES`]; and the heads no signer could be read off,
 /// apart, never attributed to one.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Replication {
@@ -812,7 +817,7 @@ pub enum Reading {
     Adjudication(Adjudication),
     /// PH5 — a court's last phase window (78.17).
     Phase(super::CourtStage),
-    /// LD1 — the bytes per award, per receipt delta and per frame (78.22).
+    /// LD1 — the bytes per award, per receipt delta and per envelope (78.22).
     Carriage(super::CarrierTally),
     /// ACT1 — a node on the TUniversal clock, with its three counts
     /// (78.21, 78.27(1), EC1).
@@ -842,6 +847,8 @@ pub enum Reading {
     Judged(Box<super::JudgedSolves>),
     /// The peers a host met, by channel and side (`TAG_CHANNELS`).
     Channels(Box<super::Channels>),
+    /// The refusals a court answered at its tubes (`TAG_BOUNDARY`).
+    Boundary(Box<super::BoundaryReading>),
 }
 
 impl Reading {
@@ -864,6 +871,7 @@ impl Reading {
             Reading::Dispatched(_) => TAG_DISPATCHED,
             Reading::Judged(_) => TAG_JUDGED,
             Reading::Channels(_) => TAG_CHANNELS,
+            Reading::Boundary(_) => TAG_BOUNDARY,
         }
     }
 
@@ -904,6 +912,7 @@ impl Reading {
             (Reading::Judged(a), Reading::Judged(b)) => *a = b.clone(),
             // The book is read whole at the question; the later stands.
             (Reading::Channels(a), Reading::Channels(b)) => *a = b.clone(),
+            (Reading::Boundary(a), Reading::Boundary(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -946,6 +955,7 @@ impl Reading {
             Reading::Dispatched(r) => r.put(out),
             Reading::Judged(r) => r.put(out),
             Reading::Channels(r) => r.put(out),
+            Reading::Boundary(r) => r.put(out),
         }
     }
 
@@ -970,6 +980,7 @@ impl Reading {
             TAG_DISPATCHED => Some(Reading::Dispatched(Box::new(super::Dispatched::take(b, p)?))),
             TAG_JUDGED => Some(Reading::Judged(Box::new(super::JudgedSolves::take(b, p)?))),
             TAG_CHANNELS => Some(Reading::Channels(Box::new(super::Channels::take(b, p)?))),
+            TAG_BOUNDARY => Some(Reading::Boundary(Box::new(super::BoundaryReading::take(b, p)?))),
             _ => None,
         }
     }

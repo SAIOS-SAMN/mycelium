@@ -196,7 +196,7 @@ impl Court {
             return Some(Stop::ColourUnproven);
         }
         let cites_unheld = |s: &Element| {
-            s.receipts().nerve.iter().any(|e| &e.target != address && self.word_at(e.target.as_bytes()).is_none())
+            s.stalk().nerve.iter().any(|e| &e.target != address && self.word_at(e.target.as_bytes()).is_none())
         };
         (spoken.is_sentence() && cites_unheld(spoken)).then_some(Stop::CitationMissing)
     }
@@ -475,12 +475,11 @@ impl Court {
         let installed = self.anchor();
         // 78.149 (b): the claim pays the word's measured discharge, the
         // escrow its cap; nothing above the discharge is minted.
-        // The mint carries the closure's modes (#169).
-        let (_, discharge) = self.discharge_read(address.as_bytes(), spoken);
+        let discharge = self.discharge_of(address.as_bytes(), spoken);
         // POWV: this court and the peer whose re-derivation glued it verified
         // the closure, and each takes its share before the closer is paid.
         let organs = [self.identity, peer];
-        let _ = self.release_verified(address.as_bytes(), &discharge, &organs, installed);
+        let _ = self.release_verified(address.as_bytes(), discharge, &organs, installed);
         self.unlist(&address, false);
         self.leave_provisional(&address);
         self.court_upheld += 1;
@@ -553,6 +552,12 @@ impl Court {
         self.confirm_cursor.remove(&peer);
     }
 
+    /// Deflation a form may mint: its DISCHARGE on the bound family
+    /// (`discharge_of`, 78.149, the one reader every escrow and release
+    /// takes). Association with a listing is not a mint.
+    pub(crate) fn verified_install_deflation(&self, address: &[u8], form: &Element) -> crate::economy::Mu {
+        self.discharge_of(address, form)
+    }
 
     /// 47.3, 13.9: WHAT THIS COURT HOLDS OF ITS OWN ON A CLASS — the Čech
     /// section it wrote from its own perception, at its own vantage: the

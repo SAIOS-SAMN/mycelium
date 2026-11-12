@@ -4,7 +4,7 @@
 // each pair's vortex of factorisations), and only then offers the samples to
 // the alphabet's section, which spells one rank.
 
-use crate::anastome::dialogue::TaskEnvelope;
+use crate::anastome::dialogue::TaskFamily;
 use crate::client::sdk::mind::perceive::{SceneKind, Stop, STOPS};
 use crate::client::sdk::*;
 use crate::transducer::family::transduce::Factored;
@@ -16,9 +16,9 @@ fn sample(extents: &[usize], digits: &str) -> Sample {
 
 /// A mind that has perceived `env`, and the section it offered the word
 /// path.
-fn perceived(env: &TaskEnvelope) -> (Option<crate::anastome::dialogue::TaskSection>, Mind) {
+fn perceived(env: &TaskFamily) -> (Option<crate::anastome::dialogue::TaskSection>, Mind) {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("perceiving at rank n"));
-    let section = mind.perceive_envelope(env, SceneKind::Task);
+    let section = mind.perceive_task(env, SceneKind::Task);
     (section, mind)
 }
 
@@ -35,7 +35,7 @@ fn rank_three_task_is_perceived() {
         (sample(&[2, 2, 3], "100000000000"), sample(&[2, 2, 3], "100000000002")),
         (sample(&[2, 2, 3], "010000000000"), sample(&[2, 2, 3], "010000000002")),
     ];
-    let env = TaskEnvelope { id, train: train.clone(), tests: vec![sample(&[2, 2, 3], "001000000000")] };
+    let env = TaskFamily { id, train: train.clone(), tests: vec![sample(&[2, 2, 3], "001000000000")] };
     let (section, mind) = perceived(&env);
     assert!(section.is_none(), "rank 3 is off the alphabet's section");
     let percept = mind.board.percepts.get(&id).expect("the percept is held under the citation");
@@ -61,7 +61,7 @@ fn rank_three_task_is_perceived() {
 fn rank_one_task_is_perceived() {
     let id = [1u8; 32];
     let train = vec![(sample(&[5], "11000"), sample(&[5], "00011"))];
-    let env = TaskEnvelope { id, train: train.clone(), tests: vec![sample(&[5], "10000")] };
+    let env = TaskFamily { id, train: train.clone(), tests: vec![sample(&[5], "10000")] };
     let (section, mind) = perceived(&env);
     assert!(section.is_none(), "rank 1 is off the alphabet's section");
     let percept = mind.board.percepts.get(&id).expect("held");
@@ -71,6 +71,8 @@ fn rank_one_task_is_perceived() {
     assert_eq!(held.len(), 2);
     let reversal = held.iter().find(|f| f.residue.is_empty()).expect("the reversal carries the signal whole");
     assert_eq!(reversal.recomposed(&train[0].0).as_ref(), Ok(&train[0].1));
+    let transitions = pair.carrier_transitions(&train[0].0, &train[0].1, reversal).expect("transitions lift onto carrier");
+    assert!(!transitions.is_empty(), "carrier transitions between charts are produced");
 }
 
 /// A claim the in-process court heard, and the verdict it answered.
@@ -83,25 +85,14 @@ type Heard = (crate::anastome::dialogue::FactorisationAct, crate::anastome::dial
 /// admitted, answered with its verdict, and handed to the test with it.
 fn factoring_court(book: std::sync::Arc<std::sync::Mutex<crate::server::registry::TaskRegistry>>) -> (String, std::sync::mpsc::Receiver<Heard>) {
     use crate::anastome::dialogue;
-    use std::io::{Read, Write};
+    use std::io::Write;
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the court listens");
     let addr = listener.local_addr().expect("an address").to_string();
     let (heard, claims) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         for conn in listener.incoming() {
             let Ok(mut s) = conn else { continue };
-            loop {
-                let mut head = [0u8; 5];
-                if s.read_exact(&mut head).is_err() {
-                    break;
-                }
-                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
-                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-                let mut body = vec![0u8; len];
-                if s.read_exact(&mut body).is_err() {
-                    break;
-                }
-                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
+            while let Some(body) = super::fixtures::read_act(&mut s) {
                 let reply = match dialogue::decode_factorisation(&body) {
                     Some(act) => {
                         let task = book.lock().expect("the book").task(&act.task).cloned();
@@ -115,8 +106,7 @@ fn factoring_court(book: std::sync::Arc<std::sync::Mutex<crate::server::registry
                     }
                     None => Vec::new(),
                 };
-                let frame = crate::network::wire::Delimited { lane, body: reply };
-                let _ = s.write_all(&frame.encode().expect("framed"));
+                let _ = s.write_all(&super::fixtures::reply_bytes(&reply));
             }
         }
     });
@@ -132,22 +122,22 @@ fn factoring_court(book: std::sync::Arc<std::sync::Mutex<crate::server::registry
 /// task perceived again speaks nothing new.
 #[test]
 fn mind_speaks_factorisations_beyond_the_alphabet() {
-    use crate::anastome::dialogue::{decode_task_envelope, encode_task_envelope, FactorVerdict};
+    use crate::anastome::dialogue::{decode_task, encode_task, FactorVerdict};
     let book = std::sync::Arc::new(std::sync::Mutex::new(crate::server::registry::TaskRegistry::new()));
     let posted = crate::server::tests::fixtures::rank_three_task();
     let cite = book.lock().expect("the book").post(posted);
     let served = {
         let mut b = book.lock().expect("the book");
         let (id, task) = b.dispatch().expect("the rank-3 task is dispatched");
-        let e = task.envelope(id);
-        encode_task_envelope(&id, &e.train, &e.tests).expect("served at rank 3")
+        let e = task.family(id);
+        encode_task(&id, &e.train, &e.tests).expect("served at rank 3")
     };
-    let env = decode_task_envelope(&served).expect("the envelope reads");
+    let env = decode_task(&served).expect("the envelope reads");
     assert_eq!(env.id, cite);
     let (court, claims) = factoring_court(book.clone());
     let name = "factoring beyond the alphabet";
     let mut mind = Mind::open(&court, Voice::named(name));
-    assert!(mind.perceive_envelope(&env, SceneKind::Task).is_none(), "rank 3 is off the alphabet's section");
+    assert!(mind.perceive_task(&env, SceneKind::Task).is_none(), "rank 3 is off the alphabet's section");
     let percept = mind.board.percepts.get(&cite).cloned().expect("perceived at its own rank");
     let ground = match &percept.ground {
         crate::transducer::family::transduce::Ground::One(g) => Some(g.clone()),
@@ -169,7 +159,7 @@ fn mind_speaks_factorisations_beyond_the_alphabet() {
         }
     }
     assert_eq!(book.lock().expect("the book").factorisations_of(&cite), held, "each admitted claim recorded once");
-    assert!(mind.perceive_envelope(&env, SceneKind::Task).is_none());
+    assert!(mind.perceive_task(&env, SceneKind::Task).is_none());
     assert_eq!(mind.hypha.in_flight(), 0, "the task perceived again speaks nothing new");
 }
 
@@ -190,7 +180,7 @@ fn word_machinery_reads_a_rank_three_sample_end_to_end() {
     use crate::transducer::spelled::SectionSample;
     use crate::transducer::symbols::{on_test_inputs, SymbolSet};
     // RANK 2: the word path holds the samples posted, as posted.
-    let flat = TaskEnvelope { id: [2u8; 32], train: vec![(sample(&[2, 3], "100000"), sample(&[2, 3], "000001"))], tests: vec![sample(&[2, 3], "010000")] };
+    let flat = TaskFamily { id: [2u8; 32], train: vec![(sample(&[2, 3], "100000"), sample(&[2, 3], "000001"))], tests: vec![sample(&[2, 3], "010000")] };
     let (section, _) = perceived(&flat);
     let section = section.expect("rank 2 at one byte is on the section");
     assert_eq!(section.train[0].0.sample(), &flat.train[0].0, "the input sample itself, its place included");
@@ -201,7 +191,7 @@ fn word_machinery_reads_a_rank_three_sample_end_to_end() {
         (sample(&[2, 2, 3], "100000000000"), sample(&[2, 2, 3], "100000000002")),
         (sample(&[2, 2, 3], "010000000000"), sample(&[2, 2, 3], "010000000002")),
     ];
-    let deep = TaskEnvelope { id, train: train.clone(), tests: vec![sample(&[2, 2, 3], "001000000003")] };
+    let deep = TaskFamily { id, train: train.clone(), tests: vec![sample(&[2, 2, 3], "001000000003")] };
     let off = SectionRefusal::Rank(AlphabetRank { rank: 3 });
     assert_eq!(SectionSample::of(train[0].0.clone()), Err(off), "the word machinery's carrier reads the rank off the sample");
     assert!(matches!(deep.section(), Err(r) if r == off), "the envelope is refused by the alphabet's name");
@@ -229,7 +219,7 @@ fn word_machinery_reads_a_rank_three_sample_end_to_end() {
 #[test]
 fn rank_two_task_is_perceived_and_offered_to_section() {
     let id = [2u8; 32];
-    let env = TaskEnvelope { id, train: vec![(sample(&[2, 3], "100000"), sample(&[2, 3], "000001"))], tests: vec![sample(&[2, 3], "010000")] };
+    let env = TaskFamily { id, train: vec![(sample(&[2, 3], "100000"), sample(&[2, 3], "000001"))], tests: vec![sample(&[2, 3], "010000")] };
     let (section, mind) = perceived(&env);
     let section = section.expect("rank 2 at width 1 is on the section");
     assert_eq!(section.train, crate::transducer::spelled::pairs_of(vec![(vec![vec![1, 0, 0], vec![0, 0, 0]], vec![vec![0, 0, 0], vec![0, 0, 1]])]));

@@ -30,7 +30,7 @@ fn is_deferred_reads_deferral_as_impedance_not_refusal() {
 
 /// 23.8 (ruled 2026-09-09), S13.4 — THE DEFERRAL CARRIES THE DOOR'S
 /// DEFICIT. The lanes come back through the codec's one reader of the
-/// outcome layout; a deferral with lanes is still a deferral; a frame that
+/// outcome layout; a deferral with lanes is still a deferral; an envelope that
 /// teaches, or carries a height, or is short, is not one.
 #[test]
 fn deferral_lanes_carries_door_deficit_per_lane() {
@@ -46,16 +46,16 @@ fn deferral_lanes_carries_door_deficit_per_lane() {
     let read = dialogue::decode_outcome_reply(&deferral).expect("the codec reads its own layout");
     assert_eq!((read.code, read.height, read.pressure), (code, 0, deficit));
     assert!(read.taught.is_empty() && read.rest.is_empty());
-    // A frame teaching one byte: the deferral's taught count raised to 1,
+    // An envelope teaching one byte: the deferral's taught count raised to 1,
     // and the byte after it.
     let mut taught = deferral.clone();
     taught.truncate(taught.len() - 2);
     taught.extend_from_slice(&1u16.to_le_bytes());
     taught.push(7);
-    assert_eq!(dialogue::deferral_lanes(&taught, code), None, "a frame that teaches is an answer");
+    assert_eq!(dialogue::deferral_lanes(&taught, code), None, "an envelope that teaches is an answer");
     assert_eq!(
         dialogue::deferral_lanes(&deferral[..deferral.len() - 1], code),
         None,
-        "a short frame is refused, never read as zeros"
+        "a short envelope is refused, never read as zeros"
     );
 }

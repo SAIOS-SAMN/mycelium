@@ -10,8 +10,8 @@ use mycelium::anastome::dialogue::uplink::{decode_uplink, encode_uplink_reply};
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(fold) = decode_uplink(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(fold) = decode_uplink(&delimited.body) else { return };
     let verdict = match crate::court_lock::held!(context.court) {
         Ok(mut h) => h.run(|k, _| k.hear_uplink(&fold)),
         Err(_) => return,
@@ -20,5 +20,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Delimited { lane: frame.lane, body: encode_uplink_reply(&verdict) });
+    answer(stream, Delimited { body: encode_uplink_reply(&verdict) });
 }

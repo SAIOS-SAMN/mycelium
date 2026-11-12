@@ -11,7 +11,7 @@
 //!
 //! The three counts (78.27 Q1, EC1) are per node, since boot:
 //!
-//! - acts sealed WITHOUT A FRAME — own-line acts that named a word no row
+//! - acts sealed WITHOUT A MEASURE — own-line acts that named a word no row
 //!   of this court measures, so the acts' μ⃗ was read as `[0; 4]`;
 //! - words held WITHOUT AN ADMITTING STAMP, by row — basis, provisional,
 //!   the listing book, the cavity, the court's federation;
@@ -28,7 +28,7 @@ pub struct CourtClock {
     /// Its own `K`: the orbit its next act stands in (78.23 as amended).
     pub k: u64,
     /// THE HEAD'S STAMP, `h:S:G:T:H:K.i` (78.21, 78.24, 78.23 as amended):
-    /// the tick, the frame the head act measured, its orbit and its place
+    /// the tick, the measure the head act took, its orbit and its place
     /// in the orbit.
     pub head: [u64; 7],
     /// The mesh origin this court adopted — `H_genesis` and its epoch —
@@ -42,7 +42,7 @@ pub struct CourtClock {
     pub persisted: Option<(u64, u64)>,
     /// The last fold's root: its height and `K`.
     pub folded: Option<(u64, u64)>,
-    /// Own-line acts sealed without a frame.
+    /// Own-line acts sealed without a measure.
     pub unmeasured: u64,
     /// Words held without an admitting stamp: basis, provisional, listing,
     /// cavity, federation.
@@ -59,7 +59,7 @@ pub struct CourtClock {
 }
 
 /// OK1, 78.23 as amended — A NODE'S ORBITS AGAINST THE OTHERS': the closes
-/// withheld because the orbit's frame met another's on every lane at one
+/// withheld because the orbit's measure met another's on every lane at one
 /// tick, and at the node's last close the DISTANCE to each other orbit
 /// closed at that tick — per lane, signed, exact, never a root and never
 /// summed (law 5). A collision is prevented at the boundary; what the

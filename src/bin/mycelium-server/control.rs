@@ -19,20 +19,20 @@ use std::sync::Mutex;
 
 /// Control acts that used to run on the accept thread. The listener never
 /// holds the court lock; these run on a reflex worker.
-pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Context) -> bool {
-    let Some((&kind, _rest)) = frame.body.split_first() else { return false };
+pub(crate) fn serve_control(s: &mut Channel, delimited: &Delimited, context: &Context) -> bool {
+    let Some((&kind, _rest)) = delimited.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
-        let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };
+        let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&delimited.body) else { return true };
         // A ROOT NAMES ITS TASK BY CITATION (the 32 bytes every reading
-        // names it by): a task's content address is never framed, routed or
+        // names it by): a task's content address is never delimited, routed or
         // indexed here. A root naming it any other way is not heard.
         let Ok(task) = <[u8; 32]>::try_from(task.as_bytes()) else {
-            answer(s, Delimited { lane: frame.lane, body: Vec::new() });
+            answer(s, Delimited { body: Vec::new() });
             return true;
         };
         // A poisoned router lock knows no peer; the root is not heard.
         if !context.router.lock().is_ok_and(|r| r.knows(&from)) {
-            answer(s, Delimited { lane: frame.lane, body: Vec::new() });
+            answer(s, Delimited { body: Vec::new() });
             return true;
         }
         let hear = {
@@ -80,14 +80,14 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                 spoken_at,
             )
         };
-        answer(s, Delimited { lane: frame.lane, body: reply });
+        answer(s, Delimited { body: reply });
         return true;
     }
     if kind == dialogue::ACT_EVIDENCE {
-        if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
+        if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&delimited.body) {
             let accepted = {
                 let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
-                // Bounded by the deposit's own items, which the frame bounds.
+                // Bounded by the deposit's own items, which the envelope bounds.
                 h.run(|k, _| {
                     items
                         .into_iter()
@@ -102,32 +102,32 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                 eprintln!("  evidence refused: {accepted} accepted does not fit the reply");
                 return true;
             };
-            let reply = Delimited { lane: frame.lane, body: vec![accepted] };
+            let reply = Delimited { body: vec![accepted] };
             answer(s, reply);
             return true;
         }
-        let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { return true };
-        // D4.2 — THE PAGE IS FILLED TO THE FRAME, one read of the hold's
-        // stroke an item; an item no frame carries is refused by name and
+        let Some(_evoice) = dialogue::decode_evidence_request(&delimited.body) else { return true };
+        // D4.2 — THE PAGE IS FILLED TO THE ENVELOPE, one read of the hold's
+        // stroke an item; an item no envelope carries is refused by name and
         // the page ends before it, never past it.
         let (items, end): (Vec<_>, _) = {
             let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
             h.run(|k, reads| {
                 let store = k.anchor_evidence();
-                let (m, end) = dialogue::evidence_page(store, mycelium::network::wire::frame_budget(), reads);
+                let (m, end) = dialogue::evidence_page(store, mycelium::network::wire::BODY_BUDGET, reads);
                 (store.iter().take(m).cloned().collect(), end)
             })
         };
         if let dialogue::EvidencePageEnd::Unframable { width } = end {
-            eprintln!("  evidence item passes the frame: {width:?} bytes; the page ends before it");
+            eprintln!("  evidence item passes the envelope: {width:?} bytes; the page ends before it");
         }
-        // LD0 — a reply whose address cannot be framed is refused whole,
+        // LD0 — a reply whose address cannot be delimited is refused whole,
         // by name, and nothing partial is answered.
         let Some(body) = dialogue::encode_evidence_reply(&items) else {
-            eprintln!("  evidence reply refused: an address cannot be framed");
+            eprintln!("  evidence reply refused: an address cannot be delimited");
             return true;
         };
-        answer(s, Delimited { lane: frame.lane, body });
+        answer(s, Delimited { body });
         return true;
     }
     if kind == dialogue::ACT_TASK {
@@ -135,15 +135,15 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
         // short: the voice would study a family this registry did not
         // dispatch. Nor is it answered empty — an empty body is "no work",
         // and a book with open tasks answered that while its cursor sat on
-        // a task it could not frame (a client read 8 such pulls as
+        // a task it could not delimit (a client read 8 such pulls as
         // tasks with no family; the task's long address passed the u16
         // wall, which the v1.2 citation removes). A plain request steps on
         // to the next open task, once round the book at most.
         let envelope = |tid: &mycelium::registry::TaskCitation, task: &dialogue::PostedTask| {
             // Track 26 S4c: the posted samples go out as posted, at any rank
             // and width, each at its position in the family.
-            let e = task.envelope(*tid);
-            let b = dialogue::encode_task_envelope(&e.id, &e.train, &e.tests).ok();
+            let e = task.family(*tid);
+            let b = dialogue::encode_task(&e.id, &e.train, &e.tests).ok();
             if b.is_none() {
                 eprintln!("  task passed over: its envelope does not fit its lengths");
             }
@@ -156,7 +156,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
         // leaves, by its citation, to the voice that asked, at this court's
         // height — read-only, never read back by the court.
         let sent = |cite: [u8; 32], voice: [u8; 32]| mycelium::observe::note_dispatch(cite, voice, context.published.take().height());
-        let body = match (dialogue::decode_task_request(&frame.body), dialogue::decode_task_by_citation(&frame.body)) {
+        let body = match (dialogue::decode_task_request(&delimited.body), dialogue::decode_task_by_citation(&delimited.body)) {
             (Some(voice), _) => {
                 let Ok(mut reg) = context.registry.lock() else { return true };
                 let mut body = Vec::new();
@@ -190,18 +190,18 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
             }
             (None, None) => return true,
         };
-        let reply = Delimited { lane: frame.lane, body };
+        let reply = Delimited { body };
         answer(s, reply);
         return true;
     }
-    if dialogue::solve_kind(&frame.body) == Some(dialogue::SOLVE_KIND_FACTORISATION) {
+    if dialogue::solve_kind(&delimited.body) == Some(dialogue::SOLVE_KIND_FACTORISATION) {
         // MU-SENSING §3.9; track 26 S4c — A CLAIM OF FACTORISATION, the
         // solve's claim kind 1 (78.126: a sub-kind, never a new byte), judged
         // by reconstruction on the posted pair it names, at any rank, off
         // the registry's lock; an admitted claim is recorded and pays
-        // nothing (`mycelium::server::factorisation`). A frame that does not
+        // nothing (`mycelium::server::factorisation`). An envelope that does not
         // read whole is not answered, as a solve's is not.
-        let Some(act) = dialogue::decode_factorisation(&frame.body) else { return true };
+        let Some(act) = dialogue::decode_factorisation(&delimited.body) else { return true };
         let task = {
             let Ok(reg) = context.registry.lock() else { return true };
             reg.task(&act.task).cloned()
@@ -212,12 +212,12 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                 reg.record_factorisation(&act);
             }
         }
-        answer(s, Delimited { lane: frame.lane, body: dialogue::encode_factor_verdict(&verdict) });
+        answer(s, Delimited { body: dialogue::encode_factor_verdict(&verdict) });
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
         let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, ground: stated, signed, .. }) =
-            dialogue::decode_solve(&frame.body)
+            dialogue::decode_solve(&delimited.body)
         else {
             return true;
         };
@@ -239,13 +239,15 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
         // S4c): a task off it is refused by the alphabet's name alone, never
         // for its rank, and a claim on it is a factorisation
         // (the solve's claim kind `SOLVE_KIND_FACTORISATION`).
-        let (tid, withheld, open, ground) = {
+        // #158 — the withheld pairs are not read here: the court judges on
+        // the pairs it bound for the task at registration, by its citation.
+        let (tid, open, ground) = {
             let Ok(reg) = context.registry.lock() else { return true };
             let g = reg.section(&cite).map(|section| match section {
                 Ok(t) => mycelium::cognition::stated_ground(&t.train, stated.as_deref()).map_err(|why| why.reason()),
                 Err(_) => Err(mycelium::verdict::REFUSE_BEYOND_ALPHABET),
             });
-            (cite, reg.withheld(&cite), reg.open(&cite), g)
+            (cite, reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
         // court reconstructs the rule on the withheld pairs and prices what it
@@ -339,10 +341,19 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                     // OWED (78.153b): the solve's reconstruction mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
-                    let verdict = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_solve_on_stroke(rule, &withheld)) {
+                    let judgement = mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_task_solve_on_stroke(rule, &cite));
+                    // A9 (#158): a binding refused leaves the rule ⊤, by name.
+                    if let Some(Err(why)) = &judgement.pi {
+                        eprintln!("  π* not bound on a solved rule: {why:?}");
+                    }
+                    let verdict = match judgement.verdict {
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
-                            // The court names a task by its citation (wire v1.2).
-                            let paid = k.pay_solve(&cite, svoice, rule, pay, &modes, first);
+                            // The court names a task by its citation (wire v1.2);
+                            // the rule docketed is the one judged, its anchor bound.
+                            // MU-ECONOMY §3.4, F2b — the point decides, not this
+                            // book alone: a point the court's cones hold is closed.
+                            let first = first && k.point_held(&cite, judgement.judged.address().as_bytes()).is_none();
+                            let paid = k.pay_solve(&cite, svoice, &judgement.judged, pay, first);
                             let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_AGAIN };
                             (code, paid, None, Some((k.height(), modes)))
                         }
@@ -435,12 +446,12 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
             Some(b) => b,
             None => dialogue::encode_solve_receipt(code, &mu),
         };
-        let reply = Delimited { lane: frame.lane, body };
+        let reply = Delimited { body };
         answer(s, reply);
         return true;
     }
     if kind == dialogue::ACT_PEERS {
-        if dialogue::decode_peers_request(&frame.body).is_some() {
+        if dialogue::decode_peers_request(&delimited.body).is_some() {
             let mut nerve_addrs = vec![context.bind.clone()];
             for p in context.join_peers.iter() {
                 if !nerve_addrs.iter().any(|a| a == p) {
@@ -455,7 +466,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                 }
             }
             match dialogue::encode_peers_reply(&nerve_addrs) {
-                Some(body) => answer(s, Delimited { lane: frame.lane, body }),
+                Some(body) => answer(s, Delimited { body }),
                 None => eprintln!("  peers reply refused: an address or the count passes its u16"),
             }
         }
@@ -463,11 +474,11 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
     }
     // A4 — THE COVER, BY PAGE. The digest carries the four roots; a peer
     // whose roots moved asks here for the charts under them, from the last
-    // chart it holds, and reads as many as one frame affords. The cover
+    // chart it holds, and reads as many as one envelope affords. The cover
     // used to ride the digest whole, which made the digest's size the
     // cover's and refused it outright past the axis count.
     if kind == dialogue::ACT_COVER {
-        if let Some((_voice, from)) = dialogue::decode_cover_request(&frame.body) {
+        if let Some((_voice, from)) = dialogue::decode_cover_request(&delimited.body) {
             // 78.153b — this court's own charts off the published reading,
             // never the cover trie walked and cloned under the court.
             let read = context.published.take();
@@ -486,21 +497,21 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
                 &context.bind,
                 charts,
                 &from,
-                mycelium::network::wire::frame_budget(),
+                mycelium::network::wire::BODY_BUDGET,
             ) else {
                 eprintln!("  cover page refused: the bind does not fit its length");
                 return true;
             };
-            answer(s, Delimited { lane: frame.lane, body });
+            answer(s, Delimited { body });
         }
         return true;
     }
     if kind == dialogue::ACT_OFFER {
-        crate::judge::offer::judge(s, frame, context);
+        crate::judge::offer::judge(s, delimited, context);
         return true;
     }
     if kind == dialogue::ACT_ADOPT {
-        let Some((ratifier, elem_bytes)) = dialogue::decode_adopt(&frame.body) else { return true };
+        let Some((ratifier, elem_bytes)) = dialogue::decode_adopt(&delimited.body) else { return true };
         let mut pos = 0usize;
         let queued = mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos)
             .map(|word| {
@@ -512,11 +523,11 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
             })
             // A word whose tape does not parse queues nothing.
             .is_some_and(|q| q);
-        answer(s, Delimited { lane: frame.lane, body: vec![queued as u8] });
+        answer(s, Delimited { body: vec![queued as u8] });
         return true;
     }
     if kind == dialogue::ACT_SYLLABUS {
-        let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { return true };
+        let Some(svoice) = dialogue::decode_syllabus_request(&delimited.body) else { return true };
         // A PAGE IS A WINDOW, NOT A COPY OF THE BOOK: a slice from the voice's
         // cursor under the syllabus lock (checklist (j)).
         // 78.153b — the seed off the published reading, never every ruled
@@ -529,7 +540,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
         };
         // THE PAGE IS WHAT THE COURT'S RESERVE AFFORDS (the actions'
         // metabolism): each word served is paid by its magnitude, drawn per
-        // lane; the page ends at the frame, the wire's count, or the first
+        // lane; the page ends at the envelope, the wire's count, or the first
         // word a lane cannot fund. 45.1, 78.24 (2b): each word served is
         // sealed as a Syllabus act and carries that stamp. Nothing is sealed
         // for a word that is not sent.
@@ -539,7 +550,7 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
             // nerve's class records on the hold's stroke, resumed page to
             // page past the chart the last reading stopped at (78.153b).
             let (page, classes) = h.run(|k, reads| {
-                let page = k.serve_syllabus(&window, svoice, mycelium::network::wire::frame_budget());
+                let page = k.serve_syllabus(&window, svoice, mycelium::network::wire::BODY_BUDGET);
                 (page, k.class_records_on(&mycelium::transducer::stalk::Invariant::default(), &svoice, reads))
             });
             drop(h);
@@ -583,10 +594,10 @@ pub(crate) fn serve_control(s: &mut Channel, frame: &Delimited, context: &Contex
             return true;
         };
         if dialogue::append_class_records(&mut body, &classes).is_none() {
-            eprintln!("  syllabus refused: the class records cannot be framed");
+            eprintln!("  syllabus refused: the class records cannot be delimited");
             return true;
         }
-        let reply = Delimited { lane: frame.lane, body };
+        let reply = Delimited { body };
         answer(s, reply);
         return true;
     }

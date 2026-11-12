@@ -13,13 +13,18 @@ use crate::physics::actions::Action;
 /// ACT_TASK and ACT_SOLVE (78.146), v1.4 the seat wire's sub-origins and
 /// relay epoch (78.155 §5c, 78.156), v2.0 every μ field as four exact
 /// rational lanes (`economy::Mu`) and the challenge window's opened and
-/// closed heights, the latest. A minor step adds and moves no layout; v2.0
-/// moves the layout of every act and reply carrying μ, so it is a major
-/// step. No act carries it on the wire; a client states it in its
-/// compatibility statement (MU-PRECURSORS §4.2), and a layout version
+/// closed heights, v3.0 the crossing record (X1, #160) carried in the
+/// signed bytes of every universe act (fold, anchor, map, mouth, conversion
+/// out, manifest, statement), the latest. A minor step adds and moves no
+/// layout; v2.0 moves the layout of every act and reply carrying μ, and
+/// v3.0 the layout of the seven universe acts, so each is a major step.
+/// Every expression carries it last (`expression::write_act`, #235), and a
+/// reader refuses another major, or a minor past its own, by name
+/// (`Unheard::Version`) before it reads the act; a client also states it in
+/// its compatibility statement (MU-PRECURSORS §4.2), and a layout version
 /// defined per act (`EQUIVOCATION_VERSION`) stands beside it.
-/// FORMAT: wire version, major 2 minor 0.
-pub const WIRE_VERSION: u16 = 0x0200;
+/// FORMAT: wire version, major 3 minor 0.
+pub const WIRE_VERSION: u16 = 0x0300;
 
 /// Act tags — frame `body[0]`. 78.94: EVERY TAG IS AN ACTION'S COORDINATE,
 /// spelled here and held by the one table (`physics::actions::Action`), which

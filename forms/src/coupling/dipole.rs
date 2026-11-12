@@ -11,7 +11,7 @@ use crate::coordinate::{FormRefusal, Key, Plane, Vector};
 use crate::Q;
 use num_traits::{One, Signed, Zero};
 
-/// A PARCEL'S FRAMES: `A` held (closed) and `Q` open, each not below zero
+/// A PARCEL'S DELIMITED: `A` held (closed) and `Q` open, each not below zero
 /// and not both zero. The pole stands on these frames, never on the
 /// electrons' phase `R`, which is the parcel's phase.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -67,7 +67,7 @@ impl Parcel {
         share_of(&self.open, &self.held)
     }
 
-    /// THE DIPOLE THE FRAMES HOLD: the pole `σ = (A − Q)/(A + Q)`, closed
+    /// THE DIPOLE THE DELIMITED HOLD: the pole `σ = (A − Q)/(A + Q)`, closed
     /// against open, continuous in `[−1, 1]` (a ratio, which no metric
     /// enters), and the open share `o = Q/(A + Q)`.
     pub fn dipole(&self) -> Result<Dipole, CouplingRefusal> {
@@ -98,7 +98,7 @@ impl Parcel {
     }
 }
 
-/// A BODY'S FRAMES PER TURNING PLANE (netstratum 3Q): `(z_k, q_k)` on each
+/// A BODY'S DELIMITED PER TURNING PLANE (netstratum 3Q): `(z_k, q_k)` on each
 /// plane, keyed by the plane's generator, in the order founded. A bond or a
 /// peel changes one plane only.
 #[derive(Clone, Debug, PartialEq, Eq)]

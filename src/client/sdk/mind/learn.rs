@@ -10,13 +10,14 @@ impl Mind {
     /// useful work. One pull is in flight at a time; the envelope lands on
     /// the board as an offer, read to its charts (`offer`), to be taken in
     /// where it couples (`task_inflow`), none where the court's listings are settled.
-    /// MU-CLIENT §4.12, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
+    /// MU-CLIENT §4.12, §4.13, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
     /// in or is being perceived, the reserve stands regenerated on every
     /// lane, and either the field holds strain (`strained`) or the corpus
-    /// holds no item (ruled 2026-10-24; asked under strain alone, a mind with
-    /// an empty feed never asked again). A settled field over a corpus that
-    /// holds items asks for nothing. The task is an offer: it couples or
-    /// lapses (`lapse_standing_task`).
+    /// holds no item and the court's registry is not exhausted at the current
+    /// height (ruled 2026-10-24, Issue #246). A full reserve over a
+    /// settled field with an exhausted registry asks for nothing, and the mind
+    /// rests (MU-CLIENT §4.13, #135).
+    /// The task is an offer: it couples or lapses (`lapse_standing_task`).
     pub(crate) fn pull_task(&mut self) {
         if self.board.court.pulling || self.board.court.task.is_some() || self.perceiving() {
             return;
@@ -25,7 +26,8 @@ impl Mind {
             return;
         }
         let corpus_empty = self.board.corpus.size().0 == 0;
-        if !self.strained() && !corpus_empty {
+        let exhausted = self.board.court.task_exhausted == Some(self.board.court.last_height);
+        if !self.strained() && (!corpus_empty || exhausted) {
             return;
         }
         self.board.court.pulling = true;
@@ -39,13 +41,18 @@ impl Mind {
                 let landed = entity.hypha.tuniversal().map(|p| p.h);
                 // Track 26 S4b: the envelope's samples are perceived at
                 // the samples' own rank; the word path takes the alphabet's section,
-                // and a task off it stops perceived (`perceive_envelope`).
-                let envelope = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b));
-                let section = envelope.and_then(|e| entity.perceive_envelope(&e, super::perceive::SceneKind::Task));
+                // and a task off it stops perceived (`perceive_task`).
+                let envelope = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task(&b));
+                let section = envelope.and_then(|e| entity.perceive_task(&e, super::perceive::SceneKind::Task));
                 entity.board.court.task = section.map(|env| {
                     let offer = super::offer::Offer { landed, ..super::offer::Offer::of(&env.train) };
                     (env, offer)
                 });
+                if entity.board.court.task.is_some() {
+                    entity.board.court.task_exhausted = None;
+                } else {
+                    entity.board.court.task_exhausted = landed.or(Some(entity.board.court.last_height));
+                }
                 // Landed on this mind, not yet taken in: attributed here.
                 if let Some(id) = entity.board.court.task.as_ref().map(|(e, _)| e.id) {
                     entity.note_task(&id, super::perceive::SceneKind::Task, |t| *t = super::perceive::TaskRead { taken: false, reading: t.reading, perspectives: None, stop: None });
@@ -291,7 +298,7 @@ impl Mind {
             .iter()
             .map(|d| dialogue::ChartOf { inv: d.inv.clone(), have: sheaf::have(&atlas, &d.inv) })
             .collect();
-        let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
+        let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::BODY_BUDGET);
         self.ask(move |s| s.speak_keyed(&voice, request), move |entity, body| {
             entity.board.court.syncing = false;
             if let Ok(body) = body {
@@ -414,7 +421,7 @@ impl Mind {
                     eprintln!("  adopt refused: a word's record passes a length its field writes");
                     continue;
                 };
-                if used + bytes.len() > crate::network::wire::frame_budget() {
+                if used + bytes.len() > crate::network::wire::BODY_BUDGET {
                     break 'strata;
                 }
                 used += bytes.len();

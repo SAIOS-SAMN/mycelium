@@ -112,9 +112,14 @@ MU-PRODUCT and MU-XSEPTUM; this section is the order they are used in.
 
 ### 2.3 Perceive and produce
 
-The agent perceives what the hypha or its seat exports (a task's train
-pairs, a feed family, a seat's senses), and produces signed work: a solve,
-a word, a sentence, a rewrite, an attestation (MU-CLIENT §5).
+The agent perceives what the hypha or its seat exports (a task, a feed
+family, a seat's senses), and produces signed work: a solve, a word, a
+sentence, a rewrite, an attestation (MU-CLIENT §5). A task is a family of
+manifolds: each sample a manifold, each train pair two manifolds and the
+map between them that a rule reconstructs, and each test input a manifold
+whose map the court withholds (proposal 78.179 §3). What the agent asserts
+carries its evidence as the word's stalk, a sheaf over the word's star in
+the cover's nerve (78.179 §2).
 
 ### 2.4 Get paid
 
@@ -185,7 +190,16 @@ Concordance is the joining instrument.
 6. **Offer seats** (78.145; MU-CLIENT §6). The world model builds each
    seated agent's senses from its predicted state, and takes the agent's
    actions as the inputs it predicts the next state from. It may also run
-   resident minds in its own process (§5.1).
+   resident minds in its own process (§5.1). The house reads the takes and
+   calls in its mail by READ-MAIL. **READ-MAIL is a held read with no time
+   bound** (78.146 as amended, ruled 2026-10-17;
+   `src/bin/mycelium-server/deferred_reads.rs`). A read whose box holds
+   nothing past its cursor is answered at the court's next event: a seat
+   post filed on the relay, or the keeper signing its next TUniversal
+   reading. The hold reads no clock, so on a quiet relay it can stand for
+   any length of time. A house sets no read timeout on a READ-MAIL, or
+   treats a timeout as "nothing yet" and asks again. A read asked again
+   while one is held answers the earlier one (`sdk::house`; #133).
 7. **Uplink through its reserve** (Concordance 4.1; the boundary law,
    §5a). The universe's work reaches the court through its reserve tier's
    folds, open to challenge for the challenge window; a fold from any other
@@ -612,11 +626,15 @@ state with no exact representation does not cross.
 | Rings of inner routes read by holonomy at the vertex | **Built** | `server/cognition/ledger.rs` (`Obstruction`, `Court::admit_chained`) |
 | L0 verify as a reading a kernel asks for (`ACT_LAWS` modes 1 and 2) | **Built** | `physics::laws::verify_sized`; `judge/laws.rs` |
 | L0 applied at admission to the transitions a crossing states: a fold carries its transitions (`TierFold::transitions`, signed written out), and each, its carried lines' included, is reconstructed under L0 at `LAW_VERSION` (`verify_sized`) inside `Reconstructed::fold`; a breach is refused `Uplinked::NotLawful` (the fold's path, the transition's index, every breach with its law), a law unread answered `Uplinked::Unread` (neither admitted nor refused) | **Built** (v0.4.0, B3) | `court::admission::Reconstructed::fold`, `anastome::dialogue::uplink`; claims `crossing_refused_by_the_law_it_breaks`, `lawful_crossing_admitted` |
-| Motions stated as turns at admission (`verify_turns`) | **Specified**: a turn has no wire writing (its fields are read only by landing, MU-ANTI-FLATTENING 12); it rides the crossing record | Track 25, X1 |
+| Motions stated as turns at admission (`verify_turns`) | **In progress** (v0.5.0 draft, #160): a turn's writing is `(r, h)` with its winding `K` beside it, read only through `Turn::of` (`Turn::put`, `Turn::take`), and it rides the crossing record's motion; `verify_turns` at admission waits on the record's carriage by each universe act | Track 25, X1 |
 | Core-shell forms applied at admission | **Specified**: no crossing kind states a core form's object yet | §5a.9, B3 |
 | Draft-4 shared laws at the boundary | **Specified**; draft 4 approved 2026-11-05 (Concordance version 5). LAW-PASSAGE v3 (`FORMS-PASSAGE` v4, `Poles::cross`) is the first; no crossing kind states a passage yet (a mouth's frames are versors of its spaces), so none is reconstructed under it | Concordance §11, §12; ROADMAP track 24 B3 |
 
 ### 5a.4 Regulation: the Concordance signed
+
+How the Concordance becomes the engine's law, clause by clause, is
+described once, in [Concordance §0.2](MU-CONCORDANCE.md#02-how-the-concordance-rules-the-engines-laws-clause-by-clause);
+this section keeps the boundary's view and the build status of each part.
 
 The universal laws bind a universe at its boundary because its kernel
 signs the Concordance (§0 SIGNING). The signature is the kernel's
@@ -676,7 +694,8 @@ of the collision held as a residue (Concordance A7), never discarded. An
 act whose signature does not verify (`Malformed`, `Unsigned`) is no
 kernel's act and is recorded nowhere; a verdict the line cannot seal is
 answered `Unrecorded`, never as admitted. The reply waits until the
-receipt is durable (78.137). History is never rewritten: a re-signing is
+court holds the receipt (MU-ENGINEERING §8; the disk sync of 78.137 is the
+built state, retiring under #273). History is never rewritten: a re-signing is
 a new event.
 
 **The alignment reading (Built, v0.4.0; `ACT_LAWS` mode 9).** Alignment
@@ -704,10 +723,11 @@ candidate.
 **`NotSignatory` at the vertex (Built, B4).** Each universe act reads its
 domain's sitting reserve's alignment (one read per signing event of the
 reserve, never per receipt held, on the act's stroke; #118) before it
-seals; a key's own acts are never read. **Next:**
+seals; a key's own acts are never read. Each refusal at the tube stands
+on the boundary reading under `ACT_OBSERVE` (§5a.7, **Built**). **Next:**
 the tube between two universes bounded by the clauses both enabled (a
-mouth's far-end acceptance is not yet read), an act read under a changed
-clause as signed, and the boundary reading under `ACT_OBSERVE`.
+mouth's far-end acceptance is not yet read), and an act read under a
+changed clause as signed.
 
 ### 5a.5 The vertex: where a universe's cones join the hypha's
 
@@ -812,7 +832,7 @@ logs:
 | The named twists at each vertex (open obstructions), per domain | Rings of inner routes whose holonomy is not the identity, each with its exact lane vector | **Built** (`ChallengeRequest::Obstructions`, `Court::open_obstructions`) |
 | A fold's finality reading | Provisional or final, bonded or not | **Built** (`FinalityReading`) |
 | A universe's position and dilation from its anchors | Where it stands against TUniversal | **Built** (MU-CHRONOMETRY §3.3) |
-| The boundary reading: refusals at the universal core tube by name and by domain (`NotThroughCore`, `NotLawful`, `NotSignatory`) under `ACT_OBSERVE` | Where a universe's acts try to bypass the core, or fail the universal laws | **Specified** (B4) |
+| The boundary reading: refusals at the universal core tube by name and by domain (`NotThroughCore`, `NotSignatory`, `Bounded`, `Unaligned`, and a fold's `NotLawful`) under `ACT_OBSERVE`, one row per domain, act and name: the last refusal whole (the clause and the reserve's reading of it, or the laws broken), the court's height then, and the count since boot | Where a universe's acts try to bypass the core, or fail the universal laws | **Built** (B4; `observe::BoundaryReading`, tag 27, `--reading boundary`). Rows are kept only for domains the court holds |
 | Reconstruction events at the boundary: Collapse (a crossing admitted), Converse (two courts reconstruct one crossing, each from the evidence it holds), Collision (two crossings claim one structure, such as two folds over one head) | The boundary as reconstruction, read across a mesh | **Specified** (MU-SCIENCE §5.0; ROADMAP track 8) |
 | Each domain's signatory reading: the clause set its reserve signed (each clause's version, enabled or vetoed) and each divergence held | Which universes stand under which regulation, and which clauses each reads under an earlier version | **Specified** (B2) |
 | A tube's shared clauses: for a core tube between two universes, the clauses both enabled and each bound a veto sets | What the tube carries, and what it stops by name | **Specified** (B2) |
@@ -853,7 +873,7 @@ logs:
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
 | **B2** | Clause-by-clause signatures by adjudicated reading (each clause by its content, enabled or vetoed; the network clauses never vetoed; **Built**: the register, modes 7 and 8, `NotSignatory` at mode 8; each signing recorded on the ledger as `Cite::Signing` and the alignment reading on mode 9, §5a.4); `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/clauses/`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/persistence/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** (**Built**, the fold's transitions under L0) | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/court/admission/reconstructed.rs`, `src/server/cognition/cite.rs` | A wire change: a fold carries its transitions section, and `Uplinked` gains `NotLawful` (tag 11) and `Unread` (tag 12). No layout change: the receipt cites the fold's coordinates as before |
-| **B4** (**Built**: `NotThroughCore` and `NotSignatory` at the tube) | `NotThroughCore` naming the act and the domain; `NotSignatory` at the tube read from the alignment, a vetoed kernel clause bounding only what it governs; the boundary reading under `ACT_OBSERVE` and reconstruction events at the boundary with track 8 (open) | `src/court/admission/boundary.rs`, `src/server/cognition/boundary.rs`; `src/observe/`, `src/bin/mycelium-server/control.rs` for the reading | A wire change: each universe act's reply carries `Boundary` (§5a.5; MU-CONFORMANCE §2.2) |
+| **B4** (**Built**: `NotThroughCore` and `NotSignatory` at the tube; the boundary reading) | `NotThroughCore` naming the act and the domain; `NotSignatory` at the tube read from the alignment, a vetoed kernel clause bounding only what it governs; the boundary reading under `ACT_OBSERVE` (built); reconstruction events at the boundary with track 8 (open) | `src/court/admission/boundary.rs`, `src/server/cognition/boundary.rs` (`Court::at_tube`); `src/observe/boundary.rs`, `src/bin/mycelium-server/judge/observe.rs` for the reading | A wire change: each universe act's reply carries `Boundary` (§5a.5; MU-CONFORMANCE §2.2) |
 | **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |
 
 Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
@@ -1093,7 +1113,7 @@ carries four parts:
 | Part | What | Why the hypha needs it |
 |---|---|---|
 | Place | The event's TUniversal coordinates and its past cone (what it cites) | Where the event stands in the cones (§5a.5) |
-| Content | The exact object: each body held by its boundary (turn breakpoints per phase, extent as a share of the frame) and the motion from the state before to the state after, as a versor of `Cl(n+1, 1)`(ℚ), or as turns, each phase with its winding, where no exact versor exists (Niven) | What is reconstructed |
+| Content | The exact object: the frame's periods per phase, stated once; each body by its origin per phase and held by its boundary (turn breakpoints per phase, extent as a share of the frame); and the motion from the state before to the state after, as a versor of `Cl(n+1, 1)`(ℚ), or as turns, each phase with its winding, where no exact versor exists (Niven) | What is reconstructed |
 | Holonomy | Each ring the crossing closes, with its exact holonomy (§5a.3) | Curvature is content: a route's meaning |
 | Clauses | The clauses the act is read under, and the signatures (§5a.4) | Which laws the reconstruction applies |
 
@@ -1102,7 +1122,7 @@ the place, the content and the holonomy under the shared clauses. It
 admits the crossing only on reaching the same exact object
 ([MU-SCIENCE §5.0](MU-SCIENCE.md#50-reconstruction)). A crossing that
 carries only digests where the object belongs is refused **`AddressOnly`**
-(proposed name). The hypha may instead fetch the object by its address and
+(ruled, #160). The hypha may instead fetch the object by its address and
 reconstruct it.
 
 **The three senses of a digest.** A digest at the vertex has exactly
@@ -1129,7 +1149,11 @@ algebraically and holds it with the crossing:
 - **Motion:** the claimed versor composed with the reverse of the
   reconstructed one, `M̃_rec · M_claim`. It is the identity exactly when
   the two motions agree, and otherwise is a motion of its own, read by
-  its modes. For a turn, the residue is `t_claim − t_rec` in ℚ/ℤ.
+  its modes. For a motion stated as turns, the residue is
+  `t_claim − t_rec` per phase, with each side's winding `K` kept beside
+  its phase and never reduced mod 1 (LAW-COORDINATE v4 ruling (c);
+  `Turn::plus`, `Turn::winding`). A place on a phase has no winding, so a
+  place's residue is a phase alone (`Turn::less`).
 - **Bodies:** the boundary breakpoints that differ, named per phase,
   with the share of the frame they bound.
 - **Holonomy:** each ring whose holonomy differs, with both values.
@@ -1163,9 +1187,9 @@ proposed with the boundary reading (B4).
 | Admission taking only a reconstructed object (`Reconstructed<T>`): `admission::admit`, `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`, `Court::admit_backfill`, `ReceiptChain::admit_unreached`; a fold root as `Reconstructed<RootProof>` (`Reconstructed::root`), taken by `ReceiptChain::adopt_root` and `Court::reach_by_root` (#88) | **Built** | `src/court/admission/reconstructed.rs`; track 25, X0 |
 | The vertex's admissions (`Court::admit_uplink`, `admit_chained`, `admit_domain`) and `ReceiptChain::admit` taking `Reconstructed<T>`: a tier's fold and a domain's genesis are reconstructed by re-writing their signed bytes from their own coordinates and verifying the signature over them (`Reconstructed::fold`, `Reconstructed::domain`); `Court::hear_uplink` and `Court::hear_domain` reconstruct the act as heard and refuse `Unsigned` | **Built** | `src/court/admission/reconstructed.rs`, `src/server/cognition/cite.rs`; track 25, X0 |
 | A motion stated as turns, read by the Conformal law: one turn per phase of the frame, composed by addition with each phase's winding kept beside its phase (`Turn::plus`, `Turn::winding`; LAW-FIELD amendment (c)), each place carried phase by phase and a disagreement held as the residue `t_claim − t_rec` per phase (`TurnBreach::NotCarried`). No turn is converted to a rotor: only multiples of a quarter turn have exact rotors over ℚ (Niven), and every turn is checked as a turn. A turn whose index on its phase's period is no whole site leaves the frame's periods and is refused `LeavesPeriods`; a count of turns other than the frame's rank is refused `Rank` (`PlaceRank` for a place). In process and through the SDK; the wire is unchanged, and the motion as turns rides the crossing record (X1). Claims `conformal_accepts_turn_valued_motion`, `turn_motion_composes_by_addition`, `composed_turns_keep_their_winding`, `verify_turns_refuses_turn_leaving_frame_periods`, `verify_turns_names_residue_of_uncarried_place` | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)) | `src/physics/laws/turns.rs` (`verify_turns`, `TurnMotion`, `TurnTransition`, `TurnBreach`); `src/transducer/family/transduce/turn.rs` |
-| A restore as a reconstruction: `Court::reconstruct(self, &[u8]) -> Result<Reconstructed<Court>, RestoreRefusal>` reads a snapshot against the line and eras the court holds, under `Reconstructed::court`'s laws (each receipt re-derives, the line verifies on its root, each row continues its receipt), and refuses by name; the in-place `restore -> bool` is removed | **Built** (ruled on #28, 2026-11-06) | `src/court/admission/reconstructed.rs`, `src/server/cognition/persistence/read.rs`; track 25, X0 |
+| A restore as a reconstruction (the disk restore retires with MU-ENGINEERING §8; a restart then rejoins from peers by the same reconstruction): `Court::reconstruct(self, &[u8]) -> Result<Reconstructed<Court>, RestoreRefusal>` reads a snapshot against the line and eras the court holds, under `Reconstructed::court`'s laws (each receipt re-derives, the line verifies on its root, each row continues its receipt), and refuses by name; the in-place `restore -> bool` is removed | **Built** (ruled on #28, 2026-11-06) | `src/court/admission/reconstructed.rs`, `src/server/cognition/persistence/read.rs`; track 25, X0 |
 | The crossing's content (bodies, motion, holonomy) reconstructed at the vertex, not only its signature | **Specified** | Track 25, X2 |
-| The crossing record (place, content, holonomy, clauses) in the SDK and on the wire | **Specified** | Track 25, X1 (with B3) |
+| The crossing record (place, content, holonomy, clauses) in the SDK and on the wire. Ruled 2026-11-06 (#160): a body is a `TurnBody` (breakpoints per phase, an extent share); a ring's holonomy is a `Cl(n+1,1)`(ℚ) versor, always, a turn being a reading of it on a named plane; a ring is named by its vertices' coordinates written out in order around it from its least vertex (A21), its orientation kept, so a ring and its reverse are two names with inverse holonomies and a writing off the least start is refused `RingStart`; the past cone is the receipt's `parents`; the cited final points ride in the clauses; a turn is written `(r, h)` with its winding `K` beside it and read only through `Turn::of`; every universe act carries one; X1 is its own wire bump (v0.5.0, a recut). Ruled 2026-11-06 (#160, second ruling): the record is verifiable from itself alone, so its content states the frame's periods per phase once and each body's origin per phase beside its `TurnBody`; `verify_turns` runs at admission on those, and a record missing either is refused by name | **In progress** (draft, v0.5.0): the record and its writing (`anastome::dialogue::crossing_record`; claims `crossing_round_trips_exact_values`, `crossing_without_content_is_refused_address_only`, `ring_named_from_least_vertex_round_trips`, `reversed_ring_has_inverse_holonomy`, `ring_writing_off_least_start_is_refused`); the carriage on the seven universe acts in their signed bytes and on the wire (`crossing_record::crossed`, wire v3.0); admission by `Crossing::verify` (`NoFrame`, `NoPlace`, `Absent`, `Unpaired`, `Turns` with each breach), refused as `Boundary::Crossing` (claims `crossing_without_frame_or_place_is_refused_by_name`, `crossing_turns_are_read_by_the_conformal_law`, `crossing_refusal_round_trips_in_the_boundary`, `universe_act_with_unverified_crossing_refused_at_the_boundary`); `mycelium_sdk::forms` re-exports it | Track 25, X1 |
 | An inter-kernel traversal (two LAW-PASSAGE v3 passages composed at the vertex, one per throat, reconstructed as a LAW-COORDINATE v4 re-origin read twice; refused `NotThroughCore` outside the core) | **Proposed**: [proposal 78.176](proposals/78.176-law-traversal.md). Each kernel declares its polarity as data; the antipolar case keeps `z_k + q_k` per plane. Which kernel's core is the antipolar face of any given tube is not confirmed | ROADMAP track 24 B3 |
 | `AddressOnly`; the residue held with a refused or collided crossing | **Specified** | Track 25, X2–X3 |
 | Every site that admits on a digest alone, found and moved to reconstruction | **Specified** | Track 25, X4 |

@@ -5,13 +5,13 @@
 //!
 //! A back-filled receipt carries no signature of its own (47.2 step 3). It
 //! is admitted by its chain and STORED, because the catch-up links on
-//! through it: the next receipt of the page, the signed frame that closes
+//! through it: the next receipt of the page, the signed prefix that closes
 //! the gap, and the head the chase pages on from all read the stored line.
 //! The hash links and never admits (§5a.10), so the stored receipt is
 //! marked UNREACHED, held in `unreached` by its place on its signer's line.
-//! Its signer's signature reaches it only through a signed frame at or
+//! Its signer's signature reaches it only through a signed prefix at or
 //! above that place whose predecessor hashes link down to it. When such a
-//! frame is admitted (`sign_through`), every receipt held at or below it is
+//! prefix is admitted (`sign_through`), every receipt held at or below it is
 //! released in line order and read once (`read_reached`): the depth index,
 //! the stamp alias and the rulings waiting on it, a fold's shed, and a
 //! founding's reconstruction. Nothing else reads a back-filled receipt
@@ -22,7 +22,7 @@
 //! The held receipts are bounded by the process's capacity: each was one
 //! read of its page (78.153b), and the reads the process holds are
 //! `C = ⌊M_proc / b⌋` (MU-DERIVATIONS D2.5). A receipt past that is refused
-//! by name (`unreached_refusal`). A signed frame that contradicts what is
+//! by name (`unreached_refusal`). A signed prefix that contradicts what is
 //! held unreached on its line evicts the line's unreached top
 //! (`evict_contradicted`): nothing a signature reached is evicted.
 //!
@@ -40,7 +40,7 @@ use crate::court::admission::{Predecessor, Reconstructed};
 
 impl Court {
     /// A RECEIPT ADMITTED BY BACK-FILL, held by its place on its signer's
-    /// line until a frame the signer signed at or above that place is
+    /// line until a prefix the signer signed at or above that place is
     /// admitted.
     pub(crate) fn hold_unreached(&mut self, r: &KStepReceipt) {
         self.unreached.insert(Stamp::line_key(&r.stamp.vk, r.stamp.place()), r.clone());
@@ -58,10 +58,10 @@ impl Court {
         }
     }
 
-    /// WHERE A SIGNED FRAME CONTRADICTS ITS SIGNER'S LINE AS HELD UNREACHED:
-    /// the frame's own place, held unreached with another hash, or its
+    /// WHERE A SIGNED PREFIX CONTRADICTS ITS SIGNER'S LINE AS HELD UNREACHED:
+    /// the prefix's own place, held unreached with another hash, or its
     /// predecessor's place, held unreached with a hash other than the one
-    /// the frame names. `None` where nothing unreached contradicts it.
+    /// the prefix names. `None` where nothing unreached contradicts it.
     fn contradicted(&self, r: &KStepReceipt) -> Option<Place> {
         let vk = &r.stamp.vk;
         let at = r.stamp.place();
@@ -73,14 +73,14 @@ impl Court {
         (prev.at.vk == *vk && !Predecessor::named(&prev).continues(&Predecessor::of(named))).then_some(prev.at.place())
     }
 
-    /// MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: `r`, a frame its signer
+    /// MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: `r`, a prefix its signer
     /// signed, contradicts the signer's line where it is held unreached, so
     /// that stored line is not the signer's above the last place a
     /// signature reached. Its unreached top leaves the chain and the gate:
     /// every receipt of the line, from its top down, while it is held
     /// unreached. A receipt a signature reached ends the walk and stays, so
     /// the reached part of the line only ever moves forward. Answers how
-    /// many receipts left. The frame is taken reconstructed: a receipt
+    /// many receipts left. The prefix is taken reconstructed: a receipt
     /// whose chain hash does not re-derive evicts nothing (§5a.10).
     pub(crate) fn evict_contradicted(&mut self, r: &Reconstructed<KStepReceipt>) -> usize {
         if self.contradicted(r).is_none() {
@@ -106,12 +106,12 @@ impl Court {
     }
 
     /// The receipt held at `at` on `signer`'s line, where it waits for a
-    /// signature: a back-filled receipt no signed frame has reached.
+    /// signature: a back-filled receipt no signed prefix has reached.
     pub(crate) fn unreached_at(&self, signer: &[u8; 32], at: Place) -> Option<&KStepReceipt> {
         self.unreached.get(&Stamp::line_key(signer, at))
     }
 
-    /// A FRAME `signer` SIGNED AT `upto`, admitted here: every receipt of
+    /// A PREFIX `signer` SIGNED AT `upto`, admitted here: every receipt of
     /// the signer's line at or below it that waited for a signature is
     /// released and read, in line order.
     pub(crate) fn sign_through(&mut self, signer: &[u8; 32], upto: Place, budget: &mut crate::physics::Budget) {
@@ -195,10 +195,12 @@ impl Court {
     /// the depth index, the stamp alias (and the rulings waiting on the
     /// stamp it files), the fold root where it is a fold and the peers'
     /// folded lines it sheds, and the domain registries where it names a
-    /// founding. On the stroke of the act that admitted the signed frame
+    /// founding. On the stroke of the act that admitted the signed prefix
     /// (65.5).
     fn read_reached(&mut self, r: &KStepReceipt, budget: &mut crate::physics::Budget) {
         self.note_attestor(r);
+        // §3.4 — a back-filled seal is read once its signature reaches it.
+        self.note_points(r);
         self.alias_admitting(r, budget);
         self.settle_own_attestation(r);
         if r.kind == crate::chronometry::ActKind::Fold {
@@ -214,9 +216,9 @@ impl Court {
     /// above its place, since a parent is cited only after it was admitted
     /// under its signature (45.2) and back-fill never cites. Every other
     /// peer receipt held is marked unreached and waits for the next signed
-    /// frame of its signer. A frame admitted under its signature and not
+    /// prefix of its signer. A prefix admitted under its signature and not
     /// yet cited reads as unreached here, and is read again when its
-    /// signer's next frame is admitted.
+    /// signer's next prefix is admitted.
     pub(crate) fn hold_unreached_at_restore(&mut self) {
         let mut reach: crate::network::nerve::Keyed<Place> = crate::network::nerve::Keyed::new();
         for r in self.chain.own() {

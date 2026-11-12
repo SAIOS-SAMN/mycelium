@@ -183,7 +183,7 @@ fn extract_rule_cached_never_keeps_none() {
 #[test]
 fn extraction_spend_includes_transduction_need() {
     let contacts = |frames: &Frames| -> usize {
-        frames.iter().map(|(i, o)| (i.len() + o.len()) * 3 * crate::transducer::blade::CANDIDATES_PER_PAIR).sum()
+        frames.iter().map(|p| (p.input.len() + p.output.len()) * 3 * crate::transducer::blade::CANDIDATES_PER_PAIR).sum()
     };
     let scaled = vec![(digits(&["10", "00"]), digits(&["1100", "1100", "0000", "0000"]))];
     let frames = perceive_family(&scaled);

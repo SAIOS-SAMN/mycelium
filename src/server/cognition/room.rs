@@ -346,7 +346,7 @@ impl Court {
             None => [0; 4],
         };
         let owed: [bool; 4] = match self.recall_short.get(voice) {
-            Some(o) => std::array::from_fn(|l| !num_traits::Zero::is_zero(o.lane(l))),
+            Some(o) => std::array::from_fn(|l| !num_traits::Zero::is_zero(&o.lane(l))),
             None => [false; 4],
         };
         let bonded = self.lane_cap.is_some() || self.treasury.bond_of(voice).is_some();
