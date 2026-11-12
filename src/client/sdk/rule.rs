@@ -571,7 +571,7 @@ pub(crate) fn would_judge_with(
     if element::Held::of(rule.clone()).form().is_none() {
         return Err(NoRule::NotASentence);
     }
-    if let Some(unheld) = rule.receipts().cited_addresses().into_iter().find(|a| resolve(a.as_bytes()).is_none()) {
+    if let Some(unheld) = rule.stalk().cited_addresses().into_iter().find(|a| resolve(a.as_bytes()).is_none()) {
         return Err(NoRule::CitesUnheld(unheld.as_bytes().to_vec()));
     }
     match crate::verdict::reconstruct_blind_at(rule, resolve, Some(family), crystal, budget) {

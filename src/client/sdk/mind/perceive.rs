@@ -841,7 +841,8 @@ impl Mind {
     /// (`speak_factorisations`; track 26 S4c). A family the transduction
     /// refuses (samples of two ranks, a stroke spent) holds no percept and
     /// is still offered to the section.
-    pub(crate) fn perceive_envelope(&mut self, env: &crate::anastome::dialogue::TaskEnvelope, reading: SceneKind) -> Option<crate::anastome::dialogue::TaskSection> {
+    /// The mind perceives the task: its argument is the TaskFamily (78.179 §3).
+    pub(crate) fn perceive_task(&mut self, env: &crate::anastome::dialogue::TaskFamily, reading: SceneKind) -> Option<crate::anastome::dialogue::TaskSection> {
         use crate::transducer::family::transduce::{factorisations_need, TaskPercept};
         // The stroke is the work's need (D2.5 O1): one read per motion of
         // each pair, at the samples' own rank.
@@ -919,7 +920,10 @@ impl Mind {
                 let stop = match refused {
                     true => Stop::RefusedBefore,
                     false => match self.submit_solve_rule(&id, &j.outputs, &rule, &j.ground) {
-                        Ok(()) => Stop::Sent,
+                        Ok(()) => {
+                            self.contemplation.release_scene(&id);
+                            Stop::Sent
+                        }
                         Err(_) => Stop::Unsubmitted,
                     },
                 };

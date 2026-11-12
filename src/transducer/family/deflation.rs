@@ -257,7 +257,7 @@ fn form_deflation_read_on_ground(
             unresolved.extend(s.unresolved.iter().cloned());
             cycled.extend(s.cycled.iter().cloned());
         }
-        let Ok((closed, after_chain, gated)) = pair_measure_read(form, x, y, spoken.as_ref()) else {
+        let Ok((closed, after_chain, gated, shell_and_creation)) = pair_measure_read(form, x, y, spoken.as_ref()) else {
             ungrounded.push(pi);
             remainders.push(Vec::new());
             continue;
@@ -271,29 +271,38 @@ fn form_deflation_read_on_ground(
         // the output frame.
         mu.step(&crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())));
         if gated {
+            // #256 (ruled 2026-11-11): what the pair's S and H moved, held at
+            // their own modes, never the founding mode.
+            modes.add(&shell_and_creation);
+            // 78.174 §1 item 9 (operator, 2026-11-05); MU-ENGINEERING §9.3:
+            // A MODE'S AMOUNT IS ITS SHARE OF THE ENCLOSURE, never the mass
+            // carried. A hue map's modes are read at the pair's G share, the
+            // share of the enclosure recoloured (a recolour pays G by its
+            // share), whether or not the pair carried mass: a recolour moves
+            // no site, so it carries none, and is still the hue map's work.
+            let hue_share = crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())).lane(1).clone();
+            if num_traits::Signed::is_positive(&hue_share) {
+                for (_, gauge) in &moved {
+                    if let Some(gs) = crate::economy::modes::Modes::of_gauge(gauge, &hue_share) {
+                        modes.add(&gs);
+                    }
+                }
+            }
             // The pair's own work: the links its before side demanded moved
-            // (𝒮), the mass the rule's motions carried on it.
+            // (𝒮), the mass the rule's motions carried on it. A motion's
+            // modes are read at the share of the output enclosure the
+            // carried mass covers (its measure at rank n).
             if let Some(m) = pair_mass(x, y).ok().flatten() {
                 carried_mass = carried_mass.and_then(|c| c.checked_add(m));
-                // 78.174 §1 item 9 (operator, 2026-11-05); MU-ENGINEERING §9.3:
-                // A MODE'S AMOUNT IS ITS SHARE OF THE ENCLOSURE, never the mass
-                // carried. A motion's modes are read at the share of the output
-                // enclosure the carried mass covers (its measure at rank n);
-                // a hue map's at the pair's G share, the share of the enclosure
-                // recoloured (a recolour pays G by its share).
                 let enclosure_share = crate::transducer::family::transduce::share_of_enclosure([m, 0, 0, 0], Some(y.sample())).lane(0).clone();
-                let hue_share = crate::transducer::family::transduce::share_of_enclosure(closed, Some(y.sample())).lane(1).clone();
                 mass_share += &enclosure_share;
-                for (motion, gauge) in &moved {
+                for (motion, _) in &moved {
                     // D2.5 — the stroke is the need of the modes it reads
                     // (`cga::modes_need`, D3.1); a motion with no need reads
                     // no modes.
                     let need = crate::transducer::cga::modes_need(motion);
                     if let Some(ms) = need.and_then(|n| crate::economy::modes::Modes::of_motion(motion, &enclosure_share, &mut crate::physics::Physics::default().stroke_n(n))) {
                         modes.add(&ms);
-                    }
-                    if let Some(gs) = crate::economy::modes::Modes::of_gauge(gauge, &hue_share) {
-                        modes.add(&gs);
                     }
                 }
             }
@@ -431,8 +440,9 @@ fn rule_flux(form: &Form, mass: u64) -> Option<u64> {
     Some(r.transport[crate::transducer::sentence::presentation::LANE_T])
 }
 
-/// One pair's pay, remainder and closure-gate reading.
-type PairMeasure = ([u64; 4], crate::transducer::germinate::ResidueGerm, bool);
+/// One pair's pay, remainder and closure-gate reading, and the S and H modes
+/// its demanded chain moves (#256).
+type PairMeasure = ([u64; 4], crate::transducer::germinate::ResidueGerm, bool, crate::economy::modes::Modes);
 
 /// ONE PAIR OF THE DEFLATION, from the speech already taken on it: what the
 /// pair pays (zero where the gate below withholds it), its remainder, and
@@ -459,8 +469,8 @@ fn pair_measure_read(
     // its closed words achieved: `deflation_of(lane_moves(after, before))`.
     let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
     Ok(match after_chain.is_empty() || form.demand_vertices().next().is_some() {
-        true => (closed, after_chain, true),
-        false => ([0; 4], after_chain, false),
+        true => (closed, after_chain, true, element::chain_modes(&before_chain)),
+        false => ([0; 4], after_chain, false, crate::economy::modes::Modes::new()),
     })
 }
 
@@ -628,7 +638,7 @@ fn mint_or_refuse(
     // on the unchecked word that a demand vertex acts on nothing.
     let held = crate::transducer::sentence::held_form(
         &crate::transducer::sentence::form_vertex_key(form),
-        &crate::transducer::element::ReceiptsEnvelope::of_form(form),
+        &crate::transducer::element::WordStalk::of_form(form),
     )
     .ok_or(ObstructionRefusal::MintAddressUndecoded)?;
     let read = form_deflation_read(&held, family, crystal, &here);

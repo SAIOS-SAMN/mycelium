@@ -51,6 +51,9 @@ pub struct SeatMind {
     /// rides the claiming form's tape (`claim`, A20.2). A refused or
     /// abandoned call moved nothing, and its certificate is let go.
     pub(crate) certified: Keyed<PivotCertificate>,
+    /// #147 — A certified move from the drive's escaping-orbit play, ready
+    /// to be carried by the next choice.
+    pub(crate) drive_certificate: Option<Box<PivotCertificate>>,
 }
 
 impl SeatMind {
@@ -74,7 +77,24 @@ impl SeatMind {
             repertoire: Vec::new(),
             own: Keyed::new(),
             certified: Keyed::new(),
+            drive_certificate: None,
         }
+    }
+
+    /// #147 — ATTACH A CERTIFIED MOVE FROM ESCAPING-ORBIT PLAY: carried by
+    /// the mind's next choice.
+    pub fn attach_drive_certificate(&mut self, cert: PivotCertificate) {
+        self.drive_certificate = Some(Box::new(cert));
+    }
+
+    /// The drive certificate ready to be carried by the next choice, if any.
+    pub fn drive_certificate(&self) -> Option<Box<PivotCertificate>> {
+        self.drive_certificate.clone()
+    }
+
+    /// Take the drive certificate held on this seat mind.
+    pub fn take_drive_certificate(&mut self) -> Option<Box<PivotCertificate>> {
+        self.drive_certificate.take()
     }
 
     /// #147 — THE CALL `reference` NAMES A CERTIFIED MOVE: its certificate
@@ -203,7 +223,7 @@ impl SeatMind {
                         }
                         // THE SEAT'S BOUND: what one frame could carry of its
                         // values, shared among the series it holds.
-                        let bound = crate::network::wire::frame_budget() / self.series.len().max(1);
+                        let bound = crate::network::wire::BODY_BUDGET / self.series.len().max(1);
                         if let Some(s) = self.series.get_mut(&key) {
                             s.observe(p.seq, at.clone(), a.clone(), bound);
                         }

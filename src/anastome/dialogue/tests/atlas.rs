@@ -46,10 +46,9 @@ fn ledger_entry_round_trips_and_verifies() {
     }
     let bare = LedgerEntry { domain: [6; 32], u: 1, commitment: [0; 32], events: [0; 32], point: at(1), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
     let mut frame = encode_ledger(&bare.clone().sign(still(), &key(30)).expect("signs")).expect("encodes");
-    // The point: genesis, epoch, h, four whole lanes `n/1` (a sign byte, then
-    // one limb by count for each of n and 1: 19 bytes a lane), K; then the
-    // crossing as it writes itself.
-    let point = 32 + 4 + 8 + 4 * 19 + 8;
+    // The point as it writes itself (genesis, epoch, h, its lanes' modes,
+    // K); then the crossing as it writes itself.
+    let point = at(1).to_bytes().len();
     let mut crossing = Vec::new();
     still().put(&mut crossing).expect("written");
     assert_eq!(frame.len(), 1 + 32 + 2 + 1 + 8 + 32 + 32 + point + 32 + 32 + crossing.len() + 64, "the ruled bytes exactly");
@@ -79,7 +78,7 @@ fn map_act_round_trips_with_reading() {
     use crate::transducer::cga::{base_vector, translator_at, Mv};
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let (f0, f1) = (translator_at(&[n(32), n(-17), n(0)]), translator_at(&[n(5), n(4), n(0)]));
-    let local = MapRecord::LocalThroat { throat: [4; 32], keeper: [2; 32], frames: (f0.clone(), f1.clone()), freshness: 6 };
+    let local = MapRecord::LocalThroat { throat: [4; 32], keeper: [2; 32], poses: (f0.clone(), f1.clone()), freshness: 6 };
     let records = [
         MapRecord::Mouth { place: ([3; 32], 1), freshness: 8 },
         MapRecord::Segment { kind: Segment::Throat, a: ([3; 32], 0), b: ([3; 32], 1), span: (11, 4), keeper: Some([2; 32]) },
@@ -98,7 +97,7 @@ fn map_act_round_trips_with_reading() {
     let mut body = Vec::new();
     local.put(&mut body);
     let mut p = 0;
-    let Some(MapRecord::LocalThroat { throat, keeper, frames: (b0, b1), freshness }) = MapRecord::take(&body, &mut p) else { panic!("a local throat") };
+    let Some(MapRecord::LocalThroat { throat, keeper, poses: (b0, b1), freshness }) = MapRecord::take(&body, &mut p) else { panic!("a local throat") };
     assert_eq!((throat, keeper, freshness, p), ([4; 32], [2; 32], 6, body.len()));
     assert!(b0.sub(&f0).is_zero() && b1.sub(&f1).is_zero(), "the frames exactly");
     let mut material = [6u8; 32].to_vec();

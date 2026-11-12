@@ -85,7 +85,7 @@ impl Mind {
         }
     }
 
-    /// A CLOSED QUESTION'S FRAMES, kept under its key beside its residue.
+    /// A CLOSED QUESTION'S DELIMITED, kept under its key beside its residue.
     pub(crate) fn keep_closed_frames(&mut self, key: &[u8], residue: &Mv, frames: Vec<Vec<u8>>) {
         if !frames.is_empty() {
             self.closed_answers.insert(key, Closed { residue: residue.clone(), frames });

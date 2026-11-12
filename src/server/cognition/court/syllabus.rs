@@ -191,7 +191,7 @@ impl Court {
     /// 2026-09-29): the candidates are the order after a voice's cursor, in
     /// ruling order; each is served while two walls stand, the first to
     /// fall ending the page:
-    /// - the FRAME: the page's bytes, `Stamp::LEN + 4 + tape` per word,
+    /// - the BUDGET: the page's bytes, `Stamp::LEN + 4 + tape` per word,
     ///   within `bytes`;
     /// - the COUNT the wire carries (`u8`), so no page is built that the
     ///   encoder then refuses after its receipts are sealed.
@@ -222,7 +222,7 @@ impl Court {
         }
         let end = match page.end {
             PageEnd::Order => "ended: order",
-            PageEnd::Budget => "ended: frame",
+            PageEnd::Budget => "ended: budget",
             PageEnd::Count => "ended: count",
         };
         count(t, &SYLLABUS, end);
@@ -269,7 +269,7 @@ impl Court {
                         self.note_deferred(address, kind, mag, &depleted, Some(voice));
                         page.deferred.push((address.clone(), depleted));
                     }
-                    Learner::Frame => {
+                    Learner::Budget => {
                         page.end = PageEnd::Budget;
                         return page;
                     }
@@ -303,7 +303,7 @@ impl Court {
                 page.consumed += 1;
                 continue;
             }
-            // Paid: now the tape, and the frame's room for it.
+            // Paid: now the tape, and the envelope's room for it.
             let Some(tape) = self.installed_word(address).and_then(|w| w.to_bytes()) else {
                 self.physics.reserve.restore(mag);
                 page.missed.push(address.clone());
@@ -552,7 +552,7 @@ impl Court {
 
     /// ONE SENTENCE TAUGHT AT ITS LEARNER'S EXPENSE: the voice's balance
     /// read first — a short voice waits, nothing written — then the tape and
-    /// the frame's room, the Syllabus act sealed, and the gluing step paid
+    /// the envelope's room, the Syllabus act sealed, and the gluing step paid
     /// from the voice to this court at that act. A step of nothing is free.
     fn serve_paid_by_learner(&mut self, address: &[u8], cost: [u64; 4], voice: [u8; 32], bytes: usize, used: usize) -> Learner {
         let balance = self.treasury.balance_mu(&voice);
@@ -569,7 +569,7 @@ impl Court {
         let Some(tape) = self.installed_word(address).and_then(|w| w.to_bytes()) else { return Learner::Missed };
         let width = crate::chronometry::Stamp::LEN + 4 + tape.len();
         if used + width > bytes {
-            return Learner::Frame;
+            return Learner::Budget;
         }
         self.deferred_words.remove(address);
         let Some(at) = self.note_served(address, voice) else { return Learner::Missed };
@@ -712,7 +712,7 @@ impl Court {
         let Some(w) = self.installed_word(address).filter(|w| w.is_sentence()) else { return mag };
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut held = [0u64; 4];
-        for c in w.receipts().cited_addresses() {
+        for c in w.stalk().cited_addresses() {
             if c.as_bytes() == address || seen.contains(c.as_bytes()) {
                 continue;
             }
@@ -794,7 +794,7 @@ fn classes_of(
 enum Learner {
     Served(crate::anastome::dialogue::Taught, usize),
     Short(crate::physics::Depleted),
-    Frame,
+    Budget,
     Missed,
 }
 

@@ -6,7 +6,7 @@
 //! The counters are the relay's own (`cognition::seat::SeatRelay`), volatile
 //! as it is, and bounded as it is: a domain is counted only once it has a
 //! reserve here, so the domains counted are the domains founded. A post
-//! naming a domain with no reserve, and a seat frame that does not read far
+//! naming a domain with no reserve, and a seat act that does not read far
 //! enough to name a domain, are each one count apart.
 
 /// THE KINDS A POST IS FILED UNDER, in the order the counts are kept.
@@ -28,7 +28,7 @@ pub struct RelayPosts {
 /// THE SEAT RELAY AT THE QUESTION: its epoch and last sequence, the
 /// listings, boxes and pieces it holds and the bytes of each, the pieces dropped
 /// at the bound; the posts naming a domain with no reserve (`unknown`) and
-/// the seat frames that did not read (`unread`); and each counted domain's
+/// the seat acts that did not read (`unread`); and each counted domain's
 /// posts, in domain order.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Relay {

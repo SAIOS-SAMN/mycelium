@@ -210,14 +210,14 @@ pub(crate) fn level_in(space: &Geometry, mass: &num_rational::BigRational) -> Op
 /// with its RATIO `r / π`, the UPPER bound, which a fitting throat keeps below
 /// `1`. `(level, ratio)`; `None` for a non-positive mass or radius.
 pub fn sphere_throat(m: &num_rational::BigRational, radius: &num_rational::BigRational) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-    use crate::core::certified::{cos, pi, Encl};
+    use crate::core::certified::{cos, pi, Certified};
     use num_traits::Signed;
     if !m.is_positive() || !radius.is_positive() {
         return None;
     }
     let r = num_rational::BigRational::from_integer(2.into()) * m / radius;
-    let level = cos(&Encl::exact(r.clone()), THROAT_LEVEL_BITS).lo;
-    let ratio = Encl::exact(r).div(&pi(THROAT_LEVEL_BITS))?.hi;
+    let level = cos(&Certified::Exact(r.clone()), THROAT_LEVEL_BITS).lo().clone();
+    let ratio = Certified::Exact(r).div(&pi(THROAT_LEVEL_BITS))?.hi().clone();
     Some((level, ratio))
 }
 
@@ -241,7 +241,7 @@ pub fn throat_level(m: &num_rational::BigRational, curvature: &num_rational::Big
         return None;
     }
     let r = num_rational::BigRational::from_integer(2.into()) * m / curvature;
-    Some(crate::core::certified::cosh(&crate::core::certified::Encl::exact(r), THROAT_LEVEL_BITS).hi)
+    Some(crate::core::certified::cosh(&crate::core::certified::Certified::Exact(r), THROAT_LEVEL_BITS).hi().clone())
 }
 
 /// 78.140 — A THROAT IN A FLAT TORUS FACE: the horizon is the sphere of
@@ -648,7 +648,7 @@ impl Court {
                     return refuse(R::Degenerate);
                 }
                 // 78.134 — A MOUTH IS A TUBE between two places, never two
-                // free frames: its mass and spaces well formed, each frame a
+                // free poses: its mass and spaces well formed, each pose a
                 // motion of its own end's space (78.140: `ℍ³` or a torus),
                 // its throat fitting both faces, and a mouth it supersedes an
                 // open untethered one of the same pair.

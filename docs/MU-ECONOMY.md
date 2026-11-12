@@ -91,14 +91,29 @@ on the lane its kind names, each with an exact rational amount:
 - on H, a rotation on a named plane (its generator's ray), its angle the
   exact degrees `360°·t/ℓ` the motion traversed (MU-EQUATIONS §6.11).
 
+Two further modes hold what a closure moves that no motion names (ruled
+2026-11-11, #256; 78.182 item 2):
+- on S, a **symbol created from the ground**,
+  `SymbolCreation { from_ground, to_symbol, forward }`: the move between
+  the ground and a symbol, `forward` a creation and its reverse an erasure,
+  as G holds a hue move;
+- on H, a **shell by its boundary class**,
+  `ShellBoundary { boundary_class }`: the closed shell's signature, its
+  components and its boundary's length, at the shell count it changed.
+
+Live closures are never held at the founding mode, which is for genesis
+and bootstrap endowment only (§2.5). A closure's S and H shares are set on
+these modes (`element::chain_modes`, `Mu::carried_by`).
+
 A holding holds its modes, each keyed by its canonical coordinates (A21).
 A payment adds modes; a draw removes modes or is refused naming the mode
 it lacks. A per-lane draw takes that lane's modes in proportion to their
 amounts, and never another lane's (§2.5). Nothing is projected to a count (MU-RECURSION 78.162). The carrier
 is `economy::modes::Modes` (`src/economy/modes.rs`): add, a draw refused
 naming the mode short (`Short`), the modes of a motion
-(`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), and the
-canonical codec. `economy::Mu`, four scalars with one per lane, is the
+(`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), the founding
+mode of a lane (`Mode::Founding`, `Modes::founding`; §2.5), the per-lane
+draw in proportion (`Modes::draw_lane`; §2.5), and the canonical codec. `economy::Mu`, four scalars with one per lane, is the
 projection this paragraph forbids. It is built today and retired in
 v0.5.0 (§9).
 
@@ -698,7 +713,11 @@ are ratios the physics already reads, studied off the wire and never tuned
 on it:
 - price against pressure: a listing's price is its own measure, and the
   court's read price per unit of gas is `1 + y_l/R` (§7.1);
-- bond against cover room;
+- bond against exposure (ruled 2026-11-11, #237; 78.182 item 1): a carried
+  line is admitted only while its tier's bond covers its exposure on every
+  lane, `B_l ≥ X_l`, the `X` the slash reads, and is refused
+  `Underbonded { lane, bond, exposure }` otherwise; the bond's strain reads
+  the same `X`;
 - verification's share of a release, `y/(y + R)` per lane (§5.1);
 - slash against bond: a falsified fold's tier forfeits `B·X/(B + X)` per
   lane, its exposure `X` against its bond `B`, and the challenger is paid
@@ -713,7 +732,7 @@ lane. It is the implementation v0.5.0 replaces, part by part:
 
 | Built today | Where | v0.5.0 |
 |---|---|---|
-| `economy::Mu`: four exact non-negative rationals, one per lane, for every amount. Exact add, a draw refused naming the first short lane (`MuRefusal::Short`), shortfall, cap, `split_at`, `part`, `lane_moves`, `Mu::counts` for `n/1`. Codec `Mu::put`/`Mu::take` (a sign byte, then numerator and denominator limbs; a negative lane or one not in lowest terms refused), used by the entries, the snapshot and every wire field carrying μ (`WIRE_VERSION` `0x0200`) | `src/economy/mu.rs` | Retired: every amount is `Modes`, and the wire and snapshot carry the `Modes` codec |
+| `economy::Mu` over `economy::modes::Modes` (#169 step 3): every amount holds its modes, the lanes' vectors by their components. What no motion made sits at each lane's founding mode (§2.5). A lane's whole (`Mu::lane`) and every comparison against an ask, a room or a cap (`shortfall`, `capped`, `lane_moves`) are readings. A draw takes each lane from that lane's modes in proportion, and the modes drawn travel with the transfer (`Mu::draw_out`, `Treasury::debit`). Codec: the `Modes` codec, on the entries, the snapshot (`MYT4`), the keeper record (v3) and every wire field carrying μ | `src/economy/mu.rs`, `src/economy/modes.rs` | The name `Mu` retires into `Modes` once mints carry their proofs' modes (step 3b) and the readings stand apart (step 2) |
 | `economy::modes::Modes`: the modes of a closure (`DeflationRead::modes`), carried behind a paid solve verdict (`encode_solve_verdict`) | `src/economy/modes.rs`, `src/transducer/family/deflation.rs`, `src/anastome/dialogue/percept.rs` | The carrier of every holding's lanes (§1, §2.2) |
 | `Treasury`: the journal `entries`, keyed `balances`, `stakes`, `escrowed` and `held`, the folded `issued` and `burned`, and `bond_total`; `balance_mu`, `account`, `bond_of`, `stake_of` | `src/economy/treasury.rs` | Holdings as coordinates on the signers' lines; balances read over the cones, never stored (§2, §6) |
 | `Entry { kind, who, mu, at, receipt, arm }`, its `Anchor` (a stamp and its chain hash), and `Kind`'s eleven entry kinds: `Genesis`, `Mint`, `Stake`, `Unstake`, `Transfer`, `Escrow`, `Release`, `Revoke`, `Slash`, `Burn`, `Epoch`; persisted by `Entry::write` and `Entry::read` | `src/economy/treasury.rs`, `src/economy/persist.rs` | Events with cited causes (§2.4); what an entry kind names becomes what the event cites |
@@ -898,7 +917,7 @@ mint found when partitions rejoin is burned (§3.4). Tests:
 **F3. The frontier reading** (Medium; reading only; track 9).
 `ACT_OBSERVE` reading `frontier`: per open task, its citation, its ask
 per lane and its obstruction kind if a refusal stands on it, paged to the
-frame budget; served by the SDK as `Session::frontier()`. No μ and no
+body budget; served by the SDK as `Session::frontier()`. No μ and no
 admission effect. Tests: `frontier_lists_open_tasks_by_lane`,
 `frontier_omits_closed_tasks`, `frontier_pages_to_frame_budget`.
 

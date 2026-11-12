@@ -5,7 +5,7 @@
 //! [--reading NAME]` asks one hypha (the
 //! home's own bind by default) for every reading it holds, renders it once
 //! and exits. It reads no clock (law 9): a live view is the operator's
-//! `watch -n 5 mycelium-server --console`, and each frame is one question.
+//! `watch -n 5 mycelium-server --console`, and each refresh is one question.
 //!
 //! WHAT IT SHOWS, per court, each reading in its own coordinates (a mind
 //! reports nothing about itself):
@@ -17,12 +17,12 @@
 //!   source by its height with its own `K` beside it, and the spread.
 //! - CLOCK — per court: its genesis, per-peer heights and gaps, where its
 //!   snapshot and last fold stand, and the three counts (acts sealed without
-//!   a frame, words held without a stamp by row, rulings admitted against
+//!   a measure, words held without a stamp by row, rulings admitted against
 //!   applied).
 //! - COURT — the court's `K`, basis, treasury and the acts it served.
 //! - PHASE — the court's last phase window and adjoined-by-closure (PH5).
 //! - CARRIAGE — the bytes per award, per receipt delta by act kind and per
-//!   frame by act tag, and the largest of each (LD1).
+//!   envelope by act tag, and the largest of each (LD1).
 //!
 //! CQ1 — `--court HEX` (a key or a hex prefix of it) asks one source's
 //! fibre, and `--reading NAME` one kind of reading: the hypha serves only
@@ -134,7 +134,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
         println!("{RED}{endpoint} answered with no reading this build reads{RESET} ({} bytes)", reply.len());
         std::process::exit(2)
     };
-    // What the frame budget cut stays said after the kind is kept.
+    // What the body budget cut stays said after the kind is kept.
     // In the count's own carrier: `held` is the reply's entries, and the
     // arithmetic is exact or the line says it could not count.
     let cut = u64::from(total).abs_diff(held.len() as u64);
@@ -231,7 +231,7 @@ pub(crate) fn render(endpoint: &str, total: u64, held: &[observe::KeyedReading])
         sources.len()
     )];
     if (held.len() as u64) < total {
-        lines.push(format!("{YELLOW}the reply held {} of {total}: the frame budget cut it{RESET}", held.len()));
+        lines.push(format!("{YELLOW}the reply held {} of {total}: the body budget cut it{RESET}", held.len()));
     }
     lines.extend(tuniversal(&sources));
     for (source, readings) in &sources {
@@ -482,7 +482,7 @@ fn clock(c: &observe::Clock) -> Vec<String> {
                 }),
                 format!("  {BOLD}persisted{RESET}   {}", since(c.persisted, h, c.k)),
                 format!("  {BOLD}folded{RESET}      {}", since(c.folded, h, c.k)),
-                format!("  {BOLD}unframed{RESET}    {}", flag(c.unmeasured > 0, format!("{} acts sealed on a word nothing measured", c.unmeasured))),
+                format!("  {BOLD}unmeasured{RESET}  {}", flag(c.unmeasured > 0, format!("{} acts sealed on a word nothing measured", c.unmeasured))),
                 format!("  {BOLD}unstamped{RESET}   {}", flag(ub + up + ul + uc + uf > 0, unstamped)),
                 format!("  {BOLD}economy{RESET}     {rulings}"),
             ]
@@ -651,7 +651,7 @@ fn carriage(c: &observe::CarrierTally) -> Vec<String> {
                 Some(k) => String::from_utf8_lossy(k.name()).into_owned(),
                 None => format!("kind {kind}"),
             },
-            observe::CARRIER_FRAME => format!("act {kind:#04x}"),
+            observe::CARRIER_DELIMITED => format!("act {kind:#04x}"),
             _ => String::new(),
         }
     };

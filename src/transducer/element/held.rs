@@ -87,7 +87,7 @@ impl Held {
     /// its genome (LC1), and the two cannot disagree about what counts.
     pub fn generators_opened(&self) -> u64 {
         let Some(f) = self.form() else { return 0 };
-        let env = self.element().receipts();
+        let env = self.element().stalk();
         f.vertices
             .scoped()
             .filter(|(_, v)| match v {

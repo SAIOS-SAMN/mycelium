@@ -3,7 +3,7 @@
 //! 19 — THE FORM'S MINT AND ITS DECODER FROM THE ADDRESS (TN1, 78.34:
 //! "tape" names a word's letter tape and nothing else; this module was
 //! `sentence/tape.rs`). A sentence mints no tape (54.7 B6): the address IS
-//! the form (law 2), the evidence the key excludes rides `ReceiptsEnvelope`,
+//! the form (law 2), the evidence the key excludes rides `WordStalk`,
 //! and `from_element_form` reads the form back out of the address. The form
 //! tape's codec — `encode_form_v2` / `decode_form_v2` and the primitives of both
 //! in `sentence/codec.rs` — was read at runtime only by the contemplation's
@@ -190,7 +190,7 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // form as bytes, and that buffer was the word's identity, its kind and
     // its decoder all at once. All three moved: the address IS the form
     // (law 2) and is set below, the kind is the address's own `TAG_FORM`,
-    // and the evidence the key excludes rides `ReceiptsEnvelope`.
+    // and the evidence the key excludes rides `WordStalk`.
     //
     // WORDS, CONNECTIONS AND RESIDUE CHAINS STILL MINT A TAPE. For those the
     // description is the content carrier and not a second copy of a
@@ -223,7 +223,7 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     //
     // They are taken from the form and not from its tape, so this is the
     // reading that does not need the tape to exist.
-    e.set_receipts(crate::transducer::element::ReceiptsEnvelope::of_form(f));
+    e.set_stalk(crate::transducer::element::WordStalk::of_form(f));
     // A port and its bond out of bijection by site is refused at the court
     // by name (`REFUSE_ORPHAN_PORT`, `REFUSE_PHANTOM_EDGE`); the mint does
     // not decide what the court decides (law 8) and prints nothing (C3).
@@ -320,17 +320,17 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // what the form IS (law 2), and the tape it used to parse is now written
     // and read by nothing but itself. B5 has evicted the citation targets
     // from the key; B6 deletes the tape.
-    held_form(&e.address(), e.receipts())
+    held_form(&e.address(), e.stalk())
 }
 
 /// THE FORM A COURT HOLDS FOR A WORD (34.2, 54.3): `from_address` of the
-/// word's address, with the cover and the evidence its receipts envelope
+/// word's address, with the cover and the evidence its stalk
 /// carries. The one decoder, over the two carriers a word travels as — so
 /// the mint, which has both in hand before it mints, reads exactly the form
 /// the court will read, and never the form in its own hand.
 pub(crate) fn held_form(
     address: &crate::transducer::address::Address,
-    receipts: &crate::transducer::element::ReceiptsEnvelope,
+    stalk: &crate::transducer::element::WordStalk,
 ) -> Option<Form> {
     let mut f = crate::transducer::sentence::from_address(address)?;
     // THE COVER, FROM THE WORD'S OWN ENVELOPE (54.7 B5a).
@@ -343,24 +343,24 @@ pub(crate) fn held_form(
     // from a key alone.
     //
     // Here there is a WORD in hand, and a word carries what its mind
-    // attests: `ReceiptsEnvelope.nerve` is `N(𝒰)`'s 1-skeleton, one edge
+    // attests: `WordStalk.nerve` is `N(𝒰)`'s 1-skeleton, one edge
     // per incidence, each keyed by the site of the boundary it leaves from.
     // Without this line every reader of the cover on a received sentence —
     // the court speaking a submitted rule, the mind comprehending an
     // expression, the retirement scope, the use credit — reads an empty
     // cover and resolves nothing, silently.
-    f.cover = receipts.nerve.clone();
+    f.cover = stalk.nerve.clone();
     // AND THE EVIDENCE THE KEY DOES NOT CARRY (AT1, 54.5 Road (d)): each
     // demand's bodies, filed on the record under the demand's own coordinate,
     // and the remainder's chain. A form read from its address holds the
     // coordinates; the word holds what they stand for.
-    for d in &receipts.demands {
+    for d in &stalk.demands {
         if let Some(Vertex::Demand { bodies, .. }) = f.vertices.at_mut(&d.at) {
             *bodies = d.bodies.clone();
         }
     }
-    if !receipts.remainder.is_empty() {
-        f.remainder = crate::transducer::element::place_chain(&receipts.remainder)?;
+    if !stalk.remainder.is_empty() {
+        f.remainder = crate::transducer::element::place_chain(&stalk.remainder)?;
         f.remainder_at = None;
     }
     Some(f)
@@ -400,10 +400,10 @@ pub(crate) fn held_form(
 pub fn remint_form(f: &Form, mag: [u64; 4], from: &Element) -> Option<Element> {
     let mut e = as_element_form(f, mag)?;
     e.filing = from.filing().clone();
-    let mut env = e.receipts().clone();
-    env.derivations = from.receipts().derivations.clone();
-    env.certificates = from.receipts().certificates.clone();
-    e.set_receipts(env);
+    let mut env = e.stalk().clone();
+    env.derivations = from.stalk().derivations.clone();
+    env.certificates = from.stalk().certificates.clone();
+    e.set_stalk(env);
     Some(e)
 }
 

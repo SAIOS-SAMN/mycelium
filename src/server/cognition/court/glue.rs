@@ -196,7 +196,7 @@ impl Court {
             return Some(Stop::ColourUnproven);
         }
         let cites_unheld = |s: &Element| {
-            s.receipts().nerve.iter().any(|e| &e.target != address && self.word_at(e.target.as_bytes()).is_none())
+            s.stalk().nerve.iter().any(|e| &e.target != address && self.word_at(e.target.as_bytes()).is_none())
         };
         (spoken.is_sentence() && cites_unheld(spoken)).then_some(Stop::CitationMissing)
     }

@@ -23,7 +23,7 @@
 use super::refusal::FieldRefusal;
 use crate::core::Q;
 use forms::coordinate::{Axis, FormRefusal, Key, Plane, Square, Vector};
-use forms::passage::Frame;
+use forms::passage::PassageState;
 use num_traits::One;
 
 /// THE COHESION OF A HELD WHOLE (the viscosity; MU-ANASTOME §9.4): one
@@ -41,7 +41,7 @@ impl Cohesion {
     /// `NotTurningPlane` with the coordinate form's refusal for a key of
     /// one axis or of two axes that hold no frame, or a plane named twice;
     /// and `Passage` where a frame holds no share.
-    pub fn of(frames: &[(Key, Frame)]) -> Result<Cohesion, FieldRefusal> {
+    pub fn of(frames: &[(Key, PassageState)]) -> Result<Cohesion, FieldRefusal> {
         let mut components = Vec::with_capacity(frames.len());
         for (key, frame) in frames {
             match key.plane() {
@@ -69,12 +69,55 @@ impl Cohesion {
     pub fn fluidity(&self) -> Vec<(Key, Q)> {
         self.planes().iter().map(|(k, c)| (k.clone(), Q::one() - c)).collect()
     }
+
+    /// THE THROAT TRAVERSAL STATE on plane `k` (78.176):
+    /// - `Balanced` where `c_k == 1/2` (the throat boundary);
+    /// - `TooCohesive` where `c_k > 1/2` (sticks at the throat);
+    /// - `TooFluid` where `c_k < 1/2` (tears at the throat).
+    pub fn traversal_state_on(&self, plane: &Key) -> Option<TraversalState> {
+        let c = self.on(plane)?;
+        let half = Q::new(num_bigint::BigInt::from(1), num_bigint::BigInt::from(2));
+        match () {
+            _ if *c == half => Some(TraversalState::Balanced),
+            _ if *c > half => Some(TraversalState::TooCohesive),
+            _ => Some(TraversalState::TooFluid),
+        }
+    }
+
+    /// FIRST-DEGREE PLANAR ORBITAL SHEAR `Δθ_k = 360° · c_k = 360° / (1 + t_k)`.
+    /// On a turning plane between attractors, reach is first-degree (t = r/M)
+    /// and the turn count is 1 + t (never (1 + t)^2). Eliminates the 1/r^2
+    /// ultraviolet singularity (bounded at 360° as r -> 0) and infrared
+    /// dark matter anomaly (first-degree shear preserves orbital hold).
+    pub fn planar_shear_on(&self, plane: &Key) -> Option<Q> {
+        let c = self.on(plane)?;
+        Some(super::turning::whole_turn() * c)
+    }
 }
 
-/// FRAME PLANE `k`'S KEY, its own two units `e₊ₖe₋ₖ` (`e_+k-k`), where the
-/// carrier's frame states stand. Refused `NotTurningPlane` with the
-/// coordinate form's refusal where `k` is 0.
-pub fn frame_plane(k: u32) -> Result<Key, FieldRefusal> {
+/// THROAT TRAVERSAL STATE on a turning plane (LAW-PASSAGE, 78.172; 78.176):
+/// a whole too cohesive sticks at the throat, one too fluid tears; balanced
+/// traversal occurs at the throat where viscosity and fluidity agree (c = d = 1/2).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TraversalState {
+    /// Both shares agree at 1/2: smooth traversal under the passage involution t ↦ 1/t.
+    Balanced,
+    /// Held share c_k > 1/2: viscosity dominates, the whole sticks at the throat.
+    TooCohesive,
+    /// Open share d_k > 1/2 (c_k < 1/2): fluidity dominates, the whole tears at the throat.
+    TooFluid,
+}
+
+/// POLE PLANE `k`'S KEY, its own two units `e₊ₖe₋ₖ` (`e_+k-k`), where the
+/// carrier's passage states stand. Refused `NotTurningPlane` with the
+/// coordinate form's refusal where `k` is 0 (78.182 item 12, #239).
+pub fn pole_plane(k: u32) -> Result<Key, FieldRefusal> {
     let unit = |square| Axis::unit(square, k).map_err(FieldRefusal::NotTurningPlane);
     Key::generator(unit(Square::Positive)?, unit(Square::Negative)?).map_err(FieldRefusal::NotTurningPlane)
+}
+
+/// Formerly `frame_plane` (78.182 item 12, #239).
+#[inline]
+pub fn frame_plane(k: u32) -> Result<Key, FieldRefusal> {
+    pole_plane(k)
 }

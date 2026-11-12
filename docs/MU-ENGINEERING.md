@@ -142,6 +142,14 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   of the seven universe acts, which moves their layouts: `WIRE_VERSION` is
   `0x0300` (wire v3.0).
 
+  **Refusal by version** (#235). Every expression carries the wire version
+  it is written at as its last two bytes (`anastome::dialogue::expression`).
+  A reader reads it first and refuses another major by name,
+  `Unheard::Version { spoken, served }`, before the point or the act: the
+  door answers such an act refused at its own version and closes, and a
+  session refuses such a reply naming both versions. A minor step, being
+  additive, is heard.
+
 ## 5. Physics and time
 
 - `physics/` (`src/physics/`): reserve per lane calibrated per host;
@@ -208,11 +216,54 @@ through the crate-private `keyed_persist_walk`. The work counters
 and insert, `Rotor::geo` and `cech::extend`, let a test assert what one
 fetched vertex, one held thought and one meet cost.
 
-## 8. Persistence and continuity
+## 8. Holding and continuity
 
-A hypha's snapshot and a mind's genome are each written as a keyed trie
-by its own coordinates and read back by key, never by position. The layout
-tags in the code are:
+**Ruled** (operator, 2026-11-11; issue #273). This section is the one
+description of how the mesh holds its state and how it continues across a
+restart. Every other document points here and describes no other path.
+
+1. **The mesh is held in memory and distributed.** A court's receipts, its
+   presentation of the language, its syllabus and its book, and a mind's
+   genome and epigenome are held in memory. No act waits on a disk write or
+   a disk read. Holding is fast because it is memory and the mesh's own
+   motion.
+2. **The genome is the adjudicated words.** The genome is the words the
+   courts adjudicated, held by one content in two places: in each mind's
+   genome, and in the courts' syllabus that teaches it. A mind is taught
+   it by the syllabus, as a mineral, and holds it as a crystal where its
+   own circuits re-derive it (MU-CLIENT §5.5; MU-RECURSION 80.2). The
+   epigenome (the dialect, the holds, the escrows) is volatile.
+3. **Replication is reconstruction, never byte-exactness.** A node holds
+   another's state as mathematical content and context: the words with
+   their derivations, their citations at their stamps, and the receipts'
+   causal order. It continues by re-deriving that content under the laws
+   (law 8; MU-SCIENCE §5.0) and admits only what reaches the same exact
+   object. Two holdings are equal where their content is equal (law 2),
+   never where their bytes are.
+4. **Where state is held is the language's own structure, not a
+   placement.** Peers are not chosen round robin, and there is no replica
+   count. The anastome carries the algorithm inside the algorithm: a word
+   holds the derivation that reconstructs it (two layers, the word and the
+   presentation that re-derives it), across the dimensions of the
+   multi-dimensional ledger (lane, layer and grade). A node whose dialect
+   differs reconstructs it through the conjugating element between the two
+   perspectives, which is dialectic conversion (MU-ANASTOME §1.3;
+   MU-RECURSION 23.9). A node holds what its own holdings reconstruct, and
+   the home trie places by chart (MU-RECURSION 73.15).
+5. **A restart is a rejoin.** A hypha that starts holds its identity and
+   nothing else. It is brought back into the mesh by reconstruction from its
+   peers (catch-up and back-fill). A mind that starts holds its key and is
+   taught by the syllabus.
+6. **Only identity and configuration stay on disk.** These are the keys
+   (`hypha.key`, `noise.key`, `voice.key`), the Noise pins, the bind and
+   peer list, the genesis allocation and the corpus manifests. None of
+   them is state.
+7. **Open:** what holds the mesh when every node stops at once. By item 1,
+   a mesh with every node stopped holds nothing.
+
+**Status: ruled, not built.** The tree still writes and reads the layouts
+below. Each retires as holding in memory is built (#273), and until then
+this table is the record of what the code writes:
 
 | tag | what | where |
 |---|---|---|
@@ -221,18 +272,19 @@ tags in the code are:
 | `MYE2` | a cold era segment | `chronometry/era.rs` |
 | `GEN7` | a mind's genome: the words a court admitted | `client/sdk/vocabulary/persist.rs` |
 | `TRI1` | an on-disk keyed trie | `network/nerve/keyed/ondisk.rs` |
-| `MSH2` | a signed mesh record | `network/mesh.rs` |
+| `MSH2` | a signed mesh record (configuration, item 6) | `network/mesh.rs` |
 | `CUR3`, `INT1` | the registry's snapshot: its dispatch cursor and task states, then its intake cursor | `server/registry.rs` |
 | `COC1` | the Čech complexes (addresses and rotors only) | `anastome/dialogue/acts.rs` |
 
+The disk paths that retire with it are the court act answered only once
+it is on the disk (`persist::durable`, MU-RECURSION 78.137) and its drill
+(`tests/durable.rs`); the snapshot and line restored at boot; the
+genome file; and the chatter rendezvous directory (`HOME/../chatter`,
+`client/sdk/chatter.rs`), which peers found on the wire replace.
 Superseded layouts are refused by name and never migrated: `MYC7` (the
 positional tape) and `MYT1` for the snapshot, `GEN4`, `GEN5` and `GEN6` for
-the genome. The one exception is the mesh record, which is configuration:
-an `MSH1` record is read and written back as `MSH2`. Ledgers and genomes
-are rewritten atomically; a restore rebuilds the basis (a derived index)
-from the lettered federation, and `prune_basis_to_ruled` drops the words
-the court has not ruled. Within one layout, residues,
-thoughts, and dialects are never deleted (`MU-STANDARDS.md` §10).
+the genome. Within one layout, residues, thoughts and dialects are never
+deleted (`MU-STANDARDS.md` §10).
 
 ## 9. Transport, carrier and coordinate
 
@@ -296,7 +348,9 @@ is refused as stale.
 ### 9.3 Names to settle
 
 "Frame" names ten distinct things. By MU-STANDARDS one name has one
-meaning, so each is to be renamed by its function. No code identifier is
+meaning, so each is to be renamed by its function; and by the ruling of
+2026-11-11 (#239) the word itself is retired, a collapse of volume and
+dimensions, so no meaning keeps it. No code identifier is
 renamed here; the renames follow the dead-code cleanup of
 `src/network/wire.rs`. Counts are of the distinctive identifiers in Rust
 sources (`src/`, `algebra/`, `forms/`, `sdk/`, `sources/`, `tests/`,
@@ -307,12 +361,12 @@ counted under the meaning of their area, not apiece.
 
 | Meaning | Where (examples) | Code identifiers | Document phrases | Proposed name |
 |---|---|---|---|---|
-| The wire envelope: one expression's bytes and their length | `WireFrame`, `frame_budget`, `read_frame`, `write_frame`, `hear_frame`, `FrameOverBudget`, `PageEnd::Frame`, `Inflow::Frame`, `receipts_frame`, the era file's `append_frame` | about 254 | about 57 | An expression delimited by its length: `Delimited` for the envelope, `BODY_BUDGET` alone for the budget, `read_delimited`, `PageEnd::Budget`; the era file's record is a `record` |
+| The wire envelope: one expression's bytes and their length | **Renamed (#239)** on the server and the wire: `BODY_BUDGET` alone, `NoiseRefusal::OverBudget` and `Malformed`, `receipts_bounds`, `note_delimited`; owed on the client's mind, `Inflow::Frame`, `hear_frame`, `read_frame` and `hold_answer_frame` (chatter envelopes) | — | — | An expression delimited by its length: `Delimited` for the envelope, `BODY_BUDGET` alone for the budget, `read_delimited`, `PageEnd::Budget`; the era file's record is a `record` |
 | One sample of a family along `e₃` (78.75; the GLOSSARY's *Frame* today) | `Frames`, `frame_key`, `frame_spelling`, `put_frame`, `member_frames`, `section_of_frames`, `at_frame_zero`, `perceive_frames`, `edges_rederive_frames`, `HeldPose::OneFrame` | about 254 | about 44, and most of MU-RECURSION's 538 | The family's sample `k`: `sample_key`, `sample_spelling`, `samples_of_section`, `HeldPose::OneSample` |
 | The sample's own extent, read as a whole | `Layer::Frame`, `Vertex::Frame`, `VertexAt::Frame`, `frame_fixed_on_ground`, `frame_faces`, `frame_boundary`, `share_of_frame`, `ShapePeriods::InFrame`; "frame fixing" (MU-SENSING §6.1) | about 130 | about 44 | The enclosure, after `transduce::Enclosure`: `Layer::Enclosure`, `Vertex::Enclosure`, `enclosure_faces`, `share_of_enclosure`, "enclosure fixing" |
 | Perception's measured `Frame` defect: four counts of a pair, two planar axes fixed | `src/transducer/element/residue.rs` (`Frame { h_in, w_in, h_out, w_out }`), `from_canonical_framed`, `from_residue_framed`, `frame_ratio`, the "frame fibre" ρ | about 40 | about 24 | The re-period, per phase at rank `n`: `Reperiod`, after `Enclosure::reperiod` (track 26 S4 replaces the four counts) |
 | The frame acts: panes and tiles | `Act::Panes`, `Act::Tile`, `statement::Spoken.frame`, `Unstated::Unframed` (`src/transducer/family/statement.rs`) | about 23 | about 20 | Enclosure acts: `Spoken.extents`, `Unstated::NoEnclosure` |
-| The μ an act or an orbit measured | `frame_of` in `src/server/cognition/cite.rs`, `orbit_frame`, the clock's `unframed` count | about 43 | about 21 | The measure: `measure_of`, `orbit_measure`, `unmeasured` (and `Modes`, not `[u64; 4]`) |
+| The μ an act or an orbit measured | **Renamed (#239)**: the receipt's and the orbit's **measure** (`chronometry::receipt`, `chain::open_orbit`, `collides`), the clock's unmeasured count; beside it, μ as a share of the **enclosure** (78.170 O1), a signer's **signed prefix** (`reach.rs`), the line file's **appends** and the era file's **record** (`Era::record`), a heard **head** in the back-fill, a throat's or mouth's **poses** (`MapRecord::LocalThroat.poses`), the server's `reperiod_of` | — | — | The measure: `measure_of`, `orbit_measure`, `unmeasured` (and `Modes`, not `[u64; 4]`) |
 | The passage's `Frame` (hold, reach) and "frame state" | `forms/src/passage.rs` (`Frame`, `PassageRefusal::NotFrame`) | about 38 | about 19 | The passage state: `PassageState { hold, reach }`, `NotOnPolePlane` |
 | A frame of reference: an observer's perspective and the conformal map between two | `forms/src/reference.rs` (`Reference`), `InFrame` in closeness, a constellation's `frames` (posed nuclei), a mouth's `from_frame` and `to_frame`, `frame_base_point` | about 65 | about 14 | The reference: module `reference`, a "reference map"; a constellation's `poses`; a mouth's `from_chart` and `to_chart`; `pose_point` |
 | A basis of vectors | `src/transducer/cga/dual.rs` (`DualFrame`), `on_frame` in the pose reader | about 26 | about 6 | The reciprocal basis: `ReciprocalBasis`, `on_basis` |

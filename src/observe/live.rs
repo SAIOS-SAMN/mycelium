@@ -379,7 +379,7 @@ pub fn encode_lines(lines: &[String], budget: usize) -> Option<Vec<u8>> {
         // Room kept for the line that says what was cut, were it cut here.
         let cut_at = |at: usize| -> Option<Vec<u8>> {
             let mut c = Vec::new();
-            crate::transducer::address::put_bytes(&mut c, format!("… {} lines past the frame (ask with `from {at}`)", lines.len() - at).as_bytes())?;
+            crate::transducer::address::put_bytes(&mut c, format!("… {} lines past the envelope (ask with `from {at}`)", lines.len() - at).as_bytes())?;
             Some(c)
         };
         let cut = cut_at(i)?;

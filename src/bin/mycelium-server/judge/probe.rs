@@ -12,10 +12,10 @@ use mycelium::network::channel::Channel;
 
 
 /// One probe against one open listing (23.8, 26).
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
     let court = &context.court;
 
-    let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
+    let Some((pvoice, target, cites)) = dialogue::decode_probe(&delimited.body) else { return };
     let reading = mycelium::synthesis::probe(court, pvoice, &target, &cites);
     // A probe that moved the listing, or found it gone, releases the lease.
     if reading.moved() || reading.closure == dialogue::ProbeClosure::Gone {

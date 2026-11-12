@@ -719,3 +719,38 @@ impl Court {
         Finality::Final { upheld }
     }
 }
+
+/// #237 — THE EXPOSURE OF ONE FOLD'S OWN NETS, per lane: the positive part of
+/// its rows, each party's summed first (rows move key to key and sum to
+/// zero, so the positive part is the value transferred), and the absolute
+/// value of its declared flows (one-sided), exactly as
+/// [`Court::exposure_of`] reads a held fold. What a carried line's bond must
+/// cover before it is admitted.
+pub(crate) fn exposure_of_nets(rows: &[Net], declared: &[Net]) -> crate::economy::Mu {
+    use num_traits::Signed;
+    let (mut by_party, mut flows): (Keyed<[Q; 4]>, Keyed<[Q; 4]>) = (Keyed::new(), Keyed::new());
+    for (who, v) in rows {
+        bump(&mut by_party, who, std::array::from_fn(|l| Q::from_integer(v[l].into())));
+    }
+    for (who, v) in declared {
+        bump(&mut flows, who, std::array::from_fn(|l| Q::from_integer(v[l].into())));
+    }
+    let mut x = zero();
+    for (_, v) in by_party.scoped() {
+        for (t, n) in x.iter_mut().zip(v.iter()) {
+            if n.is_positive() {
+                *t += n;
+            }
+        }
+    }
+    for (_, v) in flows.scoped() {
+        for (t, n) in x.iter_mut().zip(v.iter()) {
+            *t += n.abs();
+        }
+    }
+    // A sum of positive parts and absolute values is never negative.
+    match crate::economy::Mu::of(x) {
+        Ok(m) => m,
+        Err(_) => crate::economy::Mu::zero(),
+    }
+}

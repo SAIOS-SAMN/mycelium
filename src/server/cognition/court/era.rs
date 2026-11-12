@@ -33,9 +33,9 @@ impl Court {
         self.chain.last_close().map(|r| r.stamp.place()).filter(|h| *h >= first)
     }
 
-    /// THE FOLD'S HEAD, ONE FRAME AT A TIME (45.8, 47.3): the last close at
+    /// THE FOLD'S HEAD, ONE PAGE AT A TIME (45.8, 47.3): the last close at
     /// or below the finality reading within the page a witness fetches in
-    /// one `ACT_RECEIPTS` reply — the same read at the same frame. An orbit
+    /// one `ACT_RECEIPTS` reply — the same read at the same page. An orbit
     /// longer than a page folds whole at its own close, since a fold cuts
     /// nowhere else.
     pub fn fold_head(&self) -> Option<Place> {
@@ -55,7 +55,7 @@ impl Court {
         let head = self.final_prefix_head()?;
         let own_vk = self.chain.signer();
         let after = self.chain.root().map(|r| r.at);
-        let (at_most, bytes) = Self::receipts_frame()?;
+        let (at_most, bytes) = Self::receipts_bounds()?;
         // The page is served in line order: walked once, it names the last
         // close on it, whether work stands before that close, and the place
         // it reached.
@@ -97,18 +97,18 @@ impl Court {
     /// THE PAGE ONE `ACT_RECEIPTS` REPLY CARRIES: at most this many
     /// receipts and this many bytes of the receipts' tapes — the reply's
     /// budget (`receipts_reply_budget`) less its own count header, and the
-    /// most of the smallest tape that fits it. `None` where the frame is
+    /// most of the smallest tape that fits it. `None` where the envelope is
     /// smaller than the envelopes.
-    pub fn receipts_frame() -> Option<(usize, usize)> {
+    pub fn receipts_bounds() -> Option<(usize, usize)> {
         let bytes = Self::receipts_reply_budget()?.checked_sub(crate::anastome::dialogue::RECEIPTS_REPLY_HEADER)?;
         Some((bytes / KStepReceipt::MIN_TAPE, bytes))
     }
 
     /// THE BYTES AN `ACT_RECEIPTS` REPLY MAY TAKE, its header included: the
-    /// frame's body less the reading height the door writes behind it
+    /// envelope's body less the reading height the door writes behind it
     /// (D1.3, D4.6: each envelope its codec's own length).
     pub fn receipts_reply_budget() -> Option<usize> {
-        crate::network::wire::frame_budget().checked_sub(crate::anastome::dialogue::READING_HEIGHT_LEN)
+        crate::network::wire::BODY_BUDGET.checked_sub(crate::anastome::dialogue::READING_HEIGHT_LEN)
     }
 
     /// THE PEERS' FOLDED LINES LEAVE THE HOT LEDGER (45.8): each peer's
@@ -195,7 +195,7 @@ impl Court {
 
     /// THE SAME READ, BOUNDED BY THE BYTES A PAGE CAN CARRY (Phase 1 item
     /// 3): no receipt is read past the one whose tape fills `bytes`. The
-    /// count bound alone is the frame over the SMALLEST tape, thousands of
+    /// count bound alone is the envelope over the SMALLEST tape, thousands of
     /// receipts, and a page carries what fits — so each served page cloned
     /// and re-read far more than it sent, and hypha b, serving its peers'
     /// catch-up, answered its own console with none of four workers free

@@ -266,3 +266,33 @@ fn sentence_erases_cells_touching_nothing() {
         &[Step::Select(Pred::And(vec![Pred::count(Coord::Cells, 1), Pred::count(Coord::Contacts, 0)])), Step::Hue(erase())],
     );
 }
+
+/// #256 (ruled 2026-11-11) — A FILL'S DISCHARGE HOLDS S AND H AT THEIR OWN
+/// MODES: 00d62c1b's enclosed regions filled yellow are paid on S (sites
+/// created from the ground) and on H (the shells closed), and the closure's
+/// discharge holds S on `SymbolCreation` and H on `ShellBoundary`, never on
+/// either lane's founding mode.
+#[test]
+fn fill_discharge_holds_symbol_creation_and_shell_boundary() {
+    use mycelium::economy::modes::Mode;
+    let (train, test) = task("00d62c1b");
+    let steps = [Step::Select(Pred::All), Step::Region(RegionKind::Interior), Step::Hue(vec![(0, 4)])];
+    let claims = mycelium::transducer::raster::on_each_perspective_of(&train, || sentence(&steps, &train, &NoCrystal));
+    let pay = claims
+        .iter()
+        .find_map(|(ground, rule)| {
+            let rule = rule.as_ref().ok()?;
+            let stated = mycelium::transducer::raster::stated(ground);
+            match judged(rule, stated.as_deref(), &train, std::slice::from_ref(&test[0])).0 {
+                SolveVerdict::Solved { pay, .. } => Some(pay),
+                _ => None,
+            }
+        })
+        .expect("some claim is solved");
+    let zero = mycelium::core::Q::from_integer(0.into());
+    assert!(pay.lane(0) > zero && pay.lane(3) > zero, "paid on S and H: {pay}");
+    let on = |lane: u8| pay.modes().modes().filter(move |(m, _)| m.lane() == lane).map(|(m, _)| m.clone()).collect::<Vec<_>>();
+    assert!(on(0).iter().all(|m| matches!(m, Mode::SymbolCreation { forward: true, to_symbol: 4, .. })), "S on the creation of yellow: {}", pay.modes().print());
+    assert!(on(3).iter().all(|m| matches!(m, Mode::ShellBoundary { .. })), "H on the shells' boundary class: {}", pay.modes().print());
+    assert!(!on(0).is_empty() && !on(3).is_empty());
+}

@@ -249,7 +249,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                 // smaller one, on every quote. The book grows with demand
                 // arriving from every peer, and the root run below is
                 // unconditional, so this was a per-request whole read of an
-                // append-only carrier (law 3) that the frame budget was
+                // append-only carrier (law 3) that the body budget was
                 // supposed to bound.
                 //
                 // A page serves what fits in rank order and stops. What

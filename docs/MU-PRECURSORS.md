@@ -100,7 +100,7 @@ Mycelium's current types, admission path and treasury.
 
 | # | Component | Track | Effort | Status |
 |---|---|---|---|---|
-| 3.1 | Noise XX encrypted transport | 5 | Medium | Landed (opt-in per peer) |
+| 3.1 | Noise XX encrypted transport | 5 | Medium | Landed (opt-in per peer; plaintext on one host only, D1.3 O2) |
 | 3.2 | ~~Mutation audit~~ | 14 | — | Retired |
 | 3.3 | Named refusals in `learn_form` | 7 | Small | In progress |
 | 3.4 | Integer homology and invariant factors | 18, 19, 12 | Medium | Specified |
@@ -129,7 +129,7 @@ acts, verified on admission.
 
 **The gap** (closed by the wiring below). In release 0.2.0, acts travel over plain TCP. The server door
 (`src/bin/mycelium-server/transport.rs`, `read_delimited`) and the SDK session
-(`src/client/sdk/session.rs`, `src/anastome/dialogue/chatter.rs`) read frames
+(`src/client/sdk/session.rs`, `src/anastome/dialogue/chatter.rs`) read envelopes
 from a `TcpStream` directly. `src/network/` holds `mesh.rs`, `nerve/` and
 `wire.rs`, and no encrypted channel. ROADMAP track 5 lists "an encrypted
 transport" as work to do. README › *Node capabilities in 0.2.0* records
@@ -137,7 +137,7 @@ the transport as Ed25519-signed acts over TCP.
 
 **Design.**
 - A `NoiseStream` in `src/network/noise.rs` implements `Read` and
-  `Write`, so the frame codec (`network::wire`) runs over it unchanged.
+  `Write`, so the envelope codec (`network::wire`) runs over it unchanged.
 - The handshake is XX: both static keys are transmitted encrypted, and
   neither side needs the other's key in advance.
 - **Trust on first use.** The host's static key and its pins are kept in
@@ -151,21 +151,21 @@ the transport as Ed25519-signed acts over TCP.
   verifies every act's Ed25519 signature; a valid tunnel carrying an
   unsigned or mis-signed act is refused as it is today.
 - **Framing inside the tunnel.** Noise messages are bounded at 65535 bytes
-  including the 16-byte tag; a frame is carried in chunks of at most
-  65519 bytes of plaintext, and the frame budget (`BODY_BUDGET`) is
+  including the 16-byte tag; an envelope is carried in chunks of at most
+  65519 bytes of plaintext, and the body budget (`BODY_BUDGET`) is
   checked on the reassembled length before any body is allocated.
 - **Opt-in first.** The transport is selected per peer address. Plain TCP
   remains for one-host development until multi-host deployment (track 5)
   makes the encrypted channel the default.
 - **The opening** (as built, `src/network/channel.rs`). A dialler with a
-  Noise home writes `noise::OPEN` alone, five bytes no plaintext frame
+  Noise home writes `noise::OPEN` alone, five bytes no plaintext envelope
   begins with (the first four read as a length past the wire's
   `DELIMITED_MAX`), and begins the XX handshake only once the door answers
   `OPEN`. A door with a home reads each connection's first four bytes and
   holds them: the opening is answered with the handshake, a length is a
-  plaintext frame read whole from its first byte (the lane byte was retired
+  plaintext envelope read whole from its first byte (the lane byte was retired
   by the v0.5.0 recut). A door that speaks only plaintext refuses the opening as
-  a frame over budget; the dialler reads that as `NotSpoken`, dials again
+  an envelope over budget; the dialler reads that as `NotSpoken`, dials again
   in plaintext and names the peer. A pinned peer is held to its seal:
   answering in plaintext is `PinnedAnsweredPlain`, and a changed key
   `PeerKeyChanged`, both refused with no plaintext fallback. Every peer
@@ -174,7 +174,7 @@ the transport as Ed25519-signed acts over TCP.
 - **Named refusals** (`NoiseRefusal`) for a failed handshake, a peer that
   presents no static key, a changed static key, a peer that does not speak
   Noise, a pinned peer answering in plaintext, a message past the Noise
-  bound, a frame past the budget, a decryption failure and a malformed key
+  bound, an envelope past the budget, a decryption failure and a malformed key
   or pin store. None is a panic.
 
 **Adaptations from the precursor.** The predecessor implementation held
@@ -185,13 +185,13 @@ static key. The predecessor's `expect` on the handshake pattern is a
 constructor that refuses instead.
 
 **Acceptance claims.**
-- A frame written on one side of an XX session is read whole on the other
-  (round trip; built as `initiate_completes_handshake_and_round_trips_frames`).
+- An envelope written on one side of an XX session is read whole on the other
+  (round trip; built as `initiate_completes_handshake_and_round_trips_envelopes`).
 - A changed static key on a pinned host is refused by name (built as
   `pin_refuses_changed_peer_key`).
 - The first static key seen for a peer is the pinned one: a fixed locus
   across a reconnect.
-- A frame past the budget is refused by name at the reassembled length,
+- An envelope past the budget is refused by name at the reassembled length,
   before its body is held (built as
   `write_delimited_refuses_over_budget_before_sending` and
   `read_delimited_refuses_head_past_budget`).
@@ -206,15 +206,15 @@ constructor that refuses instead.
   `pinned_key_mismatch_refused`).
 - A plaintext peer is still spoken to, never pinned, and named in the log
   and the observer (built as `plaintext_peer_named_not_hidden`); the
-  opening reads as no plaintext frame (`opening_reads_as_no_plaintext_frame`).
+  opening reads as no plaintext envelope (`opening_reads_as_no_plaintext_envelope`).
 - The reference mind speaks inside Noise: its sessions and its chatter
   carry ciphertext on the wire, which the keyed peer reconstructs whole
   (built as `mind_speaks_inside_noise`, `src/client/sdk/tests/channel.rs`);
   a mind pinned to one key and met with another, or met in plaintext once
   pinned, is refused by name and never sent to in plaintext (built as
   `mind_refuses_a_changed_or_unsealed_peer`); a mind's post tells the
-  opening from a plaintext frame by all five bytes (built as
-  `post_tells_the_opening_from_a_plaintext_frame`).
+  opening from a plaintext envelope by all five bytes (built as
+  `post_tells_the_opening_from_a_plaintext_envelope`).
 
 **Track** 5. **Effort** medium. **Status** Landed, opt-in per peer:
 `src/network/noise.rs` (the channel), `src/network/channel.rs` (the

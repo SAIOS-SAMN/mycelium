@@ -72,11 +72,11 @@ impl Treasury {
         if !short.is_zero() {
             return Err(Unpaid::Short(short));
         }
-        let drawn = self.debit(from, mu);
-        debug_assert!(drawn.is_ok(), "the shortfall was read as none");
-        self.credit(to, mu);
-        self.write(Entry { kind: Kind::Transfer, who: from, mu: mu.clone(), at: anchor.0, receipt: anchor.1, arm });
-        self.write(Entry { kind: Kind::Transfer, who: to, mu: mu.clone(), at: anchor.0, receipt: anchor.1, arm });
+        // The modes drawn travel with the transfer (MU-ECONOMY §2.5).
+        let moved = self.debit(from, mu).map_err(|_| Unpaid::Short(short))?;
+        self.credit(to, &moved);
+        self.write(Entry { kind: Kind::Transfer, who: from, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Transfer, who: to, mu: moved, at: anchor.0, receipt: anchor.1, arm });
         Ok(())
     }
 
@@ -90,11 +90,9 @@ impl Treasury {
             return Err(Unpaid::Nothing);
         }
         let pool = self.held.get(RECYCLED).cloned();
-        let now = match &pool {
-            Some(h) if h.payer != court => return Err(Unpaid::Taken),
-            Some(h) => h.mu.add(&mu),
-            None => mu.clone(),
-        };
+        if pool.as_ref().is_some_and(|h| h.payer != court) {
+            return Err(Unpaid::Taken);
+        }
         if from != court {
             self.transfer(from, court, &mu, anchor)?;
         }
@@ -102,14 +100,17 @@ impl Treasury {
         if !short.is_zero() {
             return Err(Unpaid::Short(short));
         }
-        let drawn = self.debit(court, &mu);
-        debug_assert!(drawn.is_ok(), "the shortfall was read as none");
-        let anchored = match pool {
+        let moved = self.debit(court, &mu).map_err(|_| Unpaid::Short(short))?;
+        let anchored = match &pool {
             Some(h) => h.anchor,
             None => anchor,
         };
+        let now = match pool {
+            Some(h) => h.mu.add(&moved),
+            None => moved.clone(),
+        };
         self.held.insert(RECYCLED, SetAside { payer: court, mu: now, anchor: anchored });
-        self.write(Entry { kind: Kind::Escrow, who: court, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        self.write(Entry { kind: Kind::Escrow, who: court, mu: moved, at: anchor.0, receipt: anchor.1, arm: None });
         Ok(())
     }
 
@@ -189,10 +190,9 @@ impl Treasury {
         if !short.is_zero() {
             return Err(Unpaid::Short(short));
         }
-        let drawn = self.debit(payer, &mu);
-        debug_assert!(drawn.is_ok(), "the shortfall was read as none");
-        self.held.insert(key, SetAside { payer, mu: mu.clone(), anchor });
-        self.write(Entry { kind: Kind::Escrow, who: payer, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        let moved = self.debit(payer, &mu).map_err(|_| Unpaid::Short(short))?;
+        self.held.insert(key, SetAside { payer, mu: moved.clone(), anchor });
+        self.write(Entry { kind: Kind::Escrow, who: payer, mu: moved, at: anchor.0, receipt: anchor.1, arm: None });
         Ok(())
     }
 

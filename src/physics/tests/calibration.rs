@@ -157,7 +157,7 @@ fn unreadable_memory_refuses_boot() {
 /// at the seal, never a registered number.
 #[test]
 fn open_physics_reads_capacity_measured() {
-    for n in crate::physics::axioms::OPEN_PHYSICS {
+    for n in crate::physics::axioms::OPEN_PHYSICS.iter().chain(&crate::physics::axioms::OPEN_ENGINEERING) {
         assert!(!n.site.starts_with("src/physics/calibration.rs"), "{} is registered at the calibration", n.name);
         assert!(!n.site.starts_with("src/physics/memory.rs"), "{} is registered at the memory", n.name);
         assert!(!n.doc.contains("D2.5"), "{} is registered under D2.5", n.name);

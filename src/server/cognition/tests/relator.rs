@@ -97,7 +97,7 @@ fn glues_triangle_from_germs_of_one_object() {
 }
 
 /// L17 DEPTH 4, THE TRIVIAL CASE. Three charts whose transports close —
-/// `q`, `q`, `q⁻²` — are ONE PROOF IN THREE FRAMES: the holonomy is the
+/// `q`, `q`, `q⁻²` — are ONE PROOF IN THREE DELIMITED: the holonomy is the
 /// identity, `glues` reads true, and there is nothing to adjoin. Each of
 /// the three courts reads that independently and each one's count of
 /// generators the engine opened stays at zero.

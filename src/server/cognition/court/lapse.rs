@@ -25,7 +25,7 @@ impl Court {
     }
 
     /// 78.37 (3), FX1 — FLUX REACHED A HELD WORD in this orbit of the court:
-    /// a citer's frame, a carriage's draw, a voice's escrow. A touch that
+    /// a citer's measure, a carriage's draw, a voice's escrow. A touch that
     /// carries nothing on any lane is no circulation and moves nothing: only
     /// a flux `Φ` non-zero on some lane re-files the word. A word not yet
     /// admitted is filed by its admission (`file_admitted`).

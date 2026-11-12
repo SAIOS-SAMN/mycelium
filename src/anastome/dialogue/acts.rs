@@ -17,10 +17,12 @@ use crate::physics::actions::Action;
 /// signed bytes of every universe act (fold, anchor, map, mouth, conversion
 /// out, manifest, statement), the latest. A minor step adds and moves no
 /// layout; v2.0 moves the layout of every act and reply carrying μ, and
-/// v3.0 the layout of the seven universe acts, so each is a major step. No
-/// act carries it on the wire; a client states it in its compatibility
-/// statement (MU-PRECURSORS §4.2), and a layout version defined per act
-/// (`EQUIVOCATION_VERSION`) stands beside it.
+/// v3.0 the layout of the seven universe acts, so each is a major step.
+/// Every expression carries it last (`expression::write_act`, #235), and a
+/// reader refuses another major, or a minor past its own, by name
+/// (`Unheard::Version`) before it reads the act; a client also states it in
+/// its compatibility statement (MU-PRECURSORS §4.2), and a layout version
+/// defined per act (`EQUIVOCATION_VERSION`) stands beside it.
 /// FORMAT: wire version, major 3 minor 0.
 pub const WIRE_VERSION: u16 = 0x0300;
 

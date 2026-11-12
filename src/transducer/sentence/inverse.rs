@@ -122,7 +122,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
                 // the depth, the placement and φ — and WHICH form that
                 // boundary mates with is the cover's fact, carried on
                 // `Form::cover` and filled by `from_element_form` from the
-                // word's `ReceiptsEnvelope`. A form reconstituted from a
+                // word's `WordStalk`. A form reconstituted from a
                 // key alone has no cover, and that is the truth about it.
                 let placement = Word::formed(Rotor::from_bytes(k, &mut p)?);
                 let depth = take_u16k(k, &mut p)?;
@@ -395,7 +395,7 @@ fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
             }
         }
         let gauge = take_gauge(k, p)?;
-        // AT1 — THE MEMBER'S FRAMES, each by its own spelling (Q4).
+        // AT1 — THE MEMBER'S DELIMITED, each by its own spelling (Q4).
         let nf = take_key_count(k, p)?;
         let mut frames = Keyed::new();
         for _ in 0..nf {

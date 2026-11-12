@@ -6,13 +6,13 @@ use super::fixtures::*;
 #[test]
 fn carriage_files_by_carrier_and_kind_and_round_trips() {
     let mut c = CarrierTally::default();
-    c.add(CARRIER_FRAME, 0x0d, 40);
+    c.add(CARRIER_DELIMITED, 0x0d, 40);
     c.add(CARRIER_DELTA, 12, 900);
     c.add(CARRIER_DELTA, 12, 100);
     c.add(CARRIER_AWARD, 0, 120);
     assert_eq!(
         c.rows.iter().map(|r| (r.carrier, r.kind, r.records, r.bytes, r.largest)).collect::<Vec<_>>(),
-        [(CARRIER_AWARD, 0, 1, 120, 120), (CARRIER_DELTA, 12, 2, 1000, 900), (CARRIER_FRAME, 0x0d, 1, 40, 40)]
+        [(CARRIER_AWARD, 0, 1, 120, 120), (CARRIER_DELTA, 12, 2, 1000, 900), (CARRIER_DELIMITED, 0x0d, 1, 40, 40)]
     );
     reads_back(&[Reading::Carriage(c)]);
 }

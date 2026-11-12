@@ -9,7 +9,7 @@ use crate::transducer::element::Element;
 #[derive(Clone, Debug)]
 pub enum SolveVerdict {
     /// Reconstructed clean on every withheld pair; `pay` what it discharged there
-    /// as μ, each closed pair's share of its frame (78.170 O1, ruled
+    /// as μ, each closed pair's share of its enclosure (78.170 O1, ruled
     /// 2026-11-01), and `modes` the modes the closing form moved on the pairs
     /// it closed (78.162), each exact: S boosts, G hue modes, T null fluxes,
     /// H turns.
@@ -236,11 +236,21 @@ impl Court {
             let at = self.anchor();
             let _ = self.pay_lease(voice, &job, pay.clone(), at);
         }
+        // MU-ECONOMY §3.4, F2b — ONE CLOSURE, ONE POINT: a point this court's
+        // cones already hold, sealed here or on a line it admitted, is closed;
+        // its closure here is judged again and mints nothing.
+        let rule_address = rule.address();
+        let first = first && self.point_held(task, rule_address.as_bytes()).is_none();
         self.acts.judge(if first { crate::observe::Judged::FirstClosure } else { crate::observe::Judged::ClosureAgain });
         if !first || pay.is_zero() {
             return crate::economy::Mu::zero();
         }
-        self.append_step(crate::chronometry::ActKind::Settled, task, voice);
+        // The settling act seals the point, so every court that back-fills
+        // its receipt holds it (`Cite::Closure`).
+        let cite = crate::chronometry::Cite::Closure { task: task.to_vec(), rule: rule_address.as_bytes().to_vec() };
+        let mu = self.measure_of(task);
+        let Some(sealed) = self.seal_step(crate::chronometry::ActKind::Settled, mu, voice, |_| vec![cite.clone()]) else { return crate::economy::Mu::zero() };
+        self.note_points(&sealed);
         let settled = self.anchor();
         let paid = self.treasury.settle_solve(voice, pay, settled);
         self.acts.paid.step(&paid);

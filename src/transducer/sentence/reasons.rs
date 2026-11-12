@@ -95,7 +95,7 @@ impl Reasons {
                 orbits.push(OrbitReason { curved: !cv.is_zero(), axes: cv.occupied() });
             }
         }
-        Some(Reasons { words, orbits, open, unsaid: e.receipts().remainder.len() as u64, measure: e.magnitude() })
+        Some(Reasons { words, orbits, open, unsaid: e.stalk().remainder.len() as u64, measure: e.magnitude() })
     }
 
     /// THE REASONS AS A HUMAN READS THEM, one sentence per kind of reason.

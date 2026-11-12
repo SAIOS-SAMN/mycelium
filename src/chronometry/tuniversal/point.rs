@@ -47,9 +47,9 @@ impl PartialOrd for TPoint {
 
 impl TPoint {
     /// The least bytes a point takes on the wire: the genesis, the epoch,
-    /// `h`, four lanes at zero (`0/1` each, eleven bytes) and `K`.
+    /// `h`, its lanes holding no mode (`Mu::MIN_LEN`) and `K`.
     /// FORMAT: least TPoint wire length.
-    pub const MIN_LEN: usize = 32 + 4 + 8 + 4 * 11 + 8;
+    pub const MIN_LEN: usize = 32 + 4 + 8 + crate::economy::Mu::MIN_LEN + 8;
 
     /// The most bytes an expression's point adds behind its act (TU-7;
     /// `anastome::dialogue::expression`): a point of at most `u16::MAX`

@@ -235,8 +235,8 @@ fn from_bytes_refuses_zero_period_and_clashing_chain() {
     // demands' bodies and the remainder's chain, which left the key for the
     // record; seven since 78.55, the tasks that witnessed a colour word.
     let mut envelope = Vec::new();
-    one.receipts().to_block(&mut envelope).expect("the envelope writes");
-    assert!(one.receipts().is_empty(), "a residue attests nothing");
+    one.stalk().to_block(&mut envelope).expect("the envelope writes");
+    assert!(one.stalk().is_empty(), "a residue attests nothing");
     assert_eq!(envelope.len(), 4 + 56, "the empty envelope is a block of seven zero counts");
     let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 4 + envelope.len() + 32;
     assert!(one.filing().scoped().next().is_none(), "a residue attests no filing");

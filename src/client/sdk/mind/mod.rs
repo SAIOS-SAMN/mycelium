@@ -228,7 +228,7 @@ pub struct Mind {
     /// its meaning or it stands an aperture cycle unanswered. The mind's,
     /// never its conversation's carrier's.
     pub(crate) questions: crate::network::nerve::Keyed<self::chatter::Question>,
-    /// MU-CLIENT §5.3(5) (#145) — THE PEERS' FRAMES OF CLOSED QUESTIONS, by
+    /// MU-CLIENT §5.3(5) (#145) — THE PEERS' DELIMITED OF CLOSED QUESTIONS, by
     /// the question's key: each closure's residue and the frames said under
     /// it, kept while the closure is cited (its residue known in the
     /// vocabulary) and let go where it is not.

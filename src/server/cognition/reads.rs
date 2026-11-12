@@ -58,7 +58,7 @@ impl Court {
     }
 
     /// 78.152 TU-6 UNPACK — a final point's coordinates by name, and the
-    /// frame each receipt at its tick measured, per lane.
+    /// measure each receipt at its tick took, per lane.
     pub fn unpack(
         &self,
         p: &crate::chronometry::tuniversal::TPoint,
@@ -183,7 +183,7 @@ impl Court {
         let mut out = [0usize; 8];
         for (_, held) in self.basis.scoped() {
             let e = held.element();
-            let cites = || e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
+            let cites = || e.stalk().derivations.iter().any(|d| !d.generators.is_empty());
             let slot = match () {
                 _ if e.is_rewrite() => 5,
                 _ if e.is_translation() => 6,

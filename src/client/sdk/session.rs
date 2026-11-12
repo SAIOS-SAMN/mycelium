@@ -110,7 +110,11 @@ impl Session {
 
     /// The channel this session dials `endpoint` on.
     fn dial(&self, endpoint: &str) -> io::Result<Channel> {
-        crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Blocking).map_err(|why| match why {
+        // Law 9 — every wait here is denominated in strokes (#221).
+        // Polled pace waits up to a stroke budget (an aperture power of strokes),
+        // reporting silence as a stall while accommodating solve verification holds.
+        let budget = std::num::NonZeroUsize::new(crate::physics::aperture_cycle() as usize * 4096);
+        crate::network::channel::dial(endpoint, self.noise.as_ref(), crate::network::channel::Pace::Polled(budget)).map_err(|why| match why {
             crate::network::noise::NoiseRefusal::Io(e) => e,
             why => io::Error::new(io::ErrorKind::ConnectionRefused, why),
         })
@@ -527,8 +531,8 @@ impl Session {
             // and the door's deficit as the surface, so the arm dwells on
             // the lanes the judge named (23.8, S13.4), and as the deficit,
             // the gravity the mind's field feels (MU-CLIENT §4.13).
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
-                // A would-block that carries no deferral names no lanes,
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut => {
+                // A would-block or timeout that carries no deferral names no lanes,
                 // and no surface is read off one.
                 let lanes = match deferral_of(&e) {
                     Some(d) => d.deficit,
@@ -722,8 +726,16 @@ impl Session {
                 body
             }
         };
-        let Some(e) = crate::anastome::dialogue::Expression::read(body) else {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply is no expression: its point does not read"));
+        // #235 — a reply at a wire version this session does not speak is
+        // refused by name, before its act is read.
+        let e = match crate::anastome::dialogue::Expression::heard(body) {
+            Ok(e) => e,
+            Err(crate::anastome::dialogue::Unheard::Version { spoken, served }) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, format!("the door speaks wire {spoken:#06x}; this session speaks {served:#06x}")));
+            }
+            Err(crate::anastome::dialogue::Unheard::Malformed) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply is no expression: its version, count or point does not read"));
+            }
         };
         self.hear_point(e.point);
         Ok(e.act)

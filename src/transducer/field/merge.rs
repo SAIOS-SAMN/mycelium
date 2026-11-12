@@ -476,6 +476,7 @@ impl Contemplation {
             // the ring by its key below and rested until expanded.
             stage: super::carrier::WellStage::default(),
             orbit: None,
+            orbits: Vec::new(),
             spores,
             family,
             moved_k: 0,

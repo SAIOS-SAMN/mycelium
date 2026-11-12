@@ -98,9 +98,10 @@ impl Treasury {
     /// escrow.
     pub fn release_discharged(&mut self, address: &[u8], discharge: impl Into<Mu>, at: Anchor) -> Option<Mu> {
         let Escrowed { voices, mu, .. } = self.release_award(address)?;
-        // The claim capped by the discharge is the payment — lane-wise the
-        // lesser of the two; what the claim held above it is never issued.
-        let paid = mu.capped(&discharge.into());
+        // The discharge capped by the claim is the payment — lane-wise the
+        // lesser of the two, holding the discharge's modes (MU-ECONOMY §2.5);
+        // what the claim held above it is never issued.
+        let paid = discharge.into().capped(&mu);
         self.mint_claim(&voices, paid.clone(), at);
         Some(paid)
     }
@@ -215,7 +216,7 @@ impl Treasury {
         self.mint_to(voice, take, anchor, Some(Arm::Pouw))
     }
 
-    /// A CARRIAGE OF A PROVISIONAL WORD DRAWS ITS OWN FRAME from its escrow
+    /// A CARRIAGE OF A PROVISIONAL WORD DRAWS ITS OWN MEASURE from its escrow
     /// (78.42 (3), 65.5): the energy a transition carries leaves the escrow,
     /// per lane, exactly. `None` where no escrow stands; `Err` with the
     /// shortfall per lane where the escrow cannot pay the draw — the word is
@@ -232,7 +233,7 @@ impl Treasury {
         Some(Ok(row.mu.clone()))
     }
 
-    /// PRESSURE ARRIVING: a frame transported to a provisional word (a
+    /// PRESSURE ARRIVING: a measure transported to a provisional word (a
     /// sentence that cites it) is credited to its escrow, per lane. `None`
     /// where no escrow stands.
     pub fn credit_escrow(&mut self, address: &[u8], mu: impl Into<Mu>) -> Option<Mu> {

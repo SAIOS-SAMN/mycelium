@@ -75,23 +75,23 @@ impl Court {
     }
 
     /// THE ROOTS' LEAF (`LEAF_ROOTS`): the proofs' count, then each proof; `None`
-    /// where none is held. A proof that does not frame is named and left out
+    /// where none is held. A proof that does not delimit is named and left out
     /// of the count (LD0) — it is proved again at the next fold.
     pub(crate) fn put_root_proofs(&self) -> Option<Vec<u8>> {
-        let mut framed: Vec<Vec<u8>> = Vec::new();
+        let mut delimited: Vec<Vec<u8>> = Vec::new();
         for (_, proof) in self.root_proofs.scoped() {
             let mut v = Vec::new();
             match proof.put(&mut v) {
-                Some(()) => framed.push(v),
+                Some(()) => delimited.push(v),
                 None => eprintln!("  root proof refused: a signed section of it cannot be written"),
             }
         }
-        if framed.is_empty() {
+        if delimited.is_empty() {
             return None;
         }
         let mut out = Vec::new();
-        crate::transducer::address::put_key_count(&mut out, framed.len());
-        for v in framed {
+        crate::transducer::address::put_key_count(&mut out, delimited.len());
+        for v in delimited {
             out.extend_from_slice(&v);
         }
         Some(out)

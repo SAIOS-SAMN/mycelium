@@ -24,10 +24,11 @@ use crate::transducer::element::measure_lanes;
 #[derive(Default)]
 pub(crate) struct CourtPace {
     last_lang: Option<(usize, usize, usize)>,
-    last_height: u64,
+    pub(crate) last_height: u64,
     last_quoted_height: u64,
-    last_pressure: [u64; 4],
+    pub(crate) last_pressure: [u64; 4],
     pub(crate) dwell_remaining: [u64; 4],
+    pub(crate) dwell_elapsed: bool,
     /// MU-CLIENT §4.13 — THE COURT'S GRAVITY ON THE MIND'S FIELD: the
     /// deficit its last deferral named, per lane, standing until the court
     /// answers a quote; the mind's beat drags on these lanes
@@ -39,13 +40,21 @@ pub(crate) struct CourtPace {
     pub(crate) wells: crate::network::nerve::Keyed<crate::client::sdk::hypha_acts::Attachment>,
     /// One read of the hyphas' lines in flight at a time.
     pub(crate) reading_acts: bool,
+    /// One peer discovery in flight at a time.
+    pub(crate) discovering: bool,
+    synced: bool,
     last_synced_height: u64,
     pub(crate) quoting: bool,
     pub(crate) quoted: Option<YieldQuote>,
     pub(crate) pulling: bool,
     /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`),
-    /// on the alphabet's section (`TaskEnvelope::section`, track 26 S5).
+    /// on the alphabet's section (`TaskFamily::section`, track 26 S5).
     pub(crate) task: Option<(crate::anastome::dialogue::TaskSection, super::offer::Offer)>,
+    /// The court height at which the registry returned an empty task envelope.
+    /// When the registry holds no task, a settled mind rests and does not
+    /// poll the court again until the court's height advances or the field
+    /// holds strain (MU-CLIENT §4.13, #135, #246).
+    pub(crate) task_exhausted: Option<u64>,
     pub(crate) syncing: bool,
     pub(crate) schooling: bool,
     pub(crate) solving: crate::network::nerve::Keyed<()>,
@@ -71,13 +80,13 @@ pub(crate) struct CourtPace {
 impl CourtPace {
     /// A pressed lane whose dwell has run out, the T lane excluded (C4).
     fn dwell_elapsed(&self) -> bool {
-        [0usize, 1, 3].iter().any(|&l| self.last_pressure[l] > 0 && self.dwell_remaining[l] == 0)
+        self.dwell_elapsed
     }
 
     /// Whether a dwell still runs on a lane the court pressed: strokes are
     /// owed to it before the court is asked again.
     pub(crate) fn dwelling(&self) -> bool {
-        self.last_pressure.iter().zip(&self.dwell_remaining).any(|(p, d)| *p > 0 && *d > 0)
+        self.dwell_remaining.iter().any(|&d| d > 0)
     }
 
     /// The pressure the court last returned, the dwell's measure.
@@ -92,6 +101,9 @@ impl Mind {
     /// closed and pressed is this tick's.
     pub(crate) fn court_inflow(&mut self, outcome: &mut StrokeOutcome) {
         self.drain_answers();
+        if let Some(p) = self.hypha.tuniversal() {
+            self.board.court.last_height = self.board.court.last_height.max(p.h);
+        }
         let probed = std::mem::take(&mut self.board.court.probed);
         StrokeOutcome::add(&mut outcome.closed, &probed.closed);
     }
@@ -121,18 +133,22 @@ impl Mind {
             pace.last_quoted_height = pace.last_quoted_height.max(q.height);
             pace.last_height = pace.last_height.max(q.height);
             pace.last_pressure = q.surface;
-            pace.dwell_remaining = q.surface;
-            // A deferral's deficit stands as the court's gravity; a quote
-            // the court answered relieves it.
-            pace.deficit = match q.deficit {
+            // A deferral's deficit stands as the court's gravity and dwells on
+            // the lanes the court named; a quote the court answered relieves it.
+            let deficit = match q.deficit {
                 Some(d) => d,
                 None => [0; 4],
             };
+            pace.deficit = deficit;
+            pace.dwell_remaining = deficit;
             self.answer_demands(&q.clusters, outcome);
         }
         let pace = &self.board.court;
         let due = pace.last_lang != Some(lang) || pace.last_height > pace.last_quoted_height || pace.dwell_elapsed();
         if due {
+            let pace = &mut self.board.court;
+            pace.last_lang = Some(lang);
+            pace.last_quoted_height = pace.last_height;
             self.quote();
         }
         if crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty()
@@ -273,8 +289,15 @@ impl Mind {
     /// tick rested: discovery, the syllabus and the sheaf sync by discordant
     /// stratum.
     pub(crate) fn language_inflow(&mut self) {
+        if matches!(self.transport(), TransportAperture::Occluded { .. }) {
+            return;
+        }
         let pace = &self.board.court;
-        let due = pace.last_height > pace.last_synced_height || pace.dwell_elapsed() || self.language.atlas_is_empty();
+        let due = !pace.synced
+            || self.language.atlas_is_empty()
+            || self.language.genome_len() == 0
+            || pace.last_height > pace.last_synced_height
+            || pace.dwell_elapsed();
         if !due {
             return;
         }
@@ -283,6 +306,7 @@ impl Mind {
         self.sync_genome();
         self.read_hypha_acts();
         let pace = &mut self.board.court;
+        pace.synced = true;
         pace.last_synced_height = pace.last_height;
     }
 }

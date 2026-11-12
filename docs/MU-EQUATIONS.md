@@ -1195,10 +1195,11 @@ Code: `src/physics/equilibrium.rs::coupling`, `::torque`, `::net_torque`,
 switch          S = mⱼ Pᵢ − mᵢ Pⱼ          (balance: mⱼ X·Pᵢ = mᵢ X·Pⱼ)
 levels          S(λ) = λ Pᵢ − Pⱼ
 charge          S(r) S(1)                  (a boost fixing both pivots, carrying level μ to μ r²)
-squared length  d² = −2 Pᵢ · Pⱼ
-strength        mᵢ mⱼ / d²
-capacity        S² = mᵢ mⱼ d²              strength × capacity = (mᵢ mⱼ)²
-projection      μ = mᵢ (X·Pⱼ) / (mⱼ (X·Pᵢ))
+reach           r = Σ_k |x_{i,k} − x_{j,k}|
+pole            t = r / (mᵢ + mⱼ)
+strength        c = (mᵢ + mⱼ) / (r + mᵢ + mⱼ) = 1 / (1 + t)
+fluidity        d = r / (r + mᵢ + mⱼ) = t / (1 + t)   (c + d = 1)
+projection      μ = (mᵢ r_{jX}) / (mⱼ r_{iX}) = t_{jX} / t_{iX}
 field line      Pᵢ ∧ Pⱼ ∧ X;    Z on it ⇔ Pᵢ ∧ Pⱼ ∧ X ∧ Z = 0
 split           B = Pᵢ ∧ Pⱼ,  B² = β² > 0:   G = c B + T + L,  c = ⟨G B⟩₀ / β²
                 T commutes with B (torsion, no work); L anticommutes (lift)
@@ -1207,8 +1208,8 @@ torque²         ⟨T T̃⟩₀
 
 A fibre between two weighted pivots, everything read off the pair.
 
-Sources: MU-RECURSION 78.74. Code: `src/physics/pivot_fibre.rs::Fibre`
-(`switch`, `level`, `charge`, `length2`, `strength`, `capacity`,
+Sources: MU-RECURSION 78.74 (amended). Code: `src/physics/pivot_fibre.rs::PivotFibre`
+(`switch`, `level`, `charge`, `reach`, `pole`, `strength`, `fluidity`,
 `torque2`, `project`, `field_line`, `on_field_line`, `split`).
 
 #### 5.13 The white-hole source
@@ -1709,6 +1710,16 @@ circuit period = strokes − strokes at the last circuit
 The one scheduler floor is told to the operating system; every bound on
 work is counted in strokes or in final-point advances.
 
+**The idle court** (ruled 2026-11-11, #234; 78.182 item 6) parks with no
+bound until the next motion: an act heard at the door, an act judged, or a
+final point advanced (`TShelf::park_until_moved`, `TShelf::judged`). Its
+next due event is always one. A peer is due on this court's K, its roots or
+the final point; the tick is signed where it moved; the reserve regenerates
+at an orbit's close; a parent is fetched on an ask. So an idle court
+spends nothing while none comes. A court still booting (its genesis not
+yet written or adopted) parks one floor at a time, since its own cycles
+write the first receipt and ask the peers that give it its origin.
+
 Sources: MU-RECURSION 47.5, 45.7, 78.152, PH1. Code:
 `src/physics/calibration.rs::stroke_floor`, `::idle_park`,
 `src/physics/lambda.rs::from_transport`, `::persist_dwell`,
@@ -1983,7 +1994,8 @@ LAW_VERSION       = 5
 
 The founding principles admit no constant: a number in the physics is read
 off the field or the geometry, or it is named in `OPEN_PHYSICS` with what
-will derive it (MU-DERIVATIONS D1.4 lists every entry). The challenge
+will derive it (MU-DERIVATIONS D1.4 lists every entry). An engineering or
+protocol number is named in its sibling, `OPEN_ENGINEERING` (D1.4 O2). The challenge
 window is derived (law version 5, 2026-10-31): a window opened at `h₀`
 closes at the height of the first sealed `Cite::Window` whose reach is at
 or above `h₀`, the reach being the least height every other keeper's signed
@@ -1994,7 +2006,7 @@ enclosure on a declared grid; the throat is a `Cl(4,1)` round carried by
 its bank's modes, fit by meet, and the grid retires with it.
 
 Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
-`src/physics/axioms/founding.rs::OPEN_PHYSICS`;
+`src/physics/axioms/founding.rs::OPEN_PHYSICS`, `OPEN_ENGINEERING`;
 `src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
 `src/server/cognition/window.rs::window_close`;
 `src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS`.
@@ -2092,7 +2104,7 @@ id is a hosted shell's own.
 | L0 temporal monotonicity (`TAG_LAW‖3‖5`) | 5 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 conservative flow into e_∅ (`TAG_LAW‖4‖5`) | 5 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
-| L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
+| L0 parameters (the body budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
 | Concordance (the clause register, `CLAUSES`) | 5 (the agreement's version, draft 4 approved 2026-11-05; version 4 was signed at v0.3.0 by its text's hash, retired); each clause by its law form's id and version (`FORMS-PASSAGE` 4, `FORMS-COORDINATE` 4, `FORMS-COUPLING` 1, `FORMS-TURNING` 1), identified by its content and signed by adjudicated reading, never by a hash of the text (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md` §0; the fixtures of proposals 78.172 §5, 78.173 §5 (11b as `FORMS-TURNING`) and 78.175 §5 | `src/physics/laws/clauses/`; served on `ACT_LAWS` mode 7, signing acts on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/reference.rs` (module documentation); Concordance 2.10, A6 | `forms::reference` (core shell) |
 | `FORMS-PASSAGE` | 4 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v3, [proposal 78.172](proposals/78.172-law-passage.md) (adopted by both operators 2026-11-05; netstratum docs/117 §10, §12): the passage is the pole swap, the reflection `x ↦ e₊·x·e₊` of the frame state `H·n_Z + R·n_Q` (hold and reach), the riding state's one-sided pass `q ↦ e₊·q`, and the flux `T ↦ T − 2·(H − R)`. v2's product `q ↦ v_k·q` is retired as the passage (v_k stays the plane's direction in the advance); v1's `2H − R` struck 2026-11-05; ROADMAP track 24 B3 | `forms::passage` (`Poles`: `swap`, `cross` to a `Crossing` with the span on `S` and the flux on `T`, `ride`, `read` to a `Frame` with its `whole`, `span`, `share` and `Place`; refusing `NotUnit`, `WrongSign`, `NotFrame`, `MixedParity`, `NoWhole`, `NotShare` and `Mismatched`; the refusal of a moved reach; the face read from the other pole), over the exact algebra `algebra::Clifford`; the five fixtures and the roles' exchange in `forms/src/tests/crossing.rs`, for the joint read |

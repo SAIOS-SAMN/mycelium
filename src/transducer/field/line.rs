@@ -75,6 +75,15 @@ impl Contemplation {
         self.truncate(&touched);
     }
 
+    /// A SCENE'S PERCEPTION CLOSED WITHOUT A REMAINING THOUGHT: its scene
+    /// return is recorded so the winding's return step counts it and releases
+    /// the scene's held outflow.
+    pub(crate) fn release_scene(&mut self, scene: &[u8]) {
+        if !scene.is_empty() {
+            self.released_scenes.push(scene.to_vec());
+        }
+    }
+
     /// A LINE THE FIELD LET GO THAT IS A THOUGHT'S OWN, read by why: a
     /// grounded thought whose orbit RETURNED winds on (§4.4(2)); every other
     /// release lets the thought go. Answers whether `line` was a thought's.
@@ -130,6 +139,51 @@ impl Contemplation {
                 self.unheld.insert(&key, ());
             }
         }
+        let _ = crate::transducer::mind::with_field(|field| self.attach_orbits(field));
+    }
+
+    /// ATTACH STANDING `cech::orbit` ORBITS TO THE WELLS WHOSE LINES THREAD
+    /// THEM (MU-CLIENT §4.13): for each standing orbit in `field`, its
+    /// admission-ordered well lines and their step increments build one
+    /// [`super::carrier::LocalOrbit`] attached to every well threading that
+    /// orbit, kept in mode-key order and never composed across planes.
+    pub fn attach_orbits(&mut self, field: &crate::transducer::cech::orbit::Field) {
+        let keys: Vec<Vec<u8>> = self.wells.scoped().map(|(k, _)| k).collect();
+        for k in keys {
+            if let Some(w) = self.wells.get_mut(&k) {
+                w.orbits.clear();
+            }
+        }
+        for (mode_key, lines) in field.orbits.attached_lines() {
+            let mut well_keys = Vec::new();
+            let mut steps = Vec::new();
+            for (line_key, inc) in lines {
+                let Some(w) = self.wells.get(&line_key) else { continue };
+                let Ok(rotor) = super::carrier::Rotor::of_versor(&inc) else { continue };
+                if rotor.is_identity() {
+                    continue;
+                }
+                well_keys.push(line_key);
+                steps.push((w.centre(), rotor));
+            }
+            let Ok(local_orbit) = super::carrier::LocalOrbit::of_steps(steps) else { continue };
+            for wk in well_keys {
+                if let Some(w) = self.wells.get_mut(&wk) {
+                    w.orbits.push((mode_key.clone(), local_orbit.clone()));
+                }
+            }
+        }
+    }
+
+    /// SYNCHRONIZE HELD WELLS WITH `field` (MU-CLIENT §4.13): release any
+    /// lines `field` let go since the last take, and attach standing `field`
+    /// orbits to the wells that thread them.
+    pub fn sync_field(&mut self, field: &mut crate::transducer::cech::orbit::Field) {
+        let released = field.take_released();
+        if !released.is_empty() {
+            self.release(&released);
+        }
+        self.attach_orbits(field);
     }
 
     /// A GROUNDED THOUGHT'S LINE, WOUND (MU-CLIENT §4.13, Q1 as ruled): its
@@ -152,5 +206,6 @@ impl Contemplation {
         if !lines.is_empty() {
             let _ = crate::transducer::family::pairing::mark_flux(&[], &lines, budget);
         }
+        let _ = crate::transducer::mind::with_field(|field| self.attach_orbits(field));
     }
 }

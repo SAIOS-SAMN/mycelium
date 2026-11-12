@@ -34,7 +34,8 @@ fn turning_order_equals_reduced_denominator() {
     assert_eq!(turning(&p, 150, 1).order(), Some(12));
     assert_eq!(turning(&p, 720, 1).order(), Some(1));
     assert_eq!(turning(&p, 720, 1).winding(), BigInt::from(2));
-    assert_eq!(turning(&p, -400, 1).winding(), BigInt::from(1), "K = ⌊|θ|/360⌋");
+    assert_eq!(turning(&p, -400, 1).winding(), BigInt::from(-1), "K = trunc(θ/360), signed");
+    assert_eq!(turning(&p, -810, 1).winding(), BigInt::from(-2), "K = trunc(θ/360), signed");
 }
 
 /// A turning on a plane reversed (`e_+2+1`) composes with one on `e_+1+2`

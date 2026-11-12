@@ -111,12 +111,13 @@ pub(crate) fn express(act: &[u8]) -> Option<Vec<u8>> {
 }
 
 /// THE ACT AN EXPRESSION READ AT THIS DOOR CARRIES, its speaker's point
-/// heard on the shelf (held apart as heard, never as final). `None` where
-/// the bytes are no expression.
-pub(crate) fn hear(expression: Vec<u8>) -> Option<Vec<u8>> {
-    let e = mycelium::anastome::dialogue::Expression::read(expression)?;
+/// heard on the shelf (held apart as heard, never as final); or why it is
+/// not heard: no expression, or one at a wire version this door does not
+/// speak (#235), refused by name before its act is read.
+pub(crate) fn hear(expression: Vec<u8>) -> Result<Vec<u8>, mycelium::anastome::dialogue::Unheard> {
+    let e = mycelium::anastome::dialogue::Expression::heard(expression)?;
     SHELF.heard_at_door(e.point);
-    Some(e.act)
+    Ok(e.act)
 }
 
 /// The origin this court adopted, as a point's origin; `None` before it.
@@ -234,7 +235,7 @@ pub(crate) fn sign_tick(mesh: &Mesh, tick: Option<Tick>) -> Option<Vec<TickReadi
 /// 78.152b — WHY A PUSHED TICK WAS NOT HEARD.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TickRefusal {
-    /// The frame does not read whole as `ACT_TICK`.
+    /// The envelope does not read whole as `ACT_TICK`.
     Unreadable,
     /// Its keeper is no peer court this mesh knows (one whose signed digest
     /// named its key and door), or is this court itself.

@@ -24,8 +24,8 @@ static LEFT: Mutex<Option<WhyAsk>> = Mutex::new(None);
 /// The stroke's answer to the question left, served to its next asking.
 static ANSWERED: Mutex<Option<(WhyAsk, Option<Why>)>> = Mutex::new(None);
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(ask) = decode_why(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(ask) = decode_why(&delimited.body) else { return };
     let why = match crate::court_lock::held!(context.court) {
         // Stays on the court (78.153b): stamp→word and its Reasons are not
         // on the shelf.
@@ -38,9 +38,9 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
 /// A WHY THAT REACHED A FULL DOOR, taken without the court: served off the
 /// stroke's answer where the same question was answered, else left for the
 /// next stroke and deferred as every act a full door holds back is. Answers
-/// whether the frame was a why.
-pub(crate) fn serve_left(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
-    let Some(ask) = decode_why(&frame.body) else { return false };
+/// whether the envelope was a why.
+pub(crate) fn serve_left(stream: &mut Channel, delimited: &Delimited, context: &Context) -> bool {
+    let Some(ask) = decode_why(&delimited.body) else { return false };
     let answered = match ANSWERED.lock() {
         Ok(a) => a.as_ref().filter(|(asked, _)| *asked == ask).map(|(_, why)| encode_why_reply(why.as_ref())),
         Err(_) => None,

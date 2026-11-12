@@ -34,10 +34,16 @@ impl Mind {
     }
 
     /// Ask the bootstrap hypha for the rest of the nerve, one peer per spend,
-    /// on the carrier.
+    /// on the carrier. One discovery is in flight at a time.
     pub fn discover(&mut self) {
+        if self.board.court.discovering {
+            return;
+        }
+        self.board.court.discovering = true;
         let mut budget = self.physics.stroke();
-        self.ask(move |s| s.discover_budgeted(&mut budget), |_, ()| {});
+        self.ask(move |s| s.discover_budgeted(&mut budget), |entity, ()| {
+            entity.board.court.discovering = false;
+        });
     }
 
     /// THE MIND OPENED toward the hypha at `endpoint`: its carrier discovers the

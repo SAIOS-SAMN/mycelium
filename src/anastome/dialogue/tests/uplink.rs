@@ -106,6 +106,7 @@ fn uplink_fold_round_trips_with_answers() {
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unbonded },
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Broken },
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeated },
+        Uplinked::ChildRefused { index: 1, why: ChildRefusal::Underbonded { lane: 2, bond: Box::new(crate::core::Q::new(1.into(), 3.into())), exposure: Box::new(crate::core::Q::from_integer(16.into())) } },
         Uplinked::Repeated,
         Uplinked::Boundary(crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain: [3u8; 32] }),
     ] {

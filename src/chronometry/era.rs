@@ -98,8 +98,8 @@ impl Era {
     /// THE ERA AS THE SEGMENT CARRIES IT: its descriptor, its payload's
     /// length, its payload. `None` where a receipt of the payload does not
     /// write (LD0).
-    #[must_use = "a frame that cannot be written is refused by name, never dropped (LD0)"]
-    pub fn frame(&self) -> Option<Vec<u8>> {
+    #[must_use = "a record that cannot be written is refused by name, never dropped (LD0)"]
+    pub fn record(&self) -> Option<Vec<u8>> {
         let payload = self.payload()?;
         let mut out = Vec::with_capacity(Self::DESCRIPTOR + 8 + payload.len());
         self.root.write(&mut out);

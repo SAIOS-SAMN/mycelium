@@ -277,7 +277,7 @@ impl Court {
         // citation is not geometry — it is a 1-simplex of the nerve and a
         // vertex's presentation. Both ride `Element.receipts`, so the
         // economy's read is now a read of two flat lists and builds no form.
-        let env = w.receipts();
+        let env = w.stalk();
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut out = Vec::new();
         let take = |k: &mut crate::network::nerve::Keyed<()>,
@@ -326,7 +326,7 @@ impl Court {
     /// binding for the citer itself), and the cited form is reconstructed over
     /// it: a generator that closes nothing there is used for nothing
     /// there, whatever it closes elsewhere. As μ, each pair's share of its
-    /// frame (78.170 O1, ruled 2026-11-01).
+    /// enclosure (78.170 O1, ruled 2026-11-01).
     pub(crate) fn cited_deflation(
         &self,
         citer: &[u8],
@@ -368,7 +368,7 @@ impl Court {
         // budget. The ledger the court keeps of who cited whom, and the
         // memo of which pivots it has certified, are both about the
         // SPEAKER, so they are read from the speaker's own attestation.
-        let env = w.receipts();
+        let env = w.stalk();
         // 26 as ruled 2026-09-10: BOTH LEVELS are uses. One entry per citer
         // address per cited address, so a form cited by two vertices of one
         // sentence is one use of one verdict and two sentences citing it are

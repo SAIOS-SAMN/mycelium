@@ -1,4 +1,4 @@
-// 26 — the mind's own codec: the frame two
+// 26 — the mind's own codec: the re-period two
 // scenes measure, and the byte an outcome rides the wire as.
 //
 //! The percept and the demand that were spelled here carried a voice's
@@ -8,13 +8,13 @@
 
 use super::*;
 
-/// The frame measured from two painted scenes (the scenes' site extents) — the
-/// identity frame when both share dims; used where no sample is at hand.
+/// The re-period measured from two painted scenes (the scenes' site extents) — the
+/// identity re-period when both share dims; used where no sample is at hand.
 #[expect(
     clippy::disallowed_methods,
     reason = "rule 4 — a scene's extent is the largest coordinate its painted sites occupy, content"
 )]
-pub fn frame_of(
+pub fn reperiod_of(
     a: &[crate::transducer::spelled::PaintedSite],
     b: &[crate::transducer::spelled::PaintedSite],
 ) -> Option<crate::transducer::element::Reperiod> {

@@ -247,7 +247,7 @@ impl House {
                 return false;
             }
         };
-        let Some(envelope) = task::decode_task_envelope(&reply) else {
+        let Some(envelope) = task::decode_task(&reply) else {
             println!("seats: the court gave no task ({} bytes)", reply.len());
             return false;
         };

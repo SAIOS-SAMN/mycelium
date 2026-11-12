@@ -60,7 +60,7 @@ impl Entry {
     /// bytes (a sign, an empty numerator, a one-limb denominator). A count
     /// of rows a tape cannot hold at this length reserves nothing.
     /// FORMAT: a row tape's fewest bytes, 166.
-    pub const MIN_TAPE: usize = 1 + 1 + 32 + 4 * 11 + crate::chronometry::Stamp::LEN + 32;
+    pub const MIN_TAPE: usize = 1 + 1 + 32 + crate::economy::Mu::MIN_LEN + crate::chronometry::Stamp::LEN + 32;
 
     /// This row's tape length.
     #[cfg(test)]

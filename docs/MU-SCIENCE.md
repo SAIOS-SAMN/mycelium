@@ -687,7 +687,7 @@ All are typed readings on the console, and nothing is answered from logs.
 
 - Every verifier runs on the court's stroke budget and never blocks the
   door. A long check answers unread and resumes.
-- Certificate and proof sizes are bounded by the frame budget; a larger
+- Certificate and proof sizes are bounded by the body budget; a larger
   object is submitted in pages under one claim address.
 - Computation (V3) is fuel-metered in strokes, with no host access.
 

@@ -5,7 +5,7 @@
 //! glued by, and the class it was seeded from.
 
 use super::*;
-use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, Monodromy, Orbit, Precession, WellBody, WellStage};
+use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, LocalOrbit, Monodromy, Orbit, Precession, RotorPrecession, WellBody, WellStage};
 
 /// THE KEYED READ OF A HELD WORD'S SECTION BY ADDRESS: the rotation the
 /// chart names and the carriage it names it at. Both halves, because a
@@ -204,9 +204,12 @@ pub struct Well {
     /// ROADMAP track 26 S7 stage 2 — THE ORBIT THE WELL BINDS in the field's
     /// atlas, where it binds one: a geodesic of the field's curvature, one
     /// revolution through charts about its centre. None is flat, and the
-    /// well's holonomy and precession are then refused `Unbound`. The
-    /// contemplation's orbits are attached here in S9a.
+    /// well's holonomy and precession are then refused `Unbound`.
     pub orbit: Option<Orbit>,
+    /// MU-CLIENT §4.13 — THE LOCAL ORBITS ATTACHED FROM `cech::orbit`: each
+    /// `(mode_key, LocalOrbit)` relation this well's line threads in the
+    /// mind's field, in mode-key order, never composed across planes.
+    pub orbits: Vec<(Vec<u8>, LocalOrbit)>,
     /// N4 — A PERCEPTION'S BODIES, by the chart each stands on, at its input
     /// and output frames (`cross_scene::Spores`): the bodies heard against
     /// another perception's. Empty for every other idea.
@@ -432,7 +435,7 @@ pub(crate) fn bundle_connections(
     out
 }
 
-/// P10(c), §25.12 — THE CANDIDATE'S MONODROMY AROUND THE FAMILY'S FRAMES:
+/// P10(c), §25.12 — THE CANDIDATE'S MONODROMY AROUND THE FAMILY'S DELIMITED:
 /// `M = ∏ γ⁻¹ V γ`, the product of `V` conjugated by each measured
 /// connection.
 ///
@@ -515,6 +518,55 @@ impl Well {
     /// refused `Unbound` where it binds no orbit.
     pub fn monodromy(&self) -> Result<Monodromy, FieldRefusal> {
         self.body()?.monodromy()
+    }
+
+    /// THE LOCAL ORBITS ATTACHED TO THIS WELL from `cech::orbit`, each with
+    /// the mode key of its plane.
+    pub fn local_orbits(&self) -> &[(Vec<u8>, LocalOrbit)] {
+        &self.orbits
+    }
+
+    /// THE HOLONOMIES OF THIS WELL'S ATTACHED LOCAL ORBITS PER REVOLUTION:
+    /// each `(mode_key, Rotor)` read on its own plane, never composed across
+    /// planes. Refused `Unbound` when the well threads no orbit, and
+    /// `NotRevolution { at: 1 }` when an attached orbit holds a single line
+    /// awaiting its second line.
+    pub fn local_holonomies(&self) -> Result<Vec<(Vec<u8>, super::carrier::Rotor)>, FieldRefusal> {
+        if self.orbits.is_empty() {
+            return Err(FieldRefusal::Unbound { charts: vec![self.centre()] });
+        }
+        self.orbits.iter().map(|(k, o)| Ok((k.clone(), o.holonomy()?))).collect()
+    }
+
+    /// THE PRECESSIONS OF THIS WELL'S ATTACHED LOCAL ORBITS PER REVOLUTION
+    /// (MU-SENSING §3.9): each `(mode_key, RotorPrecession)` read on its own
+    /// plane. Refused `Unbound` when the well threads no orbit, and
+    /// `NotRevolution { at: 1 }` when an attached orbit holds a single line
+    /// awaiting its second line.
+    pub fn local_precessions(&self) -> Result<Vec<(Vec<u8>, RotorPrecession)>, FieldRefusal> {
+        if self.orbits.is_empty() {
+            return Err(FieldRefusal::Unbound { charts: vec![self.centre()] });
+        }
+        self.orbits.iter().map(|(k, o)| Ok((k.clone(), o.precession()?))).collect()
+    }
+
+    /// THE AXIOMATIC GRAVITY SHEAR OF THIS WELL'S LOCAL ORBITS ON `other`'S
+    /// LOCAL ORBITS (MU-SENSING §3.7): each commuting rate drag on an
+    /// orthogonal orbit plane. Refused `Unbound` when this well threads no
+    /// orbit.
+    pub fn local_shear(&self, other: &Well) -> Result<Vec<crate::transducer::cga::Mv>, FieldRefusal> {
+        if self.orbits.is_empty() {
+            return Err(FieldRefusal::Unbound { charts: vec![self.centre()] });
+        }
+        let mut out = Vec::new();
+        for (_, local) in &self.orbits {
+            for (_, neighbour) in &other.orbits {
+                if let Some(drag) = local.rate_shear(neighbour)? {
+                    out.push(drag);
+                }
+            }
+        }
+        Ok(out)
     }
 
     /// THE WELL'S INFLATION, a gauge reading: the frame state on its

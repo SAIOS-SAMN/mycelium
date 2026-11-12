@@ -105,6 +105,6 @@ fn entries_act_round_trips() {
         receipt: [6; 32],
         arm: None,
     };
-    let reply = encode_entries_reply(1, std::slice::from_ref(&entry), crate::network::wire::frame_budget()).expect("the page counts");
+    let reply = encode_entries_reply(1, std::slice::from_ref(&entry), crate::network::wire::BODY_BUDGET).expect("the page counts");
     assert_eq!(decode_entries_reply(&reply), Some((1, vec![entry])));
 }

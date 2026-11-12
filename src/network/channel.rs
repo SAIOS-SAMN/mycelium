@@ -19,6 +19,12 @@
 //! name (`PinnedAnsweredPlain`), and a pinned peer presenting another static
 //! key is refused by name (`PeerKeyChanged`), never with a fallback.
 //!
+//! PLAINTEXT STAYS ON THE HOST (D1.3 O2, 78.182 item 19). A plaintext
+//! channel is spoken only with a peer on this host: a loopback address, or
+//! the address the socket itself stands at. Across the host's boundary the
+//! channel is Noise or nothing, refused by name (`PlainAcrossBoundary`), on
+//! the door's side and the dialler's alike.
+//!
 //! The channel moves bytes. It knows byte counts, peer addresses, peer keys
 //! and the pace of a read, and never what the bytes mean.
 
@@ -249,6 +255,23 @@ impl Write for Channel {
     }
 }
 
+/// WHETHER A PEER STANDS ON THIS HOST: a loopback address, or the very
+/// address the socket stands at (one host reached by its own address).
+pub fn on_this_host(peer: std::net::IpAddr, local: std::net::IpAddr) -> bool {
+    peer.is_loopback() || peer == local
+}
+
+/// A plaintext channel on `tcp`, where its peer stands on this host;
+/// refused `PlainAcrossBoundary` otherwise, or where either end's address
+/// cannot be read.
+fn plain_on_host(paced: Paced, peer: &str) -> Result<Paced, NoiseRefusal> {
+    let tcp = paced.tcp();
+    match (tcp.peer_addr(), tcp.local_addr()) {
+        (Ok(p), Ok(l)) if on_this_host(p.ip(), l.ip()) => Ok(paced),
+        _ => Err(NoiseRefusal::PlainAcrossBoundary { peer: peer.to_string() }),
+    }
+}
+
 fn connect(endpoint: &str, pace: Pace) -> Result<Paced, NoiseRefusal> {
     let tcp = TcpStream::connect(endpoint)?;
     let _ = tcp.set_nodelay(true);
@@ -271,14 +294,16 @@ pub fn dial(endpoint: &str, home: Option<&NoiseHome>, pace: Pace) -> Result<Chan
 /// never under a port another mind may take next.
 pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace) -> Result<Channel, NoiseRefusal> {
     let Some(home) = home else {
+        let plain = plain_on_host(connect(endpoint, pace)?, peer)?;
         met(peer, Kind::Plain, Side::Dialled);
-        return Ok(Channel::Plain(connect(endpoint, pace)?));
+        return Ok(Channel::Plain(plain));
     };
     // A peer met in plaintext by this process and never pinned is dialled
     // in plaintext without the opening asked again.
     if home.pinned(peer)?.is_none() && answered_plain(peer) {
+        let plain = plain_on_host(connect(endpoint, pace)?, peer)?;
         met(peer, Kind::Plain, Side::Dialled);
-        return Ok(Channel::Plain(connect(endpoint, pace)?));
+        return Ok(Channel::Plain(plain));
     }
     match noise::initiate(connect(endpoint, pace)?, home, peer) {
         Ok(s) => {
@@ -288,8 +313,9 @@ pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace)
         Err(NoiseRefusal::NotSpoken { .. }) => match home.pinned(peer)? {
             Some(pinned) => Err(NoiseRefusal::PinnedAnsweredPlain { peer: peer.to_string(), pinned }),
             None => {
+                let plain = plain_on_host(connect(endpoint, pace)?, peer)?;
                 met(peer, Kind::Plain, Side::Dialled);
-                Ok(Channel::Plain(connect(endpoint, pace)?))
+                Ok(Channel::Plain(plain))
             }
         },
         Err(e) => Err(e),
@@ -300,7 +326,7 @@ pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace)
 /// the channel's opening is answered with the XX handshake (the caller is
 /// pinned under no name: it dials from a port of its own choosing, and its
 /// identity is the signature on each act); any other head is a plaintext
-/// frame, read whole from its first byte and named.
+/// envelope, read whole from its first byte and named.
 ///
 /// The connection's first four bytes tell the two apart: a plaintext
 /// envelope opens with its length, and the opening's four, read as a length,
@@ -320,6 +346,7 @@ pub fn accept(tcp: TcpStream, home: Option<&NoiseHome>, pace: Pace) -> Result<Ch
                 Ok(a) => a.ip().to_string(),
                 Err(_) => String::from("an unread address"),
             };
+            let paced = plain_on_host(paced, &at)?;
             met(&at, Kind::Plain, Side::Accepted);
             Ok(Channel::Plain(paced))
         }

@@ -64,9 +64,11 @@ fn founded() -> Court {
     assert!(matches!(k.designate_reserve(&reservation.sign(&key(4))), Founded::Reserved { .. }));
     super::boundary::signs(&mut k, &r);
     let anchor = k.anchor();
-    k.treasury.genesis(verifying(&r), [12, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&r), [12, 192, 192, 192], anchor);
+    // #237: each line's bond covers what its folds move on every lane; S's
+    // four units are the bond the slash's readings below are worked on.
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
-        let bond = Bond { domain: domain(), reserve: verifying(&r), tier: verifying(line), mu: Some([4, 0, 0, 0].into()), nonce: [i; 32] };
+        let bond = Bond { domain: domain(), reserve: verifying(&r), tier: verifying(line), mu: Some([4, 64, 64, 64].into()), nonce: [i; 32] };
         assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
     }
     k
@@ -174,18 +176,14 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
 /// −3 — the same continuity, other rows. Falsified, reversed, final never;
 /// the reserve fold that carried it unwinds (it refiles without the line),
 /// and the LINE's bond is slashed, never the reserve's — on the lane the
-/// lie moved, against its exposure (D2.1): bonded 6 on G, exposed 15 (9 out
-/// to `w1`, 6 declared), the cut is 6·15/21 = 30/7, so 12/7 stays bonded;
-/// on S, where the fold moved nothing, nothing is cut.
+/// lie moved, against its exposure (D2.1): bonded 64 on G, which covers the
+/// line's exposure there (#237), exposed 15 (9 out to `w1`, 6 declared), the
+/// cut is 64·15/79 = 960/79, so 4096/79 stays bonded; on S, T and H, where
+/// the fold moved nothing, nothing is cut.
 #[test]
 fn challenge_falsifies_fold_line_does_not_sum_to() {
-    use crate::anastome::dialogue::domain::{Bond, Founded};
     let (a, ..) = tiers();
     let mut k = founded();
-    let anchor = k.anchor();
-    k.treasury.genesis(verifying(&reserve()), [0, 6, 0, 0], anchor);
-    let on_g = Bond { domain: domain(), reserve: verifying(&reserve()), tier: verifying(&a), mu: Some([0, 6, 0, 0].into()), nonce: [9; 32] };
-    assert!(matches!(k.bond(&on_g.sign(&reserve())), Founded::Bonded { .. }), "the line bonded on G too");
     let e = a_entries();
     let lie = fold(&a, &e, vec![(who(1), g(9)), (who(2), g(-3))], e[0].declared.clone(), Vec::new());
     assert_eq!(lie.continuity(), Ok(()), "continuity alone does not catch it");
@@ -195,10 +193,11 @@ fn challenge_falsifies_fold_line_does_not_sum_to() {
     assert!(matches!(reply, Challenged::Falsified { unwound: 1, .. }), "the carrying reserve fold unwound: {reply:?}");
     assert_eq!(k.finality(&at), Finality::Falsified);
     assert_eq!(k.finality(&FoldAt::sealed(at.stamp)), Finality::Unwound, "the reserve refiles without the line");
-    let kept = crate::economy::Mu::counts([28, 12, 0, 0]).part(7).expect("sevenths");
-    assert_eq!(k.bond_of(&verifying(&a)), kept, "the line's own bond slashed on G against its exposure, S untouched");
-    let bounty = crate::economy::Mu::counts([0, 60, 0, 0]).part(119).expect("a part");
-    assert_eq!(k.treasury.balance_mu(&verifying(&challenger())), bounty, "the bounty: the cut times the defect 2 against the exposure 15");
+    let q = |n: i64, d: i64| crate::core::Q::new(n.into(), d.into());
+    let kept = crate::economy::Mu::of([q(4, 1), q(4096, 79), q(64, 1), q(64, 1)]).expect("non-negative");
+    assert_eq!(k.bond_of(&verifying(&a)).lanes(), kept.lanes(), "the line's own bond slashed on G against its exposure, S, T and H untouched");
+    let bounty = crate::economy::Mu::of([q(0, 1), q(1920, 1343), q(0, 1), q(0, 1)]).expect("non-negative");
+    assert_eq!(k.treasury.balance_mu(&verifying(&challenger())).lanes(), bounty.lanes(), "the bounty: the cut 960/79 times the defect 2 against the exposure 15, 2/17");
     assert_eq!(k.bond_of(&verifying(&reserve())), reserve_bond, "never the reserve's");
     let head = k.chain.head_height();
     assert!(close_through(&mut k, head).is_none(), "a falsified fold holds no window to close");
@@ -431,6 +430,11 @@ fn challenge_part_streams_span_within_frame_budget() {
         (0..4096).map(|_| Entry { rows: vec![(who(1), g(2)), (who(2), g(-1)), (who(3), g(-1))], declared: Vec::new() }).collect();
     let f = fold(&a, &line, vec![(who(1), g(8192)), (who(2), g(-4096)), (who(3), g(-4096))], Vec::new(), Vec::new());
     let mut k = founded();
+    // #237: the line's bond covers the 8192 its fold moves on G.
+    let anchor = k.anchor();
+    k.treasury.genesis(verifying(&reserve()), [0, 8192, 0, 0], anchor);
+    let more = crate::anastome::dialogue::domain::Bond { domain: domain(), reserve: verifying(&reserve()), tier: verifying(&a), mu: Some([0, 8192, 0, 0].into()), nonce: [9; 32] };
+    assert!(matches!(k.bond(&more.sign(&reserve())), crate::anastome::dialogue::domain::Founded::Bonded { .. }));
     let at = sealed(&mut k, f.clone(), &a);
     let whole = evidence(&f, &at, line.clone()).sign(&challenger());
     let framed = |c: &crate::anastome::dialogue::challenge::SignedChallenge| {

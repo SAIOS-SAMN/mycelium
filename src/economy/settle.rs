@@ -39,14 +39,13 @@ impl Treasury {
         }
         // The rows are written for μ⃗ that MOVED, after the debit — which
         // cannot be short, by `paid ≤ held`.
-        let drawn = self.debit(demander, &paid);
-        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
-        self.credit(discoverer, &paid);
+        let Ok(moved) = self.debit(demander, &paid) else { return Mu::zero() };
+        self.credit(discoverer, &moved);
         // POWC (78.33): a cited generator paid by the use that cited it.
         let arm = Some(Arm::Powc);
-        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
-        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
-        paid
+        self.write(Entry { kind: Kind::Transfer, who: demander, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm });
+        moved
     }
 
     /// MU-CLIENT §5.6 (E2) — POWC MINTED: a demand closed at another
@@ -178,7 +177,7 @@ impl Treasury {
     ///
     /// K3 (78.177 §4a(1), ruled 2026-11-06) — `converged` are the minds
     /// whose own words converged with this one, each with its share of the
-    /// frame: they are paid POWC out of the composition premium, after the
+    /// enclosure: they are paid POWC out of the composition premium, after the
     /// base and use shares (`Treasury::pay_converging`); a word has no
     /// premium, and its convergences are held as claims, never minted.
     pub fn settle_recursive(
@@ -296,10 +295,9 @@ impl Treasury {
         if paid.is_zero() {
             return (paid, short);
         }
-        let drawn = self.debit(voice, &paid);
-        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm: None });
-        (paid, short)
+        let Ok(moved) = self.debit(voice, &paid) else { return (Mu::zero(), short) };
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+        (moved, short)
     }
 
     /// THE DOOR FEE (D12) — a strained mesh prices its own door: the speaker

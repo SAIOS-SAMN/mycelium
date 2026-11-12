@@ -50,7 +50,7 @@ pub use cover::*;
 pub use demand::*;
 pub use docket::*;
 pub use equivocation::*;
-pub use expression::{write_act, Expression};
+pub use expression::{speaks, write_act, Expression, Unheard};
 pub use factorisation::*;
 pub use fold::*;
 pub use offer::*;
@@ -61,7 +61,7 @@ pub use receipts::*;
 pub use root::*;
 pub use samples::{
     decode_posted_samples, decode_samples, encode_posted_samples, encode_samples, push_sample, read_sample, section_of,
-    spoken_outputs, PostedTask, SampleWire, TaskEnvelope, TaskSection,
+    spoken_outputs, PostedTask, SampleWire, TaskFamily, TaskSection,
 };
 pub use speech::*;
 pub use syllabus::*;

@@ -61,8 +61,8 @@ pub fn forfeit(bond: &Mu, exposure: &Mu, defect: &Mu) -> Forfeit {
             Err(_) => Mu::zero(),
         }
     };
-    let cut = lanes(&|l| share(bond.lane(l), exposure.lane(l), bond.lane(l)));
-    let bounty = lanes(&|l| share(cut.lane(l), defect.lane(l), exposure.lane(l)));
+    let cut = lanes(&|l| share(&bond.lane(l), &exposure.lane(l), &bond.lane(l)));
+    let bounty = lanes(&|l| share(&cut.lane(l), &defect.lane(l), &exposure.lane(l)));
     // bounty ≤ cut ≤ bond on every lane: each is its whole times a fraction
     // at most one.
     let (_, retired) = cut.split_at(&bounty);

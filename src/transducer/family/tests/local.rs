@@ -48,7 +48,7 @@ fn word_local_covers_every_changed_site() {
     assert!(read.pay.iter().any(|&m| m > 0), "a word that says the pair is paid");
     // μ is a share of the frame (78.170 O1): six sites changed between
     // ground and painted on a 4×6 frame are 6/24 of it on S.
-    assert_eq!(read.mu.lane(0), &crate::core::Q::new(1.into(), 4.into()), "six of 24 sites on S");
+    assert_eq!(read.mu.lane(0), crate::core::Q::new(1.into(), 4.into()), "six of 24 sites on S");
 }
 
 /// W — A WORD THAT SAYS SOMETHING FALSE ON A PAIR IS PAID NOTHING THERE, even

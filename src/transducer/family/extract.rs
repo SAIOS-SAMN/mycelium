@@ -33,7 +33,7 @@ pub fn extract_rule_with(
     })
 }
 
-/// THE EXTRACTION ON FRAMES ALREADY PERCEIVED (rule 10, ruled 2026-09-26):
+/// THE EXTRACTION ON DELIMITED ALREADY PERCEIVED (rule 10, ruled 2026-09-26):
 /// the caller that sized its stroke by the family's frames
 /// ([`super::perceive_family`], [`super::extraction_spend`]) hands them here
 /// and the percept reads them; no frame is perceived a second time. Read on
@@ -56,7 +56,7 @@ fn extract_rule_on_ground(
     if family.is_empty() {
         return None;
     }
-    // 78.167 C5 — FRAMES THAT SHARE NO RATIO carry no motion the vertices
+    // 78.167 C5 — DELIMITED THAT SHARE NO RATIO carry no motion the vertices
     // read, and the act may still be read off the pairs: a crop's frame is
     // the body's, never one ratio of the input's.
     let Some(scale) = family_ratio(family) else {
