@@ -121,7 +121,7 @@ pub use mycelium::anastome::dialogue::universe::{
 /// What a universe states once, by its sitting reserve: its geometry, its
 /// reserve's basket, its join to a parent's core.
 pub use mycelium::anastome::dialogue::universe::{
-    basket_holds, encode_statement as encode_universe_statement, Basket, SignedStatement as SignedUniverseStatement, Stated,
+    basket_holds, encode_statement as encode_universe_statement, Basket, BasketEntry, SignedStatement as SignedUniverseStatement, Stated,
     Statement as UniverseStatement,
 };
 
