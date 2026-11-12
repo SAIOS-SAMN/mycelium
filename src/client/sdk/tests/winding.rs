@@ -120,3 +120,52 @@ fn re_reduce_given_derives_once_factors_known() {
     });
     mind.field = field;
 }
+
+/// 23.8, MU-CLIENT §4.13 — AN ANSWERED QUOTE ON NON-SHORT LANES DWELLS NOT,
+/// AND A DEFERRED QUOTE'S DWELL COUNTS DOWN ONE STROKE PER WINDING. An
+/// answered quote (`deficit: None`) records `last_pressure` without starting a
+/// dwell on lanes where the mind's reserve is not short, and does not trigger
+/// `dwell_elapsed`. A deferred quote (`deficit: Some(d)`) dwells on the
+/// deferred lanes across non-short strokes, counts down by one each stroke,
+/// fires `dwell_elapsed` on the stroke that reaches zero, and clears
+/// `dwell_elapsed` on the stroke after.
+#[test]
+fn wind_preserves_quote_dwell_across_non_short_strokes() {
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("dwell"));
+    mind.board.court.quoted = Some(YieldQuote {
+        height: 5,
+        surface: [3, 0, 0, 0],
+        k: 0,
+        clusters: Vec::new(),
+        deficit: None,
+    });
+    let stop = std::sync::atomic::AtomicBool::new(false);
+    let _ = mind.wind(&stop);
+    assert_eq!(mind.board.court.pressure(), [3, 0, 0, 0], "the court's surface stands as last_pressure");
+    assert_eq!(mind.board.court.dwell_remaining, [0, 0, 0, 0], "an answered quote on non-short lanes starts no dwell");
+    assert!(!mind.board.court.dwelling(), "no dwell runs on non-short lanes");
+    assert!(!mind.board.court.dwell_elapsed, "no dwell elapsed without a countdown");
+
+    mind.board.court.quoted = Some(YieldQuote {
+        height: 5,
+        surface: [3, 0, 0, 0],
+        k: 0,
+        clusters: Vec::new(),
+        deficit: Some([3, 0, 0, 0]),
+    });
+    let _ = mind.wind(&stop);
+    assert_eq!(mind.board.court.dwell_remaining, [3, 0, 0, 0], "booking preserves a deferral's dwell on non-short lanes");
+    assert!(mind.board.court.dwelling(), "the mind owes strokes while the deferral dwell runs");
+    let _ = mind.wind(&stop);
+    assert_eq!(mind.board.court.dwell_remaining, [2, 0, 0, 0]);
+    assert!(!mind.board.court.dwell_elapsed);
+    let _ = mind.wind(&stop);
+    assert_eq!(mind.board.court.dwell_remaining, [1, 0, 0, 0]);
+    assert!(!mind.board.court.dwell_elapsed);
+    let _ = mind.wind(&stop);
+    assert_eq!(mind.board.court.dwell_remaining, [0, 0, 0, 0], "the dwell expires on the third stroke after admission");
+    assert!(mind.board.court.dwell_elapsed, "dwell_elapsed fires on the stroke that reaches zero");
+    assert!(!mind.board.court.dwelling(), "no further strokes are owed once the dwell has run out");
+    let _ = mind.wind(&stop);
+    assert!(!mind.board.court.dwell_elapsed, "dwell_elapsed clears on the following stroke");
+}

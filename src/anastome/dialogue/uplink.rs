@@ -15,6 +15,7 @@
 //! First slice: a single-level fold. Multi-tier chaining, matter handoffs
 //! (two-sided, P2) and the challenge window are later rows.
 
+use super::crossing_record::{crossed, Crossing};
 use crate::chronometry::Stamp;
 
 /// The signed bytes' domain, so a fold signature is never a signature on
@@ -260,7 +261,7 @@ fn take_fold(b: &[u8], p: &mut usize) -> Option<SignedFold> {
     let children = take_children(b, p)?;
     let handoffs = take_handoffs(b, p)?;
     let transitions = take_transitions(b, p)?;
-    Some(SignedFold { fold: TierFold { tier, prefix, rows, declared, children, handoffs, transitions }, sig })
+    Some(SignedFold { fold: TierFold { tier, prefix, rows, declared, children, handoffs, transitions }, crossing: None, sig })
 }
 
 /// B3 — THE TRANSITIONS WRITTEN OUT: their count, then each as the law
@@ -279,6 +280,9 @@ fn take_transitions(b: &[u8], p: &mut usize) -> Option<Vec<crate::physics::laws:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedFold {
     pub fold: TierFold,
+    /// X1 (#160) — the crossing the reserve's fold carries, the universe
+    /// act at the vertex; `None` for a line's fold carried inside it.
+    pub crossing: Option<Crossing>,
     pub sig: [u8; 64],
 }
 
@@ -450,11 +454,37 @@ impl TierFold {
         }
     }
 
-    /// The fold signed by the tier's key — whose public half must be `tier`.
+    /// The fold signed by the tier's key — whose public half must be `tier`
+    /// — as a line's fold carried inline: no crossing of its own, since the
+    /// reserve's fold is the act that crosses.
     pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedFold {
         use ed25519_dalek::Signer;
         let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedFold { fold: self, sig }
+        SignedFold { fold: self, crossing: None, sig }
+    }
+
+    /// X1 (#160) — THE RESERVE'S FOLD, THE UNIVERSE ACT, signed with the
+    /// crossing it carries through the universal core tube
+    /// ([`SignedFold::signed_bytes`]). `None` where a turn of the record
+    /// cannot be written.
+    pub fn sign_crossed(self, crossing: Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedFold> {
+        use ed25519_dalek::Signer;
+        let bytes = crossed(self.signed_bytes(), &crossing)?;
+        let sig = key.sign(&bytes).to_bytes();
+        Some(SignedFold { fold: self, crossing: Some(crossing), sig })
+    }
+}
+
+impl SignedFold {
+    /// THE BYTES THE SIGNATURE IS OVER: the fold's own
+    /// ([`TierFold::signed_bytes`]), then, for the act that crosses, its
+    /// crossing record written out whole (`crossing_record::crossed`).
+    /// `None` where a turn of the record cannot be written.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        match &self.crossing {
+            Some(c) => crossed(self.fold.signed_bytes(), c),
+            None => Some(self.fold.signed_bytes()),
+        }
     }
 }
 
@@ -478,18 +508,21 @@ fn take_handoffs(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], super::handof
         .collect()
 }
 
-/// `[ACT_UPLINK][tier 32][prefix 32][rows][sig 64]`, and — 78.123 B, only
+/// `[ACT_UPLINK][tier 32][prefix 32][rows][crossing][sig 64]` (X1, #160: the
+/// crossing record the act carries, `Crossing::put`), and — 78.123 B, only
 /// where the fold nets children, consumes handoffs or states transitions —
 /// `[count][child …]` after the signature, then — 78.126, only where it
 /// consumes handoffs or states transitions — `[count][(id, side) …]`, then —
 /// B3, only where it states transitions — `[count][transition …]`; so a
-/// single-level fold's bytes are 78.119's exactly and a chained one's
-/// 78.123's.
-pub fn encode_uplink(f: &SignedFold) -> Vec<u8> {
+/// single-level fold's bytes are 78.119's with the crossing beside the
+/// rows. `None` where the fold carries no crossing, or a turn of it cannot
+/// be written: a universe act on the wire carries its record.
+pub fn encode_uplink(f: &SignedFold) -> Option<Vec<u8>> {
     let mut out = vec![super::ACT_UPLINK];
     out.extend_from_slice(&f.fold.tier);
     out.extend_from_slice(&f.fold.prefix);
     out.extend_from_slice(&f.fold.rows_bytes());
+    f.crossing.as_ref()?.put(&mut out)?;
     out.extend_from_slice(&f.sig);
     let states = !f.fold.transitions.is_empty();
     if !f.fold.children.is_empty() || !f.fold.handoffs.is_empty() || states {
@@ -501,7 +534,7 @@ pub fn encode_uplink(f: &SignedFold) -> Vec<u8> {
     if states {
         put_transitions(&mut out, &f.fold.transitions);
     }
-    out
+    Some(out)
 }
 
 /// The fold a frame carries, read whole: a byte left over is no fold.
@@ -514,6 +547,7 @@ pub fn decode_uplink(b: &[u8]) -> Option<SignedFold> {
     p += 32;
     let rows = take_nets(rest, &mut p)?;
     let declared = take_nets(rest, &mut p)?;
+    let crossing = Crossing::take(rest, &mut p).ok()?;
     let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
     p += 64;
     let children = match p == rest.len() {
@@ -533,12 +567,12 @@ pub fn decode_uplink(b: &[u8]) -> Option<SignedFold> {
     // empty transitions block never — what does not re-encode to these very
     // bytes is no fold.
     let fold = TierFold { tier, prefix, rows, declared, children, handoffs, transitions };
-    let signed = SignedFold { fold, sig };
-    (p == rest.len() && encode_uplink(&signed) == b).then_some(signed)
+    let signed = SignedFold { fold, crossing: Some(crossing), sig };
+    (p == rest.len() && encode_uplink(&signed)? == b).then_some(signed)
 }
 
 /// 78.123 B — WHY A CHILD WAS NOT NETTED.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChildRefusal {
     /// Its stamp names no admitted fold on this court's line.
     NotOnLine,
@@ -560,6 +594,11 @@ pub enum ChildRefusal {
     /// 78.138 — a carried line's fold over its line's current head: an empty
     /// span claiming nets.
     Repeated,
+    /// #237 (ruled 2026-11-11, 78.182 item 1) — a carried line whose tier's
+    /// bond does not cover the line's exposure on a lane, `B_l < X_l`: the
+    /// first such lane, the bond's whole there and the exposure there, the
+    /// same exposure the slash reads.
+    Underbonded { lane: usize, bond: Box<crate::core::Q>, exposure: Box<crate::core::Q> },
 }
 
 /// WHAT THE COURT ANSWERED.
@@ -703,9 +742,14 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
                 ChildRefusal::Unbonded => (5, 0),
                 ChildRefusal::Broken => (6, 0),
                 ChildRefusal::Repeated => (7, 0),
+                ChildRefusal::Underbonded { lane, .. } => (8, *lane),
             };
             out.push(code);
             out.extend_from_slice(&lane.to_le_bytes()[..1]);
+            if let ChildRefusal::Underbonded { bond, exposure, .. } = why {
+                crate::transducer::alphabet::put_q(&mut out, bond);
+                crate::transducer::alphabet::put_q(&mut out, exposure);
+            }
         }
         Uplinked::HandoffRefused { index, why } => {
             out.push(7);
@@ -833,6 +877,11 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
                 5 => ChildRefusal::Unbonded,
                 6 => ChildRefusal::Broken,
                 7 => ChildRefusal::Repeated,
+                8 => {
+                    let bond = crate::transducer::alphabet::take_q(b, &mut p)?;
+                    let exposure = crate::transducer::alphabet::take_q(b, &mut p)?;
+                    ChildRefusal::Underbonded { lane, bond: Box::new(bond), exposure: Box::new(exposure) }
+                }
                 _ => return None,
             };
             Uplinked::ChildRefused { index, why }

@@ -16,15 +16,15 @@ use mycelium::network::channel::Channel;
 /// saw a provisional, no root ever moved, and every percept sat at `germ
 /// pending (one voice)` forever with basis 0. The gate was never the germ
 /// quorum; it was that the offer never left the process.
-pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
+pub(crate) fn judge(s: &mut Channel, delimited: &Delimited, context: &Context) {
     let Some(dialogue::Offer { addr, home, elem: elem_bytes, section, .. }) =
-        dialogue::decode_offer(&frame.body)
+        dialogue::decode_offer(&delimited.body)
     else {
         return;
     };
     let witness = context.mesh.vk;
     // 47.2, BEFORE ANY CARRIER IS TOUCHED. `glue_fetched` below writes a
-    // Čech section into THIS MESH'S OWN COVER at the vantage the frame
+    // Čech section into THIS MESH'S OWN COVER at the vantage the envelope
     // names, pushes cocycles, marks classes, admits into `ruled`, releases
     // escrow and mints. Not one of 47.2's steps ran on this path: no
     // origin, no signature, no K, no height. Any host that could open a
@@ -43,7 +43,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
             home[1]
         );
         match dialogue::encode_offer_reply(&dialogue::Witnessed::Refused { vk: witness, why: why.as_bytes().to_vec() }) {
-            Some(body) => answer(s, Delimited { lane: frame.lane, body }),
+            Some(body) => answer(s, Delimited { body }),
             None => eprintln!("  court offer answer refused: the reason passes its u16"),
         }
     };
@@ -56,7 +56,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
         return;
     };
     // The signer is the key the receipt names, and the act's `home` is that
-    // same key or the frame is two claims (A2's rule, one signer).
+    // same key or the envelope is two claims (A2's rule, one signer).
     let signer = section.receipt.stamp.vk;
     if let Err(why) =
         mycelium::court::admission::admit_signature(origin, &section.prefix, &signer, &section.sig)
@@ -95,7 +95,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
             Some(word) if word.address() != addr => {
                 // The tape does not re-derive to the address the home
                 // signed: identity is content (law 2), so this is not the
-                // form that was offered whatever the frame says.
+                // form that was offered whatever the envelope says.
                 dialogue::Witnessed::Refused {
                     vk: witness,
                     why: mycelium::verdict::REFUSE_VERTEX_TAPE.as_bytes().to_vec(),
@@ -170,20 +170,21 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
         };
     // The witness's form may not fit the wire budget. A reply that cannot
     // carry it still ANSWERS -- as UNMEASURED, since the form did not
-    // travel and the home must not read a frame it could not send as a
+    // travel and the home must not read an envelope it could not send as a
     // vantage. Refuse the PAYLOAD, never the reply, and never invent one:
     // the first cut of this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`,
-    // a hand-built frame for the case where a five-byte frame fails to
+    // a hand-built envelope for the case where a five-byte envelope fails to
     // encode, which is the shape rule 11 refuses.
     let full = dialogue::encode_offer_reply(&answered)
-        .and_then(|body| Delimited { lane: frame.lane, body }.encode_at(crate::tuniversal::final_point().as_ref()));
+        .and_then(|act| crate::tuniversal::express(&act))
+        .and_then(|body| Delimited { body }.encode());
     match full {
         Some(bytes) => {
             let _ = s.write_all(&bytes);
         }
         None => match dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: witness }) {
-            Some(body) => answer(s, Delimited { lane: frame.lane, body }),
-            None => eprintln!("  court offer answer refused: the unmeasured reply does not frame"),
+            Some(body) => answer(s, Delimited { body }),
+            None => eprintln!("  court offer answer refused: the unmeasured reply does not delimit"),
         },
     }
 }

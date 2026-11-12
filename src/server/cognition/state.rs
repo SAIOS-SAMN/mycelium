@@ -349,6 +349,10 @@ pub struct Court {
     pub(crate) task_listings: crate::network::nerve::Keyed<Vec<Address>>,
     /// Train pairs of a bound task. Install mints only what a rule speaks.
     pub(crate) task_family: crate::network::nerve::Keyed<Vec<crate::transducer::family::TrainPair>>,
+    /// #158 — A BOUND TASK'S WITHHELD PAIRS, as its registration fixed them
+    /// (`TaskRegistry::withheld`), bound with its family and never chosen at
+    /// a judgement. Volatile, as the family is.
+    pub(crate) task_withheld: crate::network::nerve::Keyed<Vec<crate::transducer::family::TrainPair>>,
     /// Sentence address → task, from perceive_speech. Reconstruction reads the family.
     pub(crate) speech_task: crate::network::nerve::Keyed<Address>,
     /// THE SENTENCES THIS COURT REFUSED (50.9): the kind, the coordinate
@@ -369,12 +373,12 @@ pub struct Court {
     /// demand its install settled — zero when the germ settled nothing on
     /// the book. The court's proof of convergence rides with the word.
     pub(crate) deflations: crate::network::nerve::Keyed<[u64; 4]>,
-    /// ACT1 — OWN-LINE ACTS SEALED WITHOUT A FRAME (78.27 Q1(a)): acts that
+    /// ACT1 — OWN-LINE ACTS SEALED WITHOUT A MEASURE (78.27 Q1(a)): acts that
     /// named a word no row of this court measures, so each act's μ⃗ was read as
     /// `[0; 4]` because nothing measured it. Counted at seal, since boot.
     pub(crate) unmeasured: u64,
     /// OK1 — CLOSES WITHHELD FOR SEPARATION: strokes at whose boundary this
-    /// court's orbit frame coincided on every lane with a peer's closed at
+    /// court's orbit measure coincided on every lane with a peer's closed at
     /// the same tick, so the close was withheld (78.23 as amended). Since
     /// boot.
     pub(crate) withheld: u64,
@@ -473,7 +477,7 @@ pub struct Court {
     /// MU-HOSTING §5a.9, §5a.10 — THE SIGNED-REACH GATE: peers' receipts
     /// admitted by back-fill, stored on the chain and not yet reached by a
     /// signature of each one's signer, keyed `vk‖K‖i`. No reader acts on
-    /// one until a frame the signer signed at or above its place is admitted
+    /// one until a prefix the signer signed at or above its place is admitted
     /// (`Court::sign_through`). Volatile; derived again at restore
     /// (`Court::hold_unreached_at_restore`).
     pub(crate) unreached: crate::network::nerve::Keyed<crate::chronometry::KStepReceipt>,
@@ -529,6 +533,14 @@ pub struct Court {
     /// domain made, summed exact per lane — what its next growth grant moves.
     /// Taken whole when a grant seals; persisted (`LEAF_CLOSED`).
     pub(crate) closed_since_grant: crate::network::nerve::Keyed<crate::economy::Mu>,
+    /// MU-ECONOMY §3.4, §11.4 F2b — THE CLOSURE POINTS IN THIS COURT'S CONES:
+    /// each point (a task's citation and its closing rule's address, written
+    /// out) a first closure sealed, on this court's line or on a line it
+    /// admitted, with the stamp of the receipt that sealed it first here. A
+    /// point held is closed: a later closure of it, at this court or any
+    /// other, is judged again. More than one seal is a concurrent residue
+    /// (45.3), held. Kept across folds; persisted (`LEAF_POINTS`).
+    pub(crate) points: crate::network::nerve::Keyed<Vec<crate::chronometry::Stamp>>,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
     /// bounded; never persisted. 78.146: on its own lock, so a door serves a
@@ -741,9 +753,10 @@ impl Court {
     /// measured from the registered tasks and re-staked,
     /// `mycelium-server.rs` `set_genesis_cover`). It is a starting corpus,
     /// not a measurement of the live one, and it is a bond a voice may work
-    /// within before any corpus arrives. It is measured by `family_cover`,
-    /// so it is the lane-wise SUM over these pairs (12.6) and covers each of
-    /// them; an envelope over them would not.
+    /// within before any corpus arrives. It is measured by `section_cover`
+    /// at the samples' own rank (track 26 S4), so it is the lane-wise SUM
+    /// over these pairs (12.6) and covers each of them; an envelope over
+    /// them would not.
     pub(crate) fn measured_test_cover() -> Option<[u64; 4]> {
         use crate::transducer::spelled::SectionSample;
         type Lines = Vec<Vec<u8>>;
@@ -761,7 +774,7 @@ impl Court {
         // The starting corpus read at intake, each pair as samples.
         let family: Vec<(SectionSample, SectionSample)> =
             lines.iter().map(|(x, y)| Some((SectionSample::of_lines(x).ok()?, SectionSample::of_lines(y).ok()?))).collect::<Option<_>>()?;
-        crate::transducer::family::magnitude::family_cover(&family)
+        crate::transducer::family::magnitude::section_cover(&family)?.bond()
     }
 
     /// The genesis covering bond, if measured.
@@ -782,8 +795,8 @@ impl Court {
         Ok(())
     }
 
-    /// HOLD THE CHAIN A LINE CARRIES. A last frame that did not land is
-    /// named, and the line stands on the frames before it.
+    /// HOLD THE CHAIN A LINE CARRIES. A last append that did not land is
+    /// named, and the line stands on the appends before it.
     pub fn hold_line(&mut self, b: &[u8]) -> Result<(), String> {
         if b.get(0..4) == Some(crate::chronometry::ReceiptChain::PRE_RATIONAL_LINE_MAGIC.as_slice()) {
             return Err("the line is MYL2, its bond citations' μ four u64 counts — refused by name, the recut is the road".into());
@@ -792,7 +805,7 @@ impl Court {
             return Err("the line does not read whole as MYL3 — the recut is the road for an older layout".into());
         };
         if torn {
-            eprintln!("  line: its last frame did not land; it stands on the frames before it");
+            eprintln!("  line: its last append did not land; it stands on the appends before it");
         }
         self.chain = chain;
         self.line_held = true;
@@ -845,7 +858,7 @@ impl Court {
         let end = file.metadata().map_err(|e| format!("the cold segment is unreadable: {e}"))?.len();
         let mut magic = [0u8; 4];
         if end > 0 && (file.read_exact_at(&mut magic, 0).is_err() || &magic != Era::SEGMENT_MAGIC) {
-            return Err("the cold segment is not MYE2, the descriptor-framed layout — the recut is the road".into());
+            return Err("the cold segment is not MYE2, the descriptor-delimited layout — the recut is the road".into());
         }
         let mut pos = Era::SEGMENT_MAGIC.len() as u64;
         let mut head = vec![0u8; Era::DESCRIPTOR + 8];
@@ -918,7 +931,7 @@ impl Court {
         false
     }
 
-    /// File a sealed era: its frame appended to the cold segment, and the
+    /// File a sealed era: its record appended to the cold segment, and the
     /// descriptor — root, signers, signatures, K range and span — kept.
     /// `None` from the append leaves the era whole in memory rather than
     /// losing it (rule 11: a write that did not happen is not a write that
@@ -933,11 +946,11 @@ impl Court {
             self.hold_filed(era);
             return;
         };
-        let Some(frame) = era.frame() else {
+        let Some(record) = era.record() else {
             eprintln!("  era refused: a receipt of its payload cannot be written");
             return;
         };
-        match Self::append_record(&path, self.eras_end, &frame) {
+        match Self::append_record(&path, self.eras_end, &record) {
             Some(at) => {
                 self.eras_end = at.offset + at.len;
                 self.hold_filed(era.filed_at(at));
@@ -960,7 +973,7 @@ impl Court {
     /// stands past it is an append that did not land, and is cut — the
     /// segment's magic first where it is new: where its payload landed, or
     /// `None` where the write did not.
-    fn append_record(path: &std::path::Path, end: u64, frame: &[u8]) -> Option<crate::chronometry::Filed> {
+    fn append_record(path: &std::path::Path, end: u64, record: &[u8]) -> Option<crate::chronometry::Filed> {
         use std::io::{Seek, Write};
         let mut f = std::fs::OpenOptions::new().create(true).write(true).truncate(false).open(path).ok()?;
         f.set_len(end).ok()?;
@@ -969,9 +982,9 @@ impl Court {
             f.write_all(crate::chronometry::Era::SEGMENT_MAGIC).ok()?;
             at = crate::chronometry::Era::SEGMENT_MAGIC.len() as u64;
         }
-        f.write_all(frame).ok()?;
+        f.write_all(record).ok()?;
         let head = (crate::chronometry::Era::DESCRIPTOR + 8) as u64;
-        Some(crate::chronometry::Filed { offset: at + head, len: frame.len() as u64 - head })
+        Some(crate::chronometry::Filed { offset: at + head, len: record.len() as u64 - head })
     }
 
     /// A filed era's receipts, read from its own span of the cold segment;
@@ -1052,7 +1065,7 @@ impl Court {
         }
     }
 
-    /// 47.2 ON A SIGNED FRAME: the signature verified (`verified`, step 2)
+    /// 47.2 ON A SIGNED PREFIX: the signature verified (`verified`, step 2)
     /// and the receipt reconstructed from its own coordinates (`r`,
     /// MU-HOSTING §5a.10), then steps 1, 3 and 4 against this court's
     /// ledger.
@@ -1069,7 +1082,7 @@ impl Court {
         }
         let recalled = self.recall_cited(r);
         let mut verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
-        // MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: a signed frame that
+        // MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: a signed prefix that
         // contradicts its line where the line is held unreached (a forged
         // genesis stored first, a forged predecessor) evicts the unreached
         // top of the line, and is admitted against what the signatures
@@ -1081,13 +1094,14 @@ impl Court {
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
                 self.chain.admit(r.clone());
+                self.note_points(r);
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and
                 // one stroke is the admission's draw, threaded to the
                 // rulings it hears.
                 let mut budget = self.physics.stroke();
-                // MU-HOSTING §5a.9, §5a.10: the signature over this frame
+                // MU-HOSTING §5a.9, §5a.10: the signature over this prefix
                 // reaches every receipt of its signer's line below it, so the
                 // receipts back-filled there are read in line order, then its
                 // own founding citations.
@@ -1121,8 +1135,8 @@ impl Court {
             crate::court::admission::Admitted::Equivocation { at, .. } if self.unreached_at(&r.stamp.vk, *at).is_none() => {
                 self.burn_equivocation(r.stamp.vk, *at);
             }
-            // B0: a signed frame this court holds already, the same receipt
-            // at its stamp, signs the line below it as a new frame does.
+            // B0: a signed prefix this court holds already, the same receipt
+            // at its stamp, signs the line below it as a new prefix does.
             crate::court::admission::Admitted::Stale
                 if self.chain.holds(&crate::chronometry::Parent::of(r)) =>
             {
@@ -1138,7 +1152,7 @@ impl Court {
     /// from the signer or a holder, admitted in order by the receipts' chain and
     /// held as known so later heights re-derive through them; one already
     /// held at its place is passed over. Nothing here is cited as a parent:
-    /// the signed frame that closes the gap is, when it is admitted again.
+    /// the signed prefix that closes the gap is, when it is admitted again.
     /// Answers how many the page advanced by AND THE CITATION THAT STOPPED
     /// IT, when one did: the stamp of a receipt this node does not
     /// hold and cannot re-derive a height without.
@@ -1153,10 +1167,10 @@ impl Court {
     /// (65.5), threaded to the rulings an alias wakes.
     ///
     /// EVERY RECEIPT ON THE PAGE IS STORED AND MARKED UNREACHED (MU-HOSTING
-    /// §5a.9, §5a.10): the chain holds it, so the page and the signed frame
+    /// §5a.9, §5a.10): the chain holds it, so the page and the signed prefix
     /// that closes the gap link on through it, and no reader acts on it —
     /// the depth index, the stamp alias and the rulings it would wake, a
-    /// fold's shed, a founding's reconstruction — until a frame its signer
+    /// fold's shed, a founding's reconstruction — until a prefix its signer
     /// signed at or above it is admitted (`admit_receipt`,
     /// `Court::sign_through`).
     ///
@@ -1268,7 +1282,7 @@ impl Court {
     /// peers two truths, be caught by both, and pay nothing — which is the
     /// one line of 48's table that 47.4 is the whole of.
     ///
-    /// A second frame at the same K burns nothing more: the bond is gone,
+    /// A second prefix at the same K burns nothing more: the bond is gone,
     /// `Treasury::burn` takes what is held and writes no entry for a
     /// vector of zeros, and the line is written only for what left.
     ///

@@ -12,13 +12,13 @@ use mycelium::anastome::dialogue;
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some((a, b)) = dialogue::decode_equivocation(&frame.body) else {
+pub(crate) fn judge(s: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some((a, b)) = dialogue::decode_equivocation(&delimited.body) else {
         return;
     };
     let say = |s: &mut Channel, r: dialogue::Ruled| {
         match dialogue::encode_ruled(&r) {
-            Some(body) => answer(s, Delimited { lane: frame.lane, body }),
+            Some(body) => answer(s, Delimited { body }),
             None => eprintln!("  court equivocation answer refused: the reason passes its u16"),
         }
     };
@@ -30,7 +30,7 @@ pub(crate) fn judge(s: &mut Channel, frame: &Delimited, context: &Context) {
         say(s, dialogue::Ruled::Refused(why.as_bytes().to_vec()));
     };
     // 47.2 steps 1 and 2 on each half, before any carrier is touched. A
-    // node that has adopted no origin has none equal to the frame's.
+    // node that has adopted no origin has none equal to the envelope's.
     let origin = match context.mesh.origin.lock() {
         Ok(o) => *o,
         Err(_) => None,

@@ -470,12 +470,15 @@ pub struct Element {
     ///
     /// All three rode `description` — the tape — which is precisely why the
     /// tape could not be retired. See [`crate::transducer::element::receipts`].
-    pub(crate) receipts: crate::transducer::element::ReceiptsEnvelope,
+    pub(crate) stalk: crate::transducer::element::WordStalk,
     /// THE ANCHOR FIBRE (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
-    /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
-    /// and every word born before selection entered the language).
-    pub(crate) anchor: Option<crate::transducer::anchor::Selection>,
+    /// scene. Empty = ⊤, the unconstrained carrier (pure topological actions,
+    /// and every word no court has bound). A court binds the WHOLE COMMON
+    /// SET its family derives, judged on the task's withheld pairs
+    /// (MU-DERIVATIONS D3.3, ruled 2026-10-31 and 2026-11-06, #158): a
+    /// superposition held whole, in its terms' key order, none chosen.
+    pub(crate) anchor: Vec<crate::transducer::anchor::Selection>,
     /// THE CONNECTION — for every assignment spoken on this fibre (the base's
     /// own, a section, a torsion-orbit member), the versors V ∈ Spin(4,1)(ℚ)
     /// under which a sibling was observed and carried into this frame:
@@ -507,11 +510,11 @@ impl Element {
             sections: Vec::new(),
             torsion: Vec::new(),
             filing: crate::network::nerve::Keyed::new(),
-            receipts: crate::transducer::element::ReceiptsEnvelope::default(),
+            stalk: crate::transducer::element::WordStalk::default(),
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
-            anchor: None,
+            anchor: Vec::new(),
         }
     }
 
@@ -669,16 +672,17 @@ impl Element {
     }
 
     /// The centred coboundary chain (empty for pure-algebra elements).
-    /// The anchor fibre — None is ⊤ (the unconstrained carrier).
-    pub fn anchor(&self) -> Option<&crate::transducer::anchor::Selection> {
-        self.anchor.as_ref()
+    /// The anchor fibre: the terms π* binds, in their keys' order; empty is
+    /// ⊤ (the unconstrained carrier).
+    pub fn anchor(&self) -> &[crate::transducer::anchor::Selection] {
+        &self.anchor
     }
 
-    /// Bind the anchor fibre (germination writes it at birth; the court's
-    /// refinement rebinds it).
-    #[cfg(test)]
-    pub fn with_anchor(mut self, pi: crate::transducer::anchor::Selection) -> Self {
-        self.anchor = Some(pi);
+    /// BIND THE ANCHOR FIBRE: the common set the court's A9 judgement bound
+    /// on the word's family (`court::verdict::bind_pi`, #158), every term
+    /// kept. The address does not move: π never renames a word.
+    pub fn with_anchor(mut self, pi: Vec<crate::transducer::anchor::Selection>) -> Self {
+        self.anchor = pi;
         self
     }
 
@@ -711,17 +715,17 @@ impl Element {
         &self.filing
     }
 
-    /// THE RECEIPTS ENVELOPE this word carries (54.5 Road (d)): its nerve
+    /// THE WORD'S STALK this word carries (54.5 Road (d); 78.179 §2, #165): its nerve
     /// incidence and the evidence a court reconstructs it with.
-    pub fn receipts(&self) -> &crate::transducer::element::ReceiptsEnvelope {
-        &self.receipts
+    pub fn stalk(&self) -> &crate::transducer::element::WordStalk {
+        &self.stalk
     }
 
-    /// Set the envelope. The address does not move: none of this is a
+    /// Set the stalk. The address does not move: none of this is a
     /// coordinate of the form (§1.5, `form_vertex_key_ignores_citations_and_certificates`), which is
     /// the whole reason it rides here.
-    pub fn set_receipts(&mut self, receipts: crate::transducer::element::ReceiptsEnvelope) {
-        self.receipts = receipts;
+    pub fn set_stalk(&mut self, stalk: crate::transducer::element::WordStalk) {
+        self.stalk = stalk;
     }
 
     pub fn torsion(&self) -> &[TorsionCycle] {
@@ -1046,6 +1050,49 @@ pub fn measure_lanes(chain: &[crate::transducer::sentence::SectionLink]) -> [u64
     // (`bundle_pressure`); one that reads a chain gets what a chain knows,
     // which on this lane is nothing.
     [spatial, gauge, 0, shell]
+}
+
+/// THE MODES A CHAIN'S S AND H MOVE (ruled 2026-11-11, #256), read as
+/// [`measure_lanes`] reads their counts: each link between the ground and a
+/// symbol a `SymbolCreation` on S — forward from the ground to the symbol,
+/// its reverse an erasure — counted per move; and the shell the chain
+/// changes a `ShellBoundary` on H, keyed by the after state's signature
+/// (components, boundary length), at the shell count. The amounts give the
+/// modes' proportions; a closure's lane share is set on them
+/// (`Mu::carried_by`).
+pub fn chain_modes(chain: &[crate::transducer::sentence::SectionLink]) -> crate::economy::modes::Modes {
+    use crate::economy::modes::{Mode, Modes};
+    let ground = crate::transducer::raster::ground();
+    let mut out = Modes::new();
+    let mut before_pos: Vec<crate::transducer::spelled::SectionSite> = Vec::new();
+    let mut after_pos: Vec<crate::transducer::spelled::SectionSite> = Vec::new();
+    let one = crate::core::Q::from_integer(1.into());
+    for l in chain {
+        let (b, a) = l.transition();
+        let (painted_b, painted_a) = (!ground.holds(&b), !ground.holds(&a));
+        if painted_b {
+            before_pos.push(l.site);
+        }
+        if painted_a {
+            after_pos.push(l.site);
+        }
+        match (painted_b, painted_a) {
+            (false, true) => {
+                out.add_mode(Mode::SymbolCreation { from_ground: b, to_symbol: a, forward: true }, one.clone());
+            }
+            (true, false) => {
+                out.add_mode(Mode::SymbolCreation { from_ground: a, to_symbol: b, forward: false }, one.clone());
+            }
+            _ => {}
+        }
+    }
+    let sb = crate::transducer::candidates::signature(&before_pos, &[]);
+    let sa = crate::transducer::candidates::signature(&after_pos, &[]);
+    let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
+    if shell > 0 {
+        out.add_mode(Mode::ShellBoundary { boundary_class: (sa.components, sa.boundary) }, crate::core::Q::from_integer(shell.into()));
+    }
+    out
 }
 
 /// [`measure_lanes`] OF SUPPORT THAT VANISHED AND APPEARED, read without a

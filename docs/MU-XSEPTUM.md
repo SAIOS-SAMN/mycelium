@@ -154,13 +154,17 @@ The payer countersigns after receiving the bytes and checking the digest.
 Two signatures from two distinct voices are the two vantages; the home
 verifies the two signatures and reads the escrow state, then releases.
 
-*Open review.* A digest never admits (MU-ANTI-FLATTENING 13;
-MU-HOSTING §5a.10): `delivery_digest` is a commitment that binds the
-delivered bytes to the payer's countersignature, and the release follows
-the receipts' reconstruction, the digest only linking. How mode 0 states
-that reconstruction for delivered bytes (what the home reconstructs, and
-from which receipts) is not yet specified; this section is held for that
-review before it is built.
+*Ruled* (coordinator, 2026-11-06, under the operator's delegation; #168
+and #169; [78.180](proposals/78.180-delegated-rulings-2026-11-06.md)
+ruling 3). A mode-0 receipt is a founding-mode receipt. The delivered
+bytes move no motion on the network's lanes, so what the Note pays is
+held at the founding mode, the identity motion of its lane stated
+explicitly as the mode, with its amount as its share of the frame
+(MU-ECONOMY §2.5). The receipt is admitted under the rule that admits a
+genesis allocation and is not held for review. Mode 0 is not retired. A
+digest still never admits (MU-ANTI-FLATTENING 13; MU-HOSTING §5a.10):
+`delivery_digest` binds the delivered bytes to the payer's
+countersignature and only links.
 
 Mode 1, work:
 
@@ -297,7 +301,7 @@ learning it: the reply is signed by the home and the payee returns it in
   unchanged.
 - Voices (**Specified**, ROADMAP track 1): new `client::identity::VoiceGroup`, a FROST group key over
   Ed25519 (RFC 9591, the `frost-ed25519` crate), shares held by the mind's
-  eyes and persisted beside the genome (`<kernel>.shares`, 0600). The voice
+  eyes and kept beside the voice's key (`<kernel>.shares`, 0600), as identity is (MU-ENGINEERING §8 item 6). The voice
   id is the group verifying key, so a signature names its voice with no
   registry. Per-chart keys are independent keys certified by a manifest
   receipt (MU-RECURSION 46.2), never tweaks of the group key.

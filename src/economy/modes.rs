@@ -10,6 +10,13 @@
 //! the mode was moved. Two modes are one where the modes'
 //! canonical coordinates are one (A21, law 2): the amounts add. A draw takes
 //! modes out, or is refused naming the mode it lacks and both amounts.
+//!
+//! THE FOUNDING MODE (MU-ECONOMY §2.5, 78.180 ruling 3) is the identity
+//! motion of its lane: a genesis allocation, a Note's mode-0 receipt and a
+//! mint whose proof cites no motion are held at it, never with empty modes.
+//! A PER-LANE DRAW takes an amount on one lane from the modes on that lane in
+//! proportion to their amounts, exactly in ℚ, never from another lane's
+//! (`draw_lane`).
 
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::Mv;
@@ -18,6 +25,18 @@ use num_rational::BigRational;
 use num_traits::{Signed, Zero};
 
 type Q = BigRational;
+
+/// FORMAT: the founding mode's leading byte on its wire and key, its lane
+/// added: `0x10` for S through `0x13` for H, apart from every lane byte.
+pub const FOUNDING: u8 = 0x10;
+
+/// FORMAT: the symbol creation mode's leading byte (S), apart from every lane
+/// byte and every founding byte.
+pub const SYMBOL_CREATION: u8 = 0x20;
+
+/// FORMAT: the shell boundary mode's leading byte (H), apart from every lane
+/// byte and every founding byte.
+pub const SHELL_BOUNDARY: u8 = 0x21;
 
 /// THE LANES, by place (law 5): S, G, T, H.
 pub const S: u8 = 0;
@@ -42,6 +61,19 @@ pub enum Mode {
     /// fraction of 360° turned (t/ℓ per turn), so two 90° turns and one
     /// 180° turn are one holding.
     Turn { ray: Mv },
+    /// THE FOUNDING MODE of a lane: the lane's identity motion, at which
+    /// value no motion of the network made is held (MU-ECONOMY §2.5).
+    Founding { lane: u8 },
+    /// S — A SYMBOL CREATED FROM THE GROUND (ruled 2026-11-11, #256): the
+    /// move between the ground `from_ground` and the symbol `to_symbol`, on
+    /// its side — `forward` a creation (ground to symbol), its reverse the
+    /// erasure (symbol to ground) — as G holds a hue move. Its amount is the
+    /// share of the enclosure the move covers.
+    SymbolCreation { from_ground: u8, to_symbol: u8, forward: bool },
+    /// H — A CLOSED SHELL BY ITS BOUNDARY CLASS (ruled 2026-11-11, #256): the
+    /// shell's topological signature, its components (β₀) and its boundary
+    /// cochain's length. Its amount is the shell count it changed.
+    ShellBoundary { boundary_class: (u64, u64) },
 }
 
 impl Mode {
@@ -52,13 +84,28 @@ impl Mode {
             Mode::Hue(_) => G,
             Mode::Flux { .. } => T,
             Mode::Turn { .. } => H,
+            Mode::Founding { lane } => *lane,
+            Mode::SymbolCreation { .. } => S,
+            Mode::ShellBoundary { .. } => H,
         }
+    }
+
+    /// The founding mode of `lane`; `None` past the four base lanes, which
+    /// open only by a ruled act (MU-ECONOMY §1).
+    pub fn founding(lane: u8) -> Option<Mode> {
+        (lane <= H).then_some(Mode::Founding { lane })
     }
 
     /// THE MODE'S COORDINATES WRITTEN OUT (A21): the lane, then what the mode
     /// is, each length-delimited by its own codec. `None` where a ray has no
     /// canonical writing.
     pub fn key(&self) -> Option<Vec<u8>> {
+        if let Mode::Founding { lane } = self {
+            return (*lane <= H).then(|| vec![FOUNDING + lane]);
+        }
+        if let Some(own) = self.put_own() {
+            return Some(own);
+        }
         let mut k = vec![self.lane()];
         let ray = |k: &mut Vec<u8>, r: &Mv| -> Option<()> {
             r.canonical()?.put_canonical(k);
@@ -87,13 +134,37 @@ impl Mode {
             Mode::Turn { ray: r } => {
                 ray(&mut k, r)?;
             }
+            Mode::Founding { .. } | Mode::SymbolCreation { .. } | Mode::ShellBoundary { .. } => {}
         }
         Some(k)
     }
 
     /// The mode written on the wire: the lane, then the mode's own fields
     /// (rays whole, by `Mv::to_bytes`).
+    /// The writing of a mode with a byte of its own (#256): its tag, then its
+    /// fields; one writing serves as its key and on the wire.
+    fn put_own(&self) -> Option<Vec<u8>> {
+        match self {
+            Mode::SymbolCreation { from_ground, to_symbol, forward } => Some(vec![SYMBOL_CREATION, *from_ground, *to_symbol, u8::from(*forward)]),
+            Mode::ShellBoundary { boundary_class: (components, boundary) } => {
+                let mut out = vec![SHELL_BOUNDARY];
+                out.extend_from_slice(&components.to_le_bytes());
+                out.extend_from_slice(&boundary.to_le_bytes());
+                Some(out)
+            }
+            _ => None,
+        }
+    }
+
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        if let Mode::Founding { lane } = self {
+            out.push(FOUNDING + (*lane <= H).then_some(*lane)?);
+            return Some(());
+        }
+        if let Some(own) = self.put_own() {
+            out.extend_from_slice(&own);
+            return Some(());
+        }
         out.push(self.lane());
         match self {
             Mode::Boost { ray, c, forward } => {
@@ -116,6 +187,7 @@ impl Mode {
             Mode::Turn { ray } => {
                 ray.to_bytes(out);
             }
+            Mode::Founding { .. } | Mode::SymbolCreation { .. } | Mode::ShellBoundary { .. } => {}
         }
         Some(())
     }
@@ -154,12 +226,23 @@ impl Mode {
                 Mode::Flux { ray, forward: side(p)? }
             }
             H => Mode::Turn { ray: Mv::from_bytes(b, p)? },
+            f if (FOUNDING..=FOUNDING + H).contains(&f) => Mode::Founding { lane: f - FOUNDING },
+            SYMBOL_CREATION => Mode::SymbolCreation { from_ground: byte(p)?, to_symbol: byte(p)?, forward: side(p)? },
+            SHELL_BOUNDARY => {
+                let components = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                let boundary = u64::from_le_bytes(b.get(*p + 8..*p + 16)?.try_into().ok()?);
+                *p += 16;
+                Mode::ShellBoundary { boundary_class: (components, boundary) }
+            }
             _ => return None,
         })
     }
 }
 
-/// WHAT A DRAW LACKED: the mode, what was held of it, what was asked.
+/// WHAT A DRAW LACKED: the mode, what was held of it, what was asked. A
+/// per-lane draw that the lane cannot cover names the lane's first mode in
+/// coordinate order (its founding mode where the lane holds none), the
+/// lane's whole as held and the amount asked.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Short {
     pub mode: Mode,
@@ -263,13 +346,97 @@ impl Modes {
         Ok(())
     }
 
-    /// THE MODES OF ONE MOTION, at `mass` times its amount: each mode of its
+    /// `amount` HELD AT THE FOUNDING MODE OF `lane` (MU-ECONOMY §2.5): a
+    /// genesis allocation, or a mint whose proof cites no motion. `None` past
+    /// the base lanes; empty for an amount that is not positive.
+    pub fn founding(lane: u8, amount: Q) -> Option<Modes> {
+        let mut out = Modes::new();
+        out.add_mode(Mode::founding(lane)?, amount);
+        Some(out)
+    }
+
+    /// THE LANE'S WHOLE, read exactly: the sum of its modes' amounts. A
+    /// reading of the holding, never the holding: room, a price and an ask
+    /// are read per lane and per mode (MU-ECONOMY §12 items 5, 8).
+    pub(crate) fn lane_whole(&self, lane: u8) -> Q {
+        self.modes().filter(|(m, _)| m.lane() == lane).fold(Q::zero(), |s, (_, a)| s + a)
+    }
+
+    /// A PER-LANE DRAW (MU-ECONOMY §2.5, 78.180 ruling 3): `amount` taken on
+    /// `lane` from the modes on that lane, each in proportion to its amount,
+    /// exactly in ℚ, and returned as the modes drawn, which travel with the
+    /// transfer. Never from another lane. Refused whole, naming the lane's
+    /// first mode with the lane's whole and the amount, where the lane holds
+    /// less; a draw of nothing draws nothing.
+    pub fn draw_lane(&mut self, lane: u8, amount: &Q) -> Result<Modes, Box<Short>> {
+        let mut drawn = Modes::new();
+        if !amount.is_positive() {
+            return Ok(drawn);
+        }
+        let whole = self.lane_whole(lane);
+        if &whole < amount {
+            let first = self.modes().find(|(m, _)| m.lane() == lane).map(|(m, _)| m.clone());
+            let mode = match first {
+                Some(m) => m,
+                None => Mode::Founding { lane },
+            };
+            return Err(Box::new(Short { mode, held: whole, asked: amount.clone() }));
+        }
+        for (m, a) in self.modes().filter(|(m, _)| m.lane() == lane) {
+            drawn.add_mode(m.clone(), a * amount / &whole);
+        }
+        self.take(&drawn)?;
+        Ok(drawn)
+    }
+
+    /// EVERY MODE AT `r` TIMES ITS AMOUNT, exactly; a zero factor holds
+    /// nothing, a negative one is refused.
+    pub fn scaled(&self, r: &Q) -> Option<Modes> {
+        if r.is_negative() {
+            return None;
+        }
+        let mut out = Modes::new();
+        for (m, a) in self.modes() {
+            out.add_mode(m.clone(), a * r);
+        }
+        Some(out)
+    }
+
+    /// The modes on the lanes `keep` names, whole; nothing on the others.
+    pub fn on_lanes(&self, keep: impl Fn(u8) -> bool) -> Modes {
+        let mut out = Modes::new();
+        for (m, a) in self.modes().filter(|(m, _)| keep(m.lane())) {
+            out.add_mode(m.clone(), a.clone());
+        }
+        out
+    }
+
+    /// AN ASK READ AGAINST THIS HOLDING, MODE BY MODE (MU-ECONOMY §2.5,
+    /// §12 item 8): the ask's amount on each lane drawn from that lane's
+    /// modes in proportion (`draw_lane`), all lanes or none. The ask holds
+    /// no modes of its own; what it reads as is the modes it would draw,
+    /// returned to travel with the transfer. Refused whole, naming the first
+    /// lane's mode short in lane order, where any lane holds less.
+    pub fn draw_lanes(&mut self, ask: &super::Mu) -> Result<Modes, Box<Short>> {
+        let mut trial = self.clone();
+        let mut drawn = Modes::new();
+        for lane in [S, G, T, H] {
+            drawn.add(&trial.draw_lane(lane, &ask.lane(usize::from(lane)))?);
+        }
+        *self = trial;
+        Ok(drawn)
+    }
+
+    /// THE MODES OF ONE MOTION, at `share` times its amount, `share` the
+    /// share of the enclosure the motion's work covers (78.174 §1 item 9;
+    /// MU-ENGINEERING §9.3: a mode's amount is its share of the enclosure,
+    /// never the mass): each mode of its
     /// action read exactly (`Coordinates::of`) and set on the lane its kind
     /// names — a turn by its plane, order and side with `t` turns; a null
     /// flux by its ray and side with its count; a boost by its ray, point
     /// and side once. `None` where the motion's modes do not read (rule 11);
     /// the identity is no mode at all.
-    pub fn of_motion(motion: &Mv, mass: &Q, budget: &mut crate::physics::Budget) -> Option<Modes> {
+    pub fn of_motion(motion: &Mv, share: &Q, budget: &mut crate::physics::Budget) -> Option<Modes> {
         use crate::transducer::sentence::coordinates::{Coordinates, Winding};
         let mut out = Modes::new();
         if crate::transducer::sentence::presentation::is_still(motion) {
@@ -283,17 +450,18 @@ impl Modes {
                 Winding::Count(l) => (Mode::Flux { ray, forward: !l.is_negative() }, l.abs()),
                 Winding::Named { c, lambda } => (Mode::Boost { ray, c, forward: !lambda.is_negative() }, Q::from_integer(1.into())),
             };
-            out.add_mode(mode, amount * mass);
+            out.add_mode(mode, amount * share);
         }
         Some(out)
     }
 
-    /// THE MODES OF ONE HUE MAP, at `mass` times: each cycle and each move
-    /// once. `None` where the listing is no map.
-    pub fn of_gauge(gauge: &[(u8, u8)], mass: &Q) -> Option<Modes> {
+    /// THE MODES OF ONE HUE MAP, each cycle and each move at `share`, the
+    /// share of the enclosure recoloured (78.174 §1 item 9; MU-ENGINEERING §9.3).
+    /// `None` where the listing is no map.
+    pub fn of_gauge(gauge: &[(u8, u8)], share: &Q) -> Option<Modes> {
         let mut out = Modes::new();
         for m in crate::transducer::sentence::presentation::gauge_modes(gauge)? {
-            out.add_mode(Mode::Hue(m), mass.clone());
+            out.add_mode(Mode::Hue(m), share.clone());
         }
         Some(out)
     }
@@ -336,6 +504,15 @@ impl Modes {
             Mode::Hue(GaugeMode::Move(x, y)) => format!("G move {x}→{y} ×{a}"),
             Mode::Flux { forward, .. } => format!("T flux {} {a}", if *forward { "+" } else { "−" }),
             Mode::Turn { .. } => format!("H turn {a} of 360°"),
+            Mode::SymbolCreation { from_ground, to_symbol, forward } => match forward {
+                true => format!("S create {from_ground}→{to_symbol} ×{a}"),
+                false => format!("S erase {to_symbol}→{from_ground} ×{a}"),
+            },
+            Mode::ShellBoundary { boundary_class: (c, b) } => format!("H shell β₀={c} ∂={b} ×{a}"),
+            Mode::Founding { lane } => match ["S", "G", "T", "H"].get(usize::from(*lane)) {
+                Some(l) => format!("{l} founding ×{a}"),
+                None => format!("lane {lane} founding ×{a}"),
+            },
         };
         match self.is_empty() {
             true => "no modes".to_string(),

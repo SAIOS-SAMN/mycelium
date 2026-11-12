@@ -22,6 +22,15 @@
 //! (`found_domain`, `reserve`, `reserve_reading`) and the seat acts
 //! (`seat_post`, `list_seats`, `read_mail`).
 //!
+//! **READ-MAIL is a held read with no time bound** (78.146 as amended,
+//! ruled 2026-10-17). A read whose box holds nothing past its cursor is
+//! answered at the court's next event: a seat post filed on the relay, or
+//! the keeper signing its next TUniversal reading. The hold reads no clock,
+//! so on a quiet relay it can stand for any length of time. A caller sets
+//! no read timeout on a READ-MAIL, or treats a timeout as "nothing yet" and
+//! asks again. A read asked again while one is held answers the earlier
+//! one, so asking again never holds two. `Session` sets no read timeout.
+//!
 //! | Group | Items |
 //! |---|---|
 //! | The Concordance | [`ConcordanceClause`], [`Fixture`], [`Object`], [`sign_concordance`], [`reconstruct_fixture`], [`Signing`], [`SigningRefusal`], modes 7 and 8; the alignment reading, [`Alignment`], [`ClauseReading`], mode 9 |
@@ -35,7 +44,7 @@
 //! | Traverse, ledger and map | [`encode_traverse`], [`decode_traverse_reply`], [`encode_ledger`], [`encode_ledger_read`], [`decode_ledger_reply`], [`decode_ledger_page`], [`encode_map`], [`encode_map_read`], [`decode_map_reply`], [`decode_map_reading`] |
 //! | Challenge and finality | [`encode_challenge`], [`decode_challenge_reply`], [`encode_finality_request`], [`decode_finality_reply`], [`encode_line_head_request`], [`decode_line_head_reply`], [`encode_obstructions_request`], [`decode_obstructions_reply`]; the fold sent up, [`encode_uplink`] |
 //! | Equivocation | [`equivocation_proof`], [`encode_equivocation`], [`decode_ruled`], [`ReceiptSection`] |
-//! | Framing and identity | [`Delimited`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
+//! | Framing and identity | [`Delimited`], [`delimited_len`], [`HEAD`], [`BODY_BUDGET`], [`DELIMITED_MAX`], [`Expression`], [`write_act`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
 //! | Whole modules | [`domain`], [`universe`], [`endowment`], [`seat`], [`atlas`], [`uplink`], [`challenge`], [`commitment`], [`tuniversal`] |
 
 /// The Concordance's clause register (`ACT_LAWS` mode 7) and a kernel's
@@ -112,7 +121,7 @@ pub use mycelium::anastome::dialogue::universe::{
 /// What a universe states once, by its sitting reserve: its geometry, its
 /// reserve's basket, its join to a parent's core.
 pub use mycelium::anastome::dialogue::universe::{
-    basket_holds, encode_statement as encode_universe_statement, Basket, SignedStatement as SignedUniverseStatement, Stated,
+    basket_holds, encode_statement as encode_universe_statement, Basket, BasketEntry, SignedStatement as SignedUniverseStatement, Stated,
     Statement as UniverseStatement,
 };
 
@@ -155,10 +164,12 @@ pub use mycelium::physics::equilibrium::carried_body;
 /// and why a motion's modes did not split.
 pub use mycelium::transducer::cga::{membrane_at, rotator, translator_at, Undecomposed};
 
-/// FRAMING: a lane-tagged frame, the four lanes, a lane byte read (and
-/// whether its frame carries a point), the point split off a body, the
-/// body's budget and the pointed bit.
-pub use mycelium::network::wire::{read_lane, split_point, Lane, Delimited, BODY_BUDGET, POINTED};
+/// FRAMING: a frame delimited by its length, the head's length read, an
+/// act's budget and the most one envelope delimits.
+pub use mycelium::network::wire::{delimited_len, Delimited, BODY_BUDGET, DELIMITED_MAX, HEAD};
+/// THE EXPRESSION: an act and the TUniversal point its speaker read, written
+/// `[act][point][point count u16 LE]` inside the frame's body (TU-7).
+pub use mycelium::anastome::dialogue::expression::{write_act, Expression};
 /// A count, and a byte run, each written by its own coordinate (LEB128,
 /// minimal), as every count on the wire is.
 pub use mycelium::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};

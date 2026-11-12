@@ -107,3 +107,136 @@ fn modes_round_trips_and_refuses_zero_amount() {
     assert!(modes(&Mv::scalar(q(1, 1))).is_empty());
     let _ = Mode::Hue(crate::transducer::sentence::presentation::GaugeMode::Move(3, 0)).key().expect("a move has coordinates");
 }
+
+/// A MOTION'S MODES ARE READ AT THE SHARE GIVEN (78.174 §1 item 9;
+/// MU-ENGINEERING §9.3): the enclosure's measure is the product of its
+/// periods at every rank (5; 6; 24; 120 at ranks 1 to 4), and a slide's
+/// mode amount is its unit amount times the share `m / measure`, exactly,
+/// at each.
+#[test]
+fn of_motion_scales_by_open_dimensional_enclosure_share() {
+    let slide_mv = slide(2, 0);
+    for (periods, expected_measure) in [
+        (vec![5usize], 5i64),
+        (vec![2, 3], 6),
+        (vec![2, 3, 4], 24),
+        (vec![2, 3, 4, 5], 120),
+    ] {
+        let enclosure = crate::transducer::family::transduce::Enclosure::new(periods).expect("enclosure");
+        let measure = enclosure.measure().expect("measure") as i64;
+        assert_eq!(measure, expected_measure, "rank {} enclosure measure is exact product", enclosure.rank());
+        let mass = 3i64;
+        let share = q(mass, measure);
+        let m = Modes::of_motion(&slide_mv, &share, &mut stroke()).expect("modes read");
+        let [(mode, amount)] = m.modes().collect::<Vec<_>>()[..] else { panic!("one mode") };
+        assert_eq!(mode.lane(), T);
+        let unit_modes = modes(&slide(1, 0));
+        let unit_amount = unit_modes.modes().next().expect("unit amount").1.clone();
+        assert_eq!(*amount, unit_amount * q(2, 1) * share, "mode amount matches exact enclosure share at rank {}", enclosure.rank());
+    }
+}
+
+/// MU-ECONOMY §2.5 — THE FOUNDING MODE IS THE LANE'S IDENTITY MOTION, held
+/// as a mode, never left empty: one per base lane, apart from every motion's
+/// mode on the lane, carried whole on the wire and refused past the four
+/// base lanes.
+#[test]
+fn founding_mode_is_held_per_lane_and_round_trips() {
+    use crate::economy::modes::S;
+    let mut held = Modes::founding(G, q(3, 2)).expect("G is a base lane");
+    held.add(&Modes::founding(H, q(1, 4)).expect("H is a base lane"));
+    held.add(&modes(&quarter()));
+    assert_eq!(held.amount_of(&Mode::Founding { lane: G }), Some(&q(3, 2)));
+    assert_eq!(held.amount_of(&Mode::Founding { lane: H }), Some(&q(1, 4)), "the founding H mode stands apart from the turn on H");
+    assert_eq!(held.on_lane(H).count(), 2);
+    assert_eq!(Mode::Founding { lane: S }.lane(), S);
+    let mut wire = Vec::new();
+    held.put(&mut wire).expect("written");
+    let mut p = 0;
+    assert_eq!(Modes::take_from(&wire, &mut p), Some(held), "read back whole");
+    assert_eq!(p, wire.len());
+    assert_eq!(Mode::founding(4), None, "a fifth lane opens only by a ruled act");
+    assert_eq!(Modes::founding(4, q(1, 1)), None);
+    assert!(Modes::founding(T, q(0, 1)).expect("T is a base lane").is_empty(), "a zero amount holds nothing");
+}
+
+/// 78.180 ruling 3 — A PER-LANE DRAW TAKES FROM THE LANE'S MODES IN
+/// PROPORTION, exactly, and never from another lane: the modes drawn travel
+/// with the transfer, the holding keeps the rest, and a lane holding less is
+/// refused whole, naming the lane's first mode with the lane's whole.
+#[test]
+fn draw_lane_is_proportional_exact_and_refused_whole() {
+    let turn = modes(&quarter());
+    let [(turn_mode, t)] = turn.modes().collect::<Vec<_>>()[..] else { panic!("one turn") };
+    let (turn_mode, t) = (turn_mode.clone(), t.clone());
+    let mut held = Modes::founding(H, q(1, 2)).expect("H");
+    held.add(&turn);
+    held.add(&Modes::founding(G, q(5, 1)).expect("G"));
+    let before = held.clone();
+    let whole = q(1, 2) + &t;
+    let drawn = held.draw_lane(H, &(&whole / q(2, 1))).expect("half the lane");
+    assert_eq!(drawn.amount_of(&Mode::Founding { lane: H }), Some(&q(1, 4)), "half the lane draws half of each mode on it");
+    assert_eq!(drawn.amount_of(&turn_mode), Some(&(&t / q(2, 1))), "the turn in its own proportion");
+    assert_eq!(drawn.on_lane(H).count(), 2);
+    assert_eq!(drawn.on_lane(G).count(), 0, "never from another lane");
+    assert_eq!(held.amount_of(&Mode::Founding { lane: H }), Some(&q(1, 4)));
+    assert_eq!(held.amount_of(&Mode::Founding { lane: G }), Some(&q(5, 1)), "G untouched");
+    let mut back = held.clone();
+    back.add(&drawn);
+    assert_eq!(back, before, "what was drawn and what was kept make the holding whole");
+    let short = held.draw_lane(H, &q(2, 1)).expect_err("the lane holds half its whole");
+    assert_eq!((short.held.clone(), short.asked.clone()), (&whole / q(2, 1), q(2, 1)));
+    assert_eq!(short.mode.lane(), H, "named on its lane");
+    assert_eq!(held.draw_lane(T, &q(1, 1)).expect_err("T holds nothing").mode, Mode::Founding { lane: T });
+    assert!(held.draw_lane(H, &q(0, 1)).expect("nothing").is_empty(), "a draw of nothing draws nothing");
+    assert_eq!(back.draw_lane(H, &whole).expect("whole lane").on_lane(H).count(), 2);
+    assert_eq!(back.on_lane(H).count(), 0, "a whole lane drawn leaves none of its modes");
+}
+
+/// §12 item 8 — AN ASK IS READ AGAINST THE HOLDING MODE BY MODE: per lane,
+/// in proportion, all lanes or none; a lane short refuses the whole ask and
+/// leaves the holding as it was.
+#[test]
+fn draw_lanes_reads_an_ask_per_lane_all_or_none() {
+    let mut held = Modes::founding(G, q(4, 1)).expect("G");
+    held.add(&Modes::founding(H, q(2, 1)).expect("H"));
+    let before = held.clone();
+    let ask = crate::economy::Mu::of([q(0, 1), q(1, 1), q(0, 1), q(3, 1)]).expect("an ask");
+    let short = held.draw_lanes(&ask).expect_err("H holds 2");
+    assert_eq!((short.mode.lane(), short.held.clone(), short.asked.clone()), (H, q(2, 1), q(3, 1)));
+    assert_eq!(held, before, "a refused ask moves nothing");
+    let ask = crate::economy::Mu::of([q(0, 1), q(1, 1), q(0, 1), q(1, 2)]).expect("an ask");
+    let drawn = held.draw_lanes(&ask).expect("both lanes hold it");
+    assert_eq!(drawn.amount_of(&Mode::Founding { lane: G }), Some(&q(1, 1)));
+    assert_eq!(drawn.amount_of(&Mode::Founding { lane: H }), Some(&q(1, 2)));
+    assert_eq!(held.amount_of(&Mode::Founding { lane: G }), Some(&q(3, 1)));
+}
+
+/// #256 (ruled 2026-11-11) — S'S CREATION AND H'S SHELL HAVE MODES OF THEIR
+/// OWN: a symbol created from the ground and its erasure are two sides of one
+/// move on S, a shell is keyed by its boundary class on H; each is apart from
+/// the lane's founding mode and from every motion's mode, and each is carried
+/// whole on the wire.
+#[test]
+fn symbol_creation_and_shell_boundary_are_modes_of_their_own() {
+    use crate::economy::modes::{Mode, S};
+    let create = Mode::SymbolCreation { from_ground: 0, to_symbol: 4, forward: true };
+    let erase = Mode::SymbolCreation { from_ground: 0, to_symbol: 4, forward: false };
+    let shell = Mode::ShellBoundary { boundary_class: (2, 12) };
+    assert_eq!((create.lane(), shell.lane()), (S, H));
+    let mut held = Modes::new();
+    held.add_mode(create.clone(), q(3, 1));
+    held.add_mode(erase.clone(), q(1, 1));
+    held.add_mode(shell.clone(), q(2, 1));
+    held.add(&Modes::founding(S, q(5, 1)).expect("S"));
+    held.add(&Modes::founding(H, q(7, 1)).expect("H"));
+    assert_eq!(held.on_lane(S).count(), 3, "creation, erasure and the founding mode, three on S");
+    assert_eq!(held.amount_of(&create), Some(&q(3, 1)));
+    assert_eq!(held.amount_of(&erase), Some(&q(1, 1)), "the reverse move is its own mode");
+    assert_eq!(held.amount_of(&shell), Some(&q(2, 1)));
+    assert!(held.amount_of(&Mode::ShellBoundary { boundary_class: (2, 13) }).is_none(), "another boundary class is another mode");
+    let mut wire = Vec::new();
+    held.put(&mut wire).expect("written");
+    let mut p = 0;
+    assert_eq!(Modes::take_from(&wire, &mut p), Some(held), "read back whole");
+}

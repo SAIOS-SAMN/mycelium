@@ -16,7 +16,7 @@ pub const SYLLABUS: [&str; 13] = [
     "words served",
     "words missed",
     "ended: order",
-    "ended: frame",
+    "ended: budget",
     "ended: count",
     "deferred: reserve",
     // 78.60 — each sentence taught, by the strongest relation it stands in

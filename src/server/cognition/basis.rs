@@ -815,12 +815,12 @@ impl Court {
     }
 
     /// 76, 78.42 (3) — PRESSURE ON A WORD IN FLIGHT: a sentence that cites it
-    /// transports a frame to the word's escrow, and carries the word — a
+    /// transports a measure to the word's escrow, and carries the word — a
     /// transition concerning it. A word this court does not hold in flight
     /// takes no pressure here.
     ///
-    /// The frame is the word's own discharge, the frame its carriage draws
-    /// (`carry`), in the escrow's currency: μ, a share of the frame (78.170
+    /// The measure is the word's own discharge, the measure its carriage draws
+    /// (`carry`), in the escrow's currency: μ, a share of the enclosure (78.170
     /// O1, ruled 2026-11-01). The waiting sentence cites a word this court
     /// does not rule, so its own discharge cannot be measured here, and its
     /// magnitude is a count, not μ: crediting it would credit a site count
@@ -829,29 +829,29 @@ impl Court {
         if !self.in_flight(address) {
             return;
         }
-        let Some(frame) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
-        if self.treasury.credit_escrow(address, frame.clone()).is_none() {
+        let Some(measure) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
+        if self.treasury.credit_escrow(address, measure.clone()).is_none() {
             self.overflowed += 1;
         }
-        self.note_flux(address, &frame);
+        self.note_flux(address, &measure);
         self.carry(address);
     }
 
     /// A TRANSITION CARRIES A WORD IN FLIGHT: its offer is emitted again, and
-    /// the carriage draws the word's own frame from its escrow, per lane. A
+    /// the carriage draws the word's own measure from its escrow, per lane. A
     /// word whose escrow cannot pay the draw is exhausted and lapses here.
     ///
-    /// The frame is read in the escrow's own currency, the word's DISCHARGE
+    /// The measure is read in the escrow's own currency, the word's DISCHARGE
     /// (78.149, `discharge_of`), never its magnitude: an escrow priced from
     /// the discharge drawn at the magnitude would exhaust every word whose
     /// measure carries an ask or a holonomic unit at its first carriage. A
     /// word that discharges nothing draws nothing, moves no flux, and lapses
     /// as silent (ZeroFlux, 78.37 (3)).
     pub(crate) fn carry(&mut self, address: &[u8]) {
-        let Some(frame) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
-        match self.treasury.carry_escrow(address, frame.clone()) {
+        let Some(measure) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
+        match self.treasury.carry_escrow(address, measure.clone()) {
             Some(Ok(_)) => {
-                self.note_flux(address, &frame);
+                self.note_flux(address, &measure);
                 if let Some(at) = self.stamp_key(address) {
                     self.emitted.insert(&at, ());
                 }

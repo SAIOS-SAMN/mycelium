@@ -1744,7 +1744,7 @@ fn read_copy(r: &PredicateTable<'_, '_>, touched: &[Vec<usize>], every: &[Vec<us
     Some(vec![Clause { select: seeds, act: Act::Copy { template } }])
 }
 
-/// C6 — THE PANES READ OFF THE FRAMES AND THE CELLS (78.167 Phase B, Step 4):
+/// C6 — THE PANES READ OFF THE DELIMITED AND THE CELLS (78.167 Phase B, Step 4):
 /// where every pair's input is two equal panes along one axis of the
 /// perspective's plane (`PlaneAxis`) — a separator line of one cell between
 /// them or none, the same on every pair — and the output is one pane's
@@ -1819,7 +1819,7 @@ fn read_panes(r: &PredicateTable<'_, '_>) -> Option<Clause> {
     Some(Clause { select: Pred::All, act: Act::Panes { along, gap, table: bits, paint: hue? } })
 }
 
-/// C7 — THE TILES READ OFF THE FRAMES AND THE BLOCKS (78.167 Phase B, Step 4):
+/// C7 — THE TILES READ OFF THE DELIMITED AND THE BLOCKS (78.167 Phase B, Step 4):
 /// where every pair's output is the same whole number of the input's frames
 /// along each axis of the perspective's plane, each block is read as the
 /// symmetries of the square that carry the input onto it — the group's

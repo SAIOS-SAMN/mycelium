@@ -43,7 +43,7 @@ pub fn decode_task_by_citation(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
 /// member]` — train pairs to STUDY, test inputs to SOLVE; the held answers
 /// never ride the wire. An empty body = no work. Refused by name where a
 /// sample or a count passes its field.
-pub fn encode_task_envelope(
+pub fn encode_task(
     citation: &[u8; 32],
     train: &[(crate::transducer::sample::Sample, crate::transducer::sample::Sample)],
     tests: &[crate::transducer::sample::Sample],
@@ -54,16 +54,16 @@ pub fn encode_task_envelope(
     Ok(out)
 }
 
-/// The envelope read back whole and exactly, or none.
-pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
+/// The task family read back whole and exactly, or none (78.179 §3).
+pub fn decode_task(body: &[u8]) -> Option<TaskFamily> {
     let id: [u8; 32] = body.get(0..32)?.try_into().ok()?;
     let mut p = 32usize;
     let train = super::samples::read_train(body, &mut p).ok()?;
     let tests = super::samples::read_tests(body, &mut p, Member::Input).ok()?;
-    // NOTHING AFTER THE LAST TEST INPUT: an envelope is read whole or
+    // NOTHING AFTER THE LAST TEST INPUT: a family is read whole or
     // refused. Read leniently, the 43-byte deferral of a zero deficit was an
     // envelope of no train pair and no test input.
-    (p == body.len()).then_some(TaskEnvelope { id, train, tests })
+    (p == body.len()).then_some(TaskFamily { id, train, tests })
 }
 
 /// THE POSTED TASK FILE'S EXTENSION: what a hypha's corpus directory, a

@@ -6,9 +6,10 @@
 //! holonomy per revolution.
 
 use super::enclosing::Membrane;
-use super::holonomy::{Holonomy, Motion};
+use super::holonomy::{Holonomy, Monodromy, Motion};
 use super::refusal::FieldRefusal;
 use super::turning::FramePlanes;
+use crate::transducer::cga::Mv;
 use crate::transducer::stalk::{ChartAxis, Invariant};
 
 /// A CHART (78.171 §2; MU-RECURSION 78.41), its one meaning: a body's exact
@@ -124,6 +125,13 @@ impl Orbit {
             _ => Precession::Advances(h),
         })
     }
+
+    /// THE MONODROMY PER REVOLUTION (78.171 §3.2; MU-SENSING §3.8): flat (order 1),
+    /// torsion (order ℓ) or rupture (infinite order). Refused as
+    /// [`Orbit::holonomy`] refuses.
+    pub fn monodromy(&self) -> Result<Monodromy, FieldRefusal> {
+        self.holonomy().map(|h| h.monodromy())
+    }
 }
 
 /// AN ATTRACTOR HELD (78.171 §2, a well): the chart it stands at, the
@@ -149,6 +157,12 @@ impl Attractor {
         self.bound()?.precession()
     }
 
+    /// THE MONODROMY OF ITS ORBIT PER REVOLUTION (78.171 §3.2; MU-SENSING §3.8).
+    /// Refused `Unbound` with its centre where it binds no orbit.
+    pub fn monodromy(&self) -> Result<Monodromy, FieldRefusal> {
+        self.bound()?.monodromy()
+    }
+
     /// The orbit it binds, or `Unbound` with its centre.
     fn bound(&self) -> Result<&Orbit, FieldRefusal> {
         self.orbit.as_ref().ok_or_else(|| FieldRefusal::Unbound { charts: vec![self.centre.clone()] })
@@ -169,6 +183,24 @@ impl Attractor {
 pub struct Curvature {
     pub centre: Chart,
     pub holonomy: Result<Holonomy, FieldRefusal>,
+}
+
+impl Curvature {
+    /// THE MONODROMY OF THE CURVATURE (78.171 §3.2; MU-SENSING §3.8): flat,
+    /// torsion or rupture, or the refusal the holonomy met.
+    pub fn monodromy(&self) -> Result<Monodromy, FieldRefusal> {
+        self.holonomy.as_ref().map(|h| h.monodromy()).map_err(|e| e.clone())
+    }
+
+    /// THE PRECESSION OF THE CURVATURE (78.171 §3.3): the holonomy's advance or
+    /// `Resonant`, or the refusal the holonomy met.
+    pub fn precession(&self) -> Result<Precession, FieldRefusal> {
+        let h = self.holonomy.as_ref().map_err(|e| e.clone())?;
+        Ok(match h.monodromy() {
+            super::holonomy::Monodromy::Flat => Precession::Resonant(h.clone()),
+            _ => Precession::Advances(h.clone()),
+        })
+    }
 }
 
 /// THE FIELD'S ATLAS (78.171 §1): its frame planes, its charts (each once,
@@ -258,5 +290,32 @@ impl Atlas {
     /// no attractor, no curvature.
     pub fn curvature(&self) -> Vec<Curvature> {
         self.attractors.iter().map(|a| Curvature { centre: a.centre.clone(), holonomy: a.holonomy() }).collect()
+    }
+
+    /// THE MONODROMY OF A CANDIDATE OVER `charts` (78.171 §3.2; MU-SENSING §3.8):
+    /// the monodromy of the geodesic revolution through those charts, read as
+    /// [`Monodromy`] (flat, torsion or rupture). Refused `NotCharted` or `Unbound`.
+    pub fn candidate_monodromy(&self, charts: &[Chart]) -> Result<Monodromy, FieldRefusal> {
+        self.revolution(charts)?.monodromy()
+    }
+
+    /// AXIOMATIC GRAVITY: the shear of each held attractor's bound orbit on
+    /// the orthogonal orbit class of `orbit` (MU-SENSING §3.7). Flat (empty)
+    /// where no attractor binds an orbit.
+    pub fn axiomatic_shear(&self, orbit: &Orbit) -> Result<Vec<Mv>, FieldRefusal> {
+        let mut out = Vec::new();
+        let Some(target) = super::gravity::primary_plane(orbit) else {
+            return Ok(out);
+        };
+        for attractor in &self.attractors {
+            if let Some(held) = &attractor.orbit {
+                if let Some(held_plane) = super::gravity::primary_plane(held) {
+                    if let Some(split) = super::gravity::axiomatic_shear(&held_plane, &target)? {
+                        out.push(split.drag);
+                    }
+                }
+            }
+        }
+        Ok(out)
     }
 }

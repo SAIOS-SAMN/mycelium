@@ -3,6 +3,7 @@
 
 mod aperture;
 mod body;
+mod bracket;
 mod commutator;
 mod complex;
 mod contemplation;

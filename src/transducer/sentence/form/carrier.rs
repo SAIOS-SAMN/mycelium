@@ -260,7 +260,7 @@ pub struct Acting {
     /// footprint.
     pub carriage: Box<Versor>,
     pub gauge: Vec<(u8, u8)>,
-    /// AT1 (ruled) — THE FRAMES THIS MEMBER STANDS ON, each by its own
+    /// AT1 (ruled) — THE DELIMITED THIS MEMBER STANDS ON, each by its own
     /// spelling ([`frame_key`]): the member's charts are `class ‖ chart ‖
     /// frame` for each, held HERE and nowhere beside it. `Form.sections`
     /// read these off the members and retired as a carrier (law 12).
@@ -900,7 +900,7 @@ pub struct Form {
     ///
     /// EMPTY IS HONEST. `from_address` reconstitutes a form from its key,
     /// and the key does not name the cover, so the form it returns has
-    /// none. `from_element_form` has the word's `ReceiptsEnvelope` in hand
+    /// none. `from_element_form` has the word's `WordStalk` in hand
     /// and fills it. A reader that finds it empty is reading a form whose
     /// citations nothing told it — which is the truth, not a zero.
     pub cover: Vec<crate::transducer::element::NerveEdge>,

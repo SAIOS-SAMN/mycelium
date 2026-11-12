@@ -108,7 +108,7 @@ impl crate::transducer::family::Crystal for Court {
 impl Court {
     /// What a rule discharges by speaking every train pair, its cited forms
     /// resolved through this court's ruled cover, as μ: each closed pair's
-    /// share of its frame (`DeflationRead::mu`, O1 ruled 2026-11-01). Any
+    /// share of its enclosure (`DeflationRead::mu`, O1 ruled 2026-11-01). Any
     /// miss is zero: association with a listing is not a mint.
     pub(crate) fn measured_discharge(&self, form: &Element, family: &crate::transducer::family::Family) -> Mu {
         self.measured_discharge_read(form, family).0
@@ -120,7 +120,9 @@ impl Court {
         match crate::transducer::sentence::from_element_form(form) {
             Some(f) => {
                 let r = crate::transducer::family::form_deflation_read(&f, family, self, &crate::transducer::alphabet::Word::identity());
-                (r.mu, r.modes)
+                // §2.5 — the discharge holds the modes the closing form
+                // moved, each lane at its ruled share.
+                (Mu::carried_by(&r.mu, &r.modes), r.modes)
             }
             None => (Mu::zero(), crate::economy::modes::Modes::new()),
         }
@@ -142,7 +144,7 @@ impl Court {
     ///   discharge)` (`Treasury::release_discharged`), and nothing above the
     ///   discharge is minted;
     /// - (c) zero for a word that names no body: a letter or a callus stands
-    ///   at no frame and closes nothing on any family, so it measures
+    ///   at no enclosure and closes nothing on any family, so it measures
     ///   nothing here. Its magnitude's holonomic unit is its EXISTENCE as a
     ///   word (`as_element_form` refuses an all-zero magnitude), never μ.
     ///
@@ -152,9 +154,9 @@ impl Court {
     /// a sentence with none discharges nothing measurable here, which is a
     /// reading and not a floor.
     ///
-    /// μ IS A SHARE OF THE FRAME (MU-RECURSION 78.170 O1, ruled 2026-11-01):
-    /// a discharge read on a family is each pair's share of its own frame
-    /// (`transduce::share_of_enclosure`); a discharge with no frame — a
+    /// μ IS A SHARE OF THE ENCLOSURE (MU-RECURSION 78.170 O1, ruled 2026-11-01):
+    /// a discharge read on a family is each pair's share of its own enclosure
+    /// (`transduce::share_of_enclosure`); a discharge with no enclosure — a
     /// rewrite's magnitude, a listing bound to no family — keeps its own
     /// measure as `n/1`.
     pub(crate) fn discharge_on(
@@ -191,7 +193,7 @@ impl Court {
     /// g̃`, 78.166 1c) and the cite is one this court holds. `None` for any
     /// word that is not a conjugate of a held word.
     pub(crate) fn conjugate_of(&self, word: &Element) -> Option<crate::transducer::address::Address> {
-        let env = word.receipts();
+        let env = word.stalk();
         let cite = env.derivations.iter().find(|d| d.conjugator.is_some())?;
         let [(form, _, _)] = cite.generators.as_slice() else { return None };
         crate::transducer::family::Crystal::by_address(self, form.as_bytes()).map(|_| form.clone())
@@ -199,7 +201,7 @@ impl Court {
 
     /// C — WHAT A CONJUGATOR ADDED ON `family` (MU-CLIENT §5.6 C, as the spec
     /// reads): the conjugate's local discharge less the cited word's own, both
-    /// read by the one local reader, each in its own frame, LANE BY LANE AS THE
+    /// read by the one local reader, each in its own enclosure, LANE BY LANE AS THE
     /// SHORTFALL — a lane the transport did not raise pays nothing, never a
     /// negative. A conjugate that discharges no more than its word is paid
     /// nothing; W's discoverer keeps W's use (the D2′ share, read locally).

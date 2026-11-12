@@ -88,13 +88,13 @@ fn sphere_throat_fits_cap_short_of_antipode() {
 /// antipode.
 #[test]
 fn sphere_fit_is_decided_past_any_grid() {
-    use crate::core::certified::{pi, Encl};
+    use crate::core::certified::{pi, Certified};
     let near = pi(200);
     let space = Geometry::Sphere((2, 1));
     // r = 2m/R = m on a sphere of radius 2.
-    assert_eq!(fits_in(&space, &near.lo), Some(true), "just short of π");
-    assert_eq!(fits_in(&space, &near.hi), Some(false), "just past π");
-    let ratio = Encl::exact(near.lo.clone()).div(&pi(64)).expect("π is no zero").hi;
+    assert_eq!(fits_in(&space, near.lo()), Some(true), "just short of π");
+    assert_eq!(fits_in(&space, near.hi()), Some(false), "just past π");
+    let ratio = Certified::Exact(near.lo().clone()).div(&pi(64)).expect("π is no zero").hi().clone();
     assert!(ratio >= q(1, 1), "the former grid's ratio reads the fitting cap as past the antipode");
 }
 

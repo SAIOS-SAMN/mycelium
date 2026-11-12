@@ -5,7 +5,7 @@
 //
 //! THE SCENES THIS MIND HAS SPOKEN WORDS ON. Every word it speaks under a
 //! scene is held by the scene's citation with the scene's family, while its
-//! expression receipt stands (`forget_utterance` lets it go). They are what a
+//! expression receipt stands (`forget_assertion` lets it go). They are what a
 //! heard word is read against.
 //!
 //! THE EVIDENCE A HEARD WORD CARRIES (`chatter::Evidence`): the scene it was
@@ -53,6 +53,11 @@ struct SceneWords {
 pub(crate) struct Scenes {
     by_scene: Keyed<SceneWords>,
     of_word: Keyed<Keyed<()>>,
+    /// 78.177 §4a(2) — THE CLOSED SENTENCES THIS MIND SPOKE UNDER EACH
+    /// SCENE, by scene then address: what a question listed at a court rides
+    /// (`Mind::question_sentence`). Held while the expression stands, as the
+    /// words are, and let go with it (`forget`).
+    sentences: Keyed<Keyed<Element>>,
     /// Evidence read, by verdict: true, refuted, unread.
     pub(crate) read: [u64; 3],
     /// Each convergence once, keyed scene ‖ heard word ‖ own word, with the
@@ -94,7 +99,16 @@ pub(crate) fn same_section(a: &Local, b: &Local, family: &crate::transducer::fam
 impl Scenes {
     /// A WORD SPOKEN UNDER A SCENE, held there with the scene's family.
     pub(crate) fn hold(&mut self, scene: &[u8], family: &crate::transducer::family::Family, word: &Element) {
-        if scene.is_empty() || family.is_empty() || !sectioned(word) {
+        if scene.is_empty() || family.is_empty() {
+            return;
+        }
+        // A sentence closed on the scene: what a listed question rides.
+        if !sectioned(word) {
+            if crate::transducer::sentence::from_element_form(word).is_some_and(|f| f.is_closed()) {
+                let address = word.address();
+                self.sentences.nested_insert(scene, address.as_bytes(), word.clone());
+                self.of_word.nested_insert(address.as_bytes(), scene, ());
+            }
             return;
         }
         let address = word.address();
@@ -118,6 +132,16 @@ impl Scenes {
     pub(crate) fn forget(&mut self, address: &[u8]) {
         let Some(scenes) = self.of_word.remove(address) else { return };
         for (scene, ()) in scenes.scoped() {
+            let spoken_none = match self.sentences.get_mut(&scene) {
+                Some(s) => {
+                    s.remove(address);
+                    s.is_empty()
+                }
+                None => false,
+            };
+            if spoken_none {
+                self.sentences.remove(&scene);
+            }
             let gone = match self.by_scene.get_mut(&scene) {
                 Some(s) => {
                     s.words.remove(address);
@@ -138,6 +162,28 @@ impl Scenes {
             Some(s) => Some((s.family.clone(), s.charts.clone())),
             None => self.pulled.get(scene).cloned(),
         }
+    }
+
+    /// The scene citation of a held family: spoken on, or pulled.
+    pub(crate) fn scene_of_family(&self, family: &crate::transducer::family::Family) -> Option<Vec<u8>> {
+        for (scene, words) in self.by_scene.scoped() {
+            if words.family == *family {
+                return Some(scene);
+            }
+        }
+        for (scene, (f, _)) in self.pulled.scoped() {
+            if f == family {
+                return Some(scene);
+            }
+        }
+        None
+    }
+
+    /// 78.177 §4a(2) — THE SENTENCE A QUESTION ON `scene` RIDES: the least
+    /// by address of the closed sentences this mind spoke there (rule 15,
+    /// by coordinates, never by arrival); none where it spoke none.
+    pub(crate) fn host_on(&self, scene: &[u8]) -> Option<Element> {
+        self.sentences.get(scene)?.scoped().next().map(|(_, e)| e.clone())
     }
 
     /// How many scenes and words are held.
@@ -209,7 +255,7 @@ impl Mind {
         if let Some((family, charts)) = self.scenes.evidence(&ev.scene) {
             let evident = self.scenes.read(&ev.scene, &word, &family, speaker);
             let charts = charts_heard(evident, charts);
-            self.perceive_hearing_on(speaker, said, words, evident, charts);
+            self.perceive_evidenced(speaker, said, words, evident, charts, Some(ev));
             return;
         }
         if self.scenes.pulling.contains(&id) {
@@ -219,7 +265,7 @@ impl Mind {
         let act = dialogue::encode_task_by_citation(&self.hypha.voice().id(), &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             entity.scenes.pulling.remove(&id);
-            let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).and_then(|e| e.section().ok()).map(|env| env.train);
+            let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task(&b)).and_then(|e| e.section().ok()).map(|env| env.train);
             let (evident, charts) = match family {
                 Some(f) => {
                     let evident = entity.scenes.read(&id, &word, &f, speaker);
@@ -233,7 +279,7 @@ impl Mind {
                     (Evident::Unread, Vec::new())
                 }
             };
-            entity.perceive_hearing_on(speaker, said, words, evident, charts);
+            entity.perceive_evidenced(speaker, said, words, evident, charts, Some(ev));
         });
     }
 }

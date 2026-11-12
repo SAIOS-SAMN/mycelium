@@ -14,30 +14,30 @@ use mycelium::anastome::dialogue::domain::{decode_domain_request, encode_domain_
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-/// 78.154 — READ-LEDGER off the published reading: `true` where the frame
+/// 78.154 — READ-LEDGER off the published reading: `true` where the envelope
 /// was one and was answered here.
-pub(crate) fn serve_ledger(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
-    let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&frame.body) else { return false };
+pub(crate) fn serve_ledger(stream: &mut Channel, delimited: &Delimited, context: &Context) -> bool {
+    let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&delimited.body) else { return false };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     let page = context.published.take().ledger_page(&domain, after);
-    answer(stream, Delimited { lane: frame.lane, body: encode_ledger_page(&page) });
+    answer(stream, Delimited { body: encode_ledger_page(&page) });
     true
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(request) = decode_domain_request(&frame.body) else { return };
-    if serve_ledger(stream, frame, context) {
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(request) = decode_domain_request(&delimited.body) else { return };
+    if serve_ledger(stream, delimited, context) {
         return;
     }
     // The final point is read off the shelf before the court is taken.
     let fin = crate::tuniversal::final_point();
     if let DomainRequest::Retrieve(s) = &request {
-        retrieve(stream, frame, context, s, fin);
+        retrieve(stream, context, s, fin);
         return;
     }
     let body = match crate::court_lock::held!(context.court) {
         // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
-        // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
+        // spends it; MAP and TRAVERSE read what the envelope carries; READ-MAP
         // walks one universe's records (a fibre), owed to the shelf.
         Ok(mut h) => h.run(|k, reads| match request {
             DomainRequest::Genesis(domain) => encode_domain_reply(&k.hear_domain(&domain)),
@@ -70,7 +70,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }
 
 /// #159 — A COORDINATE RETRIEVAL (`ACT_DOMAIN` sub-kind 19), answered beside
@@ -79,7 +79,7 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
 /// section and that the receipts stand under its head. A served answer this
 /// court cannot sign is answered with nothing, never unsigned; it is
 /// acknowledged only once the claim it drew is durable (78.137).
-fn retrieve(stream: &mut Channel, frame: &Delimited, context: &Context, s: &mycelium::anastome::dialogue::retrieve::SignedRetrieve, fin: Option<mycelium::chronometry::tuniversal::TPoint>) {
+fn retrieve(stream: &mut Channel, context: &Context, s: &mycelium::anastome::dialogue::retrieve::SignedRetrieve, fin: Option<mycelium::chronometry::tuniversal::TPoint>) {
     use mycelium::anastome::dialogue::retrieve::{answered_payload, encode_retrieve_reply, Retrieved};
     let read = match crate::court_lock::held!(context.court) {
         Ok(mut h) => h.run(|k, _| k.retrieve_signed(s, fin)),
@@ -114,5 +114,5 @@ fn retrieve(stream: &mut Channel, frame: &Delimited, context: &Context, s: &myce
         eprintln!("  retrieve unanswered: a receipt or the section cannot be written");
         return;
     };
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

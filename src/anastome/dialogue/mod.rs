@@ -13,12 +13,15 @@ pub mod cited;
 pub mod commitment;
 pub mod conformance;
 pub mod crossing;
+pub mod crossing_record;
+pub mod crossing_refusal;
 pub mod handoff;
 pub mod lease;
 pub mod cover;
 pub mod demand;
 pub mod docket;
 pub mod equivocation;
+pub mod expression;
 pub mod factorisation;
 pub mod fold;
 pub mod offer;
@@ -47,6 +50,7 @@ pub use cover::*;
 pub use demand::*;
 pub use docket::*;
 pub use equivocation::*;
+pub use expression::{speaks, write_act, Expression, Unheard};
 pub use factorisation::*;
 pub use fold::*;
 pub use offer::*;
@@ -57,7 +61,7 @@ pub use receipts::*;
 pub use root::*;
 pub use samples::{
     decode_posted_samples, decode_samples, encode_posted_samples, encode_samples, push_sample, read_sample, section_of,
-    spoken_outputs, PostedTask, SampleWire, TaskEnvelope, TaskSection,
+    spoken_outputs, PostedTask, SampleWire, TaskFamily, TaskSection,
 };
 pub use speech::*;
 pub use syllabus::*;

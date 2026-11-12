@@ -21,7 +21,7 @@ pub enum Face {
 }
 
 /// THE UNLOCKED FACE of a body of hold `H` at reach `r` on `face`: the
-/// carry or pinch share `δ = H/(r + H)` (`forms::passage::Frame::share`),
+/// carry or pinch share `δ = H/(r + H)` (`forms::passage::PassageState::share`),
 /// read `1 − δ` on the continuum (`forms::passage::pass_share`) and `δ` on
 /// the vacuum. Refused `Negative` with a part below zero, and by the
 /// passage's name where `δ` has no whole.

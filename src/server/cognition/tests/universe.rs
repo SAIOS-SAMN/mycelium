@@ -7,6 +7,7 @@
 use crate::anastome::dialogue::domain::{BigBangRecord, DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{ConvertOut, Handed, Handoff, HandoffRefusal, Level, Mouth, State, Tube};
 use crate::anastome::dialogue::universe::{Genesis, Geometry, Metric, Parent, Statement, Stated};
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use crate::chronometry::Cite;
 use crate::server::cognition::Court;
 use crate::transducer::cga::Mv;
@@ -63,7 +64,7 @@ fn origin(d: u8, universe: Option<Genesis>) -> BigBangRecord {
 }
 
 fn state(k: &mut Court, d: u8, stated: Stated, by: &SigningKey) -> Founded {
-    k.state(&Statement { domain: verifying(&domain(d)), stated }.sign(by))
+    k.state(&Statement { domain: verifying(&domain(d)), stated }.signed(by))
 }
 
 fn curved(r: (u64, u64)) -> Geometry {
@@ -97,7 +98,7 @@ fn core_tube(to_r: (u64, u64)) -> Mouth {
 
 fn open(k: &mut Court, m: Mouth) -> [u8; 32] {
     let id = m.citation();
-    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))), Handed::Sealed { .. }), "offered");
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(4))), Handed::Sealed { .. }), "offered");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }), "accepted");
     id
 }
@@ -118,7 +119,7 @@ fn state_records_geometry_and_basket_once() {
     assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &domain(4)), off_core(), "the founder's key no longer speaks");
     assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &line(4)), off_core());
     assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &key(77)), Founded::Unsigned, "no key of the domain");
-    assert_eq!(k.state(&Statement { domain: [9; 32], stated: Stated::Geometry(space.clone()) }.sign(&reserve(4))), Founded::NotFounded);
+    assert_eq!(k.state(&Statement { domain: [9; 32], stated: Stated::Geometry(space.clone()) }.signed(&reserve(4))), Founded::NotFounded);
     for bad in [curved((0, 1)), Geometry::Torus { periods: Vec::new(), metric: Metric::L2 }, Geometry::Torus { periods: vec![(1, 1); 4], metric: Metric::L1 }] {
         assert_eq!(state(&mut k, 4, Stated::Geometry(bad), &reserve(4)), Founded::Malformed);
     }
@@ -128,15 +129,20 @@ fn state_records_geometry_and_basket_once() {
     assert_eq!(state(&mut k, 4, Stated::Geometry(torus()), &reserve(4)), Founded::AlreadyStated, "never an edit");
     // The basket gates conversions at the reserve.
     let out = ConvertOut { tier: verifying(&reserve(4)), holder: [7; 32], identity: [8; 32], g: 4, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [1; 32] };
-    let convert = |k: &mut Court, nonce: u8| k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { nonce: [nonce; 32], ..out.clone() })).sign(&reserve(4)));
+    let convert = |k: &mut Court, nonce: u8| k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { nonce: [nonce; 32], ..out.clone() })).signed(&reserve(4)));
     assert_eq!(convert(&mut k, 1), Handed::Refused(HandoffRefusal::NoBasket), "the reserve unit is the reserve's basket");
-    for bad in [Vec::new(), vec![(8, (3, 1)), (1, (2, 1))], vec![(1, (0, 1))]] {
-        assert_eq!(state(&mut k, 4, Stated::Basket(bad), &reserve(4)), Founded::Malformed);
+    let mut lying = e(8, 3, 24, 0);
+    lying.mass += 1u8;
+    let mut split = e(8, 3, 24, 0);
+    split.protons += 1u8;
+    for bad in [Vec::new(), vec![e(8, 3, 24, 0), e(1, 2, 0, 0)], vec![e(1, 0, 0, 0)], vec![e(0, 1, 0, 0)], vec![lying], vec![split], vec![e(1, 1, 0, 4)]] {
+        assert_eq!(state(&mut k, 4, Stated::Basket(bad), &reserve(4)), Founded::Malformed, "#238: an entry that does not hold its dipole");
     }
-    // Ammonia stated as its elements' masses, with water and iron.
-    let basket = vec![(1, (21, 1)), (7, (14, 1)), (8, (160, 1)), (26, (1, 10))];
+    // Ammonia stated as its elements' portions, with water and iron: each
+    // portion its whole counts, the mass its first-degree hold.
+    let basket = vec![e(1, 21, 0, 21), e(7, 2, 14, 10), e(8, 20, 160, 40), e(26, 1, 30, 26)];
     assert!(matches!(state(&mut k, 4, Stated::Basket(basket.clone()), &reserve(4)), Founded::Stated { .. }));
-    assert_eq!(state(&mut k, 4, Stated::Basket(vec![(1, (1, 1))]), &reserve(4)), Founded::AlreadyStated);
+    assert_eq!(state(&mut k, 4, Stated::Basket(vec![e(1, 1, 0, 1)]), &reserve(4)), Founded::AlreadyStated);
     assert!(matches!(convert(&mut k, 2), Handed::Sealed { .. }), "converted once its basket stands");
     let read = k.universe_reading(&verifying(&domain(4)));
     assert_eq!((read.originated, read.geometry.clone(), read.parent, read.basket.clone()), (false, Some(space), None, basket.clone()));
@@ -154,14 +160,14 @@ fn state_records_geometry_and_basket_once() {
 #[test]
 fn record_origin_child_through_core_tube() {
     let mut k = founded();
-    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(core_tube((2, 1)))).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotAUniverse), "the parent is no universe yet");
+    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(core_tube((2, 1)))).signed(&reserve(4))), Handed::Refused(HandoffRefusal::NotAUniverse), "the parent is no universe yet");
     assert_eq!(k.record_origin(&BigBangRecord { version: 1, ..origin(4, Some(root())) }.sign(&domain(4))), Founded::Malformed, "version and fields agree");
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
     let by_line = Mouth { from_tier: verifying(&line(4)), ..core_tube((2, 1)) };
     let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Mouth, domain: verifying(&domain(4)) };
-    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(by_line)).sign(&line(4))), Handed::Boundary(off_core), "only the reserve offers a core");
+    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(by_line)).signed(&line(4))), Handed::Boundary(off_core), "only the reserve offers a core");
     let bent = Mouth { tube: Some(Tube { from_space: curved((3, 1)), ..core_tube((2, 1)).tube.expect("a tube") }), ..core_tube((2, 1)) };
-    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(bent)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoGeometry));
+    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(bent)).signed(&reserve(4))), Handed::Refused(HandoffRefusal::NoGeometry));
     let tube = open(&mut k, core_tube((2, 1)));
     let child = |g: Geometry, parent: Parent| origin(5, Some(Genesis { geometry: g, parent }));
     assert_eq!(k.record_origin(&child(curved((2, 1)), Parent::Core([9; 32])).sign(&domain(5))), Founded::NotACore);
@@ -208,7 +214,7 @@ fn tube_of_reads_torus_face_flat_and_bounded() {
     use crate::transducer::cga::{base_vector, dilator, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole, translator_at};
     let mut k = founded();
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
-    let offer = |k: &mut Court, m: Mouth| k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4)));
+    let offer = |k: &mut Court, m: Mouth| k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(4)));
     let refused = Handed::Refused;
     let step = hyperbolic_compartment(&[n(1), n(0), n(0)], &n(2)).expect("on the sheet");
     let away = geodesic_transvection(&hyperboloid_pole(), &step).expect("a transvection");
@@ -267,21 +273,27 @@ fn universe_acts_round_trips() {
         assert_eq!(decode_domain_request(&encode_origin(&signed)), Some(DomainRequest::Origin(signed)));
     }
     let l2 = Geometry::Torus { periods: vec![(7, 3)], metric: Metric::L2 };
-    for stated in [Stated::Geometry(curved((7, 3))), Stated::Geometry(l2), Stated::Basket(vec![(1, (1, 2)), (26, (3, 1))]), Stated::Join([2; 32])] {
-        let s = Statement { domain: verifying(&domain(5)), stated }.sign(&reserve(5));
-        let mut asked = encode_statement(&s);
+    for stated in [Stated::Geometry(curved((7, 3))), Stated::Geometry(l2), Stated::Basket(vec![e(1, 2, 0, 1), e(26, 3, 90, 60)]), Stated::Join([2; 32])] {
+        let s = Statement { domain: verifying(&domain(5)), stated }.signed(&reserve(5));
+        let mut asked = encode_statement(&s).expect("encodes");
         assert_eq!(decode_domain_request(&asked), Some(DomainRequest::State(s)));
         asked.push(0);
         assert_eq!(decode_domain_request(&asked), None);
     }
     assert_eq!(decode_domain_request(&encode_universe_read([3; 32])), Some(DomainRequest::ReadUniverse([3; 32])));
-    let r = UniverseReading { originated: true, geometry: Some(torus()), parent: Some(Parent::Unwitnessed), basket: vec![(8, (1, 1))] };
+    let r = UniverseReading { originated: true, geometry: Some(torus()), parent: Some(Parent::Unwitnessed), basket: vec![e(8, 1, 8, 6)] };
     assert_eq!(decode_universe_reading(&encode_universe_reading(&r)), Some(r));
     for f in [Founded::AlreadyStated, Founded::NotACore, Founded::NotAUniverse, Founded::Malformed] {
         assert_eq!(decode_domain_reply(&encode_domain_reply(&f)), Some(f));
     }
-    let core = Handoff::Mouth(Box::new(core_tube((2, 1)))).sign(&reserve(4));
-    assert_eq!(decode_handoff_request(&encode_handoff(&core)), Some(HandoffRequest::Signed(core)));
+    let core = Handoff::Mouth(Box::new(core_tube((2, 1)))).signed(&reserve(4));
+    assert_eq!(decode_handoff_request(&encode_handoff(&core).expect("encodes")), Some(HandoffRequest::Signed(core)));
     let flat = Mouth { tube: Some(Tube { core: false, ..core_tube((2, 1)).tube.expect("a tube") }), ..core_tube((2, 1)) };
     assert_ne!(flat.citation(), core_tube((2, 1)).citation(), "a core is its own throat");
+}
+
+/// #238 — a basket entry: `nuclei` nuclei of the element of `element`
+/// protons, with `neutrons` neutrons and `bound` held electron states in all.
+fn e(element: u16, nuclei: u32, neutrons: u32, bound: u32) -> crate::anastome::dialogue::universe::BasketEntry {
+    crate::anastome::dialogue::universe::BasketEntry::of(element, nuclei.into(), neutrons.into(), bound.into())
 }

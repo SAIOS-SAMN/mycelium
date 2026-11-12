@@ -237,7 +237,7 @@ pub fn coherence(before: &Constellation, after: &Constellation, budget: &mut cra
     Ok(defect)
 }
 
-/// THE FRAMES STAND (the structural half of `equilibrium`): at least two, no
+/// THE DELIMITED STAND (the structural half of `equilibrium`): at least two, no
 /// two collapsed into one. Where they do not, the coherence form cannot be
 /// read at all — a refusal, never a defect.
 pub fn frames_stand(c: &Constellation) -> Result<(), Refusal> {
@@ -498,7 +498,7 @@ pub fn external_torque(before: &BodyMoments, after: &BodyMoments, step: &Mv) -> 
     Some(momentum(after, &b)?.sub(&carried))
 }
 
-/// TWO FRAMES' PAIR: the frames' product at unit weight ([`unit_product`]) and
+/// TWO DELIMITED' PAIR: the frames' product at unit weight ([`unit_product`]) and
 /// the pair's regime, read in the algebra (GR1, 78.59) — never a squared ratio.
 pub fn inversive(i: &PosedNucleus, j: &PosedNucleus) -> (Option<Q>, PairRegime) {
     (unit_product(&i.nucleus, &j.nucleus), cga::pair_regime(&[i.nucleus.clone(), j.nucleus.clone()], 0, 1))

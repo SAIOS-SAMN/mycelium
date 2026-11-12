@@ -117,3 +117,21 @@ pub fn bind_a_thought(mind: &mut crate::client::sdk::Mind, scene: &[u8]) -> u64 
     mind.field = field;
     returned
 }
+
+/// A FIXTURE DOOR'S READ: one envelope off `s`, its expression read, the
+/// act answered. `None` where the stream ends or the bytes are no
+/// expression.
+pub fn read_act(s: &mut impl std::io::Read) -> Option<Vec<u8>> {
+    let mut head = [0u8; crate::network::wire::HEAD];
+    s.read_exact(&mut head).ok()?;
+    let mut body = vec![0u8; crate::network::wire::delimited_len(head)?];
+    s.read_exact(&mut body).ok()?;
+    Some(crate::anastome::dialogue::Expression::read(body)?.act)
+}
+
+/// A FIXTURE DOOR'S REPLY: `act` written as an expression with no point,
+/// framed whole.
+pub fn reply_bytes(act: &[u8]) -> Vec<u8> {
+    let body = crate::anastome::dialogue::write_act(act, None).expect("an expression");
+    crate::network::wire::Delimited { body }.encode().expect("framed")
+}

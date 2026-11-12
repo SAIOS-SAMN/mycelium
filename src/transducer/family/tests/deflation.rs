@@ -383,9 +383,27 @@ fn deflation_reads_mu_as_share_of_each_frame() {
     assert!(read.remainders.iter().all(Vec::is_empty), "the slide closes both pairs: {:?}", read.remainders);
     let q = |n: u64, d: u64| crate::core::Q::new(n.into(), d.into());
     assert_eq!(read.pay[0], 8, "the measure counts eight sites on S");
-    assert_eq!(read.mu.lane(0), &q(5, 3), "μ on S: 4 of 4 and 4 of 6 sites");
+    assert_eq!(read.mu.lane(0), q(5, 3), "μ on S: 4 of 4 and 4 of 6 sites");
     let t = crate::transducer::sentence::presentation::LANE_T;
     assert!(read.pay[t] > 0, "the slide carries a flux");
-    assert_eq!(read.mu.lane(t), &(q(read.pay[t], 1) * q(5, 24)), "𝒯: the flux over the carried mass, as the frames' share of it");
-    assert_eq!(read.mu.lane(3), &q(read.pay[3], 1), "H stands as its count");
+    assert_eq!(read.mu.lane(t), (q(read.pay[t], 1) * q(5, 24)), "𝒯: the flux over the carried mass, as the frames' share of it");
+    assert_eq!(read.mu.lane(3), q(read.pay[3], 1), "H stands as its count");
+}
+
+/// 78.174 §1 item 9 — A RECOLOUR'S DISCHARGE HOLDS ITS HUE MODES: a
+/// recolour moves no site, so its pairs carry no mass, and its G share is
+/// still the hue map's work, read as the map's hue modes at the share of the
+/// enclosure recoloured. Before, the modes were read only where a pair
+/// carried mass, so a recolour paid G with no mode.
+#[test]
+fn recolour_discharge_holds_its_hue_modes() {
+crate::transducer::raster::stand_on(0);
+let family = vec![(digits(&["11"]), digits(&["22"]))];
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
+let read = form_deflation_read(&rule.form, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());
+assert!(!num_traits::Zero::is_zero(&read.mu.lane(1)), "the recolour is paid on G: {}", read.mu);
+let hue: Vec<_> = read.modes.modes().filter(|(m, _)| m.lane() == crate::economy::modes::G).collect();
+assert!(!hue.is_empty(), "and holds the hue map's modes: {}", read.modes.print());
+let whole = hue.iter().fold(crate::core::Q::from_integer(0.into()), |s, (_, a)| s + *a);
+assert!(num_traits::Signed::is_positive(&whole));
 }

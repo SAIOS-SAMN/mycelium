@@ -80,7 +80,7 @@ pub fn still(a: &AckWord) -> bool {
 
 /// ONE WORD'S LOOP read: its holonomy on the motion and on the hue map, from
 /// what was said and what was derived — the one reader both minds use.
-pub fn loop_of(said: &Spoken, heard: &HeardWord) -> AckWord {
+pub fn loop_of(said: &SaidWord, heard: &HeardWord) -> AckWord {
     AckWord {
         vertex: said.vertex.clone(),
         motion: heard.derived.as_ref().and_then(|d| holonomy(&said.motion, d)),

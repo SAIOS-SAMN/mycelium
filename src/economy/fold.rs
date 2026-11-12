@@ -19,6 +19,117 @@ pub struct Folded {
     pub net: Mu,
 }
 
+/// THE ISSUANCE A FOLD CHECKPOINTS BESIDE ITS NETS (MU-ECONOMY §6, §6.1;
+/// GLOSSARY, Era / fold): every row a fold replaces moved issuance or a
+/// balance, and its `epoch` rows keep only the balances. What the replaced
+/// rows issued and burned, by the proof each carried, is kept here, so a
+/// fold removes nothing a reading reads: the earned supply apart from
+/// genesis (§6), what each proof of work paid and burned (§0), issued and
+/// burned each, never netted into one another.
+///
+/// Each source is a row kind and the arm byte the row carries (`Arm::byte`:
+/// `0` for none, then POUW, POWC, POWR, POWV), summed gross over every
+/// folded prefix; an `epoch` row is a net of balances and is never read
+/// here, so a fold over an earlier fold's epoch rows counts that fold's
+/// issuance once. Written only by [`Treasury::fold`] and read back with the
+/// carriers (`persist.rs`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FoldedIssuance {
+    /// Genesis allocations.
+    pub genesis: Mu,
+    /// Mint rows, by the arm byte each carried.
+    pub minted: [Mu; 5],
+    /// Transfer rows, by arm byte: both halves of each pair, as the rows
+    /// stood (a reading takes one of each pair).
+    pub transferred: [Mu; 5],
+    /// Burn rows, by arm byte.
+    pub burned: [Mu; 5],
+    /// Slash rows: issuance leaving, read apart from a burn (§6).
+    pub slashed: Mu,
+}
+
+impl FoldedIssuance {
+    /// What `rows` issued and burned, by source; an `epoch` row and every
+    /// kind that moves no supply and pays no proof read nothing.
+    pub fn of_rows(rows: &[Entry]) -> FoldedIssuance {
+        let mut f = FoldedIssuance::default();
+        for e in rows {
+            let slot = usize::from(Arm::byte(e.arm));
+            let into = match e.kind {
+                Kind::Genesis => &mut f.genesis,
+                Kind::Mint => &mut f.minted[slot],
+                Kind::Transfer => &mut f.transferred[slot],
+                Kind::Burn => &mut f.burned[slot],
+                Kind::Slash => &mut f.slashed,
+                Kind::Epoch | Kind::Stake | Kind::Unstake | Kind::Escrow | Kind::Release | Kind::Revoke => continue,
+            };
+            into.step(&e.mu);
+        }
+        f
+    }
+
+    /// This checkpoint and `other`, source by source.
+    pub fn add(&self, other: &FoldedIssuance) -> FoldedIssuance {
+        let by = |a: &[Mu; 5], b: &[Mu; 5]| -> [Mu; 5] { std::array::from_fn(|i| a[i].add(&b[i])) };
+        FoldedIssuance {
+            genesis: self.genesis.add(&other.genesis),
+            minted: by(&self.minted, &other.minted),
+            transferred: by(&self.transferred, &other.transferred),
+            burned: by(&self.burned, &other.burned),
+            slashed: self.slashed.add(&other.slashed),
+        }
+    }
+
+    /// What the folded prefixes issued: genesis and every mint.
+    pub fn issued(&self) -> Mu {
+        Mu::sum(std::iter::once(&self.genesis).chain(&self.minted))
+    }
+
+    /// What the folded prefixes took out of circulation: every burn and
+    /// every slash.
+    pub fn burned(&self) -> Mu {
+        Mu::sum(self.burned.iter().chain(std::iter::once(&self.slashed)))
+    }
+
+    /// What the folded prefixes earned: the mint rows alone, every proof
+    /// and the subsidy, never genesis.
+    pub fn minted(&self) -> Mu {
+        Mu::sum(self.minted.iter())
+    }
+
+    /// EVERY SOURCE HELD, by its coordinate `[kind tag, arm byte]` (the row
+    /// tape's own, `Kind::tag` and `Arm::byte`), each where the trie it is
+    /// written to keys it; a source that holds nothing is not written, and
+    /// reads back as nothing.
+    pub fn sources(&self) -> Vec<([u8; 2], &Mu)> {
+        let mut out = vec![([Kind::Genesis.tag(), 0], &self.genesis)];
+        for (kind, by) in [(Kind::Mint, &self.minted), (Kind::Transfer, &self.transferred), (Kind::Burn, &self.burned)] {
+            for (slot, mu) in (0u8..).zip(by.iter()) {
+                out.push(([kind.tag(), slot], mu));
+            }
+        }
+        out.push(([Kind::Slash.tag(), 0], &self.slashed));
+        out.retain(|(_, mu)| !mu.is_zero());
+        out
+    }
+
+    /// The source at coordinate `key`, to be written; `None` where `key`
+    /// names no source the checkpoint holds (a kind it keeps no sum of, an
+    /// arm byte naming no arm, or an arm on genesis or a slash).
+    pub fn source_mut(&mut self, key: [u8; 2]) -> Option<&mut Mu> {
+        let [tag, arm] = key;
+        let slot = usize::from(Arm::byte(Arm::of(arm)?));
+        match (Kind::of_tag(tag)?, slot) {
+            (Kind::Genesis, 0) => Some(&mut self.genesis),
+            (Kind::Slash, 0) => Some(&mut self.slashed),
+            (Kind::Mint, s) => self.minted.get_mut(s),
+            (Kind::Transfer, s) => self.transferred.get_mut(s),
+            (Kind::Burn, s) => self.burned.get_mut(s),
+            _ => None,
+        }
+    }
+}
+
 /// The nets a fold writes: one (identity, net) per identity with a
 /// nonzero net, in identity order, and the nets' total.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -164,9 +275,10 @@ impl Treasury {
     }
 
     /// FOLD the rows written before the act at `head` into `epoch` rows
-    /// anchored to the fold receipt. The audit failing before or after, a
-    /// net below zero on a lane, or an unpaired transfer half is
-    /// `REFUSE_FOLD_INEXACT` and the journal is exactly as it was.
+    /// anchored to the fold receipt, the issuance those rows carried kept in
+    /// the checkpoint beside them ([`FoldedIssuance`]). The audit failing
+    /// before or after, a net below zero on a lane, or an unpaired transfer
+    /// half is `REFUSE_FOLD_INEXACT` and the journal is exactly as it was.
     pub fn fold(&mut self, head: Place, anchor: Anchor) -> Result<Folded, &'static str> {
         let inexact = crate::verdict::REFUSE_FOLD_INEXACT;
         self.audit().map_err(|_| inexact)?;
@@ -177,16 +289,19 @@ impl Treasury {
             .map(|(who, mu)| Entry { kind: Kind::Epoch, who: *who, mu: mu.clone(), at: anchor.0, receipt: anchor.1, arm: None })
             .collect();
         let before = std::mem::take(&mut self.entries);
-        let (issued, burned) = (self.issued.clone(), self.burned.clone());
+        let (issued, burned, folded) = (self.issued.clone(), self.burned.clone(), self.folded.clone());
+        let prefix: Vec<Entry> = before.iter().filter(|e| e.stands_at() < Some(head)).cloned().collect();
+        self.folded = folded.add(&FoldedIssuance::of_rows(&prefix));
         let rest = before.iter().filter(|e| e.stands_at() >= Some(head)).cloned();
         self.entries = epochs;
         self.entries.extend(rest);
         self.journal_moved();
         self.refold_supply();
-        if self.audit().is_err() {
+        if self.audit().is_err() || self.issued != issued || self.burned != burned {
             self.entries = before;
             self.issued = issued;
             self.burned = burned;
+            self.folded = folded;
             return Err(inexact);
         }
         Ok(Folded { replaced, rows: nets.rows.len(), net: nets.total })

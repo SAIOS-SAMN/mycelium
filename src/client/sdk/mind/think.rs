@@ -6,7 +6,7 @@ use crate::client::sdk::*;
 impl Mind {
     /// HOLD A CHAIN AS THE FORM IT IS (50.6 seam 1): a demand this mind has
     /// not closed is held as an idea — the pair form of the scene the chain
-    /// describes, its painted sites before against its painted sites after in one frame —
+    /// describes, its painted sites before against its painted sites after in one manifold enclosure —
     /// never as a bare chain minted into a word. An idea is a form; its
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
@@ -30,9 +30,9 @@ impl Mind {
         self.hold_perceived_from(p.form, &p.frames, (&[][..], &p.pair), &[], family, &mut budget);
     }
 
-    /// N4 — HOLD A PERCEPTION with the frames it was perceived from, so the
+    /// N4 — HOLD A PERCEPTION with the pair bodies it was perceived from, so the
     /// thoughts it forms with the perceptions it meets are the transitions
-    /// between the perceptions' bodies. The draw is `hold_form`'s, one reading of it.
+    /// between the perceptions' bodies across the manifold. The draw is `hold_form`'s, one reading of it.
     /// `family` is the task the perception was seen in (78.56 III: its
     /// thoughts wind only within it); empty where none is named.
     pub(crate) fn hold_perceived(
@@ -113,7 +113,7 @@ impl Mind {
         // transcribed and stood now, and said at the mind's return.
         // MU-CLIENT §5.4 (E1) — each under the scene that taught it.
         for word in taught {
-            let _ = self.speak_word_on(&word, train, family);
+            let _ = self.assert_word_on(&word, train, family);
         }
         if let Some(sentence) = open {
             self.speak_with(std::slice::from_ref(&sentence), train, family, |_, _| {});
@@ -531,8 +531,8 @@ impl Mind {
     ///   is adjoined.
     /// - No rotation to read: unread.
     ///
-    /// Each word with the scene its thought was perceived in (E1); a twist's
-    /// word names none.
+    /// Each word with the scene its thought was perceived in (E1); a closed
+    /// twist names the scene of the thought that twisted (78.177 §4a(4)).
     pub(crate) fn transcribe_closed(&mut self, budget: &mut crate::physics::Budget) -> Vec<(Element, Vec<u8>)> {
         use crate::transducer::sentence::rung::Transcribed;
         let mut words = Vec::new();
@@ -541,18 +541,19 @@ impl Mind {
                 words.push((word, family));
             }
         }
-        // MU-CLIENT §4.4(1) — WHAT CHANGED AT A LATER RETURN: the twist the
-        // pull put on the orbit, transcribed by the same transcriber at its
-        // own period where it returns; a twist of no finite order is the
-        // thought's torsion, held, and nothing is said of it.
-        for twist in self.contemplation.take_twists() {
+        // MU-CLIENT §4.4(1), 78.177 §4a(4) — WHAT CHANGED AT A LATER RETURN:
+        // the twist the pull put on the orbit, transcribed by the same
+        // transcriber at its own period where it returns, asserted under
+        // the family it was perceived in; a twist of no finite order is
+        // the thought's torsion, held, and nothing is said of it.
+        for (twist, family) in self.contemplation.take_twists() {
             let period = crate::transducer::element::conformal_factors(&twist)
                 .ok()
                 .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok())
                 .and_then(|r| r.order());
             let Some(crate::transducer::alphabet::Order::Finite(ell)) = period else { continue };
             if let (Transcribed::Spelled, Some(word)) = self.transcribe(&twist, u64::from(ell), budget) {
-                words.push((word, Vec::new()));
+                words.push((word, family));
             }
         }
         words
@@ -921,7 +922,7 @@ impl Mind {
         // WORD (no face) whose derivation cites ruled words mints no
         // dimension: the court reconstructs it from what it holds (D4), and it
         // goes now. A sentence is never one: it is shared, not carried.
-        let cites = e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
+        let cites = e.stalk().derivations.iter().any(|d| !d.generators.is_empty());
         let composed = cites && crate::transducer::sentence::from_element_form(e).is_some_and(|f| f.faces.is_empty());
         if !composed && self.hold_for_union(e, family) {
             return;
@@ -981,7 +982,7 @@ impl Mind {
         for e in spoken {
             // A REWRITE THE PIVOT MINTED (Torse, Condense; MU-CLIENT §5.4, S3)
             // is a proposal to the court, spoken as `Retire` is — never a
-            // word for `speak_word`, which says nothing that is not a
+            // word for `assert_word`, which says nothing that is not a
             // connection or an opened axis and so dropped every one of them
             // unheard.
             if e.is_rewrite() {
@@ -991,7 +992,7 @@ impl Mind {
                 }
                 continue;
             }
-            if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
+            if let Ok(Assertion::Admitted) = self.assert_word(&e) { n += 1 }
         }
         n
     }
@@ -1073,7 +1074,7 @@ impl Mind {
         // with it: 24.3's "nothing is asserted twice" needs the receipt only
         // while the word stands.
         for a in &dropped {
-            self.forget_utterance(a);
+            self.forget_assertion(a);
         }
         // DOOR 1 (25): the addresses the dialect just dropped have lapsed
         // from the working atlas, so the wells standing at them and the
@@ -1185,5 +1186,18 @@ impl Mind {
             self.language.waiting_on.len(),
             self.unheard.len(),
         ]
+    }
+
+    /// MU-CLIENT §4.9, §7.1 — COHESION, THE VISCOSITY: per turning plane k, the
+    /// held share c_k = A/(A + Q) = ν(1/t); read over the mind's held thoughts
+    /// in contemplation. Keyed vector over planes, never summed and never stored.
+    pub fn cohesion(&self) -> Result<Option<crate::transducer::field::carrier::Cohesion>, crate::transducer::field::carrier::FieldRefusal> {
+        self.contemplation.cohesion()
+    }
+
+    /// The cohesion of the specific thought at `address` ([`Well::cohesion`]),
+    /// or `None` where no thought stands at `address`.
+    pub fn cohesion_of(&self, address: &[u8]) -> Option<Result<crate::transducer::field::carrier::Cohesion, crate::transducer::field::carrier::FieldRefusal>> {
+        self.contemplation.cohesion_of(address)
     }
 }

@@ -69,8 +69,9 @@ fn mint_sentence_escrows_discharge_not_span() {
     let read = crate::transducer::family::form_deflation_read(&held, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());
     assert_eq!(read.mu, mu, "the discharge is d over the frame's 2·4 sites");
     let escrow = k.treasury().escrow_of(stood.address().as_bytes()).map(|e| e.mu.clone()).expect("escrowed");
-    assert_eq!(escrow, crate::economy::price(&mu, &k.physics().pressure), "escrowed at price(μ), exactly");
-    assert_eq!(k.discharge_of(stood.address().as_bytes(), &stood), mu, "the one reader reads the same discharge");
+    let discharge = k.discharge_of(stood.address().as_bytes(), &stood);
+    assert_eq!(discharge.lanes(), mu.lanes(), "the one reader reads the same discharge, lane by lane");
+    assert_eq!(escrow, crate::economy::price(&discharge, &k.physics().pressure), "escrowed at price(μ), exactly, holding the discharge's modes");
 }
 
 /// 78.149 (b) — A CLOSURE PAYS EACH CLAIM THE CLOSER'S MEASURED DISCHARGE,

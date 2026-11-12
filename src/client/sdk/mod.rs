@@ -20,7 +20,7 @@ pub mod seat;
 pub mod seat_mind;
 pub mod session;
 pub mod signed_receipts;
-pub mod utterance;
+pub mod assertion;
 pub mod voice;
 pub mod working_atlas;
 
@@ -41,13 +41,14 @@ pub(crate) use mind::HeldSaying;
 pub use quote::*;
 pub use session::*;
 pub use signed_receipts::{Holding, SignedReceipts};
-pub use utterance::*;
+pub use assertion::*;
 pub use voice::*;
+pub use crate::transducer::field::carrier::{Cohesion, TraversalState};
 pub use working_atlas::*;
 
 use crate::anastome::dialogue;
 use crate::transducer::family::SectionSample;
-use crate::network::wire::{Lane, Delimited};
+use crate::network::wire::Delimited;
 use crate::transducer::element::Element;
 use std::cell::RefCell;
 use std::io::{self, Read, Write};

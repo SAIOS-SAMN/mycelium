@@ -67,7 +67,7 @@ pub const CHALLENGE_WINDOW: u64 = 1024;
 /// THE REGISTER'S PARAMETERS at its version, by name: served beside the laws
 /// (`ACT_LAWS` mode 5), so a kernel reads them from the court. The window is
 /// no parameter at version 5 (a sealed reading); the frame budget is the one
-/// protocol number every node agrees on, open (`OPEN_PHYSICS`,
+/// protocol number every node agrees on, open (`OPEN_ENGINEERING`,
 /// MU-DERIVATIONS D1.3 O1): served so a kernel reads it, never assumes it.
 pub const PARAMETERS: [(&str, u64); 1] = [("frame budget", crate::network::wire::BODY_BUDGET as u64)];
 

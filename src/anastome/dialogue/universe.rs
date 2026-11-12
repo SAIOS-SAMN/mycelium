@@ -12,6 +12,9 @@
 //! joined. The basket is the reserve's: stated when it takes up the
 //! reserve, never at genesis, where nobody knows it.
 
+use num_bigint::BigUint;
+use num_traits::Zero;
+
 /// ACT_DOMAIN's sub-kind mark (as `domain.rs` writes it).
 /// FORMAT: sub-kind mark bytes for ACT_DOMAIN.
 const SUB_KIND: [u8; 2] = [0x80, 0x00];
@@ -196,15 +199,77 @@ impl Genesis {
     }
 }
 
-/// THE RESERVE'S SURVIVAL BASKET: one person-year of survival at the core
-/// for the people that holds the reserve, by mass per element (`Z`, mass) — species-neutral, a molecule
-/// stated as its elements' masses — in ascending `Z`, each once.
-pub type Basket = Vec<(u16, (u64, u64))>;
+/// ONE ELEMENT OF A SURVIVAL BASKET (#238; 78.182 item 10, with the
+/// operator's ruling of 2026-11-12 that the counts are the portion's
+/// totals): the element, named by the protons `Z` of one of its nuclei, and
+/// the person-year portion of it, held as its dipole by four whole counts:
+/// - `protons`, the portion's captured proton charge, `Z_total`;
+/// - `neutrons`, its neutron count `Q_total`, an integer the reserve states
+///   (the universe's own rest point read back to whole nucleons; per
+///   universe, checked against no table, Concordance 1.13);
+/// - `bound_electrons`, `E_bound = 3·Z_total − U`, the held electron states
+///   screening the cores;
+/// - `mass`, `M = 3(Z_total + Q_total)`, the portion's whole nucleon hold in
+///   first-degree units.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BasketEntry {
+    pub element: u16,
+    pub protons: BigUint,
+    pub neutrons: BigUint,
+    pub bound_electrons: BigUint,
+    pub mass: BigUint,
+}
 
-/// The basket well formed: not empty, `Z` strictly ascending, every mass a
-/// positive exact rational.
+impl BasketEntry {
+    /// THE PORTION OF `nuclei` NUCLEI of the element of `element` protons,
+    /// carrying `neutrons` neutrons and `bound_electrons` held electron
+    /// states in all: its protons and its mass derived, never stated twice.
+    pub fn of(element: u16, nuclei: BigUint, neutrons: BigUint, bound_electrons: BigUint) -> BasketEntry {
+        let protons = BigUint::from(element) * nuclei;
+        let mass = BigUint::from(3u8) * (&protons + &neutrons);
+        BasketEntry { element, protons, neutrons, bound_electrons, mass }
+    }
+
+    /// The entry well formed: an element with protons; the portion whole
+    /// nuclei of it (`protons` a multiple of `element`); the bound electrons
+    /// at most the frames the protons hold (`E_bound ≤ 3·Z_total`, so
+    /// `U ≥ 0`); and the mass the nucleons' first-degree hold exactly,
+    /// `M = 3(Z_total + Q_total)`.
+    pub fn holds(&self) -> bool {
+        let three = BigUint::from(3u8);
+        let element = BigUint::from(self.element);
+        self.element > 0
+            && !self.protons.is_zero()
+            && (&self.protons % &element).is_zero()
+            && self.bound_electrons <= &three * &self.protons
+            && self.mass == &three * (&self.protons + &self.neutrons)
+    }
+
+    fn put(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&self.element.to_be_bytes());
+        for n in [&self.protons, &self.neutrons, &self.bound_electrons, &self.mass] {
+            crate::transducer::address::put_key_bytes(out, &n.to_bytes_le());
+        }
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<BasketEntry> {
+        let element = u16::from_be_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
+        *p += 2;
+        let mut count = || crate::transducer::address::take_key_bytes(b, p).map(|bytes| BigUint::from_bytes_le(&bytes));
+        Some(BasketEntry { element, protons: count()?, neutrons: count()?, bound_electrons: count()?, mass: count()? })
+    }
+}
+
+/// THE RESERVE'S SURVIVAL BASKET (Concordance 5.1): one person-year of
+/// survival at the core for the people that holds the reserve, one entry
+/// per element held as its dipole — species-neutral, a molecule stated as
+/// its elements' portions — in ascending element, each once.
+pub type Basket = Vec<BasketEntry>;
+
+/// The basket well formed: not empty, the elements strictly ascending, every
+/// entry well formed ([`BasketEntry::holds`]).
 pub fn basket_holds(b: &Basket) -> bool {
-    !b.is_empty() && b.windows(2).all(|w| matches!(w, [x, y] if x.0 < y.0)) && b.iter().all(|(_, m)| positive(*m))
+    !b.is_empty() && b.windows(2).all(|w| matches!(w, [x, y] if x.element < y.element)) && b.iter().all(BasketEntry::holds)
 }
 
 /// WHAT A UNIVERSE STATES, once each, by its sitting reserve.
@@ -233,9 +298,8 @@ impl Stated {
             Stated::Geometry(g) => g.put(out),
             Stated::Basket(entries) => {
                 crate::transducer::address::put_key_count(out, entries.len());
-                for (z, m) in entries {
-                    out.extend_from_slice(&z.to_be_bytes());
-                    put_q(out, *m);
+                for e in entries {
+                    e.put(out);
                 }
             }
             Stated::Join(t) => out.extend_from_slice(t),
@@ -257,7 +321,7 @@ pub struct Statement {
     pub stated: Stated,
 }
 
-const STATEMENT: &[u8] = b"mycelium universe statement v1";
+const STATEMENT: &[u8] = b"mycelium universe statement v2";
 
 impl Statement {
     pub fn signed_bytes(&self) -> Vec<u8> {
@@ -268,11 +332,12 @@ impl Statement {
         out
     }
 
-    /// Signed by the domain's sitting reserve.
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedStatement {
+    /// Signed by the domain's sitting reserve, with the crossing it carries
+    /// (X1, #160). `None` where a turn of the record cannot be written.
+    pub fn sign(self, crossing: super::crossing_record::Crossing, key: &ed25519_dalek::SigningKey) -> Option<SignedStatement> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedStatement { statement: self, sig }
+        let sig = key.sign(&super::crossing_record::crossed(self.signed_bytes(), &crossing)?).to_bytes();
+        Some(SignedStatement { statement: self, crossing: Box::new(crossing), sig })
     }
 
     pub(super) fn take(kind: u8, domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<Statement> {
@@ -280,13 +345,7 @@ impl Statement {
             KIND_GEOMETRY => Stated::Geometry(Geometry::take(b, p)?),
             KIND_BASKET => {
                 let n = crate::transducer::address::take_key_count(b, p)?;
-                let entries = (0..n)
-                    .map(|_| {
-                        let z = u16::from_be_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
-                        *p += 2;
-                        Some((z, take_q(b, p)?))
-                    })
-                    .collect::<Option<Basket>>()?;
+                let entries = (0..n).map(|_| BasketEntry::take(b, p)).collect::<Option<Basket>>()?;
                 Stated::Basket(entries)
             }
             KIND_JOIN => {
@@ -303,18 +362,30 @@ impl Statement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedStatement {
     pub statement: Statement,
+    /// X1 (#160) — the crossing the statement carries.
+    pub crossing: Box<super::crossing_record::Crossing>,
     pub sig: [u8; 64],
 }
 
-/// `[ACT_DOMAIN][domain 32][0x80 0x00][8 | 9 | 10][body][sig 64]`.
-pub fn encode_statement(s: &SignedStatement) -> Vec<u8> {
+impl SignedStatement {
+    /// THE BYTES THE SIGNATURE IS OVER: the statement's own, then its
+    /// crossing written out whole.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
+        super::crossing_record::crossed(self.statement.signed_bytes(), &self.crossing)
+    }
+}
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][8 | 9 | 10][body][crossing][sig 64]`.
+/// `None` where a turn of the record cannot be written.
+pub fn encode_statement(s: &SignedStatement) -> Option<Vec<u8>> {
     let mut out = vec![super::ACT_DOMAIN];
     out.extend_from_slice(&s.statement.domain);
     out.extend_from_slice(&SUB_KIND);
     out.push(s.statement.stated.kind());
     s.statement.stated.put_body(&mut out);
+    s.crossing.put(&mut out)?;
     out.extend_from_slice(&s.sig);
-    out
+    Some(out)
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][11]`.

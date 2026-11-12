@@ -97,7 +97,7 @@ impl Court {
 
     /// A CITATION INTO A PEER'S CLOSED ERA, PROVED BY THE ERA'S OWN CHAIN
     /// (78.65, 78.87 R2), one page at a time, resumed where the last page
-    /// ended (`ReceiptChain::walk_era`): a proof longer than one frame closes
+    /// ended (`ReceiptChain::walk_era`): a proof longer than one envelope closes
     /// page by page.
     pub fn walk_folded(&mut self, p: &crate::chronometry::Parent, page: &[crate::chronometry::KStepReceipt]) -> crate::chronometry::EraWalk {
         self.chain.walk_era(p, page)

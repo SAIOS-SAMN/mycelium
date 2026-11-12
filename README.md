@@ -1,6 +1,23 @@
 # Mycelium
 
-**Version 0.3.0-rc.3** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.4.0-rc.1** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+
+> [!TIP]
+> **TL;DR in 10 Seconds:** Mycelium is a decentralized mesh where peer courts (*hyphae*) verify AI agent reasoning (*ARC-AGI-2, scientific simulations, world models*) using **exact rational geometric algebra** ($\mathcal{C}l(4,1)(\mathbb{Q})$)—zero floating-point drift, zero hash-mining puzzles, zero central benchmark servers. Verified results are settled deterministically via **Proof-of-Useful-Work (POW++)**, minting a 4-lane vector currency ($\vec{\mu}$).
+
+```mermaid
+flowchart LR
+    Task["Task / Environment (ARC-AGI-2)"] --> Mind["AI Agent (Mind / mycelium-client)"]
+    Mind -- "Exact Cl(4,1)(Q) Motion via Noise" --> Court["Hypha Court (mycelium-server)"]
+    Court -- "Deterministic Law Reconstruction" --> Ledger["POW++ Settlement & μ Mint"]
+```
+
+```bash
+# 30-Second Quickstart: Spin up a 3-hypha testnet & watch an AI agent solve and get paid
+git clone https://github.com/SAIOS-SAMN/mycelium.git && cd mycelium
+./scripts/quickstart
+```
+
 
 Mycelium is a network that hosts **universes**, complete simulations each
 run by a kernel, in which external **AI agents** explore, act and do
@@ -187,6 +204,19 @@ scripts/quickstart
 The network keeps running, and the script prints the commands for reading
 it, until Ctrl-C. `scripts/quickstart DIR BASE_PORT TASKS` sets the home
 directory, the ports and the number of tasks.
+
+`scripts/network DIR BASE_PORT MINDS` brings up the whole network on one
+machine:
+- three hyphae from a genesis allocation;
+- `MINDS` sovereign minds (`mycelium-client`), each inside Noise and
+  chattering at one rendezvous;
+- a kernel's house with a mind seated in its domain;
+- the SDK client as the paid worker, on each hypha in turn.
+
+Every node runs in a capped systemd user scope. At each frame the script
+writes the observer's reading, the POW++ reading
+(`mycelium-server --console --proofs`), each mind's `now` and each node's
+memory and CPU. Its header lists every option.
 
 ---
 
@@ -774,14 +804,14 @@ cargo build --release            # mycelium-server, mycelium-client, mycelium-so
 ```
 
 A change is checked by the two commands of
-[AGENTS › Definition of done](AGENTS.md#definition-of-done): clippy over
+[AGENTS › Checks](AGENTS.md#checks): clippy over
 the workspace with warnings denied, and the workspace tests, the gate
 (`gate/`) among them.
 
 **Corpus.** The ARC-AGI-2 dataset from the ARC Prize Foundation is read
 only by its decoder, the workspace crate `sources/arc-agi`, from the
 corpus directory that
-[AGENTS › Definition of done](AGENTS.md#definition-of-done) names. The
+[AGENTS › Checks](AGENTS.md#checks) names. The
 core library reads no corpus. A hypha, a client's feed and the soak read
 **posted tasks** (`<name>.task`, `dialogue::encode_posted_task`), which
 the decoder writes:
@@ -910,9 +940,12 @@ as `peers`, copy the corpus manifests (step 4), and start without
 
 - **Readings.** `mycelium-server --home DIR --console --reading <name>`
   prints a typed reading: `acts`, `court`, `economy`, `judged`,
-  `dispatched`, `clock`, `memory`, `replication`, `agreements` and others.
+  `dispatched`, `boundary` (refusals at a universe's core tube), `clock`,
+  `memory`, `replication`, `agreements` and others.
   `--at HOST:PORT` reads another hypha.
-- **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP. `--check`
+- **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP, which is the
+  built state. As ruled, the mesh is held in memory and a restart rejoins
+  from its peers ([MU-ENGINEERING §8](docs/MU-ENGINEERING.md#8-holding-and-continuity), #273). `--check`
   reports whether a home boots on a given build before that build is
   started on it.
 - **Recut.** Adopting a new ledger layout means re-founding a network on
@@ -924,7 +957,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
   `scripts/timeline UNIT` renders what each reader of a voice's stroke
   cost, from its journal under `MYC_TRACE=1`.
 
-### Node capabilities in 0.3.0-rc.3
+### Node capabilities in 0.4.0-rc.1
 
 | Capability | Verified |
 |---|---|
@@ -955,11 +988,11 @@ about 200 lines, with `mycelium-sdk` as its only Mycelium dependency.
 
 ```toml
 [dependencies]
-mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0-rc.3" }
+mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.4.0-rc.1" }
 ```
 
-The release candidate `v0.3.0-rc.3` is the latest tag; `v0.3.0` is not
-yet tagged (ROADMAP › Now). Release tags are signed with a prototype key
+The release candidate `v0.4.0-rc.1` is the latest tag; the last release is
+`v0.3.0` (ROADMAP › Now). Release tags are signed with a prototype key
 while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 
 ### The modules
@@ -967,9 +1000,9 @@ while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 | Module | What it carries |
 |---|---|
 | `voice` | `Voice`, the voice key (`VoiceKey`, `load_or_mint`), `SigningKey`, the mesh record of a voice home (`load_or_migrate_voice`) |
-| crate root | `WIRE_VERSION` (`0x0200`, wire v2.0: every μ field read on the four base lanes, one exact non-negative component each), `ACT_TABLE` (every act the SDK may send), the solve's claim kinds, and the deferral's `PENDING_CODE` and `encode_deferral` |
+| crate root | `WIRE_VERSION` (`0x0300`, wire v3.0: the crossing record in the signed bytes of the seven universe acts; every expression carries it, and a reader refuses another major by name, `Unheard::Version`), `ACT_TABLE` (every act the SDK may send), the solve's claim kinds, and the deferral's `PENDING_CODE` and `encode_deferral` |
 | `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint`; the deferral a hypha with a full worker pool answers every act with, which every client MUST recognise and retry: `read_deferral` (`Deferral { deficit }`), `deferral_of` on a `speak` refusal ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) §5); the reference mind, `Mind::open` and `Mind::open_persistent` |
-| `task` | Task request and envelope, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskEnvelope`; `TaskEnvelope::section` for the alphabet's section, `TaskSection`); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places each at its position); `decode_solve_verdict` and the `SOLVE_*` codes |
+| `task` | Task request and family, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskFamily`; `TaskFamily::section` for the alphabet's section, `TaskSection`); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places each at its position); `decode_solve_verdict` and the `SOLVE_*` codes |
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
 | `wallet` | The wallet read, a reading of the holding's coordinate on the one multi-dimensional ledger: `Mu`, an amount of μ read exactly per lane (retiring in v0.5.0 for `Modes`), and `MuRefusal`; stake and unstake; lease open, reply and close |
@@ -992,25 +1025,25 @@ use mycelium_sdk::task;
 let (voice, key) = mycelium_sdk::voice::load_or_mint("voice.key");
 // 2. Session: one hypha's address.
 let session = Session::open("127.0.0.1:7610", voice);
-// 3. Work: the task envelope carries train pairs and test inputs; the test
+// 3. Work: the task family carries train pairs and test inputs; the test
 //    outputs stay with the court. An empty reply means no work is available.
 let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()))?;
-let samples = task::decode_task_envelope(&reply).ok_or("no task")?;
-//    The envelope's samples may be of any rank; the rule seam reads the
+let samples = task::decode_task(&reply).ok_or("no task")?;
+//    The family's samples may be of any rank; the rule seam reads the
 //    alphabet's section, and a task off it is refused by name.
-let envelope = samples.section().map_err(|_| "off the alphabet's section")?;
+let section = samples.section().map_err(|_| "off the alphabet's section")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
 //    can reconstruct, and spoken on each test input.
 let mut budget = Physics::default().stroke_n(1 << 20);
-let rule = extract_rule(&envelope.train, &mut budget).ok_or("no rule")?;
-let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0)?;
-let outputs: Vec<_> = envelope.tests.iter()
+let rule = extract_rule(&section.train, &mut budget).ok_or("no rule")?;
+let element = mint_sentence_why(&rule, &section.train, &NoCrystal, 0)?;
+let outputs: Vec<_> = section.tests.iter()
     .map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.sample()))
     .collect::<Option<_>>().ok_or("rule does not speak a test")?;
 // 5. Solve: the outputs, as samples at their places, and the rule's tape,
 //    signed by the voice the court pays.
 let outputs = task::spoken_outputs(&outputs).map_err(|_| "an output is no sample")?;
-let solve = task::encode_solve_with_rule(&key, &envelope.id, &outputs,
+let solve = task::encode_solve_with_rule(&key, &section.id, &outputs,
                                          Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
 let verdict = session.speak(solve)?;
 let (code, paid, refusal, modes) = task::decode_solve_verdict(&verdict).ok_or("verdict")?;
@@ -1111,7 +1144,7 @@ Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
 workflow and the standards;
-[AGENTS › Definition of done](AGENTS.md#definition-of-done) is the check
+[AGENTS › Checks](AGENTS.md#checks) is the check
 before a pull request. [ROADMAP.md](ROADMAP.md) lays out
 the development tracks in order, each with its specification and where it
 lands in the code. In brief: the tracks begin with settlement (the
@@ -1143,8 +1176,8 @@ numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
 ## Versioning
 
 The release version is recorded in [`VERSION`](VERSION), in the crate
-manifest (`Cargo.toml`), and as a git tag. The version is `0.3.0-rc.3`,
-tagged `v0.3.0-rc.3`; the last full release is `v0.2.0`.
+manifest (`Cargo.toml`), and as a git tag. The version is `0.4.0-rc.1`,
+tagged `v0.4.0-rc.1`; the last full release is `v0.3.0`.
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.

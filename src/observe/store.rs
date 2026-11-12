@@ -169,13 +169,13 @@ pub fn last_phase() -> Option<super::CourtStage> {
 }
 
 /// REPLICATION, counted where the exchange and the back-fill classify each
-/// frame (CV5): per signer by its key, and apart for a frame no signer
+/// head (CV5): per signer by its key, and apart for a head no signer
 /// could be read off.
 static REPLICATION: LazyLock<Mutex<Keyed<[u64; super::REP_AXES]>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
 static UNATTRIBUTED: [AtomicU64; super::REP_AXES] = [const { AtomicU64::new(0) }; super::REP_AXES];
 
 /// Count `n` on one axis of [`super::REPLICATION_AXES`] for `signer`, or
-/// unattributed where the frame named none. An axis past the list is no
+/// unattributed where the head named none. An axis past the list is no
 /// axis and counts nothing.
 pub fn note_replication(signer: Option<[u8; 32]>, axis: usize, n: u64) {
     match signer {

@@ -7,6 +7,7 @@ mod chatter;
 mod cited;
 mod commitment;
 mod conformance;
+mod crossing_record;
 mod equivocation;
 mod evidence;
 mod factorisation;

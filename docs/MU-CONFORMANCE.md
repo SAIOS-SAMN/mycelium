@@ -63,8 +63,9 @@ acts, each once. Each `ActRequirement` names:
 - `fields`: the exact fields that decoder reads back.
 
 `Statement::union(profiles)` is the acts of a client declaring
-`profiles`. At this tree the statement stands at wire `0x0200` (v2.0) and
-law version 5.
+`profiles`. At this tree the statement stands at wire `0x0300` (v3.0: the
+crossing record X1 carried on the seven universe acts, MU-HOSTING §5a.10)
+and law version 5.
 
 **μ fields (wire v2.0).** Every field that carries μ — the solve verdict's
 and receipt's paid μ, the grant's μ, the wallet's balance, bond and held,
@@ -84,10 +85,10 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 
 | Need | Act | Reply decoder | Fields read back |
 |---|---|---|---|
-| MUST | `task` (`[ACT_TASK][voice 32]`) | `decode_task_envelope` | citation, train, tests, each a sample of any rank (rank, extents, width, place, symbols; MU-SENSING §6) (an empty reply: no work) |
+| MUST | `task` (`[ACT_TASK][voice 32]`) | `decode_task` | citation, train, tests, each a sample of any rank (rank, extents, width, place, symbols; MU-SENSING §6) (an empty reply: no work) |
 | MUST | `solve` (`ACT_SOLVE`, claim kind 0; signed as `mycelium solve v5`, its outputs samples of any rank, the perspective they were perceived under (track 26 S6), with the rule's tape and, optionally, the ground the claim was spoken under; MU-SENSING §6.2) | `decode_solve`, `decode_solve_verdict` | the act: voice, task, outputs (samples), stated perspective (pose sources and senses, roles), rule, stated ground (or none), signature; the verdict: code, paid S:G:T:H, refusal, modes |
 | MUST | `laws register` (`ACT_LAWS` mode 0) | `decode_register_reply` | law version, laws |
-| MAY | `task by citation` | `decode_task_envelope` | citation, train, tests |
+| MAY | `task by citation` | `decode_task` | citation, train, tests |
 | MAY | `laws lexicon` (mode 3), `laws clock` (4), `laws parameters` (5), `laws statement` (6) | `decode_lexicon_reply`, `decode_clock_reply`, `decode_parameters_reply`, `decode_statement_reply` | as each decoder reads |
 | MAY | `laws concordance` (mode 7), `laws signature` (mode 8), `laws alignment` (mode 9) | `decode_concordance_reply`, `decode_signature_reply`, `decode_alignment_reply` | as the kernel profile's |
 | MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |

@@ -45,7 +45,7 @@ pub struct TaskRegistry {
     /// (citation, the posted task, state) — append-only, content-addressed.
     /// The task's full content address ([`task_address_of`]) is never held
     /// here: it is recomputed losslessly from the task it names, where a
-    /// reader needs its coordinates, and a task of busy frames makes it
+    /// reader needs its coordinates, and a task of busy samples makes it
     /// tens of kilobytes (an index copies the address it is keyed by).
     tasks: Vec<(TaskCitation, PostedTask, TaskState)>,
     /// 78.146, wire v1.2 — each task's CITATION, the 32 bytes that name it
@@ -71,6 +71,13 @@ pub struct TaskRegistry {
     /// voice and the motion (`server::factorisation`). Recorded, never
     /// paid; volatile, as the routes are.
     factorisations: Keyed<()>,
+    /// #158 (ruled 2026-11-06) — EACH TASK'S WITHHELD PAIRS, FIXED WHEN IT
+    /// WAS REGISTERED: under its citation, the place `[split, pair, member]`
+    /// of every withheld output the source posted, in the order posted. A
+    /// solve's judgement reads the pairs at these coordinates and never
+    /// chooses among them. Volatile, as the book is: the tasks re-register
+    /// from the corpus at boot, and content is identity.
+    withheld_at: Keyed<Vec<crate::transducer::sample::Place>>,
 }
 
 /// A TASK'S IDENTITY IS ITS CONTENT (law 2; MU-SENSING §6; track 26 S2):
@@ -82,9 +89,9 @@ pub struct TaskRegistry {
 /// outputs are the court's and are no part of the identity. Two tasks that
 /// differ by one site, one extent or one place are two tasks.
 ///
-/// THE IDENTITY READS NO GROUND AND FIXES NO FRAME (the operator's ruling of
+/// THE IDENTITY READS NO GROUND AND FIXES NO ENCLOSURE (the operator's ruling of
 /// 2026-11-03, scope separation): the hypha addresses what the source
-/// posted. The ground is the mind's deduction, and frame fixing is a
+/// posted. The ground is the mind's deduction, and enclosure fixing is a
 /// perspective a sensor may take after intake, never before addressing.
 ///
 /// `None` where a member is no sample (an empty or ragged raster): skipping
@@ -152,6 +159,7 @@ impl TaskRegistry {
             intake_done: false,
             routes: Keyed::new(),
             factorisations: Keyed::new(),
+            withheld_at: Keyed::new(),
         }
     }
 
@@ -291,11 +299,25 @@ impl TaskRegistry {
     /// on the alphabet's section. A task this book does not hold, or one off
     /// the section, withholds nothing a rule is reconstructed on: a claim on it
     /// is a factorisation's, reconstructed on its samples.
+    ///
+    /// #158 — THE PAIRS AT THE COORDINATES FIXED AT REGISTRATION
+    /// ([`TaskRegistry::withheld_at`]), in the order recorded: the reader
+    /// takes no pair the registration did not fix, and leaves none it did.
     pub fn withheld(&self, id: &[u8]) -> Vec<(SectionSample, SectionSample)> {
-        match self.section(id) {
-            Some(Ok(t)) => t.test.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
-            Some(Err(_)) | None => Vec::new(),
-        }
+        let (Some(Ok(t)), Some(places)) = (self.section(id), self.withheld_at.get(id)) else { return Vec::new() };
+        places
+            .iter()
+            .filter_map(|place| {
+                t.test.iter().find_map(|(x, y)| y.as_ref().filter(|y| y.sample().place() == place).map(|y| (x.clone(), y.clone())))
+            })
+            .collect()
+    }
+
+    /// THE COORDINATES OF A TASK'S WITHHELD PAIRS, fixed when it was
+    /// registered: each withheld output's place `[split, pair, member]`.
+    /// `None` where the book holds no such task.
+    pub fn withheld_at(&self, id: &[u8]) -> Option<&[crate::transducer::sample::Place]> {
+        self.withheld_at.get(id).map(Vec::as_slice)
     }
 
     /// REGISTER a raster task: its samples, each at its position, posted
@@ -313,6 +335,11 @@ impl TaskRegistry {
     pub fn post(&mut self, task: PostedTask) -> TaskCitation {
         let id = citation(&task_address_of(&task));
         if !self.by_id.contains(&id) {
+            // #158 — the withheld pairs are fixed here, by coordinate, once:
+            // every test output the source posted, at its place.
+            let places: Vec<crate::transducer::sample::Place> =
+                task.test.iter().filter_map(|(_, y)| y.as_ref().map(|y| y.place().clone())).collect();
+            self.withheld_at.insert(id, places);
             let i = self.tasks.len();
             self.tasks.push((id, task, TaskState::Unsolved));
             self.by_id.insert(id, i);

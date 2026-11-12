@@ -15,7 +15,7 @@ impl Court {
     /// SETTLE A PROBE AGAINST ONE DEMAND VERTEX.
     ///
     /// `at` is the listing; `demand` is the key 50.5 files the vertex
-    /// under. The court resolves the vertex on the listed sentence, frames
+    /// under. The court resolves the vertex on the listed sentence, sets
     /// the demand's own bodies as a scene (`scene_at_of_chain`, 50.6 seam
     /// 1 — both sides at one corner), and SPEAKS THE CITED FORM onto the
     /// before side with `apply_form`. What the form says is measured

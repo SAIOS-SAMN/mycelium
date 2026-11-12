@@ -5,7 +5,49 @@
 //! carriers disagree with its journal is caught by the audit (§6) rather
 //! than carried forward.
 
+use super::fold::FoldedIssuance;
 use super::*;
+
+impl Kind {
+    /// A ROW'S KIND AS ITS TAG on the tape, one tag per kind; the match is
+    /// exhaustive, so a kind that could not be written would not compile,
+    /// where a string match once fell through to `255` and wrote a row
+    /// nothing could read back. The fold's checkpoint keys its sources by
+    /// the same tags.
+    pub fn tag(self) -> u8 {
+        match self {
+            Kind::Stake => 4,
+            Kind::Slash => 8,
+            Kind::Mint => 14,
+            Kind::Transfer => 15,
+            Kind::Genesis => 16,
+            Kind::Burn => 17,
+            Kind::Escrow => 18,
+            Kind::Release => 19,
+            Kind::Revoke => 20,
+            Kind::Unstake => 21,
+            Kind::Epoch => 22,
+        }
+    }
+
+    /// The kind a tag names; a tag the layout does not define names none.
+    pub fn of_tag(tag: u8) -> Option<Kind> {
+        Some(match tag {
+            4 => Kind::Stake,
+            8 => Kind::Slash,
+            14 => Kind::Mint,
+            15 => Kind::Transfer,
+            16 => Kind::Genesis,
+            17 => Kind::Burn,
+            18 => Kind::Escrow,
+            19 => Kind::Release,
+            20 => Kind::Revoke,
+            21 => Kind::Unstake,
+            22 => Kind::Epoch,
+            _ => return None,
+        })
+    }
+}
 
 impl Entry {
     /// One row's tape: `[tag u8][arm u8][who 32][μ⃗][stamp 56][receipt 32]`
@@ -18,7 +60,7 @@ impl Entry {
     /// bytes (a sign, an empty numerator, a one-limb denominator). A count
     /// of rows a tape cannot hold at this length reserves nothing.
     /// FORMAT: a row tape's fewest bytes, 166.
-    pub const MIN_TAPE: usize = 1 + 1 + 32 + 4 * 11 + crate::chronometry::Stamp::LEN + 32;
+    pub const MIN_TAPE: usize = 1 + 1 + 32 + crate::economy::Mu::MIN_LEN + crate::chronometry::Stamp::LEN + 32;
 
     /// This row's tape length.
     #[cfg(test)]
@@ -28,24 +70,8 @@ impl Entry {
         out.len()
     }
 
-    /// One tag per kind, and the match is exhaustive: a kind that could not
-    /// be written would not compile, where a string match once fell
-    /// through to `255` and wrote a row nothing could read back.
     pub fn write(&self, out: &mut Vec<u8>) {
-        let tag: u8 = match self.kind {
-            Kind::Stake => 4,
-            Kind::Slash => 8,
-            Kind::Mint => 14,
-            Kind::Transfer => 15,
-            Kind::Genesis => 16,
-            Kind::Burn => 17,
-            Kind::Escrow => 18,
-            Kind::Release => 19,
-            Kind::Revoke => 20,
-            Kind::Unstake => 21,
-            Kind::Epoch => 22,
-        };
-        out.push(tag);
+        out.push(self.kind.tag());
         out.push(Arm::byte(self.arm));
         out.extend_from_slice(&self.who);
         self.mu.put(out);
@@ -59,22 +85,8 @@ impl Entry {
     /// the audit then compared carriers against a journal it had not read
     /// whole.
     pub fn read(b: &[u8], pos: &mut usize) -> Option<Entry> {
-        let tag = *b.get(*pos)?;
+        let kind = Kind::of_tag(*b.get(*pos)?)?;
         *pos += 1;
-        let kind = match tag {
-            4 => Kind::Stake,
-            8 => Kind::Slash,
-            14 => Kind::Mint,
-            15 => Kind::Transfer,
-            16 => Kind::Genesis,
-            17 => Kind::Burn,
-            18 => Kind::Escrow,
-            19 => Kind::Release,
-            20 => Kind::Revoke,
-            21 => Kind::Unstake,
-            22 => Kind::Epoch,
-            _ => return None,
-        };
         let arm = Arm::of(*b.get(*pos)?)?;
         *pos += 1;
         let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
@@ -194,12 +206,18 @@ impl Treasury {
             nodes.insert(key, vec![(LEAF_MU, mu), (LEAF_PAYER, h.payer.to_vec()), (LEAF_ANCHOR, anchor)]);
         });
         crate::trie_tape::put_trie(out, HELD_TRIE, &nodes);
+        // §6.1 — THE FOLD'S CHECKPOINT, keyed by each source's coordinate.
+        let mut nodes: crate::network::nerve::Keyed<crate::trie_tape::Leaves> = crate::network::nerve::Keyed::new();
+        for (key, mu) in self.folded.sources() {
+            nodes.insert(key, vec![(LEAF_MU, mu.to_bytes())]);
+        }
+        crate::trie_tape::put_trie(out, FOLDED_TRIE, &nodes);
     }
 
     /// The inverse of [`Treasury::put_tries`]: the stakes and the balances,
-    /// each keyed by a `vk` of 32 bytes carrying one μ⃗, and the held
-    /// carrier, or refused whole.
-    pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk, Holds)> {
+    /// each keyed by a `vk` of 32 bytes carrying one μ⃗, the held carrier and
+    /// the fold's checkpoint, or refused whole.
+    pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk, Holds, FoldedIssuance)> {
         let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<Mu>> {
             let nodes = crate::trie_tape::take_trie(b, pos, name, &[LEAF_MU])?;
             let mut out = crate::network::nerve::Keyed::new();
@@ -223,21 +241,26 @@ impl Treasury {
             let receipt: [u8; 32] = a.get(p..)?.try_into().ok()?;
             held.insert(key, super::pay::SetAside { payer, mu, anchor: (at, receipt) });
         }
-        Some((stakes, balances, held))
+        // A source keyed by no coordinate the checkpoint holds refuses the
+        // tape, never read as another source or as nothing.
+        let nodes = crate::trie_tape::take_trie(b, pos, FOLDED_TRIE, &[LEAF_MU])?;
+        let mut folded = FoldedIssuance::default();
+        for (key, leaves) in nodes.scoped() {
+            let key: [u8; 2] = key.as_slice().try_into().ok()?;
+            *folded.source_mut(key)? = Mu::from_bytes(crate::trie_tape::leaf(leaves, LEAF_MU)?).ok()?;
+        }
+        Some((stakes, balances, held, folded))
     }
 
     /// A TREASURY REBUILT FROM ITS PARTS at restore: the stakes and
-    /// balances off the tries that hold them, the journal off the ledger's nodes in the
-    /// order they stand. The bond total and the supply are re-derived; the
-    /// awards come back off the awarded words' nodes (`restore_award`).
-    pub fn from_parts(
-        stakes: ByVk,
-        balances: ByVk,
-        held: Holds,
-        entries: Vec<Entry>,
-    ) -> Treasury {
+    /// balances off the tries that hold them, the fold's checkpoint off its
+    /// own, the journal off the ledger's nodes in the order they stand. The
+    /// bond total and the supply are re-derived; the awards come back off
+    /// the awarded words' nodes (`restore_award`).
+    pub fn from_parts(stakes: ByVk, balances: ByVk, held: Holds, folded: FoldedIssuance, entries: Vec<Entry>) -> Treasury {
         let mut t = Treasury {
             entries,
+            folded,
             bond_total: Mu::zero(),
             stakes,
             escrowed: crate::network::nerve::Keyed::new(),
@@ -267,6 +290,9 @@ pub const STAKES_TRIE: &str = "stakes";
 pub const BALANCES_TRIE: &str = "balances";
 /// The held carrier's trie (E3), keyed by what each hold is against.
 pub const HELD_TRIE: &str = "held";
+/// The fold's checkpoint trie (§6.1), keyed by each source's coordinate
+/// `[kind tag, arm byte]`.
+pub const FOLDED_TRIE: &str = "folded";
 /// The held carrier, keyed by what each hold is against.
 pub type Holds = crate::network::nerve::Keyed<super::pay::SetAside>;
 /// The one leaf of a stake or balance node: its μ⃗, four exact lanes

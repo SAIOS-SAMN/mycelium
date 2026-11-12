@@ -81,7 +81,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
             if answered {
                 continue;
             }
-            // An offer whose section cannot be framed is not spoken.
+            // An offer whose section cannot be delimited is not spoken.
             let Some(body) = dialogue::encode_offer(&dialogue::Offer {
                 addr: oaddr.clone(),
                 home: mesh.vk,

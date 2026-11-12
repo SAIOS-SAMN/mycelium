@@ -11,7 +11,7 @@ use crate::transducer::cga::{base_axis, Clifford};
 use forms::coordinate::{Axis, Key, Plane, Square, DEGREES_PER_TURN};
 use num_bigint::BigInt;
 use num_integer::Integer;
-use num_traits::{One, Signed, ToPrimitive};
+use num_traits::{One, ToPrimitive};
 
 /// THE FIELD'S FRAME PLANES (78.171 §1a): plane `k` is held by its two
 /// units, `e₊ₖ` squaring to +1 and `e₋ₖ` to −1, so the algebra is
@@ -134,6 +134,37 @@ impl TurningPlane {
     }
 }
 
+impl TurningPlane {
+    /// THE PLANE BETWEEN THIS PLANE AND `other`, where they share one unit:
+    /// the two units neither shares, of the one square both hold, written
+    /// in ascending order whichever plane holds which (`e_+1+2` and
+    /// `e_+2+3` give `e_+1+3`, and so do `e_+2+3` and `e_+1+2`). `None`
+    /// where the two do not share exactly one unit.
+    pub(super) fn between(&self, other: &TurningPlane) -> Option<TurningPlane> {
+        let (a, b) = (self.units, other.units);
+        let shared = (a.0 | a.1) & (b.0 | b.1);
+        if shared.count_ones() != 1 || a == b || a == (b.1, b.0) {
+            return None;
+        }
+        // The key's axes are written in the order of the plane's units.
+        let pick = |p: &TurningPlane| {
+            let [x, y] = p.key.axes() else { return None };
+            Some(match p.units.0 == shared {
+                true => (p.units.1, y.clone()),
+                false => (p.units.0, x.clone()),
+            })
+        };
+        let (one, two) = (pick(self)?, pick(other)?);
+        let ((u, x), (v, y)) = match one.0 < two.0 {
+            true => (one, two),
+            false => (two, one),
+        };
+        let key = Key::generator(x, y).ok()?;
+        let bivector = Clifford::blade(self.bivector.negatives(), u | v, Q::one()).ok()?;
+        Some(TurningPlane { key, units: (u, v), bivector })
+    }
+}
+
 impl PartialEq for TurningPlane {
     fn eq(&self, other: &TurningPlane) -> bool {
         self.key == other.key && self.units == other.units
@@ -143,7 +174,7 @@ impl PartialEq for TurningPlane {
 impl Eq for TurningPlane {}
 
 /// THE DEGREES OF ONE WHOLE TURN, exact.
-fn whole_turn() -> Q {
+pub(crate) fn whole_turn() -> Q {
     Q::from_integer(BigInt::from(DEGREES_PER_TURN))
 }
 
@@ -201,9 +232,10 @@ impl Turning {
         &self.motion
     }
 
-    /// THE WINDING `K = ⌊|θ| / 360⌋` (LAW-COORDINATE v3 §1), in ℤ.
+    /// THE WINDING `K = trunc(θ / 360)` (LAW-COORDINATE v3 §1), signed in the
+    /// sense of the plane's key, in ℤ.
     pub fn winding(&self) -> BigInt {
-        (self.degrees.abs() / whole_turn()).floor().to_integer()
+        (&self.degrees / whole_turn()).trunc().to_integer()
     }
 
     /// THE MOTION'S ORDER: `ℓ / gcd(t, ℓ)`, read by exact products, `1` for

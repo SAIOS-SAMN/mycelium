@@ -31,8 +31,9 @@
 //!
 //! v1.3 (78.152 TU-7, WIRE-CHANGE): a PERCEPT's fields end in the house's
 //! last final TUniversal point, `[0]` or `[1][TPoint 84]`, signed with them;
-//! every frame on the seat surface carries its speaker's last final point
-//! behind its body (`network::wire::POINTED`).
+//! every expression on the seat surface carries its speaker's last final
+//! point behind its act (`anastome::dialogue::expression`, the v0.5.0
+//! recut; it rode the frame's envelope before).
 //!
 //! v1.4 (lexicon 5, WIRE-CHANGE; 78.155 §5c, 78.156):
 //! - SEATS SCOPED TO A SUB-ORIGIN. A seat is named by (domain, sub-origin,
@@ -111,8 +112,8 @@ pub const REASON_BAD_ARGUMENTS: u16 = 5;
 /// FORMAT: reason code for not applied.
 pub const REASON_NOT_APPLIED: u16 = 6;
 
-const TAG_Q: u8 = 0;
-const TAG_KEY: u8 = 1;
+pub const TAG_Q: u8 = 0;
+pub const TAG_KEY: u8 = 1;
 /// A Count's tag, as a listing's FN names its arguments (78.148: a
 /// function whose every argument is a Count or a Flag is the mind's to
 /// explore).
@@ -121,11 +122,11 @@ pub const TAG_COUNT: u8 = 2;
 /// FORMAT: argument tag for a flag.
 pub const TAG_FLAG: u8 = 3;
 /// FORMAT: argument tag for a multivector.
-const TAG_MV: u8 = 4;
+pub const TAG_MV: u8 = 4;
 /// FORMAT: argument tag for a rational past 64 bits.
-const TAG_BIGQ: u8 = 5;
+pub const TAG_BIGQ: u8 = 5;
 /// FORMAT: argument tag for a run of bytes.
-const TAG_BYTES: u8 = 6;
+pub const TAG_BYTES: u8 = 6;
 
 /// ONE ARGUMENT, exact: a rational, a key, a count, a flag, a multivector of
 /// the algebra, a rational past 64 bits, or a run of bytes named whole (at

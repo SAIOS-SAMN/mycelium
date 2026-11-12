@@ -9,7 +9,7 @@ use super::turning::FramePlanes;
 use crate::core::Q;
 use crate::transducer::cga::Clifford;
 use forms::coordinate::Square;
-use forms::passage::{Frame, Place, Pole, Poles};
+use forms::passage::{PassageState, Place, Pole, Poles};
 use num_traits::Zero;
 
 /// WHICH POLE OF A PLANE IS INFINITY, read from the state (amendment (b)):
@@ -51,7 +51,7 @@ impl Membrane {
         let (positive, negative) = (frame.unit_value(Square::Positive, k)?, frame.unit_value(Square::Negative, k)?);
         let poles = Poles::of(&positive, &negative).map_err(FieldRefusal::Passage)?;
         let half = algebra::multivector::half();
-        let throat = poles.state(&Frame { hold: half.clone(), reach: half }).map_err(FieldRefusal::Passage)?;
+        let throat = poles.state(&PassageState { hold: half.clone(), reach: half }).map_err(FieldRefusal::Passage)?;
         Ok(Membrane { plane: k, poles, throat })
     }
 
@@ -106,8 +106,8 @@ pub fn stand(state: &Clifford, poles: &Poles, labels: Labels, enclosure: Option<
 /// `c·(e₊ − e₋)` open (78.172 §1), at the gauge `c`.
 pub fn at_pole(poles: &Poles, pole: Pole, c: Q) -> Result<Clifford, FieldRefusal> {
     let frame = match pole {
-        Pole::Closed => Frame { hold: c, reach: Q::zero() },
-        Pole::Open => Frame { hold: Q::zero(), reach: c },
+        Pole::Closed => PassageState { hold: c, reach: Q::zero() },
+        Pole::Open => PassageState { hold: Q::zero(), reach: c },
     };
     poles.state(&frame).map_err(FieldRefusal::Passage)
 }

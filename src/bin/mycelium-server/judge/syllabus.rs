@@ -15,11 +15,11 @@ use crate::admission::sign_cover_digest;
 
 /// The section digests over this court's atlas, with the signed cover
 /// digest behind them (A19, 47.1).
-pub(crate) fn digests(stream: &mut Channel, frame: &Delimited, context: &Context) {
+pub(crate) fn digests(stream: &mut Channel, delimited: &Delimited, context: &Context) {
     let court = &context.court;
     let mesh = &context.mesh;
 
-    let Some(dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
+    let Some(dvoice) = dialogue::decode_digests_request(&delimited.body) else { return };
     mycelium::observe::note_digest_ask(&dvoice);
     // 78.153b — the voice's own ruled digests off the published reading, the
     // language's atlas off its snapshot taken by pointer: neither read under
@@ -41,29 +41,29 @@ pub(crate) fn digests(stream: &mut Channel, frame: &Delimited, context: &Context
         return;
     };
     body.extend(sign_cover_digest(court, &context.published, mesh));
-    let reply = Delimited { lane: frame.lane, body };
+    let reply = Delimited { body };
     answer(stream, reply);
 }
 
 /// The stratum fetch: the ruled words of the charts a peer named, up to
-/// the frame budget, with the class records behind them (A19).
-pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) {
+/// the body budget, with the class records behind them (A19).
+pub(crate) fn fetch(stream: &mut Channel, delimited: &Delimited, context: &Context) {
     // 78.160 P1 — a mind's residue asked of the presentation rides the
     // fetch's act under its own marker.
-    if let Some((pvoice, motion)) = dialogue::decode_presentation_request(&frame.body) {
-        present(stream, frame, context,pvoice, &motion);
+    if let Some((pvoice, motion)) = dialogue::decode_presentation_request(&delimited.body) {
+        present(stream, context, pvoice, &motion);
         return;
     }
     // 2026-10-14 — a peer court's citation ask, by address.
-    if let Some((cvoice, addrs)) = dialogue::decode_cited_request(&frame.body) {
-        cited(stream, frame, context,cvoice, &addrs);
+    if let Some((cvoice, addrs)) = dialogue::decode_cited_request(&delimited.body) {
+        cited(stream, context, cvoice, &addrs);
         return;
     }
     let court = &context.court;
-    let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
-    // The words' and records' share of the frame, exact: its body less the
+    let Some((fvoice, charts)) = dialogue::decode_fetch(&delimited.body) else { return };
+    // The words' and records' share of the envelope, exact: its body less the
     // reply's count and the class records' count (D4.6).
-    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER + dialogue::CLASS_RECORDS_HEADER) else {
+    let Some(mut budget) = mycelium::network::wire::BODY_BUDGET.checked_sub(dialogue::SYLLABUS_REPLY_HEADER + dialogue::CLASS_RECORDS_HEADER) else {
         return;
     };
     let mut words: Vec<dialogue::Taught> = Vec::new();
@@ -99,7 +99,7 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) 
             let page = k.serve_ruled_on(inv, have, (budget, room), asker, read.syllabus_seed(), reads);
             // `serve_ruled` fills to the budget and no further, so what is
             // left is exact. A page WIDER than the budget is a broken page,
-            // and the frame it would go in cannot carry it: the fetch is
+            // and the envelope it would go in cannot carry it: the fetch is
             // answered with nothing rather than a reply the wire truncates.
             let width = |t: &dialogue::Taught| mycelium::chronometry::Stamp::LEN + 4 + t.word.len();
             let Some(left) = budget.checked_sub(page.iter().map(width).sum::<usize>())
@@ -112,7 +112,7 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) 
             // THE CLASSES ARE MEASURED AS THE WORDS ARE (2026-10-14): they
             // were appended past the byte budget the words filled, and the
             // root stratum's are every complex's in the nerve, so a reply ran
-            // past the frame, was refused whole, and its words — counted
+            // past the envelope, was refused whole, and its words — counted
             // served — never reached the asker. A record is taken while the
             // bytes left and the two-byte count hold it; one that does not
             // fit ends the reply, and the asker's next fetch resumes.
@@ -138,7 +138,7 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) 
     }
     drop(read);
     if overran {
-        eprintln!("  fetch refused: a served page ran past the frame budget");
+        eprintln!("  fetch refused: a served page ran past the body budget");
         words.clear();
         classes.clear();
     }
@@ -155,10 +155,10 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) 
         return;
     };
     if dialogue::append_class_records(&mut body, &classes).is_none() {
-        eprintln!("  fetch refused: the class records cannot be framed");
+        eprintln!("  fetch refused: the class records cannot be delimited");
         return;
     }
-    let reply = Delimited { lane: frame.lane, body };
+    let reply = Delimited { body };
     let written = crate::transport::answer_written(stream, reply);
     // The words a peer court's fetch carried away, under the court that
     // asked: only on a reply the wire took.
@@ -168,14 +168,14 @@ pub(crate) fn fetch(stream: &mut Channel, frame: &Delimited, context: &Context) 
 }
 
 /// 2026-10-14 — A PEER COURT'S CITATION, ANSWERED BY ADDRESS: each asked word
-/// this court installed, at the stamp that admitted it, while the frame's
+/// this court installed, at the stamp that admitted it, while the envelope's
 /// bytes and the reply's one-byte count carry it. Courts exchange what a
 /// waiting sentence cites, never a stratum's whole lack. Only a key this
 /// court's mesh knows is a court; any other asker is a learner, taught at
 /// its own expense through the fetch, and is answered with nothing here.
-fn cited(stream: &mut Channel, frame: &Delimited, context: &Context, cvoice: [u8; 32], addrs: &[mycelium::transducer::address::Address]) {
+fn cited(stream: &mut Channel, context: &Context, cvoice: [u8; 32], addrs: &[mycelium::transducer::address::Address]) {
     let court = context.mesh.addrs.lock().is_ok_and(|a| a.get(&cvoice).is_some());
-    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
+    let Some(mut budget) = mycelium::network::wire::BODY_BUDGET.checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
     let mut words: Vec<dialogue::Taught> = Vec::new();
     if court {
         if let Ok(mut h) = crate::court_lock::held!(context.court) {
@@ -197,18 +197,18 @@ fn cited(stream: &mut Channel, frame: &Delimited, context: &Context, cvoice: [u8
         eprintln!("  citation answer refused: the page does not fit its count");
         return;
     };
-    if crate::transport::answer_written(stream, Delimited { lane: frame.lane, body }) && court {
+    if crate::transport::answer_written(stream, Delimited { body }) && court {
         mycelium::observe::note_replication(Some(cvoice), mycelium::observe::replication::FETCH_SERVED, words.len() as u64);
     }
 }
 
 /// 78.160 P1 — THE PRESENTATION ASKED BY A RESIDUE: the motion deconstructed
 /// over this court's presentation on the hold's stroke, and the words that
-/// deconstruct it the asker lacks, within the frame's body budget.
-fn present(stream: &mut Channel, frame: &Delimited, context: &Context, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
-    // The words' and the answer's share of the frame: its body less the
+/// deconstruct it the asker lacks, within the envelope's body budget.
+fn present(stream: &mut Channel, context: &Context, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
+    // The words' and the answer's share of the envelope: its body less the
     // reply's count; `present` keeps the answer's own width out of it.
-    let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
+    let Some(budget) = mycelium::network::wire::BODY_BUDGET.checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
     let Ok(mut h) = crate::court_lock::held!(&context.court) else { return };
     let presented = h.run(|k, reads| k.present(voice, motion, budget, reads));
     drop(h);
@@ -216,5 +216,5 @@ fn present(stream: &mut Channel, frame: &Delimited, context: &Context, voice: [u
         eprintln!("  presentation refused: a count or an address passes the field that carries it");
         return;
     };
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

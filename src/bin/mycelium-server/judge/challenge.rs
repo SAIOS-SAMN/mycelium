@@ -12,8 +12,8 @@ use mycelium::anastome::dialogue::challenge::{
 use mycelium::network::wire::Delimited;
 use mycelium::network::channel::Channel;
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(request) = decode_challenge_request(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(request) = decode_challenge_request(&delimited.body) else { return };
     // The reads stay on the court (78.153b): finality, obstructions, tolls
     // and line heads are not on the shelf yet, and the domain acts are 78.154's.
     let body = match crate::court_lock::held!(context.court) {
@@ -42,5 +42,5 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Delimited { lane: frame.lane, body });
+    answer(stream, Delimited { body });
 }

@@ -56,7 +56,7 @@ pub struct ReceiptChain {
     /// AN ERA PROOF IN PROGRESS: `p`'s key and hash → the last receipt of
     /// the signer's line the walk from `p` has re-derived, where the page
     /// that carried it ended short of the root (`walk_era`). The next page
-    /// is asked from there, so a proof longer than one frame closes page by
+    /// is asked from there, so a proof longer than one envelope closes page by
     /// page across hearings, never asked again from `p`. Volatile; an entry
     /// leaves when its proof stands or breaks.
     walking: Keyed<Parent>,
@@ -205,25 +205,25 @@ impl ReceiptChain {
             .collect()
     }
 
-    /// THE FRAME OF AN ORBIT (78.23 as amended): the per-lane sum of the
-    /// frames its acts measured before `before` — lanes never mixed (law
-    /// 5), a close's own frame never counted in. `None` where a lane passes
-    /// its u64: an unmeasured frame, never a saturated one (rule 11).
+    /// THE MEASURE OF AN ORBIT (78.23 as amended): the per-lane sum of the
+    /// measures its acts took before `before` — lanes never mixed (law
+    /// 5), a close's own measure never counted in. `None` where a lane passes
+    /// its u64: an unmeasured lane, never a saturated one (rule 11).
     pub fn orbit_measure(&self, signer: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
-        let mut frame = [0u64; 4];
+        let mut measure = [0u64; 4];
         for (at, n) in self.orbit_acts(signer, k) {
             if at.place() >= before || n.kind == ActKind::Orbit {
                 continue;
             }
-            for (f, m) in frame.iter_mut().zip(n.mu) {
+            for (f, m) in measure.iter_mut().zip(n.mu) {
                 *f = f.checked_add(m)?;
             }
         }
-        Some(frame)
+        Some(measure)
     }
 
     /// THIS CHAIN'S OPEN ORBIT: the place its close would take and the
-    /// frame it would carry, or `None` where no act stands since the last
+    /// measure it would carry, or `None` where no act stands since the last
     /// close — a close with no act seals nothing (OK1).
     pub fn open_orbit(&self) -> Option<(Place, [u64; 4])> {
         let (_, head) = self.head_node()?;
@@ -235,7 +235,7 @@ impl ReceiptChain {
     }
 
     /// EVERY ORBIT CLOSED AT ONE TICK, read off the close nodes in
-    /// `fibre(h)`: the signer, its `K` and the orbit's frame as the close
+    /// `fibre(h)`: the signer, its `K` and the orbit's measure as the close
     /// carries it. An orbit whose close this ledger does not hold is not
     /// here: unmeasured, never compared (rule 11).
     pub fn orbits_closed_at(&self, h: u64) -> Vec<([u8; 32], u64, [u64; 4])> {
@@ -260,16 +260,16 @@ impl ReceiptChain {
         self.node(&prev.at).filter(|r| r.kind == ActKind::Orbit)
     }
 
-    /// WOULD A CLOSE AT `tick` CARRYING `frame` COLLIDE (78.23 as amended):
-    /// another signer's orbit closed at that tick with a frame equal on
+    /// WOULD A CLOSE AT `tick` CARRYING `measure` COLLIDE (78.23 as amended):
+    /// another signer's orbit closed at that tick with a measure equal on
     /// every lane, compared exactly — no constant, no threshold.
-    pub fn collides(&self, tick: u64, frame: [u64; 4]) -> bool {
-        self.orbits_closed_at(tick).into_iter().any(|(vk, _, f)| vk != self.vk && f == frame)
+    pub fn collides(&self, tick: u64, measure: [u64; 4]) -> bool {
+        self.orbits_closed_at(tick).into_iter().any(|(vk, _, f)| vk != self.vk && f == measure)
     }
 
     /// THE SEPARATION AT THIS CHAIN'S LAST CLOSE: per peer orbit closed at
     /// the same tick, the per-lane signed distance from this chain's own
-    /// frame to its — sign first, exact, never a root and never summed (law 5).
+    /// measure to its — sign first, exact, never a root and never summed (law 5).
     pub fn separation(&self) -> Vec<([u8; 32], [i128; 4])> {
         let Some(own_close) = self.last_close() else { return Vec::new() };
         self.orbits_closed_at(own_close.stamp.h)
@@ -281,7 +281,7 @@ impl ReceiptChain {
 
     /// DOES A CLOSE RE-DERIVE (OK1): a node of kind `Orbit` stands after at
     /// least one act of its orbit and carries the per-lane sum of those acts'
-    /// frames, re-derived here from the acts this ledger holds, exactly as
+    /// measures, re-derived here from the acts this ledger holds, exactly as
     /// a height is. Any other kind is not a close and passes.
     pub fn close_rederives(&self, r: &KStepReceipt) -> bool {
         r.kind != ActKind::Orbit
@@ -498,7 +498,7 @@ impl ReceiptChain {
     /// walk leaves. CONTINUES where the page is a whole chain from where it
     /// opened and ends short of the root, having moved: the walk stands at
     /// its last receipt and the next page opens there — a proof longer than
-    /// one frame closes page by page, and a root a later fold moved further
+    /// one envelope closes page by page, and a root a later fold moved further
     /// is walked to as well. STALLED where the page moved nothing (the walk
     /// keeps its place). BROKEN where the page is not the chain the walk
     /// stands on, or `p` is no citation into a closed era: the walk leaves.
@@ -659,7 +659,7 @@ impl ReceiptChain {
     /// ledger and are returned, cold, in line order, with the root they
     /// leave the line standing on. A fold cuts only at an orbit's close, so
     /// every orbit is held whole on one side of it and a close re-derives
-    /// its frame from what the hot line holds: `None` where the node at
+    /// its measure from what the hot line holds: `None` where the node at
     /// `upto` is not a close, or no hot receipt sits at or below it.
     pub fn fold_before(&mut self, upto: Place) -> Option<(Vec<KStepReceipt>, Root)> {
         self.head?;
@@ -1025,7 +1025,7 @@ impl ReceiptChain {
     /// parent is unmeasured height, and the append refuses). `None` where
     /// a parent is not held or a citation cannot be written (LD0), and
     /// where a close is asked with no act since the last close or with a
-    /// frame other than its orbit's (OK1).
+    /// measure other than its orbit's (OK1).
     pub fn append(
         &mut self,
         kind: ActKind,
@@ -1039,7 +1039,7 @@ impl ReceiptChain {
         if !kind.sealed() {
             return None;
         }
-        if kind == ActKind::Orbit && self.open_orbit().map(|(_, frame)| frame) != Some(mu) {
+        if kind == ActKind::Orbit && self.open_orbit().map(|(_, measure)| measure) != Some(mu) {
             return None;
         }
         let stamp = self.next_stamp(&parents)?;
@@ -1059,7 +1059,7 @@ impl ReceiptChain {
     /// Verify the hot line: contiguous from its opening — every node's
     /// predecessor the one before it (or the root), and its place the one
     /// the predecessor's kind says follows it — every height re-derived
-    /// from its predecessor and parents, every close's frame re-derived
+    /// from its predecessor and parents, every close's measure re-derived
     /// from its orbit's acts, every hash re-derived from its coordinates.
     pub fn verify_chain_integrity(&self) -> bool {
         let mut prev = self.root.map(|r| Parent { at: Stamp::new(r.height, self.vk, r.at), hash: r.hash });
@@ -1185,7 +1185,7 @@ impl ReceiptChain {
 }
 
 /// WHAT A CYCLE'S CLOSE BY NAME DID (OK1): the orbit closed at its stamp;
-/// it was WITHHELD, its frame coinciding with a peer's at its tick, and
+/// it was WITHHELD, its measure coinciding with a peer's at its tick, and
 /// stays open for the separating transport; or nothing stood to close.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Close {

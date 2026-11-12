@@ -106,7 +106,7 @@ impl Corpus {
     }
 }
 
-/// THE COORDINATES OF A FAMILY'S FRAMES: its bodies' charts, and the key of
+/// THE COORDINATES OF A FAMILY'S DELIMITED: its bodies' charts, and the key of
 /// the 𝒢 orbit its hue fibre moves, where it moves one.
 fn coords_of(train: &crate::transducer::family::Family, fibre: Option<Vec<(u8, u8)>>) -> Vec<Vec<u8>> {
     let mut coords: Vec<Vec<u8>> = super::offer::Offer::of(train).charts.iter().map(|k| tagged(COORD_CHART, k)).collect();
@@ -281,7 +281,7 @@ impl Mind {
                     }
                     return;
                 };
-                let mag = super::family::family_magnitude(&task.train);
+                let mag = super::family::family_magnitude(&task.train).lanes();
                 if short(self, &mag) {
                     self.board.feed_waits = true;
                     return;

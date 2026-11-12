@@ -14,26 +14,35 @@
 mod atlas;
 mod cyclotomic;
 mod enclosing;
+mod fibration;
+mod gravity;
 mod holding;
 mod holonomy;
 mod lift;
 mod motions;
 mod refusal;
+mod rotor;
 mod shares;
 mod statement;
+mod transitions;
 mod turning;
 
 pub use atlas::{Atlas, Attractor, Chart, Curvature, Orbit, Precession, Transition};
 pub use cyclotomic::Cyclotomic;
 pub use enclosing::{at_pole, stand, Labels, Membrane};
+pub use fibration::{Fibred, Level};
+pub use gravity::{axiomatic_shear, orbit_rate_shear, plane_split, primary_plane};
 pub use holding::{ExpansionRing, Inflation, WellBody, WellLayer, WellStage};
 pub use holonomy::{Holonomy, Monodromy, Motion};
 pub use lift::{Lifted, LiftedBody, Nested, Point};
 pub use motions::{FieldMotion, Generator, Unit};
 pub use refusal::{FieldRefusal, Residue};
-pub use shares::{frame_plane, Cohesion};
+pub use rotor::{LocalOrbit, Rotor, RotorPrecession, RotorTransition};
+pub use shares::{frame_plane, pole_plane, Cohesion, TraversalState};
 pub use statement::{admit, admit_well, reconstruct, reconstruct_well, StatementRefusal};
+pub use transitions::{motion_of, transitions_of, PairTransition};
 pub use turning::{FramePlanes, Meeting, Turning, TurningPlane};
+pub(crate) use turning::whole_turn;
 
 #[cfg(test)]
 mod tests;

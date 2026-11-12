@@ -39,14 +39,13 @@ impl Treasury {
         }
         // The rows are written for μ⃗ that MOVED, after the debit — which
         // cannot be short, by `paid ≤ held`.
-        let drawn = self.debit(demander, &paid);
-        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
-        self.credit(discoverer, &paid);
+        let Ok(moved) = self.debit(demander, &paid) else { return Mu::zero() };
+        self.credit(discoverer, &moved);
         // POWC (78.33): a cited generator paid by the use that cited it.
         let arm = Some(Arm::Powc);
-        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
-        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
-        paid
+        self.write(Entry { kind: Kind::Transfer, who: demander, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm });
+        moved
     }
 
     /// MU-CLIENT §5.6 (E2) — POWC MINTED: a demand closed at another
@@ -175,12 +174,19 @@ impl Treasury {
     /// close beyond its words', never the arithmetic left after the shares —
     /// capped by what is left, and what is left above it never issued (E1).
     /// `None` for a word, whose voices take what is left.
+    ///
+    /// K3 (78.177 §4a(1), ruled 2026-11-06) — `converged` are the minds
+    /// whose own words converged with this one, each with its share of the
+    /// enclosure: they are paid POWC out of the composition premium, after the
+    /// base and use shares (`Treasury::pay_converging`); a word has no
+    /// premium, and its convergences are held as claims, never minted.
     pub fn settle_recursive(
         &mut self,
         escrow: &[u8],
         shares: &[([u8; 32], Mu)],
         pay: &Mu,
         premium: Option<Mu>,
+        converged: &[([u8; 32], Mu)],
         anchor: Anchor,
     ) -> Mu {
         let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
@@ -199,11 +205,17 @@ impl Treasury {
             left = rest;
             self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
         }
-        let taken = match premium {
-            Some(p) => p.capped(&left),
-            None => left,
+        let (taken, composed) = match premium {
+            Some(p) => {
+                let p = p.capped(&left);
+                (p.clone(), p)
+            }
+            None => (left, Mu::zero()),
         };
-        self.mint_claim(&voices, taken.clone(), anchor);
+        // K3: the converging minds out of the premium; the voices keep the
+        // rest of it. `to_minds ≤ composed ≤ taken` on every lane.
+        let to_minds = self.pay_converging(escrow, &composed, converged, anchor);
+        self.mint_claim(&voices, taken.shortfall(&to_minds), anchor);
         taken
     }
 
@@ -283,10 +295,9 @@ impl Treasury {
         if paid.is_zero() {
             return (paid, short);
         }
-        let drawn = self.debit(voice, &paid);
-        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm: None });
-        (paid, short)
+        let Ok(moved) = self.debit(voice, &paid) else { return (Mu::zero(), short) };
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: moved.clone(), at: anchor.0, receipt: anchor.1, arm: None });
+        (moved, short)
     }
 
     /// THE DOOR FEE (D12) — a strained mesh prices its own door: the speaker

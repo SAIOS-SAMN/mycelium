@@ -546,5 +546,7 @@ crate::transducer::raster::stand_on(0);
     // every residue is read on, so S, G and 𝒯 are over 16 sites and H stands.
     assert_eq!(read.mu, crate::economy::Mu::counts(read.pay).over([16, 16, 16, 1]).expect("non-zero wholes"), "the client's μ: the deflation over 4·4 sites");
     let tape = crate::transducer::sentence::as_element_form(&rule.form, read.pay).expect("the form has a tape");
-    assert_eq!(Court::new().measured_discharge(&tape, &family), read.mu, "the court reconstructs the client's μ");
+    // MU-ECONOMY §2.5 — the court's discharge holds the modes the client's
+    // closure moved, each lane at the client's share.
+    assert_eq!(Court::new().measured_discharge(&tape, &family), crate::economy::Mu::carried_by(&read.mu, &read.modes), "the court reconstructs the client's μ, mode by mode");
 }

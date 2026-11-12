@@ -7,9 +7,9 @@
 //! A dialler holding a Noise home (`NoiseHome`) opens every connection with
 //! the channel's opening (`noise::OPEN`) and the XX handshake, its static key
 //! the host's long-term Noise key, the peer's pinned under the address
-//! dialled. A door holding a home reads the first byte of each connection:
-//! the opening is answered with the handshake, a lane byte is a plaintext
-//! frame read as it always was.
+//! dialled. A door holding a home reads the first four bytes of each
+//! connection: the opening is answered with the handshake, a length is a
+//! plaintext envelope read as it always was.
 //!
 //! OPT-IN PER PEER (MU-PRECURSORS §3.1). A peer that does not speak Noise
 //! stays plaintext and is named: in the log the first time it is met, and in
@@ -18,6 +18,12 @@
 //! unless the peer is pinned: a pinned peer is held to its seal, refused by
 //! name (`PinnedAnsweredPlain`), and a pinned peer presenting another static
 //! key is refused by name (`PeerKeyChanged`), never with a fallback.
+//!
+//! PLAINTEXT STAYS ON THE HOST (D1.3 O2, 78.182 item 19). A plaintext
+//! channel is spoken only with a peer on this host: a loopback address, or
+//! the address the socket itself stands at. Across the host's boundary the
+//! channel is Noise or nothing, refused by name (`PlainAcrossBoundary`), on
+//! the door's side and the dialler's alike.
 //!
 //! The channel moves bytes. It knows byte counts, peer addresses, peer keys
 //! and the pace of a read, and never what the bytes mean.
@@ -49,11 +55,14 @@ pub struct Paced {
     pace: Pace,
     polls: u64,
     first: Option<u64>,
+    /// Bytes read off the stream to tell the channel apart (`take_head`),
+    /// served again before the stream's own.
+    held: Vec<u8>,
 }
 
 impl Paced {
     pub fn new(tcp: TcpStream, pace: Pace) -> Self {
-        Paced { tcp, pace, polls: 0, first: None }
+        Paced { tcp, pace, polls: 0, first: None, held: Vec::new() }
     }
 
     pub fn tcp(&self) -> &TcpStream {
@@ -106,17 +115,15 @@ impl Paced {
         out
     }
 
-    /// The first byte the peer sent, left on the stream.
-    pub fn peek_first(&mut self) -> io::Result<u8> {
-        let mut b = [0u8; 1];
-        let n = match self.pace {
-            Pace::Blocking => self.tcp.peek(&mut b)?,
-            Pace::Polled(stall) => self.polled(stall, |t| t.peek(&mut b))?,
-        };
-        match n {
-            0 => Err(io::Error::new(io::ErrorKind::UnexpectedEof, "the peer closed before its first byte")),
-            _ => Ok(b[0]),
-        }
+    /// THE FIRST `N` BYTES THE PEER SENT, read at the stream's pace and held:
+    /// every read after serves them again before the stream's own, so a
+    /// plaintext envelope they open is read whole. A peer that closes before
+    /// `N` bytes is refused (`UnexpectedEof`).
+    pub fn take_head<const N: usize>(&mut self) -> io::Result<[u8; N]> {
+        let mut head = [0u8; N];
+        self.read_exact(&mut head)?;
+        self.held.splice(0..0, head);
+        Ok(head)
     }
 }
 
@@ -124,6 +131,12 @@ impl Read for Paced {
     fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
         if out.is_empty() {
             return Ok(0);
+        }
+        if !self.held.is_empty() {
+            let n = out.len().min(self.held.len());
+            out[..n].copy_from_slice(&self.held[..n]);
+            self.held.drain(..n);
+            return Ok(n);
         }
         let n = match self.pace {
             Pace::Blocking => self.tcp.read(out)?,
@@ -242,6 +255,23 @@ impl Write for Channel {
     }
 }
 
+/// WHETHER A PEER STANDS ON THIS HOST: a loopback address, or the very
+/// address the socket stands at (one host reached by its own address).
+pub fn on_this_host(peer: std::net::IpAddr, local: std::net::IpAddr) -> bool {
+    peer.is_loopback() || peer == local
+}
+
+/// A plaintext channel on `tcp`, where its peer stands on this host;
+/// refused `PlainAcrossBoundary` otherwise, or where either end's address
+/// cannot be read.
+fn plain_on_host(paced: Paced, peer: &str) -> Result<Paced, NoiseRefusal> {
+    let tcp = paced.tcp();
+    match (tcp.peer_addr(), tcp.local_addr()) {
+        (Ok(p), Ok(l)) if on_this_host(p.ip(), l.ip()) => Ok(paced),
+        _ => Err(NoiseRefusal::PlainAcrossBoundary { peer: peer.to_string() }),
+    }
+}
+
 fn connect(endpoint: &str, pace: Pace) -> Result<Paced, NoiseRefusal> {
     let tcp = TcpStream::connect(endpoint)?;
     let _ = tcp.set_nodelay(true);
@@ -264,14 +294,16 @@ pub fn dial(endpoint: &str, home: Option<&NoiseHome>, pace: Pace) -> Result<Chan
 /// never under a port another mind may take next.
 pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace) -> Result<Channel, NoiseRefusal> {
     let Some(home) = home else {
+        let plain = plain_on_host(connect(endpoint, pace)?, peer)?;
         met(peer, Kind::Plain, Side::Dialled);
-        return Ok(Channel::Plain(connect(endpoint, pace)?));
+        return Ok(Channel::Plain(plain));
     };
     // A peer met in plaintext by this process and never pinned is dialled
     // in plaintext without the opening asked again.
     if home.pinned(peer)?.is_none() && answered_plain(peer) {
+        let plain = plain_on_host(connect(endpoint, pace)?, peer)?;
         met(peer, Kind::Plain, Side::Dialled);
-        return Ok(Channel::Plain(connect(endpoint, pace)?));
+        return Ok(Channel::Plain(plain));
     }
     match noise::initiate(connect(endpoint, pace)?, home, peer) {
         Ok(s) => {
@@ -281,8 +313,9 @@ pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace)
         Err(NoiseRefusal::NotSpoken { .. }) => match home.pinned(peer)? {
             Some(pinned) => Err(NoiseRefusal::PinnedAnsweredPlain { peer: peer.to_string(), pinned }),
             None => {
+                let plain = plain_on_host(connect(endpoint, pace)?, peer)?;
                 met(peer, Kind::Plain, Side::Dialled);
-                Ok(Channel::Plain(connect(endpoint, pace)?))
+                Ok(Channel::Plain(plain))
             }
         },
         Err(e) => Err(e),
@@ -292,12 +325,17 @@ pub fn dial_as(endpoint: &str, peer: &str, home: Option<&NoiseHome>, pace: Pace)
 /// ACCEPT a connection at a door. With a home, a connection that opens with
 /// the channel's opening is answered with the XX handshake (the caller is
 /// pinned under no name: it dials from a port of its own choosing, and its
-/// identity is the signature on each act); any other first byte is a
-/// plaintext frame, left unread on the stream and named.
+/// identity is the signature on each act); any other head is a plaintext
+/// envelope, read whole from its first byte and named.
+///
+/// The connection's first four bytes tell the two apart: a plaintext
+/// envelope opens with its length, and the opening's four, read as a length,
+/// pass `wire::DELIMITED_MAX`, so no plaintext envelope opens with them. The
+/// four are held and read again by whichever channel follows.
 pub fn accept(tcp: TcpStream, home: Option<&NoiseHome>, pace: Pace) -> Result<Channel, NoiseRefusal> {
     let mut paced = Paced::new(tcp, pace);
-    let first = paced.peek_first()?;
-    match (home, first == OPEN[0]) {
+    let head = paced.take_head::<{ super::wire::HEAD }>()?;
+    match (home, head[..] == OPEN[..super::wire::HEAD]) {
         (Some(home), true) => {
             let s = noise::respond(paced, home, None)?;
             met(&crate::court::identity::hex32(&s.remote_static()), Kind::Noise, Side::Accepted);
@@ -308,6 +346,7 @@ pub fn accept(tcp: TcpStream, home: Option<&NoiseHome>, pace: Pace) -> Result<Ch
                 Ok(a) => a.ip().to_string(),
                 Err(_) => String::from("an unread address"),
             };
+            let paced = plain_on_host(paced, &at)?;
             met(&at, Kind::Plain, Side::Accepted);
             Ok(Channel::Plain(paced))
         }
@@ -340,7 +379,7 @@ fn answered_plain(endpoint: &str) -> bool {
 /// channel and side said in the log. An entry is kept while the book's bytes
 /// fit the sealed process memory (MU-DERIVATIONS D2.5 (a)); one past it is
 /// refused by name and the book left as it stood. A door of its own that
-/// tells the two channels apart by more than `accept`'s first byte (a mind's
+/// tells the two channels apart by its own reading of the head (a mind's
 /// post) names what it met here too.
 pub(crate) fn met(peer: &str, kind: Kind, side: Side) {
     let Ok(mut book) = BOOK.lock() else { return };

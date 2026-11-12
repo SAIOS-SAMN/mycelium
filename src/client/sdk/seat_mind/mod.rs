@@ -44,15 +44,22 @@
 //! read off the two beats, never assumed.
 //!
 //! BOUNDED AS THE RELAY IS (a sink keeps its bound): a SEAT holds what one
-//! frame could carry of its values as they write (`frame_budget`), shared
+//! frame could carry of its values as they write (`BODY_BUDGET`), shared
 //! among its series, each series' oldest dropped and counted past its share;
 //! changes and carriers are derived where read, never held (Concordance
 //! 1.13). OWED, named: a series whose locator the house stops sending keeps
 //! its last share until the seat sheds it, and the hand-over of a recognised
 //! orbit to the contemplation as a form.
+//!
+//! #147 — EACH SERIES LIFTED INTO THE FIELD as a sample of rank one along
+//! its series index (`lift`): values and symbols by `Lifted::of`, versors
+//! as motions. A seat's call stays a relay (78.145); the A20 certificate of
+//! the move it names is held beside the call's reference and rides the
+//! claiming form's tape (`SeatMind::claim`, A20.2).
 
 mod change;
 mod choice;
+mod lift;
 mod mind;
 mod perceived;
 mod repertoire;
@@ -61,6 +68,7 @@ pub mod task;
 
 pub use change::*;
 pub use choice::*;
+pub use lift::*;
 pub use mind::*;
 pub use perceived::*;
 pub use repertoire::*;

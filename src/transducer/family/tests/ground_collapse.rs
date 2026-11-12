@@ -21,7 +21,7 @@ fn candidates(family: &[(SectionSample, SectionSample)]) -> Vec<Vec<u8>> {
     Ground::candidacies(&samples(family)).into_iter().filter(|(_, c)| *c == Candidacy::Candidate).map(|(s, _)| s).collect()
 }
 
-/// A frame of 7 holds an interior of 0 on every input; a dot stands on the
+/// A border of 7 holds an interior of 0 on every input; a dot stands on the
 /// 0 in the first input and is recoloured, and nothing stands on the 0 in
 /// the second, which is carried as it is. Both are candidates (the
 /// interior holds a body in some input); a body stands on 7 on every input
@@ -41,7 +41,7 @@ fn ground_vortex_collapses_where_bodies_stand_on_one_candidate() {
     assert_eq!(crate::transducer::raster::ground_of(&family), Ground::One(7), "the vortex collapsed to 7");
 }
 
-/// A frame of 8 holds an interior of 0 on which a dot moves: a body stands
+/// A border of 8 holds an interior of 0 on which a dot moves: a body stands
 /// on both (the 0 inside the 8, the dot inside the 0), so `Stands` holds
 /// alike; the residue changes only the 0's sites (the dot leaves 0 and
 /// lands on 0), so 0 collapses the vortex by `PaintedOn`.

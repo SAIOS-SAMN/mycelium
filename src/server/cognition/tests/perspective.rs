@@ -12,20 +12,31 @@ use crate::transducer::family::transduce::{Ground, Sense, SignedPermutation};
 use crate::transducer::family::{NoCrystal, TrainPair};
 use crate::transducer::perspective::{Perspective, Role, SensorMotion};
 
-/// A body of 1 standing on 0 moves one site along the second axis, in two
-/// train pairs; the withheld pair is a third such move. The ground is 0
-/// alone: 1 does not meet the seam in the first input.
+/// A canvas of two halves, 0 and 5, along the first axis, so the ground is
+/// a vortex of 0 and 5; a body of 1 standing on the 0 half moves one site
+/// along the first axis, in two train pairs; the withheld pair is a third
+/// such move. The solve's `halves` family with its axes exchanged.
 fn moves() -> (Vec<TrainPair>, Vec<TrainPair>) {
     let train = vec![
-        (digits(&["00000", "01000", "00000"]), digits(&["00000", "00100", "00000"])),
-        (digits(&["00000", "00000", "10000"]), digits(&["00000", "00000", "01000"])),
+        (
+            digits(&["000", "010", "000", "000", "000", "555", "555", "555"]),
+            digits(&["000", "000", "010", "000", "000", "555", "555", "555"]),
+        ),
+        (
+            digits(&["000", "000", "001", "000", "000", "555", "555", "555"]),
+            digits(&["000", "000", "000", "001", "000", "555", "555", "555"]),
+        ),
     ];
-    let withheld = vec![(digits(&["00000", "00010", "00000"]), digits(&["00000", "00001", "00000"]))];
+    let withheld = vec![(
+        digits(&["000", "000", "000", "010", "000", "555", "555", "555"]),
+        digits(&["000", "000", "000", "000", "010", "555", "555", "555"]),
+    )];
     (train, withheld)
 }
 
 /// The sensor turned: read axis 0 is the sample's axis 1 and read axis 1
-/// its axis 0, so the move reads along the first axis.
+/// its axis 0, so the move reads along the second axis, as the solve's
+/// `halves` reads it.
 fn turned() -> Perspective {
     let swap = SignedPermutation::new(vec![(1, Sense::Kept), (0, Sense::Kept)]).expect("a signed permutation");
     Perspective::of_sample(2).shifted(&SensorMotion::Pose(swap)).expect("the pose turns")
@@ -78,10 +89,12 @@ fn solve_and_speech_state_their_perspective_and_court_reconstructs_under_it() {
     let hear = |perspective: Option<Perspective>| {
         let tape = rule.to_bytes().expect("the record writes");
         let said = Spoken { tape, standing: 0, contraction: None, agreement: None, ground: Some(vec![0]), perspective };
-        let act = decode_speech(&encode_speech_spoken(&[1; 32], task, 0, &[said]).expect("the speech frames")).expect("the speech reads");
+        let act = decode_speech(&encode_speech_spoken(&[1; 32], task, 0, &[said]).expect("the speech is delimited")).expect("the speech reads");
         let mut k = Court::new();
         k.bind_task_family(task, train.clone());
-        (act.perspectives.clone(), k.hear_frame(&act).expect("heard"))
+        // 78.153: a fixture asking what one act hears hands it a stroke
+        // that holds it.
+        (act.perspectives.clone(), k.hear_act_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("heard"))
     };
     let (carried, heard) = hear(Some(turned.clone()));
     assert_eq!(carried, vec![Some(turned.clone())], "the stated perspective rides the speech");

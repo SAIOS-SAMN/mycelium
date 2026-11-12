@@ -111,26 +111,27 @@ never by re-sampling both onto a common lattice (MU-RECURSION 78.170 O4;
 MU-ANTI-FLATTENING clause 12). The `n` phases' periods are the sample's
 own gauge: no period is fixed in the code.
 
-**The sample as a manifold** (ruled 2026-11-06 on #32, the envelope;
-built in track 26, `transduce::SampleManifold`). The envelope the sensor
-builds is read as a manifold. A phase with a period is a circle `S¹` of
-that period: the sample's symbols repeat along the axis with a period `p`
-dividing its extent, so the far seam glues onto the near one, and `p`, the
-least such, is the circle's circumference (`PhaseManifold::Circle {
-period }`). A phase without one is an interval chart with boundary, its
-seam held (`PhaseManifold::Interval { extent }`). The sample is their
-product (`SampleManifold::of`), or a fibration where an axis is taken
-apart (§3.6, #176): the coarse phase the base and the fine phase the
-fibre, each read the same way on the blocks (`SampleManifold::nested`,
-`AxisManifold::Fibred`). A fully periodic sample is a torus `Tⁿ`
-(`SampleManifold::torus`, its circles' circumferences). The perspectives'
-cover (§4) is the atlas, and its cocycle the gluing; the membrane is the
-only sphere. The manifold is a reading, computed when asked and never
-stored, and no threshold decides a circle: a period holds on every site or
-it is no period. Claims `periodic_sample_reads_as_a_torus`,
-`aperiodic_phase_reads_as_an_interval`, `partial_period_reads_as_an_interval`
-(confirmed: a period that does not divide the extent makes no circle, and
-the extent alone never does), `nested_axis_reads_as_a_fibration`.
+**The sample's manifold** (ruled 2026-11-06, #32; proposal 78.179 §1).
+The lift builds the sample as a manifold, never as an "envelope" of
+bounds:
+- **A circle** where the content has a period. A phase is a circle `S¹`
+  of period `p` only where `p` is the least proper divisor of the extent
+  `e` such that every site's symbol equals the symbol `p` steps on, taken
+  round the extent. The far seam then glues to the near one. Site `s` is
+  the turn `s/p`, its winding `⌊s/p⌋` kept.
+- **An interval chart** otherwise: extent `e`, with boundary, its seam a
+  named boundary. This includes content whose period does not divide `e`.
+- The sample is the product of its phases, or a fibration where an axis
+  is taken apart (§3.6; #176). A sample whose every phase is a circle is a
+  torus `Tⁿ`. The carriers are built on branch `sensing-sample-manifold`
+  (#32): `SampleManifold`, `AxisManifold::{One, Fibred}`,
+  `PhaseManifold::{Circle { period }, Interval { extent }}` and
+  `SampleManifold::torus`.
+- The perspectives' cover is its atlas, and the cover's cocycle is the
+  gluing (§4). The seams are residue, held where the gluing does not
+  close.
+- The membrane is the only sphere (§3.7). No sphere is built about a
+  sample from its extents.
 
 ### 3.2 Connection is read, never declared
 
@@ -556,6 +557,27 @@ bubble (a thought bubble), renamed 2026-11-02.
   (§3.1). The phases' common scale is a gauge, so there is no unit norm
   and no sum of squares (law 11). What the sample holds curves the field
   into wells around its attractors.
+- **Depth perception: observation rank vs. manifold thinking.** Depth
+  perception is the invariant property of the mind (client and server)
+  that perceives an intake as an observation of $x$ dimensions (any rank
+  $n$ data source, ARC-AGI-2 sample, raster, or world state), while
+  thinking across curved, fibred manifolds ($S^1$ period windings,
+  interval charts with boundary, $Cl(n+1, 1)$, covering atlases, and
+  holonomy loops) without dimensional collapse, flat-frame compaction, or
+  loss of winding classes:
+  - **Observation.** The sensor observes at native rank $n$ without
+    flattening or padding. The sample's extents form its enclosure
+    (`Enclosure`), whose open-dimensional measure is $\prod_{i=1}^n e_i$.
+  - **Thinking.** The mind lifts the observation into an open-dimensional
+    manifold (`SampleManifold`, `Lifted`). Periodic phases lift to circles
+    $S^1$ keeping their winding class in $\mathbb{Z}$; non-periodic phases
+    lift to interval charts with held boundary; nested axes form
+    fibrations.
+  - **The anti-flattening guard.** Models frequently suffer from 2D
+    compaction, reflexively reducing open-dimensional manifolds to flat
+    planar "frames". In this system, dimensions never collapse: a sample
+    is a manifold, its extent is its enclosure, and work is measured
+    against the enclosure's open-dimensional measure, never a 2D frame.
 - **Nesting is a fibration.** The field is read as base and fibre:
   "base the class, fibre the gauge" (MU-RECURSION 25.12). An axis taken
   apart (§3.6) adds a level, a field within the field, which gives a
@@ -740,7 +762,7 @@ is set by gravity:
 - **The mind perceives every task at its own rank**
   (`transduce::TaskPercept`): the default perspective, the ground, each
   sample's bodies and each pair's factorisations, held under the task's
-  citation (`Mind::perceive_envelope`) before the word path (claims
+  citation (`Mind::perceive_task`; 78.179 §3, §6) before the word path (claims
   `rank_three_task_is_perceived`, `rank_one_task_is_perceived`).
 - Shear and precession in the contemplation are S9's; the carrier reads
   a resonant orbit and refuses an unbound path since S7 stage 2.
@@ -846,7 +868,14 @@ runs.
   agreement is the cocycle of MU-CLIENT 24.4, and a disagreement is a residue,
   held and never discarded.
 - **A mind may ask for a perspective** it does not hold yet. Asking is a
-  demand, never a fallback.
+  demand, never a fallback. Where a cover's cocycle fails because a chart
+  is missing, the missing perspective is the demand: a typed vertex naming
+  the sample and the overlap, the residue being the demand (ruled
+  2026-11-06, #32; 78.180 ruling 6).
+- **A solve of outputs, and speech, state their perspective** (ruled
+  2026-11-06, #32; 78.180 ruling 6). A solve or a spoken sample states the
+  perspective it was perceived or spoken under, as a claim of
+  factorisation does (§6.2), and a court reconstructs under it.
 - **A perspective is taken after intake, never before addressing.**
   Frame fixing, the canonical turn or mirror of a sample, is a
   perspective and belongs to the sensor's scope (§6.1).
@@ -1026,18 +1055,19 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
   refuses a count past the machine word by the sample's own name
   (`SampleRefusal::SitesOverflow`, `BytesOverflow`) before it reads or
   allocates; a count the bytes do not carry is `Short`. Claim
-  `symbol_bytes_overflow_is_refused_by_name`.
+  `symbol_bytes_refuses_overflow`.
 - A sample's place is its position in the family, `[split, pair,
   member]` (`samples::position`). Every reader refuses a place other than
   its position (`PlaceOffPosition`), so a family has one writing.
-- The task envelope (`encode_task_envelope`, `TaskEnvelope`), the posted
+- The task as the registry serves it, a family of manifolds (78.179 §3;
+  `encode_task`, `TaskFamily`, #165), the posted
   task (`encode_posted_samples`, `PostedTask`) and a solve's outputs
   (`encode_solve_spoken`, `SolveAct.outputs`; `encode_samples` for the
   seat's solve call) carry samples, read back exactly at ranks 1 to 4
   and widths 1, 2 and 4 (claim `task_round_trips_samples_of_rank_n`).
 - The mind perceives every task's samples at the samples' own rank (track 26
   S4b). The word machinery spells the alphabet's section:
-  `TaskEnvelope::section` and `PostedTask::section` admit the samples of
+  `TaskFamily::section` and `PostedTask::section` admit the samples of
   the letters' rank at width 1 as `spelled::SectionSample`, each the
   posted sample itself (track 26 S4d), and refuse any other sample by name
   (`sentence::SectionRefusal`: the alphabet's rank, or the width).
@@ -1045,7 +1075,8 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
 - **The hypha serves tasks of any rank** (track 26 S4c). The registry
   holds each task as posted (`PostedTask`), names it by that content
   alone (`TaskRegistry::post`) and serves it as posted
-  (`PostedTask::envelope`); the corpus intake reads posted samples
+  (`PostedTask::family`; 78.179 §6);
+  the corpus intake reads posted samples
   (`decode_posted_samples`). Only the word machinery's readers take the
   alphabet's section (`TaskRegistry::section`): a solve's reconstruction on the
   withheld rasters, the families a court binds, and the routes, kept
@@ -1216,7 +1247,7 @@ source-neutral form a hypha's corpus directory, a client's feed and the
 soak read, so none of them parses a dataset's format. Since track 26 S5 it
 holds samples of rank `n` (`dialogue::PostedTask`,
 `encode_posted_samples`): `[nt u8][(input, output)·nt][nx u8][(input,
-[0|1] output?)·nx]`, each sample as the envelope writes it, a withheld
+[0|1] output?)·nx]`, each sample as the served task writes it (§6), a withheld
 test output absent where the source holds none. It holds decoded values,
 exactly. `encode_posted_task` places a raster task's samples, and
 `decode_posted_task` reads one back at the raster intake (the soak and a
@@ -1238,20 +1269,20 @@ track 26 S4c).
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
-| A sample lifted into the field: each body on its chart (rank, measure and boundary faces of grade `n − 1`, coarsest first, invariant under the signed permutations of the phases), each band's two corners as points of one phase per axis, exact in degrees on a named turning plane (axis `i` on `e₊ᵢe₊₍ₙ₊₁₎`, the lift's own plane `n + 1`), the far seam held as 360° with `K = 1`; the field's frame planes on the pole basis, `Cl(p, q)` read per plane; the sample's membrane the throat of its own plane; an axis taken apart coarsest first (`Nested`) | **Built** (track 26 S4a, stage 1, built against LAW-FIELD v1 as proposed); the plane each axis turns on at rank `n` is the lift's convention, open in 78.171 §8; nesting as a fibration of levels, and lifting a family, are stage 2 | `src/transducer/field/carrier/` (`Lifted`, `Point`, `Turning`, `TurningPlane`, `FramePlanes`, `Cyclotomic`, `Nested`); claims `lift_holds_one_phase_per_axis_on_turning_planes`, `lift_keeps_far_seam_as_whole_turn_with_winding_one`, `lift_charts_are_invariant_under_signed_permutation` |
+| A sample lifted into the field: each body on its chart (rank, measure and boundary faces of grade `n − 1`, coarsest first, invariant under the signed permutations of the phases), each band's two corners as points of one phase per axis, exact in degrees on a named turning plane (axis `i` on `e₊ᵢe₊₍ₙ₊₁₎`, the lift's own plane `n + 1`), the far seam held as 360° with `K = 1`; the field's frame planes on the pole basis, `Cl(p, q)` read per plane; the sample's membrane the throat of its own plane; an axis taken apart coarsest first (`Nested`) | **Built** (track 26 S4a, stage 1, built against LAW-FIELD v1 as proposed; S7 stage 4 in part): the plane each axis turns on at rank `n` and its phase origin, measured from the shared lift unit `e₊₍ₙ₊₁₎`, are the convention agreed between the coordinators' readings, 2026-11-06 (78.171 §8; netstratum docs/117 §11.6; operators to confirm); on it a family's pairs are lifted as transitions between their bodies' charts, every signed permutation and re-period whole (a reversal the reflection in `e₊ᵢ` alone, a transposition the 90° turning on `e₊ᵢe₊ⱼ` then the flip of `e₊ᵢ`); nesting is a fibration of levels where the family's nesting takes an axis apart, the base the coarse phase and over each base point the block's own field with its own atlas (`Fibred`, `Level`) | `src/transducer/field/carrier/` (`Lifted`, `Point`, `Turning`, `TurningPlane`, `FramePlanes`, `Cyclotomic`, `Nested`, `motion_of`, `transitions_of`, `PairTransition`, `Fibred`, `Level`); claims `lift_holds_one_phase_per_axis_on_turning_planes`, `lift_keeps_far_seam_as_whole_turn_with_winding_one`, `lift_charts_are_invariant_under_signed_permutation`, `every_signed_permutation_lifts_whole_as_a_motion_of_the_field`, `reversal_is_the_reflection_in_its_own_unit_alone`, `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s`, `pair_lifted_as_transitions_between_its_bodies_charts`, `axis_taken_apart_lifts_as_a_fibration_of_levels`, `axis_kept_whole_is_no_level` |
 | The field's charts as an atlas, its transitions as its connection, attractors held with the orbits they bind and their membranes; curvature as the holonomy of an orbit's transitions per revolution, read per named plane in degrees with its winding and order, flat where nothing is held; since stage 2 (ruled 2026-11-06) every path a geodesic, a path through a flat region refused `Unbound`, zero precession in a curved field read `Resonant` (`Precession`), the `Loop` refusal retired; monodromy flat, torsion or rupture; turnings on planes sharing one unit refused `NotExact` with both planes; an angle asked of several planes refused `ScalarCollapse`; infinity outside every enclosure refused `Unenclosed` | **Built** (track 26 S7, stage 1); LAW-FIELD v1's six fixtures stand as claims | `src/transducer/field/carrier/` (`Atlas`, `Chart`, `Transition`, `Orbit`, `Attractor`, `Curvature`, `Holonomy`, `Monodromy`, `Membrane`, `stand`, `FieldRefusal`); `src/transducer/field/carrier/tests/law_field.rs` |
 | The field stated as an object a court reconstructs (§0): an atlas written as its charts, its attractors' centres and membranes' planes, and each revolution's steps with their turnings' planes and angles in degrees, never a reading; the court rebuilds every plane, motion, revolution and membrane through the carrier's constructors, derives the curvature itself, and admits a mind's claimed curvature on a match, refusing `Differs` with each pair otherwise | **Built** (track 26 S7, stage 1); not on the wire: carrying it is S9's, a wire change | `src/transducer/field/carrier/statement.rs` (`Atlas::put_statement`, `reconstruct`, `admit`, `StatementRefusal`); claims `put_statement_round_trips`, `admit_refuses_claimed_curvature_court_does_not_derive` |
 | The field's motions as one exact group: rotate (turnings on named planes), flip (the reflection in a frame unit; the pole swap, the inversion in the membrane, is the flip of `e₋ₖ`), deflate and re-inflate (the boost on a frame plane by an exact gauge), stretch and thin (the re-period of one phase, no versor); a motion the reduced word of its generators, with its inverse; acting by conjugation on turnings, motions and orbits (the curvature carried is the carried orbit's), on frame states and on points, refused `NotExact` with `Residue::Unnamed` where a plane is carried onto none the carrier names. A resonant orbit keeps its holonomy whole, its winding with it (fixture 2b) | **Built** (track 26 S8); quarter turns only on planes sharing a unit, the rest waits on 78.173 fixture 11b | `src/transducer/field/carrier/motions.rs` (`Generator`, `FieldMotion`, `Unit`); `Membrane::invert`; claims `field_stays_smooth_under_every_isometry`, `stretch_is_a_re_period_not_a_versor`, `inversion_in_the_membrane_needs_no_infinity`, `field_motion_and_its_inverse_compose_to_the_identity`, `flat_and_resonant_separated_by_kept_winding` |
 | The field's curvature read from the orbits the contemplation holds, turnings on planes that share a unit composed, its forces (axiomatic gravity's shear of the orthogonal class; the court's pressure) | **Specified** | Track 26, S7 stage 3, S9 |
 | One field carrier shared by perception and the physics' shells: LAW-FIELD v1 | **Proposed**; netstratum has read the fixtures, xylarium's reading is owed; mycelium's carrier is built against it as proposed and amended if the joint reading changes the law | [proposal](proposals/78.171-law-field.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36); `src/transducer/field/carrier/` |
-| **Closed in part (S7, stage 3):** spheres built Euclidean, from a squared radius with `e∞` | **Built** (track 26 S7, stage 3): a sphere is a holding's own enclosure, the membrane `−e₊` (`cga::membrane`) or its image under the dilation by a gauge `ρ` and the slide to a centre (`cga::membrane_at`), no squared radius written (claim `sphere_built_without_squared_radius`); the horizon, the chart's inversion, the house's nuclei, the conformance probes and the oracle's fixtures read it; `on_sphere` and `at_three::sphere` are retired, and the SDK's `house::sphere_at` is `house::membrane_at`. **Open:** a body's nucleus (`blade::Blade::nucleus`, `vertex_nucleus`, the lift's `spatial`), whose extent is its polar second moment, an exact `r²` with no rational root in general, is still built from `r²` by the crate-private `cga::sphere_at`; the reading that replaces it waits on a ruling (#134) | `cga/embedding.rs` (`membrane`, `membrane_at`; `sphere_at`, crate-private); `blade/body.rs` |
+| **Closed (S7, stage 3, and the nucleus ruling of 2026-11-06 on #134):** spheres built Euclidean, from a squared radius with `e∞` | **Built** (track 26 S7, stage 3; a body's nucleus is its exact second moment, a reading, written where the algebra needs a vector as the dual-sphere form `c + ½(c² − r²)e_∞ + e_o` from `r²` alone, `blade::nucleus_form`, and `cga::sphere_at` is retired; claim `nucleus_is_the_second_moment_read_never_a_sphere`; no value, word or chart address changes): a sphere is a holding's own enclosure, the membrane `−e₊` (`cga::membrane`) or its image under the dilation by a gauge `ρ` and the slide to a centre (`cga::membrane_at`), no squared radius written (claim `sphere_built_without_squared_radius`); the horizon, the chart's inversion, the house's nuclei, the conformance probes and the oracle's fixtures read it; `on_sphere` and `at_three::sphere` are retired, and the SDK's `house::sphere_at` is `house::membrane_at`. | `cga/embedding.rs` (`membrane`, `membrane_at`); `blade/body.rs` (`nucleus_form`, `Blade::nucleus`) |
 | **Closed (S7, stage 2):** the well's stage and state as flags (`Well.percept: bool`, `Well.dirty: bool`), and its volume and potential as stored counts (`Well.volume`/`potential: [u64; 4]`) | **Built** (track 26 S7, stage 2): the stage is the coordinate `Well.stage`, and the volume and potential are readings per lane, never stored; every caller reads them (hold, merge, the expansion ring, the doors, the docket, the cross-scene meet, the observer, the quote) | `src/transducer/field/well.rs`; `src/transducer/field/carrier/holding.rs` |
 | μ as the metabolic cost of traversal, never a measure of meaning | **Ruled** (2026-11-04); built as the share of the frame | §3.7; 78.170 O1 |
 | The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/`; the core has no `arc` module (a `compile_fail` claim); the hypha, the soak and the client's feed read posted tasks; the SDK re-exports no `Grid` | **Built** (track 26, S1) | `sources/arc-agi/` (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`); `src/anastome/dialogue/percept.rs` (`encode_posted_task`, `decode_posted_task`, `POSTED_TASK`) |
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
-| **Closed (S4d, stage 1):** the raster carrier was rank 2 by its own storage (`family::Grid = Vec<Vec<u8>>`, `raster::AXES = 2`, `extents`, `raster_of`) | **Built** (track 26 S4d): the word, chart and rule-language machinery reads `SectionSample`, a `Sample` admitted onto the alphabet's section and held whole with its place, refused by name off it. Of the 94 files that named `Grid`: about 17 now read the sample at its own rank (the symbol set's test inputs, the ground, the envelopes' dilation, every re-period, need, share and transduction of a pair, the stated ground, the routes); about 77 are rank 2 by the letters' mathematics and read the section sample; one, the ARC-AGI-2 decoder's JSON rows, stays in `sources/arc-agi` and is read at intake. A raster remains only at intake (`raster::sample_of`, `SectionSample::of_lines`) and at the speech end toward a source's form (`SectionSample::raster`) | `src/transducer/spelled.rs`; `src/transducer/raster.rs`; claim `word_machinery_reads_a_rank_three_sample_end_to_end` |
-| **Closed (S4d, stage 2):** the section's line readers (`lines`, `line`, `line_mut`, and the `[r][c]` index) and speech's raster canvas | **Built** (track 26 S4d, stage 2): a section sample is read through its perspective (`SectionSample::perspective`, the sample's default `Perspective::of_sample`), admitted only where the perspective's plane spans every axis. A site of the section (`SectionSite`) is the sample's coordinate vector restricted to that plane; readers walk the sites (`sites`), read one (`at`) and write one in place (`paint`), and a site off the sample carries no symbol. The painted readings (`raster::painted_sites`), perception's compartments (`SectionSite::on_family`), the envelopes' carried site, the frame fixing's reorientation, the rule language's readings and the court's and the mind's reconstructions read sites, never lines. Speech's canvas (`statement::speak_elements`) is the input sample painted in place; the panes, the tiling, the crop and the scaling write samples. The symbol set refuses a posted test input of another symbol width by name (`SymbolSet::of_family`, `SymbolRefusal::Width`), never read as an empty set. No wire, task, word or chart address changes | `src/transducer/spelled.rs` (`SectionSite`); claims `section_site_is_the_sample_coordinate_restricted_by_the_perspective`, `test_input_of_another_width_refuses_the_family_set_by_name` |
+| **Closed (S4d, stage 1):** the raster carrier was rank 2 by its own storage (`family::Grid = Vec<Vec<u8>>`, `raster::AXES = 2`, `extents`, `raster_of`) | **Built** (track 26 S4d): the word, chart and rule-language machinery reads `SectionSample`, a `Sample` admitted onto the alphabet's section and held whole with its place, refused by name off it. Of the 94 files that named `Grid`: about 17 now read the sample at its own rank (the symbol set's test inputs, the ground, the dilation between extents (since replaced by the re-period), every re-period, need, share and transduction of a pair, the stated ground, the routes); about 77 are rank 2 by the letters' mathematics and read the section sample; one, the ARC-AGI-2 decoder's JSON rows, stays in `sources/arc-agi` and is read at intake. A raster remains only at intake (`raster::sample_of`, `SectionSample::of_lines`) and at the speech end toward a source's form (`SectionSample::raster`) | `src/transducer/spelled.rs`; `src/transducer/raster.rs`; claim `word_machinery_reads_a_rank_three_sample_end_to_end` |
+| **Closed (S4d, stage 2):** the section's line readers (`lines`, `line`, `line_mut`, and the `[r][c]` index) and speech's raster canvas | **Built** (track 26 S4d, stage 2): a section sample is read through its perspective (`SectionSample::perspective`, the sample's default `Perspective::of_sample`), admitted only where the perspective's plane spans every axis. A site of the section (`SectionSite`) is the sample's coordinate vector restricted to that plane; readers walk the sites (`sites`), read one (`at`) and write one in place (`paint`), and a site off the sample carries no symbol. The painted readings (`raster::painted_sites`), perception's compartments (`SectionSite::on_family`), the site carried between extents (`carried_site`), the frame fixing's reorientation, the rule language's readings and the court's and the mind's reconstructions read sites, never lines. Speech's canvas (`statement::speak_elements`) is the input sample painted in place; the panes, the tiling, the crop and the scaling write samples. The symbol set refuses a posted test input of another symbol width by name (`SymbolSet::of_family`, `SymbolRefusal::Width`), never read as an empty set. No wire, task, word or chart address changes | `src/transducer/spelled.rs` (`SectionSite`); claims `section_site_is_the_sample_coordinate_restricted_by_the_perspective`, `symbol_set_refuses_differing_test_width` |
 | **Closed (S4d, stage 2b):** the section's link as a tuple `(i64, i64, u8, u8)` | **Built** (track 26 S4d, stage 2b): `sentence::SectionLink { site, before, after }` holds a `SectionSite` and the two symbols, ordered as the tuple was; every carrier, key and codec of a chain reads it (the element's chain, the receipts, the form, the field, the court, the mind); a chain's least corner is `element::corner_of`. No wire, tape, task, word or chart address changes | `src/transducer/sentence/chain.rs`; claim `section_link_holds_section_site_and_transition` |
 | **Closed (S4d, stage 2b):** the painted triple `(i64, i64, u8)`, its alias `Painted` and the incongruence reader's `Cell` | **Built** (track 26 S4d, stage 2b): `spelled::PaintedSite { site, symbol }` holds a `SectionSite` and its symbol, ordered as the triple was. The sensor's one reading, `raster::painted_sites`, returns it (`painted_of`, which returned the triple, is retired); the shells (`blade::outline`, `core`, `adjacent_ring`, `enclosed_interior`, `cut`, `magnified`, `reduced`, `tiled`, `bordered`), the layers, the orbit (`carry_painted`, `moves`), speech (`Speech.painted`, `remainder`, `statement::Spoken.painted`), the germ (`germinate`, `apply`), the local section, the incongruence reader and the scene frame (`cognition::frame_of`) read it. A scene laid back on its span is `SectionSite::span_of`. No wire, tape, task, word or chart address changes | `src/transducer/spelled.rs` (`PaintedSite`); claim `painted_sites_round_trip_through_their_span` |
 | **Closed (S4d, stage 2c):** the coordinate pairs `(i64, i64)` of the chart and its readers, the anchor's selection algebra, and the clause reader's planar tables | **Built** (track 26 S4d, stage 2c): held as `SectionSite` and `PaintedSite`. The chart's supports (`element::positions`, `pullback`, `blade::shape_of_section`, `section_moduli`, `sentence::incidence_of`, `orbit::positions_of`, `ring_dist_peel`, the confluence reader) read section sites; `perceive::on_grid` is retired for `SectionSite::of_family`. The anchor's evidence holds its footprint as section sites and its scene as painted sites, converted together with `Selection::eval`, the derive, `candidates::signature` and `keys::footprint_key`; its face neighbours and extremal codes are generated from the plane's rank. The clause reader holds each body's painted sites and the owner of each site at its canonical offset; `extent_of` is retired for `statement::corners_of`; `acts::pattern_key` writes a centred pattern of painted sites. Every codec writes a section site's coordinates in the plane's order (`SectionSite::put_canonical`), so no wire, task, word, chart or clause address changes. The act reading's own index cells and the frame acts were left planar here and are closed in stage 2d | `src/transducer/spelled.rs`; `src/transducer/anchor/`; `src/transducer/family/statement.rs`; claims `section_site_round_trips`, `corners_of_reads_least_and_greatest_on_each_axis` |
@@ -1268,19 +1299,18 @@ track 26 S4c).
 | A ground's vortex collapsed by a relation (§3.4): `Stands` or `PaintedOn` holding for one candidate on every pair and for no other; otherwise superposed; a closing rule never collapses it | **Built** (track 26 S6, stage 5; ruled 2026-11-06 on #32 (3)) | `src/transducer/family/transduce/collapse.rs` (`collapse_of`, `GroundReading`, `Collapse`); `Ground::of`, `Ground::collapse` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
 | The solve of outputs and speech state their perspective: the solve after its outputs, each sentence by `carries` bit 3; the court reads its copy of the task's pairs through it and reconstructs there, refusing another rank or a non-space role by name (§6.2) | **Built** (track 26 S6, stage 3); the seat's solve call and a word's install after its hearing are open | `dialogue::SolveAct.perspective`, `Spoken.perspective`; `cognition::stated_perspective`; `Court::hear_speech_under`, `family_heard` |
-| **Closed (S4):** the envelopes' dilation squared the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11, read by the fibre map and the frame's momentum | **Built** (track 26 S4): the re-period of each phase replaces it, read through the one measured carrier (`element::Reperiod::of_extents`, `p′ᵢ/pᵢ` axis by axis, refused for two ranks). A site is carried about the centres by its own phase's ratio (`carried_site`), and the momentum weighs each axis by its own re-period (`momentum_vanishes`); `envelope_dilation`, `exact_root` and `gcd_i64` are removed. An anisotropic change of extent now carries sites, and reads a momentum, where the dilation read an irrational scale and read neither. Claims `reperiod_carries_sites_between_extents_phase_by_phase`, `momentum_read_per_phase_across_anisotropic_reperiod` | `src/transducer/family/fibre_relation.rs`; `src/transducer/raster.rs` |
+| **Closed (S4):** the dilation between the samples' "envelopes" (each sample's bounds, opened into its manifold by 78.179 §1) squared the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11, read by the fibre map and the frame's momentum | **Built** (track 26 S4): the re-period of each phase replaces it, read through the one measured carrier (`element::Reperiod::of_extents`, `p′ᵢ/pᵢ` axis by axis, refused for two ranks). A site is carried about the centres by its own phase's ratio (`carried_site`), and the momentum weighs each axis by its own re-period (`momentum_vanishes`); `envelope_dilation`, `exact_root` and `gcd_i64` are removed. An anisotropic change of extent now carries sites, and reads a momentum, where the dilation read an irrational scale and read neither. Claims `reperiod_carries_sites_between_extents_phase_by_phase`, `momentum_read_per_phase_across_anisotropic_reperiod` | `src/transducer/family/fibre_relation.rs`; `src/transducer/raster.rs` |
 | **Closed (S6):** the frame fixing ordered and reversed two fixed axes by moments over the painted sites and rewrote the samples (`frame_fixed`) where §4 makes the frame a perspective | **Built** (track 26 S6): the moments name a pose (`raster::frame_fixing`, a `Perspective`), and `frame_fixed` reads the task through it; the samples are never rewritten. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One`. The moments stay on the section's plane, of the rank the letters spell | `src/transducer/raster.rs` |
 | **Closed (S4):** the measured frame was four planar counts (`Frame { h_in, w_in, h_out, w_out }`, renamed `Reperiod` by the names pass) | **Built** (track 26 S4): `element::Reperiod` holds each phase's input and output period at the pair's own rank (`of_extents`, refused for two ranks), and the word's frame fibre is the re-period every phase shares (`shared`), a dilator where it is not 1; an anisotropic re-period shares none, as before. No word, chart or listing address changes. Claim `reperiod_is_read_per_phase_at_any_rank` | `src/transducer/element/residue.rs` |
-| **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_sites`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
-| The sample as a manifold (§3.1): each phase a circle of its period or an interval with boundary, the sample their product or a fibration where an axis is taken apart; a fully periodic sample a torus `Tⁿ` | **Built** (track 26; ruled 2026-11-06 on #32) | `src/transducer/family/transduce/manifold.rs` (`SampleManifold`, `AxisManifold`, `PhaseManifold`); claims `periodic_sample_reads_as_a_torus`, `aperiodic_phase_reads_as_an_interval`, `partial_period_reads_as_an_interval`, `nested_axis_reads_as_a_fibration` |
+| **Closed (S4):** a family's magnitude was read on planar chains (`pair_magnitude`, `family_cover` over `raster::painted_sites`, the chains aligned at a corner) | **Built** (track 26 S4; ruled 2026-11-06 on #32): the bond stays lane counts, read on the samples at their own rank: S and G from each pair's projected record (`magnitude::pair_record`, `Transduction::projected`), H from the boundary by grade `n − 1` of the support painted before and after (components and free faces, `record_lanes`); the chain-length term on H is retired. A pair of unequal enclosure whose projection lands (an integer scaling) is resolved by that reading and measured; a pair whose record does not read (`OffSite` where the re-period does not land, `Rank`) is held as residue (`Unmeasured`, its index and the refusal) and contributes nothing; `FamilyCover` holds the counts and the residue apart. The genesis bond (`family_cover` on posted samples of any rank, `section_cover` on the section) and the mind's `family_magnitude` read alike. The bond's value changes: a recut. Moving the bond to the share of the frame is v0.5.0's (MU-ECONOMY §12). Claims `magnitude_reads_counts_at_rank_n_and_h_by_grade_n_minus_one`, `pair_of_unequal_enclosure_is_held_as_residue_citing_off_site`, `scaled_pair_is_measured_refused_pair_is_residue` | `src/transducer/family/magnitude.rs`; `src/bin/mycelium-server/genesis.rs`; `src/client/sdk/mind/family.rs` |
 | An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse; a separated factoring `a·(b + 1) − 1` on the same carrier | **Built** | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`, `Joint`) |
 | Which factorings the family is invariant under (ruled 2026-11-06 on #32): read per pair (`a·b → a′·b′`), kept only where every pair admits it and otherwise held as the refusing pairs' residue; a separator the fine phase `b` of a period `b + 1` (`Joint::Separated`, extent `a·(b + 1) − 1`), its symbol deduced; repeating blocks kept as relations by a sense of the fine phase; motions per level the product of a coarse and a fine sense, exact; a candidate collapses the vortex where a reading holds for it alone, several alike stay superposed; the nesting recorded as a coordinate of the percept (`TaskPercept.nesting`) | **Built** (track 26, S4) | `src/transducer/family/transduce/nest.rs` (`Joint`, `Factoring::separated`, `Factorings::of_axis`); `src/transducer/family/transduce/nesting.rs` (`nesting_of`, `AxisNesting`, `Taken`); claims `axis_taken_apart_only_where_family_invariant`, `factoring_read_per_pair_and_kept_only_where_every_pair_admits`, `separator_is_the_fine_phase_of_period_b_plus_one`, `repeating_blocks_kept_as_relation_by_fine_motion`, `motion_per_level_is_coarse_times_fine`, `several_factorings_holding_alike_stay_superposed` |
 | The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |
 | `e_∅` as a typed record outside the symbols' bytes: a fibre relation's rows and its records apart, on a word's description and the law register's wire; `RESERVOIR = 10` retired, so a family using the byte 10 has its colour word | **Built** (track 26 S5; the defect of the record byte is closed) | `element::FibreRelation`, `colour_word`, `Letters::fibre`; `physics::laws::codec::put_transition` |
 | Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b), and the nesting's family-invariance reading (S4) | `transducer::perspective`; `transduce::Enclosure` |
-| A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind perceives every rank since S4b and the hypha serves every rank since S4c; a solve's rule is reconstructed on the alphabet's section | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
+| A task on the wire as samples of rank `n`: the served task, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind perceives every rank since S4b and the hypha serves every rank since S4c; a solve's rule is reconstructed on the alphabet's section | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
 | **Closed (S4b):** a link was `(i64, i64, u8, u8)`, two axes and one-byte symbols. `sentence::Link` now carries a site of rank `n` and the symbols at the source's width; the alphabet's section reads `SectionLink`, a section site and two symbols (a named type since S4d, stage 2b) | **Built** (track 26 S4b) | `transducer::sentence::link` |
-| Perspective as a sensor motion (a pose beside the roles, shifted by a signed permutation or a recast; a sample read through it, never rewritten); the perspectives of one sample as a cover (contacts as 0-cochains, the turn on each overlap, the cocycle on triples, the residue held) | **Built** (track 26, S6) | `src/transducer/perspective.rs` (`Perspective::shifted`, `turn_to`, `read`, `SensorMotion`); `src/transducer/perspective/cover.rs` (`Cover`, `Agreement`, `Cocycle`) |
+| Perspective as a sensor motion (a pose beside the roles, shifted by a signed permutation or a recast; a sample read through it, never rewritten); the perspectives of one sample as a cover (contacts as 0-cochains, the turn on each overlap, the cocycle on triples, the residue held) | **Built** (track 26, S6). Ruled 2026-11-06 (#32; 78.180 ruling 6) and built in S6, stages 3 and 4: a solve of outputs and speech state their perspective and a court reconstructs under it (the row above); a mind asks for a perspective as a demand, a typed vertex naming the sample and the overlap, where the cocycle fails for a missing chart | `src/transducer/perspective.rs` (`Perspective::shifted`, `turn_to`, `read`, `SensorMotion`); `src/transducer/perspective/cover.rs` (`Cover`, `Agreement`, `Cocycle`, `PerspectiveDemand`); claim `missing_perspective_is_listed_as_a_typed_demand` |
 
 **The defect** ([ROADMAP track 26](../ROADMAP.md#26-sensing-any-source-at-any-rank);
 the issue linked there). The sensor and everything downstream are written
@@ -1302,7 +1332,10 @@ for one source:
   `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N = 3`). S4b retired them
   for a perspective's roles. The 3-tuple `Point` and the planar `(rows,
   cols)` carriers remain inside the alphabet's section, which spells one
-  rank.
+  rank. Letters past `n = 3` are never written by hand (ruled 2026-11-06,
+  #32; 78.180 ruling 6): past the section, readings go through section
+  samples, and new letters are adjoined only by the presentation's growth
+  (replayed generators, germination).
 - The wire carried a task as `u16 × u16` one-byte cells; since S5 it
   carries samples of rank `n`, and since S4b a link carries a site of
   rank `n` (the table above).

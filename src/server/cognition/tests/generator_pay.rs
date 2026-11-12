@@ -286,7 +286,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
     // The two halves of this test are the two carriers: the ADDRESS cannot
     // tell the minds apart, and the ENVELOPE must.
     let cites = |e: &crate::transducer::element::Element| -> Vec<crate::transducer::address::Address> {
-        e.receipts()
+        e.stalk()
             .derivations
             .iter()
             .flat_map(|d| d.generators.iter().map(|(form, _, _)| form.clone()))
@@ -324,7 +324,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
         let act = dialogue::decode_speech(&frame).expect("the frame decodes");
         // 78.153: a stroke that holds the frame's reconstructions.
         let heard = k
-            .hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+            .hear_act_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20))
             .expect("the court hears it");
         // One sentence was spoken, so one adjudication comes back.
         let [only] = heard.as_slice() else { panic!("one sentence, one adjudication") };

@@ -8,6 +8,7 @@
 use crate::anastome::dialogue::uplink::{Child, ChildNet, ChildRefusal, Discontinuous, FoldAt, Net, TierFold, Uplinked};
 use crate::chronometry::Stamp;
 use crate::server::cognition::Court;
+use crate::anastome::dialogue::crossing_record::SignedStill;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -58,9 +59,10 @@ fn found(k: &mut Court) {
     assert!(matches!(k.designate_reserve(&reservation.sign(&domain)), Founded::Reserved { .. }));
     super::boundary::signs(k, &r);
     let anchor = k.anchor();
-    k.treasury.genesis(verifying(&r), [3, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&r), [192, 192, 192, 192], anchor);
+    // #237: each line's bond covers what its folds move on every lane.
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
-        let bond = Bond { domain: verifying(&domain), reserve: verifying(&r), tier: verifying(line), mu: Some([1, 0, 0, 0].into()), nonce: [i; 32] };
+        let bond = Bond { domain: verifying(&domain), reserve: verifying(&r), tier: verifying(line), mu: Some([64, 64, 64, 64].into()), nonce: [i; 32] };
         assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
     }
 }
@@ -88,7 +90,7 @@ fn carry(k: &mut Court, f: TierFold, by: &SigningKey) -> Uplinked {
     let mut prefix = [7u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
     let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-    k.hear_uplink(&carrier.sign(&reserve()))
+    k.hear_uplink(&carrier.signed(&reserve()))
 }
 
 /// The line's fold carried, and where it stands: `[0]` inside the reserve's
@@ -185,7 +187,7 @@ fn admit_uplink_refuses_unproved_child() {
     assert!(matches!(k.designate_reserve(&reservation.sign(&other)), Founded::Reserved { .. }));
     super::boundary::signs(&mut k, &x);
     let foreign = fold(&x, 1, child.rows.clone(), child.declared.clone(), Vec::new());
-    let Uplinked::Admitted { at: there, .. } = k.hear_uplink(&foreign.clone().sign(&x)) else { panic!("its own reserve's") };
+    let Uplinked::Admitted { at: there, .. } = k.hear_uplink(&foreign.clone().signed(&x)) else { panic!("its own reserve's") };
     let netted = part(&foreign, &FoldAt::sealed(there), foreign.rows.clone(), foreign.declared.clone(), 1, 1);
     assert_eq!(carry(&mut k, parent(netted), &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::ForeignDomain });
 }
@@ -290,7 +292,7 @@ fn admit_uplink_carries_nested_line_in_one_receipt() {
     let forged = fold(&q, 9, Vec::new(), Vec::new(), Vec::new()).sign(&unbonded);
     let carried = ChildNet { rows: Vec::new(), declared: Vec::new(), child: Child::Carried(Box::new(forged)), included_rows: Vec::new(), included_declared: Vec::new(), rate: [(1, 1); 4] };
     let carrier = TierFold { tier: verifying(&reserve()), prefix: [8; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
-    assert_eq!(k.hear_uplink(&carrier.sign(&reserve())), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unsigned });
+    assert_eq!(k.hear_uplink(&carrier.signed(&reserve())), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unsigned });
 }
 
 /// A witness's signed position over a root written out (as the era tests

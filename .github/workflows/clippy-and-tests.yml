@@ -1,0 +1,77 @@
+# AI-GENERATED CONTENT — see DISCLAIMER.md.
+#
+# CLIPPY AND TESTS (AGENTS.md, Checks), run on every pull request and on
+# every push to main: builds all workspace crates and test binaries once,
+# runs clippy over every member and target with warnings denied, and runs
+# the workspace's tests with the cached ARC-AGI-2 corpus. Named for the two
+# commands it runs and nothing more: the quickstart, the changelog fragment
+# and a network contract's approval are not read here.
+
+name: clippy and tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  clippy-and-tests:
+    name: clippy and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # The standard hosted Linux runner has 4 cores.
+      CARGO_BUILD_JOBS: 4
+      CARGO_TERM_COLOR: always
+      MYCELIUM_CORPUS: ${{ github.workspace }}/../ARC-AGI-2/data
+    steps:
+      - uses: actions/checkout@v4
+
+      # The toolchain is pinned in rust-toolchain.toml, so CI reads the
+      # same compiler and clippy as every local check.
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: clippy
+
+      - name: Cache cargo registry and build targets
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}-${{ github.sha }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}-
+            cargo-${{ runner.os }}-
+
+      - name: Cache ARC-AGI-2 corpus
+        id: cache-corpus
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../ARC-AGI-2
+          key: corpus-arc-agi-2-v1
+
+      - name: Fetch ARC-AGI-2 corpus
+        if: steps.cache-corpus.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/arcprize/ARC-AGI-2 "${{ github.workspace }}/../ARC-AGI-2"
+          test -d "$MYCELIUM_CORPUS/training"
+          test -d "$MYCELIUM_CORPUS/evaluation"
+
+      - name: Build workspace and test binaries
+        run: cargo test --release --workspace --no-run
+
+      - name: Clippy
+        run: cargo clippy --release --workspace --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --release --workspace

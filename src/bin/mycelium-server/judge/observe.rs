@@ -38,11 +38,11 @@ pub(crate) fn answer_standing(k: &mycelium::cognition::Court, mesh: &crate::exch
 fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh, own: Source) {
     // ACT1: the origin this court adopted.
     let genesis = mesh.origin.lock().ok().and_then(|o| *o);
-    // LD1 — the bytes its awards, its receipt deltas and its frames carry.
+    // LD1 — the bytes its awards, its receipt deltas and its envelopes carry.
     let mut carriage = observe::CarrierTally::default();
     k.treasury().carriage(&mut carriage);
     carriage.of_chain(k.chain());
-    carriage.of_frames();
+    carriage.of_delimited();
     // RM1 — its remainders over its complexes, beside what the torsion
     // filing kept of them.
     let (remainders, torsion_words) = k.remainders();
@@ -81,8 +81,8 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
     observe::replace(own, Reading::Court(Box::new(court)));
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) {
-    let Some(act) = observe::decode_act(&frame.body) else { return };
+pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Context) {
+    let Some(act) = observe::decode_act(&delimited.body) else { return };
     match act {
         ObserveAct::Query(prefix) => {
             // ONE HOLD ACROSS TWO QUESTIONS: the court held by the same take
@@ -135,14 +135,17 @@ pub(crate) fn judge(stream: &mut Channel, frame: &Delimited, context: &Context) 
             // MU-PRECURSORS §3.1 — every peer this hypha met, by its channel:
             // a plaintext peer is named here, never hidden.
             observe::replace(own, Reading::Channels(Box::new(observe::Channels::now())));
-            // The frame's whole body: `encode_reply` counts its own header
+            // MU-HOSTING §5a.7, track 24 B4 — the refusals this court
+            // answered at its universes' core tubes, by domain, act and name.
+            observe::replace(own, Reading::Boundary(Box::new(observe::boundary_reading())));
+            // The envelope's whole body: `encode_reply` counts its own header
             // against it (D4.6).
-            let budget = mycelium::network::wire::frame_budget();
+            let budget = mycelium::network::wire::BODY_BUDGET;
             let Some(body) = observe::encode_reply(&observe::readings(&prefix), budget) else {
                 eprintln!("  observe reply refused: more readings held than four bytes count");
                 return;
             };
-            answer(stream, Delimited { lane: frame.lane, body });
+            answer(stream, Delimited { body });
         }
     }
 }

@@ -11,42 +11,42 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
 
-/// 78.151 — THE READS THAT TAKE NO COURT, answered where the frame is read:
+/// 78.151 — THE READS THAT TAKE NO COURT, answered where the envelope is read:
 /// a page of a line or a fold root (`ACT_RECEIPTS`), an account
 /// (`ACT_WALLET`) and the core clock (`ACT_LAWS` clock), off the court's
 /// published reading; a seat listing, off the relay's own lock; and
 /// (78.152b) a peer keeper's pushed ring (`ACT_TICK`), off the keepers' own
 /// lock. None waits behind a worker the court holds. `false` where the
-/// frame is none of them: the caller judges it as before.
-pub(crate) fn serve_published(stream: &mut Channel, frame: &Delimited, context: &Context) -> bool {
-    let tag = dialogue::act_tag(&frame.body);
+/// envelope is none of them: the caller judges it as before.
+pub(crate) fn serve_published(stream: &mut Channel, delimited: &Delimited, context: &Context) -> bool {
+    let tag = dialogue::act_tag(&delimited.body);
     let served = match tag.and_then(Action::of_wire) {
         Some(Action::Receipts) => {
-            receipts::judge(stream, frame, context);
+            receipts::judge(stream, delimited, context);
             true
         }
         // 78.153b — a fold witness's journal page, off the reading.
         Some(Action::Entries) => {
-            entries::judge(stream, frame, context);
+            entries::judge(stream, delimited, context);
             true
         }
         // 78.154 (4) — a stake act is a write: it reaches the court.
-        Some(Action::Wallet) if mycelium::anastome::dialogue::wallet::decode_wallet(&frame.body).is_some() => {
-            wallet::judge(stream, frame, context);
+        Some(Action::Wallet) if mycelium::anastome::dialogue::wallet::decode_wallet(&delimited.body).is_some() => {
+            wallet::judge(stream, delimited, context);
             true
         }
         // 78.154 — READ-LEDGER off the reading; every other domain act writes.
-        Some(Action::Domain) => domain::serve_ledger(stream, frame, context),
+        Some(Action::Domain) => domain::serve_ledger(stream, delimited, context),
         Some(Action::Laws) => {
-            let clock = matches!(mycelium::physics::laws::codec::decode_laws_request(&frame.body), Some(mycelium::physics::laws::codec::LawsRequest::Clock));
+            let clock = matches!(mycelium::physics::laws::codec::decode_laws_request(&delimited.body), Some(mycelium::physics::laws::codec::LawsRequest::Clock));
             if clock {
-                laws::judge(stream, frame, context);
+                laws::judge(stream, delimited, context);
             }
             clock
         }
-        Some(Action::Seat) => seat::serve_listing(stream, frame, context),
+        Some(Action::Seat) => seat::serve_listing(stream, delimited, context),
         Some(Action::Tick) => {
-            tick::judge(stream, frame, context);
+            tick::judge(stream, delimited, context);
             true
         }
         _ => false,
@@ -57,20 +57,20 @@ pub(crate) fn serve_published(stream: &mut Channel, frame: &Delimited, context: 
     served
 }
 
-pub(crate) fn judge(stream: &mut Channel, frame: Delimited, context: &Context) {
-    if serve_control(stream, &frame, context) {
+pub(crate) fn judge(stream: &mut Channel, delimited: Delimited, context: &Context) {
+    if serve_control(stream, &delimited, context) {
         return;
     }
-    // 78.94 — THE FRAME IS READ AS AN ACTION OF THE PHYSICS: a byte that
+    // 78.94 — THE ENVELOPE IS READ AS AN ACTION OF THE PHYSICS: a byte that
     // names no action, or a court's own act (never asked for), is not
     // answered; a retired action is refused by its kind.
-    let Some(action) = dialogue::act_tag(&frame.body).and_then(Action::of_wire) else { return };
+    let Some(action) = dialogue::act_tag(&delimited.body).and_then(Action::of_wire) else { return };
     if action.kind() == Kind::Retired {
         // 26, 50.6 seam 3: raw painted sites and coboundary chains do not
         // reach a court, nor do acts with no handler. Refused with the
         // reason, no height (this court read no book to answer with),
         // nothing taught.
-        if frame.body.len() < 5 {
+        if delimited.body.len() < 5 {
             return;
         }
         let why = mycelium::verdict::REFUSE_NOT_A_SENTENCE;
@@ -79,31 +79,31 @@ pub(crate) fn judge(stream: &mut Channel, frame: Delimited, context: &Context) {
             eprintln!("  court refuse action {}: {why} (count={c})", String::from_utf8_lossy(action.name()));
         }
         let body = dialogue::encode_outcome(outcome_code(&Outcome::Refused(why)), 0, &[0; 4]);
-        answer(stream, Delimited { lane: frame.lane, body });
+        answer(stream, Delimited { body });
         return;
     }
     match action {
-        Action::Speech => speech::judge(stream, &frame, context),
-        Action::Quote => quote::judge(stream, &frame, context),
-        Action::Digests => syllabus::digests(stream, &frame, context),
-        Action::Fetch => syllabus::fetch(stream, &frame, context),
-        Action::Probe => probe::judge(stream, &frame, context),
-        Action::Equivocation => equivocation::judge(stream, &frame, context),
-        Action::Receipts => receipts::judge(stream, &frame, context),
-        Action::Entries => entries::judge(stream, &frame, context),
-        Action::Fold => fold::judge(stream, &frame, context),
-        Action::Observe => observe::judge(stream, &frame, context),
-        Action::Laws => laws::judge(stream, &frame, context),
-        Action::Why => why::judge(stream, &frame, context),
-        Action::Wallet => wallet::judge(stream, &frame, context),
-        Action::Uplink => uplink::judge(stream, &frame, context),
-        Action::Domain => domain::judge(stream, &frame, context),
-        Action::Challenge => challenge::judge(stream, &frame, context),
-        Action::Handoff => handoff::judge(stream, &frame, context),
-        Action::Seat => seat::judge(stream, &frame, context),
-        // Answered where the frame is read (`serve_published`); here only
+        Action::Speech => speech::judge(stream, &delimited, context),
+        Action::Quote => quote::judge(stream, &delimited, context),
+        Action::Digests => syllabus::digests(stream, &delimited, context),
+        Action::Fetch => syllabus::fetch(stream, &delimited, context),
+        Action::Probe => probe::judge(stream, &delimited, context),
+        Action::Equivocation => equivocation::judge(stream, &delimited, context),
+        Action::Receipts => receipts::judge(stream, &delimited, context),
+        Action::Entries => entries::judge(stream, &delimited, context),
+        Action::Fold => fold::judge(stream, &delimited, context),
+        Action::Observe => observe::judge(stream, &delimited, context),
+        Action::Laws => laws::judge(stream, &delimited, context),
+        Action::Why => why::judge(stream, &delimited, context),
+        Action::Wallet => wallet::judge(stream, &delimited, context),
+        Action::Uplink => uplink::judge(stream, &delimited, context),
+        Action::Domain => domain::judge(stream, &delimited, context),
+        Action::Challenge => challenge::judge(stream, &delimited, context),
+        Action::Handoff => handoff::judge(stream, &delimited, context),
+        Action::Seat => seat::judge(stream, &delimited, context),
+        // Answered where the envelope is read (`serve_published`); here only
         // where a caller judged it unread.
-        Action::Tick => tick::judge(stream, &frame, context),
+        Action::Tick => tick::judge(stream, &delimited, context),
         // The door's control actions (`serve_control`) answered above; any
         // other action has no judge here and is not answered.
         _ => {}

@@ -26,7 +26,7 @@ use std::sync::{Arc, Mutex};
 pub(crate) use mycelium::anastome::dialogue::Roots;
 
 /// A NODE'S ORIGIN: the genesis hash it adopted and the epoch it adopted it
-/// at — the pair 47.2 step 1 tests every signed frame against.
+/// at — the pair 47.2 step 1 tests every signed act against.
 pub(crate) type GenesisEpoch = ([u8; 32], u32);
 
 /// THE LOCK ORDER of this binary (Stage 11 I26), read from every site that
@@ -76,7 +76,7 @@ pub(crate) struct Mesh {
     /// `rtt_window`.
     pub(crate) fold_unmeasured_at: Arc<Mutex<Keyed<u64>>>,
     /// This node's own `(H_genesis, E_origin)`, the pair 47.2 step 1 tests
-    /// every signed frame against. `None` is UNMEASURED, not zero: a node
+    /// every signed act against. `None` is UNMEASURED, not zero: a node
     /// that has not adopted a genesis admits no receipt at all rather than
     /// admitting everything under a zero sentinel.
     pub(crate) origin: Arc<Mutex<Option<GenesisEpoch>>>,
@@ -161,7 +161,7 @@ pub(crate) fn speak_root(
             Some(body) => {
                 let _ = nerve.try_send((addr, body));
             }
-            None => eprintln!("  root refused: the task's address cannot be framed"),
+            None => eprintln!("  root refused: the task's address cannot be delimited"),
         }
     }
 }
@@ -715,7 +715,7 @@ impl Exchange {
                         // of the missing receipts from the signer that owns
                         // them until the chain reaches the reported K, within
                         // this exchange's stroke budget, and the reporting
-                        // frame is then admitted again — the one citation.
+                        // envelope is then admitted again — the one citation.
                         // The chase and its readings (ACT1-hold-b) are the
                         // lib's; the wire is `backfill::fetch`.
                         // Each page spends one stroke; a stroke is taken
@@ -899,10 +899,10 @@ impl Exchange {
                         // words this court's waiting sentences cite and it has
                         // not ruled (`awaited_citations`), as many as one ask
                         // and one reply's count carry (the reply's `u8` count
-                        // wall); the addresses share the ask's frame with its
+                        // wall); the addresses share the ask's envelope with its
                         // own header (D4.6). Nothing waits, nothing is asked.
                         let awaited = match crate::court_lock::held!(court) {
-                            Ok(mut h) => h.run(|k, _| match mycelium::network::wire::frame_budget().checked_sub(mycelium::anastome::dialogue::CITED_REQUEST_HEADER) {
+                            Ok(mut h) => h.run(|k, _| match mycelium::network::wire::BODY_BUDGET.checked_sub(mycelium::anastome::dialogue::CITED_REQUEST_HEADER) {
                                 Some(bytes) => k.awaited_citations(usize::from(u8::MAX), bytes),
                                 None => Vec::new(),
                             }),
@@ -1085,12 +1085,24 @@ impl Exchange {
                 // this cycle did nothing and must cost the processor
                 // something rather than a decrement.
                 // 78.152: THE PARK ENDS ON THE FIRST MOTION — an advance of
-                // the final point, or an act read at the door — and is
-                // bounded by the one scheduler floor (`stroke_floor`), told
-                // to the scheduler and read by no one.
+                // the final point, or an act read at the door (every act heard
+                // there is counted on the shelf). #234 (ruled 2026-11-11,
+                // option (a)): the next due event is the next motion — a peer
+                // is due only on one (this court's K, its roots, the final
+                // point), the tick is signed only where it moved, the reserve
+                // regenerates at an orbit's close and a parent is fetched on an
+                // ask — so an idle court parks until it, unbounded, and burns
+                // nothing while none comes. A court still BOOTING — its genesis
+                // not yet written, or not yet adopted from a peer — has work
+                // its own cycles do (the first receipt, the asks that adopt
+                // the origin), so it parks one scheduler floor at a time
+                // until it is written.
                 idle += 1;
                 let shelf = crate::tuniversal::shelf();
-                let _ = shelf.park(park_seen, mycelium::physics::stroke_floor());
+                let _ = match genesis_written.load(std::sync::atomic::Ordering::Relaxed) {
+                    true => shelf.park_until_moved(park_seen),
+                    false => shelf.park(park_seen, mycelium::physics::stroke_floor()),
+                };
             }
             park_seen = crate::tuniversal::shelf().seen();
             // Written when the READING CHANGES, not every cycle. As

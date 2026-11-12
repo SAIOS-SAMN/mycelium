@@ -7,12 +7,13 @@
 
 use super::atlas::{Atlas, Attractor, Chart, Orbit, Precession};
 use super::enclosing::{stand, Labels, Membrane};
-use super::holonomy::Holonomy;
+use super::holonomy::{Holonomy, Monodromy};
 use super::refusal::FieldRefusal;
-use super::shares::{frame_plane, Cohesion};
+use super::shares::{pole_plane, Cohesion};
 use super::turning::FramePlanes;
 use crate::core::Q;
-use forms::passage::{Frame, Place};
+use forms::passage::{PassageState, Place};
+use num_traits::{One, Signed, Zero};
 
 /// THE LAYER A WELL STANDS AT (MU-CLIENT §4, N4): a held percept and a
 /// held thought are one well at two stages (78.171 §2), perception first.
@@ -79,7 +80,7 @@ impl WellStage {
 /// fluidity, never its viscosity.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Inflation {
-    pub gauge: Frame,
+    pub gauge: PassageState,
     pub place: Place,
 }
 
@@ -162,6 +163,12 @@ impl WellBody {
         self.attractor.precession()
     }
 
+    /// THE MONODROMY OF ITS ORBIT PER REVOLUTION (78.171 §3.2; MU-SENSING §3.8):
+    /// flat, torsion or rupture; refused `Unbound` where it binds no orbit.
+    pub fn monodromy(&self) -> Result<Monodromy, FieldRefusal> {
+        self.attractor.monodromy()
+    }
+
     /// THE INFLATION AT `hold` AND `reach`: the frame state built on the
     /// membrane's pole basis (its held share the viscosity, its open share
     /// the fluidity), stood inside the membrane (so its open pole,
@@ -170,19 +177,34 @@ impl WellBody {
     pub fn inflation(&self, hold: Q, reach: Q) -> Result<Inflation, FieldRefusal> {
         let membrane = &self.attractor.membrane;
         let poles = membrane.poles();
-        let state = poles.state(&Frame { hold, reach }).map_err(FieldRefusal::Passage)?;
+        let state = poles.state(&PassageState { hold, reach }).map_err(FieldRefusal::Passage)?;
         let place = stand(&state, poles, Labels::Standard, Some(membrane))?;
         let gauge = poles.read(&state).map_err(FieldRefusal::Passage)?;
         Ok(Inflation { gauge, place })
     }
 
-    /// THE COHESION AT `hold` AND `reach` (MU-ANASTOME §9.4; #149): the
-    /// inflation's gauge read per plane it stands on, the membrane's frame
-    /// plane, as its held share `H/(H + R)`; a keyed reading, never stored
-    /// and never summed. Refused as [`WellBody::inflation`] and
-    /// [`Cohesion::of`] refuse.
+    /// THE COHESION AT `hold` AND `reach` (MU-ANASTOME §9.4; #149, #249): the
+    /// inflation's gauge read per plane it stands on: the membrane's pole
+    /// plane and each turning plane of its bound orbit, as its held share
+    /// `H/(H + R) = 1/(1 + t)`; a keyed reading, never stored and never summed.
+    /// Refused as [`WellBody::inflation`] and [`Cohesion::of`] refuse.
     pub fn cohesion(&self, hold: Q, reach: Q) -> Result<Cohesion, FieldRefusal> {
         let gauge = self.inflation(hold, reach)?.gauge;
-        Cohesion::of(&[(frame_plane(self.membrane().plane())?, gauge)])
+        let mut frames = vec![(pole_plane(self.membrane().plane())?, gauge)];
+        if let Ok(holo) = self.holonomy() {
+            for t in holo.turnings() {
+                let frac = (t.degrees() / super::turning::whole_turn()).abs();
+                let c_k = frac.fract();
+                let c_k = if c_k.is_zero() && !t.degrees().is_zero() { Q::one() } else { c_k };
+                let h_k = c_k.clone();
+                let r_k = Q::one() - &c_k;
+                let key = t.plane().key().clone();
+                let f = PassageState { hold: h_k, reach: r_k };
+                if !frames.iter().any(|(existing, _)| existing == &key) {
+                    frames.push((key, f));
+                }
+            }
+        }
+        Cohesion::of(&frames)
     }
 }

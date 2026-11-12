@@ -55,11 +55,11 @@ fn sensor_plane_agrees_with_default_perspective() {
     assert_eq!(assigned, Some(sensor_plane()));
 }
 
-/// A sample of a rank the letters are not written on is refused by name
+/// A sample of a rank the letters are not written on is refused
 /// where only the alphabet limits it (`AlphabetRank`), never truncated to
 /// the letters' planes; the rank the letters spell is admitted.
 #[test]
-fn rank_beyond_the_alphabet_is_refused_by_name() {
+fn perspective_refuses_rank_beyond_alphabet() {
     assert_eq!(alphabet_admits(ALPHABET_SAMPLE_RANK), Ok(()));
     let beyond = ALPHABET_SAMPLE_RANK + 1;
     assert_eq!(alphabet_admits(beyond), Err(AlphabetRank { rank: beyond }));

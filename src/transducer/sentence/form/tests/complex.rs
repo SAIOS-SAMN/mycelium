@@ -138,17 +138,14 @@ fn edge_holonomies_never_telescopes() {
 /// is a `Demand::Dislocation` carrying the slip, not an entry in a
 /// side-table.
 ///
-/// This test asserted the opposite for four commits: that filing the class
-/// at period 0 made the orbit COHERE. That is procedural compliance wearing
-/// geometry's clothes, and it let an open dislocation read as a closed
-/// manifold. Every field of a `FiledOrbit` is derivable from the complex
-/// (`orbit_classes`), so by law 12 the annotation carries no fact the
-/// geometry does not already determine — it records that a stroke looked.
+/// An open dislocation cannot read as a closed manifold. Every field of a
+/// `FiledOrbit` is derivable from the complex (`orbit_classes`), so by law 12
+/// the annotation carries no fact the geometry does not already determine — it
+/// records that a stroke looked.
 ///
-/// What remains true, and is what the filing is FOR: the stroke reads the
-/// class, files it at 0, and the reading rides `Element.filing` as the
-/// speaker's attestation, where it prices the yield and says whether the
-/// stroke finished.
+/// What the filing is FOR: the stroke reads the class, files it at 0, and the
+/// reading rides `Element.filing` as the speaker's attestation, where it prices
+/// the yield and says whether the stroke finished.
 #[test]
 fn coheres_refuses_infinite_order_orbit_filed_or_not() {
     let w = infinite();
@@ -363,7 +360,7 @@ fn form_vertex_key_carries_ratio_and_sections() {
         kind: crate::transducer::layers::LayerKind::Whole,
         class: w.rotor().holonomy_key().expect("the 90° turn has a class"),
     });
-    // AT1 — A MEMBER HOLDS ITS FRAMES, and the sections are read off them:
+    // AT1 — A MEMBER HOLDS ITS DELIMITED, and the sections are read off them:
     // the word's member stands at frame 1 as well as the fixture's frame.
     let word = c.vertices.at(&only_word(&c)).cloned().expect("the word vertex");
     c.stand_member(&word, 1).expect("the word stands at frame 1");

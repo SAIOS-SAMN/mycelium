@@ -99,12 +99,18 @@ pub fn cited(text: &str) -> Vec<Cited> {
     out
 }
 
-/// THE CHANGELOG FRAGMENTS (AGENTS.md, *Definition of done*): every file
+/// THE CHANGELOG FRAGMENTS (AGENTS.md, *Checks*): every file
 /// under `dir` is a markdown file (`.md`) holding one entry, opened by its
 /// `### ` heading with a title. A hit per file that is not. Returns the
 /// count of fragments read.
 pub fn lint_fragments(dir: &Path, hits: &mut Vec<String>) -> Result<usize, String> {
-    let entries = std::fs::read_dir(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    // Right after a release assembles them, no fragment is held and git
+    // keeps no empty directory: none read, none refused.
+    let entries = match std::fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(e) => return Err(format!("{}: {e}", dir.display())),
+    };
     let mut read = 0;
     for e in entries {
         let p = e.map_err(|e| format!("{}: {e}", dir.display()))?.path();
@@ -202,6 +208,10 @@ pub fn lint_section(repo: &Path, section: &Section, hits: &mut Vec<String>) -> R
 /// THE DOCUMENTS' PATHS: a hit per cited path of `files` (read relative to
 /// `repo`) that does not exist and whose line does not say it is gone.
 /// Returns the count of cited paths read.
+///
+/// `changes/` itself is the fragments directory: it stands while a fragment
+/// is held and is gone right after a release assembles them (git keeps no
+/// empty directory), so citing it is never a stale path.
 pub fn lint_documents(repo: &Path, files: &[PathBuf], hits: &mut Vec<String>) -> Result<usize, String> {
     let mut read = 0;
     for f in files {
@@ -212,7 +222,8 @@ pub fn lint_documents(repo: &Path, files: &[PathBuf], hits: &mut Vec<String>) ->
         };
         for c in cited(&text) {
             read += 1;
-            if !c.gone && !repo.join(c.path.trim_end_matches('/')).exists() {
+            let fragments = c.path.trim_end_matches('/') == "changes";
+            if !c.gone && !fragments && !repo.join(c.path.trim_end_matches('/')).exists() {
                 hits.push(format!(
                     "  {name}:{}: `{}` names no path of the tree (MU-STANDARDS 7.1); rebind it, or say on its line that it was removed",
                     c.line, c.path

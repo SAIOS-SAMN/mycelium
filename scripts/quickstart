@@ -2,14 +2,16 @@
 # QUICK START — a Mycelium network on one machine: three hyphae (courts) and
 # one SDK client, provisioned and started from nothing, the client solving
 # tasks the courts adjudicate and pay; then the conformance read of both
-# profiles, a kernel's house founding a domain, the observer's frame of the
-# mesh (scripts/observer) and the timeline of the client's traced journal
-# (scripts/timeline). Where the observer or the timeline fails, the run
-# exits 1. The network keeps running until Ctrl-C, then every process
-# stops; the homes stay in DIR for inspection.
+# profiles, a kernel's house founding a domain, a mind seated in that
+# house's domain (`mycelium-client --seat`) filing its solve under its own
+# key, the observer's frame of the mesh (scripts/observer) and the timeline
+# of the client's traced journal (scripts/timeline). Where the seated mind's
+# solve is not judged under its own key, or the observer or the timeline
+# fails, the run exits 1. The network keeps running until Ctrl-C, then every
+# process stops; the homes stay in DIR for inspection.
 #
-# The definition of done (AGENTS.md) requires this run for a change to the
-# wire or the mesh.
+# AGENTS.md › Checks requires this run for a change to the wire or the
+# mesh; CI does not run it.
 #
 # Usage: scripts/quickstart [DIR] [BASE_PORT] [TASKS]
 #   DIR        where the homes are written (default: $TMPDIR/mycelium-quickstart,
@@ -35,7 +37,17 @@ CLI="$TARGET/release/mycelium-client"
 EX="$TARGET/release/examples/client"
 CONF="$TARGET/release/examples/conformance"
 HOUSE="$TARGET/release/examples/house"
+SEATS="$TARGET/release/examples/seats"
 DECODE="$TARGET/release/mycelium-arc-agi"
+# How long the seated stage waits on the house, in seconds: a bound on the
+# run, never a reading of the mind.
+SEAT_WAIT="${MYCELIUM_SEAT_WAIT:-1800}"
+# How many of the court's tasks the house sets before the seat, one at a
+# time while the mind declines (default: the corpus's 30).
+SEAT_TASKS="${MYCELIUM_SEAT_TASKS:-30}"
+# How long the courts' judged readings are read for the seated solve, in
+# seconds.
+JUDGED_WAIT="${MYCELIUM_JUDGED_WAIT:-120}"
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 
 if [ ! -d "$CORPUS_ROOT/training" ]; then
@@ -46,10 +58,10 @@ if [ ! -d "$CORPUS_ROOT/training" ]; then
   exit 1
 fi
 
-if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ] || [ ! -x "$CONF" ] || [ ! -x "$HOUSE" ] || [ ! -x "$DECODE" ]; then
+if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ] || [ ! -x "$CONF" ] || [ ! -x "$HOUSE" ] || [ ! -x "$SEATS" ] || [ ! -x "$DECODE" ]; then
   say "building (release)"
   cargo build --release --bins || exit 1
-  cargo build --release -p mycelium-sdk --example client --example conformance --example house || exit 1
+  cargo build --release -p mycelium-sdk --example client --example conformance --example house --example seats || exit 1
   cargo build --release -p mycelium-source-arc-agi --bin mycelium-arc-agi || exit 1
 fi
 
@@ -70,6 +82,7 @@ port() { eval "echo \$PORT_$1"; }
 say "1. identities: one key per node"
 for n in a b c; do "$SRV" --home "$DIR/$n" --init || exit 1; done | tee "$DIR/init.txt"
 "$CLI" --home "$DIR/client" --init | tee -a "$DIR/init.txt" || exit 1
+"$CLI" --home "$DIR/seated" --init | tee -a "$DIR/init.txt" || exit 1
 
 say "2. the genesis allocation, and each hypha's address and peers"
 grep '^genesis line: hypha' "$DIR/init.txt" | cut -d' ' -f3- > "$DIR/genesis"
@@ -122,15 +135,43 @@ say "6. the conformance suite on hypha b (MU-CONFORMANCE): the mind profile, the
 "$CONF" --endpoint "127.0.0.1:$PORT_b" --home "$DIR/kernel-conformance" --profile kernel
 
 say "7. a kernel's house on hypha c: the Concordance signed, the clock read, a domain founded"
-"$HOUSE" "$DIR/house" "127.0.0.1:$PORT_c"
+"$HOUSE" "$DIR/house" "127.0.0.1:$PORT_c" | tee "$DIR/house.txt"
 
-say "8. the court's reading of what it judged"
+say "8. a seated mind: the house lists seat 1 and sets the court's tasks before it; mycelium-client --seat sits it (its journal in $DIR/seated.log)"
+# MU-HOSTING §5a.6 — sit, percept, call, outcome, then the court's solve
+# filed under the seated mind's own key (Concordance 6.2a), read off the
+# courts' judged readings.
+DOMAIN=$(sed -n 's/^house \([0-9a-f]\{64\}\)$/\1/p' "$DIR/house.txt" | head -n1)
+SEATED_VK=$(sed -n "s|^$DIR/seated: voice key .* vk \([0-9a-f]\{64\}\)$|\1|p" "$DIR/init.txt" | head -n1)
+if [ -z "$DOMAIN" ] || [ -z "$SEATED_VK" ]; then echo "the house's domain or the seated mind's key did not read"; exit 1; fi
+echo "127.0.0.1:$PORT_c" > "$DIR/seated/bootstrap"
+timeout "$SEAT_WAIT" "$SEATS" "$DIR/house" "127.0.0.1:$PORT_c" "$SEAT_TASKS" > "$DIR/seats.txt" 2>&1 & SEATS_PID=$!
+"$CLI" --home "$DIR/seated" --seat "$DOMAIN" 1 > "$DIR/seated.log" 2>&1 & PIDS+=($!)
+wait "$SEATS_PID"; seats_rc=$?
+cat "$DIR/seats.txt"
+SOLVED=$(sed -n "s/^solved: task \([0-9a-f]\{64\}\) by mind $SEATED_VK$/\1/p" "$DIR/seats.txt" | head -n1)
+if [ "$seats_rc" != 0 ] || [ -z "$SOLVED" ]; then echo "no seated solve reached the house (exit $seats_rc); see $DIR/seats.txt, $DIR/seated.log"; exit 1; fi
+judged=""
+for _ in $(seq 1 "$JUDGED_WAIT"); do
+  for n in a b c; do
+    if "$SRV" --console --home "$DIR/$n" --reading judged 2>/dev/null | grep -q "task $SOLVED ← voice ${SEATED_VK:0:8} "; then judged=$n; break 2; fi
+  done
+  sleep 1
+done
+if [ -z "$judged" ]; then
+  echo "no court judged task $SOLVED under the seated mind's key ${SEATED_VK:0:8}; what the mind holds:"
+  "$CLI" --home "$DIR/seated" --call held --mind "${SEATED_VK:0:8}"
+  exit 1
+fi
+echo "hypha $judged judged task ${SOLVED:0:16}… under the seated mind's own key ${SEATED_VK:0:8}, never the house's ${DOMAIN:0:8}"
+
+say "9. the court's reading of what it judged"
 "$SRV" --console --home "$DIR/a" --reading judged 2>&1 | grep -vE 'OBSERVER|TUNIVERSAL|clock'
 
-say "9. the observer's frame of the mesh (scripts/observer)"
+say "10. the observer's frame of the mesh (scripts/observer)"
 MYCELIUM_SERVER="$SRV" scripts/observer once "$DIR/a" "$DIR/b" "$DIR/c" || { echo "the observer failed"; exit 1; }
 
-say "10. the timeline of the client's journal (scripts/timeline)"
+say "11. the timeline of the client's journal (scripts/timeline)"
 scripts/timeline "$DIR/client.log" || { echo "the timeline failed"; exit 1; }
 
 say "the network is running"
@@ -141,6 +182,7 @@ cat <<EOF
   conformance $CONF --endpoint 127.0.0.1:$PORT_c --home $DIR/conformance [--profile mind|kernel|both]
   a house     $HOUSE $DIR/house 127.0.0.1:$PORT_a
   a mind      $CLI --home $DIR/mind      (write 127.0.0.1:$PORT_a to $DIR/mind/bootstrap first)
+  seated      $CLI --home $DIR/seated --seat $DOMAIN 1   (running; the house: $SEATS $DIR/house 127.0.0.1:$PORT_c)
 
 Ctrl-C stops the network.
 EOF

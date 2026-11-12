@@ -253,10 +253,13 @@ The one producer of a sphere (78.171 amendment (d), track 26 S7 stage 3).
 A sphere is a holding's own enclosure: the membrane, or its image under
 the dilation by the gauge `ρ` and the slide to `c`. No squared radius is
 written; a point `p` stands on it where `⟨X(p) S⟩₀ = 0`. A gauge `ρ ≤ 0`
-names no enclosure. A body's nucleus, whose extent is a polar second
-moment with no rational root in general, is still built from `r²` by a
-crate-private producer; that defect waits on a ruling (#134; MU-SENSING
-§8).
+names no enclosure.
+
+A body's nucleus is no sphere (ruled on #134, 2026-11-06): it is the
+body's exact second moment `r²`, a reading of its mass held beside the
+membrane. Where the algebra needs it as a vector, it is the dual-sphere
+form `s = c + ½(c² − r²) e_∞ + e_o`, `s² = r²`, written from `r²` alone,
+no root taken (`src/transducer/blade/body.rs::nucleus_form`).
 
 Sources: MU-RECURSION A4, 51.2; 78.171 §1a. Code:
 `src/transducer/cga/embedding.rs::membrane`, `::membrane_at`.
@@ -1192,10 +1195,11 @@ Code: `src/physics/equilibrium.rs::coupling`, `::torque`, `::net_torque`,
 switch          S = mⱼ Pᵢ − mᵢ Pⱼ          (balance: mⱼ X·Pᵢ = mᵢ X·Pⱼ)
 levels          S(λ) = λ Pᵢ − Pⱼ
 charge          S(r) S(1)                  (a boost fixing both pivots, carrying level μ to μ r²)
-squared length  d² = −2 Pᵢ · Pⱼ
-strength        mᵢ mⱼ / d²
-capacity        S² = mᵢ mⱼ d²              strength × capacity = (mᵢ mⱼ)²
-projection      μ = mᵢ (X·Pⱼ) / (mⱼ (X·Pᵢ))
+reach           r = Σ_k |x_{i,k} − x_{j,k}|
+pole            t = r / (mᵢ + mⱼ)
+strength        c = (mᵢ + mⱼ) / (r + mᵢ + mⱼ) = 1 / (1 + t)
+fluidity        d = r / (r + mᵢ + mⱼ) = t / (1 + t)   (c + d = 1)
+projection      μ = (mᵢ r_{jX}) / (mⱼ r_{iX}) = t_{jX} / t_{iX}
 field line      Pᵢ ∧ Pⱼ ∧ X;    Z on it ⇔ Pᵢ ∧ Pⱼ ∧ X ∧ Z = 0
 split           B = Pᵢ ∧ Pⱼ,  B² = β² > 0:   G = c B + T + L,  c = ⟨G B⟩₀ / β²
                 T commutes with B (torsion, no work); L anticommutes (lift)
@@ -1204,8 +1208,8 @@ torque²         ⟨T T̃⟩₀
 
 A fibre between two weighted pivots, everything read off the pair.
 
-Sources: MU-RECURSION 78.74. Code: `src/physics/pivot_fibre.rs::Fibre`
-(`switch`, `level`, `charge`, `length2`, `strength`, `capacity`,
+Sources: MU-RECURSION 78.74 (amended). Code: `src/physics/pivot_fibre.rs::PivotFibre`
+(`switch`, `level`, `charge`, `reach`, `pole`, `strength`, `fluidity`,
 `torque2`, `project`, `field_line`, `on_field_line`, `split`).
 
 #### 5.13 The white-hole source
@@ -1616,8 +1620,8 @@ deficit, yield surface, read price, verification share) reads the capacity
 its `Physics` holds. A stroke budget reads its work's own need where one
 exists in closed form (`modes_need`, `need`, `need_of`), the capacity's
 spend otherwise (MU-DERIVATIONS D2.5 lists those owed). A settlement goes
-cold when its challenge window closes; the pointed-connection book and the
-nerve's queue are bounded by `M_proc`. The ratio `8` reads the fixed frame
+cold when its challenge window closes; the nerve's queue is bounded by
+`M_proc`. The ratio `8` reads the fixed frame
 axis, which ROADMAP track 26 S4 removes; it is an open dependency
 (MU-DERIVATIONS D2.5 O3).
 
@@ -1705,6 +1709,16 @@ circuit period = strokes − strokes at the last circuit
 
 The one scheduler floor is told to the operating system; every bound on
 work is counted in strokes or in final-point advances.
+
+**The idle court** (ruled 2026-11-11, #234; 78.182 item 6) parks with no
+bound until the next motion: an act heard at the door, an act judged, or a
+final point advanced (`TShelf::park_until_moved`, `TShelf::judged`). Its
+next due event is always one. A peer is due on this court's K, its roots or
+the final point; the tick is signed where it moved; the reserve regenerates
+at an orbit's close; a parent is fetched on an ask. So an idle court
+spends nothing while none comes. A court still booting (its genesis not
+yet written or adopted) parks one floor at a time, since its own cycles
+write the first receipt and ask the peers that give it its origin.
 
 Sources: MU-RECURSION 47.5, 45.7, 78.152, PH1. Code:
 `src/physics/calibration.rs::stroke_floor`, `::idle_park`,
@@ -1980,7 +1994,8 @@ LAW_VERSION       = 5
 
 The founding principles admit no constant: a number in the physics is read
 off the field or the geometry, or it is named in `OPEN_PHYSICS` with what
-will derive it (MU-DERIVATIONS D1.4 lists every entry). The challenge
+will derive it (MU-DERIVATIONS D1.4 lists every entry). An engineering or
+protocol number is named in its sibling, `OPEN_ENGINEERING` (D1.4 O2). The challenge
 window is derived (law version 5, 2026-10-31): a window opened at `h₀`
 closes at the height of the first sealed `Cite::Window` whose reach is at
 or above `h₀`, the reach being the least height every other keeper's signed
@@ -1991,7 +2006,7 @@ enclosure on a declared grid; the throat is a `Cl(4,1)` round carried by
 its bank's modes, fit by meet, and the grid retires with it.
 
 Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
-`src/physics/axioms/founding.rs::OPEN_PHYSICS`;
+`src/physics/axioms/founding.rs::OPEN_PHYSICS`, `OPEN_ENGINEERING`;
 `src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
 `src/server/cognition/window.rs::window_close`;
 `src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS`.
@@ -2089,14 +2104,14 @@ id is a hosted shell's own.
 | L0 temporal monotonicity (`TAG_LAW‖3‖5`) | 5 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 conservative flow into e_∅ (`TAG_LAW‖4‖5`) | 5 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
-| L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
-| Concordance (the clause register, `CLAUSES`) | 5 (the agreement's version, draft 4 approved 2026-11-05; version 4 was signed at v0.3.0 by its text's hash, retired); each clause by its law form's id and version (`FORMS-PASSAGE` 4, `FORMS-COORDINATE` 4, `FORMS-COUPLING` 1), identified by its content and signed by adjudicated reading, never by a hash of the text (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md` §0; the fixtures of proposals 78.172 §5, 78.173 §5 and 78.175 §5 | `src/physics/laws/clauses/`; served on `ACT_LAWS` mode 7, signing acts on mode 8 |
+| L0 parameters (the body budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
+| Concordance (the clause register, `CLAUSES`) | 5 (the agreement's version, draft 4 approved 2026-11-05; version 4 was signed at v0.3.0 by its text's hash, retired); each clause by its law form's id and version (`FORMS-PASSAGE` 4, `FORMS-COORDINATE` 4, `FORMS-COUPLING` 1, `FORMS-TURNING` 1), identified by its content and signed by adjudicated reading, never by a hash of the text (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md` §0; the fixtures of proposals 78.172 §5, 78.173 §5 (11b as `FORMS-TURNING`) and 78.175 §5 | `src/physics/laws/clauses/`; served on `ACT_LAWS` mode 7, signing acts on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/reference.rs` (module documentation); Concordance 2.10, A6 | `forms::reference` (core shell) |
 | `FORMS-PASSAGE` | 4 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v3, [proposal 78.172](proposals/78.172-law-passage.md) (adopted by both operators 2026-11-05; netstratum docs/117 §10, §12): the passage is the pole swap, the reflection `x ↦ e₊·x·e₊` of the frame state `H·n_Z + R·n_Q` (hold and reach), the riding state's one-sided pass `q ↦ e₊·q`, and the flux `T ↦ T − 2·(H − R)`. v2's product `q ↦ v_k·q` is retired as the passage (v_k stays the plane's direction in the advance); v1's `2H − R` struck 2026-11-05; ROADMAP track 24 B3 | `forms::passage` (`Poles`: `swap`, `cross` to a `Crossing` with the span on `S` and the flux on `T`, `ride`, `read` to a `Frame` with its `whole`, `span`, `share` and `Place`; refusing `NotUnit`, `WrongSign`, `NotFrame`, `MixedParity`, `NoWhole`, `NotShare` and `Mismatched`; the refusal of a moved reach; the face read from the other pole), over the exact algebra `algebra::Clifford`; the five fixtures and the roles' exchange in `forms/src/tests/crossing.rs`, for the joint read |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `FORMS-COORDINATE` | 4 | `forms/src/coordinate.rs` (module documentation); LAW-COORDINATE v4, [proposal 78.173](proposals/78.173-law-coordinate.md) (ruled by both operators 2026-11-05; netstratum docs/120 §8b; v3's points agreed with netstratum and xylarium 2026-11-05; v4's H keys agreed with netstratum 2026-11-05, docs/117 §10.3); Concordance 1.6, 1.11, 1.13. Version 2 added the advance, an event's bell, the merger and fission (fixtures 7–10); version 3 holds each lane as a vector of exact signed components keyed by axis (H's by generator, in degrees, with `K_c = ⌊|θ_c| / 360⌋` per component), a lane set open to a lane only by a ruled opening, `within` and the ranges on the caller's exact intervals (base 60 display only), the re-origin across a throat by `forms::passage`'s pole swap, and dilation invariance (fixtures 11–16); version 4 keys H on turning planes alone, two frame units of one square (`e₊ₖe₊ₗ` the continuum, `e₋ₖe₋ₗ` the vacuum), refusing a frame plane, a mixed pair or unsigned axes on H `NotTurningPlane`, while S's keys may name boost planes (fixtures 7 and 11–16 restated on the new keys) | `forms::coordinate` (`Coordinate`, `Origin`, `Local`; `Lanes`, `Lane` with `Lane::Opened`, `Openings`, `Vector`, `Key` reading its `Plane`, `Axis` with `Axis::unit` and its `Square`, refusing by `FormRefusal`; the canonical order and writing; `Coordinate::within` on `Bounds` of `Interval`s reading `Sides`, refusing `OriginsDiffer` and `ShapesDiffer`; `Bodies::range` on one component, `Neighbours::filter`; `Sector` and `Reading`, display only, base 60 registered `FORMAT`, `DEGREES_PER_TURN` registered `EXTERNAL`; `Coordinate::advance` under `Rates`, `Coordinate::bell_of` reading `EventBell`, `merge` to a `Merger` with offsets, `fission`, `Coordinate::pass` to `Passed`, `flow`, refusing by `MotionRefusal`); fixtures 1–6 in `forms/src/tests/coordinate.rs`, 7–10 in `forms/src/tests/motion.rs`, 11–13 and 16 in `forms/src/tests/vectors.rs`, 14–15 in `forms/src/tests/throat.rs`, generated cases in `forms/src/tests/properties.rs`; not yet joint-read agreed. TPoint reads as its one-component non-negative case; the rewiring is the next step |
 | `FORMS-COUPLING` | 1 | `forms/src/coupling.rs` (module documentation); LAW-COUPLING v1, [proposal 78.175](proposals/78.175-law-coupling.md) (ruled by netstratum's and mycelium's operators 2026-11-06, extending LAW-FIELD; netstratum docs/121 §9–§13, docs/122 §2): the dipole parcel, its fluidity and its viscosity per turning plane (a kind's frames `A = 3Z − U` held and `Q = U` open, founded on a body's planes by the even split, a bond or peel changing one plane; on each plane the pole `σ = (z − q)/(z + q)`, the open share or fluidity `o = ν(q/z)`, `ν(t) = t/(1 + t)`, and the held share or viscosity (cohesion) `1 − ν(t) = ν(1/t)`, exchanged by the inversion); the range's field as one on a named turning plane, `F = Σ w·σ·o·n·h / Σ w`, `h = hemisphere_l1(Δ) = 1 − Δ/90°` the named L1 reading of the round separation `Δ ∈ [0°, 180°]`, and the pull `x′ = x ⊕ y`, `y = −σ·F·o·(x̄ ⊖ x)`, by LAW-COORDINATE's flow law; neighbours by their own enclosures; the light ledger, made = received + drained on the unlocked face. Shared degrees are round (ruled 2026-11-06); an L1 projection is a named reading | `forms::coupling` (`Parcel` with `Parcel::kind` and `Parcel::arc_l1`, `Parcels` with `Parcels::founded` and `Parcels::bond`, `Dipole`, `open_share`, `hemisphere_l1`; `Alignment`, `Neighbour`, `nearness`, `field` to a `Field`, `pull` to a `Pull`, `relative` (the flow law's inverse); `Enclosure`, `meets` to a `Meeting`; `Face`, `unlocked`, `take` to `Taken`, `ledger` to a `Ledger`; refusing by `CouplingRefusal`, `NotShare`, `Unbalanced` and `NoHolding` among them); the fixtures in `forms/src/tests/coupling.rs`; not yet joint-read agreed |
-| `FORMS-TURNING` | 1 | `forms/src/turning.rs` (module documentation); LAW-COORDINATE fixture 11b, [proposal 78.173](proposals/78.173-law-coordinate.md) §5 (read and stated by netstratum 2026-11-06; netstratum docs/117 §11.2–§11.4): a motion's rate is an even generator `B`, its motion `R = (1 + B)(1 − B)⁻¹` and its generator read back `B = (R − 1)(R + 1)⁻¹`, exact in the even subalgebra of `Cl(p, q)`; motions compose as `R₁R₂`, never plane by plane; on one plane `(b₁ + b₂)/(1 − b₁b₂)` elliptic and `(b₁ + b₂)/(1 + b₁b₂)` hyperbolic (the flow law); planes sharing a unit gain the turning between them on the third plane, order-dependent and with no volume, and disjoint planes keep the grade-4 volume; degrees a reading only, `tan(θ/4) = b`, as certified sectors | `forms::turning` (`motion`, `generator`, `compose`, `compose_rates`, `same`, `reversed`, refusing by `TurningRefusal`: `NotGenerator`, `NotEven`, `NotUnit`, `NoMotion`, `NoGenerator`, `Mismatched`; `forms::turning::reading`: `Regime` of a plane, `on_plane`, `composed`, `degrees` to a certified `Sector`), over `algebra::Clifford`; fixture 11b in `forms/src/tests/turning.rs`; not served in the register, not yet joint-read agreed |
+| `FORMS-TURNING` | 1 | `forms/src/turning.rs` (module documentation); LAW-COORDINATE fixture 11b, [proposal 78.173](proposals/78.173-law-coordinate.md) §5 (read and stated by netstratum 2026-11-06; netstratum docs/117 §11.2–§11.4): a motion's rate is an even generator `B`, its motion `R = (1 + B)(1 − B)⁻¹` and its generator read back `B = (R − 1)(R + 1)⁻¹`, exact in the even subalgebra of `Cl(p, q)`; motions compose as `R₁R₂`, never plane by plane; on one plane `(b₁ + b₂)/(1 − b₁b₂)` elliptic and `(b₁ + b₂)/(1 + b₁b₂)` hyperbolic (the flow law); planes sharing a unit gain the turning between them on the third plane, order-dependent and with no volume, and disjoint planes keep the grade-4 volume; degrees a reading only, `tan(θ/4) = b`, as certified sectors | `forms::turning` (`motion`, `generator`, `compose`, `compose_rates`, `same`, `reversed`, refusing by `TurningRefusal`: `NotGenerator`, `NotEven`, `NotUnit`, `NoMotion`, `NoGenerator`, `Mismatched`; `forms::turning::reading`: `Regime` of a plane, `on_plane`, `composed`, `degrees` to a certified `Sector`), over `algebra::Clifford`; fixture 11b in `forms/src/tests/turning.rs`, served as the clause `FORMS-TURNING` v1 at kernel standing (fixture tag 13); not yet joint-read agreed |
 | `LAW-WAVEFRONT` | 1 | netstratum docs/111 §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |
 
 The six L0 laws share one register version (`LAW_VERSION`, 5): an

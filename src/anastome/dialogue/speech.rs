@@ -9,9 +9,9 @@
 use super::*;
 use crate::transducer::sentence::Contraction;
 
-/// ONE SENTENCE AS SPOKEN: its tape, the standing the speaker claims, and
+/// ONE SENTENCE AS ASSERTED: its tape, the standing the speaker claims, and
 /// the contraction certificate it cites, if any.
-pub struct Spoken {
+pub struct Asserted {
     pub tape: Vec<u8>,
     pub standing: u8,
     pub contraction: Option<Contraction>,
@@ -29,12 +29,10 @@ pub struct Spoken {
     /// it and reconstructs the sentence there. None reads the family as
     /// posted, which is the default perspective's reading.
     pub perspective: Option<crate::transducer::perspective::Perspective>,
-    // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The generators a
-    // voice reached each word vertex through are ON the tape at v7, in
-    // the vertex's own derivation, because they are what the vertex is.
-    // The contraction certificate stays beside the tape: it is a claim
-    // about which expression this is (50.9).
 }
+
+/// Backwards-compatibility alias for [`Asserted`].
+pub type Spoken = Asserted;
 
 /// `None` where the task's address cannot be framed (LD0): not spoken.
 pub fn encode_speech(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, sentences: &[Vec<u8>]) -> Option<Vec<u8>> {

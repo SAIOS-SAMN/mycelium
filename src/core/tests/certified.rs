@@ -1,6 +1,6 @@
 // 78.130 — CERTIFIED REALS: every enclosure holds the true value — pinned
-// against known constants to 2^-60 — inverse pairs close, P is monotone and
-// tends to one, and the same inputs give the same enclosure on any thread.
+// against known constants to 2^-60 — inverse pairs close, and the same
+// inputs give the same enclosure on any thread.
 
 use crate::core::certified::*;
 use num_bigint::BigInt;
@@ -24,25 +24,20 @@ fn q(n: i64, d: i64) -> Q {
     Q::new(BigInt::from(n), BigInt::from(d))
 }
 
-fn point(v: Q) -> Encl {
-    Encl::exact(v)
-}
-
-/// A token wide enough for every series these tests run.
-fn token() -> crate::physics::Budget {
-    crate::physics::Physics::default().stroke_n(1 << 24)
+fn point(v: Q) -> Certified {
+    Certified::Exact(v)
 }
 
 /// The enclosure holds the reference (known to far more digits than `W`)
 /// and is no wider than `2^-60`.
-fn pins(e: &Encl, reference: &str, name: &str) {
+fn pins(e: &Certified, reference: &str, name: &str) {
     let r = dec(reference);
     let slack = Q::new(BigInt::one(), BigInt::from(10).pow(45));
-    assert!(e.lo <= &r + &slack && &r - &slack <= e.hi, "{name}: {e:?} misses {reference}");
+    assert!(e.lo() <= &(&r + &slack) && &(&r - &slack) <= e.hi(), "{name}: {e:?} misses {reference}");
     assert!(e.width() <= Q::new(BigInt::one(), BigInt::one() << 60u32), "{name}: wider than 2^-60");
 }
 
-/// The constants (π, e, ln 2, √2, sin 1, cos 1, lnΓ(½), erf 1, P(1, 1)) are
+/// The constants (π, e, ln 2, √2, sin 1, cos 1, lnΓ(½)) are
 /// enclosed to 2^-60, each enclosure holding the reference value.
 #[test]
 fn enclosure_pins_constants_within_two_pow_minus_sixty() {
@@ -53,17 +48,10 @@ fn enclosure_pins_constants_within_two_pow_minus_sixty() {
     pins(&sin(&point(Q::one()), W), "0.84147098480789650665250232163029899962256306079837", "sin 1");
     pins(&cos(&point(Q::one()), W), "0.54030230586813971740093660744297660373231042061792", "cos 1");
     pins(&lgamma(&point(q(1, 2)), W).expect("lnΓ(½)"), "0.57236494292470008707171367567652935582364740645765", "lnΓ(½)");
-    pins(&erf(&point(Q::one()), W, &mut token()).expect("erf 1"), "0.84270079294971486934122063508260925929606699796630", "erf 1");
-    pins(
-        &gamma_p(&point(Q::one()), &point(Q::one()), W, &mut token()).expect("P(1,1)"),
-        "0.63212055882855767840447622983853913255418886896823",
-        "P(1, 1) = 1 − 1/e",
-    );
 }
 
 /// Inverse pairs close (`exp ∘ ln`, `ln ∘ exp`) and the identities hold:
-/// `Γ(1) = Γ(2) = 1`, `Γ(x+1) = xΓ(x)`, `sin² + cos² = 1`, `sin π = 0` and
-/// erf is odd.
+/// `Γ(1) = Γ(2) = 1`, `Γ(x+1) = xΓ(x)`, `sin² + cos² = 1` and `sin π = 0`.
 #[test]
 fn exp_inverts_ln_and_satisfies_identities() {
     let v = q(7, 3);
@@ -81,98 +69,8 @@ fn exp_inverts_ln_and_satisfies_identities() {
     let (s, c) = sin_cos(&point(q(10, 1)), W);
     assert!(s.square().add(&c.square()).contains(&Q::one()), "sin² + cos² = 1 at 10");
     assert!(sin(&pi(W), W).contains(&Q::zero()), "sin π = 0");
-    // erf is odd.
-    let e1 = erf(&point(q(3, 4)), W, &mut token()).expect("");
-    assert_eq!(erf(&point(q(-3, 4)), W, &mut token()).expect(""), e1.neg(), "erf(−x) = −erf(x)");
     assert_eq!(point(q(1, 3)).lt(&point(q(1, 2))), Some(true));
     assert_eq!(pi(W).lt(&pi(W)), None, "undecided where the bounds overlap");
-}
-
-/// The incomplete gamma `P` is monotone in `x` and tends to one, and erf far
-/// out is proved by its own tail bound, never run.
-#[test]
-fn gamma_p_rises_to_one_and_erf_reads_tail() {
-    let a = point(q(2, 1));
-    let low = gamma_p(&a, &point(Q::one()), W, &mut token()).expect("");
-    let high = gamma_p(&a, &point(q(3, 1)), W, &mut token()).expect("");
-    assert_eq!(low.lt(&high), Some(true), "P increasing in x");
-    let far = gamma_p(&point(Q::one()), &point(q(40, 1)), W, &mut token()).expect("");
-    assert!(far.lo > Q::one() - Q::new(BigInt::one(), BigInt::one() << 50u32), "P(1, 40) = 1 − e^-40");
-    assert!(far.hi <= Q::one());
-    assert_eq!(gamma_p(&a, &point(Q::zero()), W, &mut token()).expect(""), point(Q::zero()));
-    let big = erf(&point(q(101, 1)), W, &mut crate::physics::Physics::default().stroke_n(0)).expect("erf by its tail, no term read");
-    assert!(big.contains(&Q::one()) && big.width() <= Q::new(BigInt::one(), BigInt::one() << 64u32), "erf 101 within 2^-64 of one");
-    assert_eq!(erf(&point(q(-101, 1)), W, &mut token()).expect(""), big.neg());
-}
-
-/// D4.8 (a) — THE SERIES' TERMS ARE AT MOST THE CLOSED FORM: `P(1, 3)` at
-/// `w₂ = W + 40 + 2·bits(3)` spends at most `max(0, ⌈2·3 − 1⌉ − 1) + w₂ − 8`
-/// reads.
-#[test]
-fn gamma_p_terms_equal_closed_form() {
-    let w2 = W + 40 + 2 * 2;
-    let bound = gamma_p_terms(&Q::one(), &q(3, 1), w2).expect("counted");
-    assert_eq!(bound, 4 + u64::from(w2) - 8);
-    let mut t = token();
-    let before = t.remaining();
-    gamma_p(&point(Q::one()), &point(q(3, 1)), W, &mut t).expect("read");
-    let spent = u64::try_from(before - t.remaining()).expect("small");
-    assert!(spent >= 1 && spent <= bound, "{spent} of at most {bound}");
-}
-
-/// D4.8 (a) — A SHORT TOKEN IS REFUSED UP FRONT: fewer reads than the exact
-/// bound refuses before a term is read, naming the need; no cap stands in
-/// `x` (a thousand runs where ten thousand was the wall's tenth).
-#[test]
-fn gamma_p_refuses_short_budget_up_front() {
-    let mut t = crate::physics::Physics::default().stroke_n(10);
-    let reply = gamma_p(&point(Q::one()), &point(q(3, 1)), W, &mut t);
-    assert!(matches!(reply, Err(SeriesRefusal::Unmetered { needed }) if needed > 10), "{reply:?}");
-    assert_eq!(t.remaining(), 10, "no read spent: refused up front");
-}
-
-/// D4.8 (e) — `P(1, 1000)` IS INFORMATIVE: its prefactor `≈ 2⁻¹⁴³³` is taken on
-/// a grid fine enough for the sum it multiplies, so the enclosure holds
-/// `1 − e^{−1000}` and is within the result's own grid, never `[0, 1]`.
-#[test]
-fn gamma_p_width_is_within_grid_at_large_x() {
-    let p = gamma_p(&point(Q::one()), &point(q(1000, 1)), W, &mut token()).expect("read");
-    assert!(p.width() <= Q::new(BigInt::from(4), BigInt::one() << W), "width {} within 2^(2−w)", p.width());
-    assert!(p.lo > Q::one() - Q::new(BigInt::one(), BigInt::one() << 60u32) && p.hi <= Q::one(), "holds 1 − e^-1000");
-}
-
-/// D4.8 (b) — THE ERF TAIL IS DERIVED, NOT CAPPED: `erf 101` at `w = 14 600`,
-/// where the former `14 000` refused it, is read off its own bound.
-#[test]
-fn erf_tail_branch_is_derived_without_cap() {
-    let w = 14_600;
-    let e = erf(&point(q(101, 1)), w, &mut crate::physics::Physics::default().stroke_n(0)).expect("by its tail");
-    assert!(e.contains(&Q::one()) && e.width() <= Q::new(BigInt::one(), BigInt::one() << w));
-}
-
-/// D4.8 (c) — A SPENT TOKEN ANSWERS THE SECTOR: `λ = 3`, `u` on `F(2)`'s
-/// enclosure at the first round, a token too short for a second; the
-/// quantile is 2 or 3, never a guess.
-#[test]
-fn poisson_quantile_answers_sector_on_spent_budget() {
-    let l = q(3, 1);
-    let w = 8;
-    let f2 = exp(&point(-l.clone()), 200).scale(&q(17, 2));
-    let u = f2.lo;
-    let mut t = crate::physics::Physics::default().stroke_n(3);
-    match poisson_quantile(&l, &u, w, &mut t) {
-        Some(Quantile::Sector { lo, hi }) => assert_eq!((lo, hi), (2, 3)),
-        Some(Quantile::At(k)) => assert!(k == 2 || k == 3, "decided {k}"),
-        None => panic!("a step was undecided: its sector is the answer"),
-    }
-}
-
-/// D4.8 (c) — A LARGE λ IS DECIDED: `λ = 500` at `w = 64`, the leading term
-/// `e^{−500}` resolved relative to its own size, the median read near λ.
-#[test]
-fn poisson_quantile_decides_at_large_lambda() {
-    let q500 = poisson_quantile(&q(500, 1), &q(1, 2), W, &mut token());
-    assert!(matches!(q500, Some(Quantile::At(k)) if (480..=520).contains(&k)), "{q500:?}");
 }
 
 /// D4.8 (e) — `exp(100)` IS WITHIN ITS GRID: the value's own magnitude is in
@@ -186,14 +84,14 @@ fn exp_width_is_within_grid_at_positive_argument() {
 /// The same inputs give the same enclosure on any thread.
 #[test]
 fn enclosure_ignores_thread() {
-    let here = (pi(W), erf(&point(q(5, 7)), W, &mut token()), lgamma(&point(q(3, 2)), W));
-    let there = std::thread::spawn(|| (pi(W), erf(&point(q(5, 7)), W, &mut token()), lgamma(&point(q(3, 2)), W))).join().expect("thread");
+    let here = (pi(W), sinh(&point(q(5, 7)), W), lgamma(&point(q(3, 2)), W));
+    let there = std::thread::spawn(|| (pi(W), sinh(&point(q(5, 7)), W), lgamma(&point(q(3, 2)), W))).join().expect("thread");
     assert_eq!(here, there, "bit for bit");
 }
 
 /// Whether `e` lies strictly inside `(lo, hi)`.
-fn within(e: &Encl, lo: Q, hi: Q) -> bool {
-    e.lo > lo && e.hi < hi
+fn within(e: &Certified, lo: Q, hi: Q) -> bool {
+    e.lo() > &lo && e.hi() < &hi
 }
 
 /// The hyperbolic and inverse circular functions are enclosed: sinh, cosh
@@ -242,23 +140,10 @@ fn planck_tail_is_one_at_zero_and_agrees_with_series() {
     // The rest is the second term, ~e^{-30}/2 ≈ 2^-44 of the first; the grid
     // adds 2^-64 absolute (F(30) ≈ 4·10⁻¹⁰, so absolute, not relative).
     let gap = far.sub(&first).abs_max();
-    let allowed = &first.hi / Q::from_integer(BigInt::one() << 40u32) + Q::new(BigInt::one(), BigInt::one() << 60u32);
+    let allowed = first.hi() / Q::from_integer(BigInt::one() << 40u32) + Q::new(BigInt::one(), BigInt::one() << 60u32);
     assert!(gap < allowed, "the first term, to 2^-40 of itself and the grid");
-    let order = planck_tail(&Encl::new(q(2, 1), q(3, 1)).expect(""), W).expect("");
-    assert!(order.lo < order.hi && order.lo > Q::zero(), "an interval of x");
-}
-
-/// The Poisson quantile reads the CDF's steps, and refuses `u = 1`.
-#[test]
-fn poisson_quantile_reads_cdf_steps() {
-    // λ = 3: CDF(0) ≈ 0.0498, CDF(1) ≈ 0.1991, CDF(2) ≈ 0.4232, CDF(3) ≈ 0.6472, CDF(5) ≈ 0.9161.
-    let l = q(3, 1);
-    let at = |u: &Q| poisson_quantile(&l, u, W, &mut token());
-    assert_eq!(at(&Q::zero()), Some(Quantile::At(0)));
-    assert_eq!(at(&q(1, 10)), Some(Quantile::At(1)));
-    assert_eq!(at(&q(1, 2)), Some(Quantile::At(3)));
-    assert_eq!(at(&q(9, 10)), Some(Quantile::At(5)));
-    assert_eq!(at(&Q::one()), None, "u < 1");
+    let order = planck_tail(&Certified::between(q(2, 1), q(3, 1)).expect(""), W).expect("");
+    assert!(order.lo() < order.hi() && order.lo() > &Q::zero(), "an interval of x");
 }
 
 /// D1.2 PHASE A — THE REFINEMENT ENDS ON A RATIONAL RADIUS: `π` refined past
@@ -271,5 +156,64 @@ fn separates_terminates_on_rational_radius() {
     for (r, side) in [(q(3, 1), Less), (q(333, 106), Less), (q(22, 7), Greater), (q(355, 113), Greater)] {
         assert_eq!(separates(&r, pi), Some(side), "{r}");
     }
-    assert_eq!(separates(&q(1, 3), |_| Encl::exact(q(1, 3))), Some(Equal));
+    assert_eq!(separates(&q(1, 3), |_| Certified::Exact(q(1, 3))), Some(Equal));
+}
+
+/// 78.182 ITEM 24 — A ZERO-WIDTH ENCLOSURE IS A POINT AND IS REFUSED:
+/// `Encl::new` refuses `lo = hi` and `lo > hi` and admits `lo < hi`, whose
+/// width is positive; the checked `Certified::between` answers the point
+/// `Exact` and refuses the reversed pair.
+#[test]
+fn encl_refuses_zero_width() {
+    assert_eq!(Encl::new(q(1, 3), q(1, 3)), None, "a point is no enclosure");
+    assert_eq!(Encl::new(q(1, 2), q(1, 3)), None, "reversed bounds");
+    let e = Encl::new(q(1, 3), q(1, 2)).expect("lo < hi");
+    assert!(e.width() > Q::zero() && e.round(4).width() > Q::zero(), "outward rounding keeps the width positive");
+    assert_eq!(Certified::between(q(1, 3), q(1, 3)), Some(point(q(1, 3))), "the point is exact");
+    assert_eq!(Certified::between(q(1, 2), q(1, 3)), None);
+    assert_eq!(Certified::between(q(1, 3), q(1, 2)), Some(Certified::Enclosed(e)));
+}
+
+/// AT AN ARGUMENT WHERE THE VALUE IS RATIONAL, IT IS EXACT: `exp 0 = 1`,
+/// `ln 1 = 0`, `sin 0 = 0`, `cos 0 = 1`, `tan 0 = 0`, `sinh 0 = 0`, `cosh 0 =
+/// 1`, `atan 0 = 0`, `acos 1 = 0`, `logistic 0 = ½`, `√(9/4) = 3/2`, `lnΓ 1 =
+/// lnΓ 2 = 0`, `F(0) = 1`, `8^{2/3} = 4`, `(4/9)^{−1/2} = 3/2`; and points
+/// compose to a point.
+#[test]
+fn special_argument_answers_exact() {
+    let zero = point(Q::zero());
+    let one = point(Q::one());
+    assert_eq!(exp(&zero, W), one, "exp 0");
+    assert_eq!(ln(&one, W), Some(zero.clone()), "ln 1");
+    assert_eq!(sin_cos(&zero, W), (zero.clone(), one.clone()), "sin 0, cos 0");
+    assert_eq!(cos(&zero, W), one, "cos 0");
+    assert_eq!(tan(&zero, W), Some(zero.clone()), "tan 0");
+    assert_eq!(sinh(&zero, W), zero, "sinh 0");
+    assert_eq!(cosh(&zero, W), one, "cosh 0");
+    assert_eq!(atan(&zero, W), zero, "atan 0");
+    assert_eq!(acos(&one, W), Some(zero.clone()), "acos 1");
+    assert_eq!(logistic(&zero, W), Some(point(q(1, 2))), "logistic 0");
+    assert_eq!(sqrt(&point(q(9, 4)), W), Some(point(q(3, 2))), "√(9/4)");
+    assert_eq!(lgamma(&one, W), Some(zero.clone()), "lnΓ 1");
+    assert_eq!(lgamma(&point(q(2, 1)), W), Some(zero.clone()), "lnΓ 2");
+    assert_eq!(planck_tail(&zero, W), Some(one.clone()), "F(0)");
+    assert_eq!(powq(&point(q(8, 1)), &q(2, 3), W), Some(point(q(4, 1))), "8^(2/3)");
+    assert_eq!(powq(&point(q(4, 9)), &q(-1, 2), W), Some(point(q(3, 2))), "(4/9)^(−1/2)");
+    let p = point(q(2, 3)).mul(&point(q(3, 4))).add(&point(q(1, 2))).div(&point(q(2, 1)));
+    assert_eq!(p, Some(point(q(1, 2))), "points compose to a point");
+    assert_eq!(point(q(1, 3)).round(8), point(q(1, 3)), "an exact value stays exact under round");
+}
+
+/// AN IRRATIONAL VALUE IS ENCLOSED, OF POSITIVE WIDTH: `e`, `√2`, `cos 1`,
+/// `π`, `ln 2`, `2^{1/2}` and `lnΓ 3 = ln 2` are each an `Encl`.
+#[test]
+fn irrational_value_is_enclosed_with_positive_width() {
+    let enclosed = |c: &Certified| matches!(c, Certified::Enclosed(e) if e.width() > Q::zero());
+    assert!(enclosed(&exp(&point(Q::one()), W)), "e");
+    assert!(enclosed(&sqrt(&point(q(2, 1)), W).expect("√2")), "√2");
+    assert!(enclosed(&cos(&point(Q::one()), W)), "cos 1");
+    assert!(enclosed(&pi(W)), "π");
+    assert!(enclosed(&ln2(W)), "ln 2");
+    assert!(enclosed(&powq(&point(q(2, 1)), &q(1, 2), W).expect("2^½")), "2^½");
+    assert!(enclosed(&lgamma(&point(q(3, 1)), W).expect("lnΓ 3")), "lnΓ 3");
 }
