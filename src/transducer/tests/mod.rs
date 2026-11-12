@@ -9,6 +9,7 @@ mod perspective;
 mod raster;
 mod rewrite;
 mod sample;
+mod sections;
 mod sheaf;
 mod symbols;
 mod torsion_witness;

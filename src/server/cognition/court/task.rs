@@ -369,6 +369,89 @@ pub fn stated_ground(
     stated_ground_of(&pairs, Some(bytes)).map(|_| Ground::One(g))
 }
 
+/// WHY THE COURT DOES NOT READ A TASK'S SECTION UNDER A CLAIM'S STATED
+/// PERSPECTIVE (MU-SENSING §4, §6.2; track 26 S6).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StatedPerspectiveRefusal {
+    /// The perspective reads another count of axes than the section has.
+    Rank,
+    /// The perspective reads an axis in a role other than space: the
+    /// section's plane spans every axis it reads.
+    Role,
+}
+
+impl StatedPerspectiveRefusal {
+    /// The refusal's reason as the court names it, on the solve and the
+    /// speech alike.
+    pub fn reason(self) -> &'static str {
+        match self {
+            StatedPerspectiveRefusal::Rank => crate::court::verdict::REFUSE_PERSPECTIVE_RANK,
+            StatedPerspectiveRefusal::Role => crate::court::verdict::REFUSE_PERSPECTIVE_ROLE,
+        }
+    }
+}
+
+/// THE PAIRS A CLAIM IS RECONSTRUCTED ON, READ THROUGH THE PERSPECTIVE IT
+/// STATES (MU-SENSING §4, §6.2; track 26 S6): each member of each pair read
+/// by `Perspective::read`, its place kept, and held again as a section
+/// sample. The perspective is part of the claim, never of the task: the
+/// pairs handed in are the court's own copy and are not rewritten, and the
+/// court never chooses a perspective of its own. Refused `Rank` where the
+/// perspective reads another count of axes than the section, `Role` where
+/// it reads an axis as other than space. The pairs are a family's train
+/// pairs, or the withheld pairs a solve is reconstructed on.
+pub fn stated_perspective(
+    pairs: &crate::transducer::family::Family,
+    perspective: &crate::transducer::perspective::Perspective,
+) -> Result<Vec<crate::transducer::family::TrainPair>, StatedPerspectiveRefusal> {
+    use crate::transducer::family::SectionSample;
+    use crate::transducer::perspective::Role;
+    if perspective.rank() != crate::transducer::alphabet::ALPHABET_SAMPLE_RANK {
+        return Err(StatedPerspectiveRefusal::Rank);
+    }
+    if perspective.roles().iter().any(|&r| r != Role::Space) {
+        return Err(StatedPerspectiveRefusal::Role);
+    }
+    // A rank-matched, all-space perspective reads every section sample onto
+    // the section again: its pose is a signed permutation of the plane.
+    let read = |s: &SectionSample| perspective.read(s.sample()).ok().and_then(|r| SectionSample::of(r).ok());
+    pairs
+        .iter()
+        .map(|(x, y)| Some((read(x)?, read(y)?)))
+        .collect::<Option<Vec<_>>>()
+        .ok_or(StatedPerspectiveRefusal::Rank)
+}
+
+/// A SENTENCE HEARD UNDER ITS STATED PERSPECTIVE (track 26 S6): the task it
+/// is heard for, the perspective and the court's copy of the task's family
+/// read through it, held while the sentence is heard and never after.
+#[derive(Clone, Debug)]
+pub struct HeardUnder {
+    pub(crate) task: Vec<u8>,
+    pub(crate) perspective: crate::transducer::perspective::Perspective,
+    pub(crate) family: Vec<crate::transducer::family::TrainPair>,
+}
+
+impl Court {
+    /// THE FAMILY OF `task` AS THE SENTENCE BEING HEARD READS IT: the
+    /// family read through the stated perspective while a sentence is heard
+    /// under one for this task, else the court's copy as posted.
+    pub(crate) fn family_heard(&self, task: &[u8]) -> Option<&[crate::transducer::family::TrainPair]> {
+        match &self.heard_under {
+            Some(h) if h.task == task => Some(h.family.as_slice()),
+            _ => self.task_family.get(task).map(Vec::as_slice),
+        }
+    }
+
+    /// The perspective a sentence of `task` is being heard under, where one
+    /// is stated: its writing extends the reconstruction's cursor key, so a
+    /// reconstruction begun under one perspective never resumes under
+    /// another.
+    pub(crate) fn perspective_heard(&self, task: &[u8]) -> Option<&crate::transducer::perspective::Perspective> {
+        self.heard_under.as_ref().filter(|h| h.task == task).map(|h| &h.perspective)
+    }
+}
+
 /// THE STATED GROUND READ AT ANY RANK (track 26 S4c): as [`stated_ground`],
 /// on the posted samples of the task's train pairs. The stated ground is
 /// one symbol at the samples' own width, or refused `NotOneSymbol`; read as

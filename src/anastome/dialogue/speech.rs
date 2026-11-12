@@ -24,6 +24,11 @@ pub struct Asserted {
     /// UNDER: one symbol at the source's width, or none. The court
     /// reconstructs the sentence under it and never deduces one.
     pub ground: Option<Vec<u8>>,
+    /// MU-SENSING §4, §6.2 (track 26 S6) — THE PERSPECTIVE THE SENTENCE WAS
+    /// SPOKEN UNDER: the court reads its copy of the task's family through
+    /// it and reconstructs the sentence there. None reads the family as
+    /// posted, which is the default perspective's reading.
+    pub perspective: Option<crate::transducer::perspective::Perspective>,
 }
 
 /// Backwards-compatibility alias for [`Asserted`].
@@ -57,6 +62,7 @@ pub fn encode_speech_standing(
             contraction: None,
             agreement: None,
             ground: None,
+            perspective: None,
         })
         .collect();
     encode_speech_spoken(voice, task, tu, &spoken)
@@ -67,10 +73,13 @@ pub fn encode_speech_standing(
 /// u32][tape]`: `carries` bit 0 a contraction certificate follows, bit 1 an
 /// agreement (`[len u32][the other mind's signed HOLD frame]`), bit 2 — track
 /// 26 S5, MU-SENSING §6.2 — the ground the claim was spoken under (`[len
-/// u32][symbol]`, never empty); the derivation of every word vertex is
-/// inside the tape at v7 (50.2 step 2). `None` where the task's address
-/// cannot be framed (LD0), or a stated ground is empty: the speech is not
-/// spoken, never sent with the task dropped.
+/// u32][symbol]`, never empty), bit 3 — track 26 S6, MU-SENSING §4 — the
+/// perspective the sentence was spoken under (as the claim of factorisation
+/// writes it, `[rank u16][(source u16)(sense u8) · rank][role u8 · rank]`),
+/// after the ground; the derivation of every word vertex is inside the
+/// tape at v7 (50.2 step 2). `None` where the task's address cannot be
+/// framed (LD0), a stated ground is empty or a perspective passes its
+/// field: the speech is not spoken, never sent with the task dropped.
 pub fn encode_speech_spoken(
     voice: &[u8; 32],
     task: impl AsRef<[u8]>,
@@ -87,7 +96,12 @@ pub fn encode_speech_spoken(
         if s.ground.as_deref() == Some(&[]) {
             return None;
         }
-        out.push(u8::from(s.contraction.is_some()) | (u8::from(s.agreement.is_some()) << 1) | (u8::from(s.ground.is_some()) << 2));
+        out.push(
+            u8::from(s.contraction.is_some())
+                | (u8::from(s.agreement.is_some()) << 1)
+                | (u8::from(s.ground.is_some()) << 2)
+                | (u8::from(s.perspective.is_some()) << 3),
+        );
         if let Some(c) = &s.contraction {
             c.to_bytes(&mut out)?;
         }
@@ -96,6 +110,9 @@ pub fn encode_speech_spoken(
         }
         if let Some(g) = &s.ground {
             crate::transducer::address::put_bytes(&mut out, g)?;
+        }
+        if let Some(p) = &s.perspective {
+            super::factorisation::put_perspective(&mut out, p)?;
         }
         crate::transducer::address::put_bytes(&mut out, &s.tape)?;
     }
@@ -118,12 +135,13 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
     let mut contractions = Vec::with_capacity(n.min(64));
     let mut agreements = Vec::with_capacity(n.min(64));
     let mut grounds = Vec::with_capacity(n.min(64));
+    let mut perspectives = Vec::with_capacity(n.min(64));
     for _ in 0..n {
         let st = *body.get(pos)?;
         pos += 1;
         let carries = *body.get(pos)?;
         pos += 1;
-        if carries & !0b111 != 0 {
+        if carries & !0b1111 != 0 {
             return None;
         }
         let cited = match carries & 1 {
@@ -145,14 +163,19 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
                 Some(g)
             }
         };
+        let perspective = match carries & 0b1000 {
+            0 => None,
+            _ => Some(super::factorisation::take_perspective(body, &mut pos)?),
+        };
         let s = crate::transducer::address::take_bytes(body, &mut pos)?;
         standing.push(st);
         contractions.push(cited);
         agreements.push(agreed);
         grounds.push(ground);
+        perspectives.push(perspective);
         sentences.push(s);
     }
-    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions, agreements, grounds })
+    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions, agreements, grounds, perspectives })
 }
 
 /// `[ACT_SPEECH][n u8]` then per sentence `[code u8][receipt 32]` and, for

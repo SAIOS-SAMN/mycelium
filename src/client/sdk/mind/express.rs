@@ -509,6 +509,9 @@ impl Mind {
                     contraction: self.certificate_for(&sentences[i]),
                     agreement: None,
                     ground: ground.clone(),
+                    // TRACK 26 S6 — the perspective the sentence was spoken
+                    // under: the section's, through which it was read.
+                    perspective: Some(SectionSample::section_perspective()),
                 })
             })
             .collect();

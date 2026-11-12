@@ -22,6 +22,10 @@ pub mod raster;
 /// MU-SENSING §3.9, §5 — the sample the letters spell: a sample admitted
 /// onto the alphabet's section, read by lines along its last axis.
 pub mod spelled;
+/// MU-SENSING §5; ruled 2026-11-06 on #32 (4) — past the alphabet's section,
+/// a sample read through its section samples, one per plane and coordinate
+/// of the rest; no letter is written for a larger rank.
+pub mod sections;
 /// 16.4 — the conformal model every transport is written in.
 pub mod cga;
 /// 52 — the Cayley chart: a versor's derivation is its bivector.

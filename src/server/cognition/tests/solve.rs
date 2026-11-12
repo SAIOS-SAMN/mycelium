@@ -30,7 +30,9 @@ fn halves() -> (Vec<TrainPair>, Vec<TrainPair>) {
 fn claim_states_ground_and_court_reconstructs_under_ground() {
     use crate::transducer::family::transduce::Ground;
     let (train, withheld) = halves();
-    assert_eq!(crate::transducer::raster::ground_of(&train), Ground::Vortex(vec![0, 5]), "the task's ground is a vortex");
+    let pairs: Vec<_> = train.iter().map(|(x, y)| (x.sample().clone(), y.sample().clone())).collect();
+    let kept: Vec<Vec<u8>> = Ground::candidacies(&pairs).into_iter().filter(|(_, c)| *c == crate::transducer::family::transduce::Candidacy::Candidate).map(|(s, _)| s).collect();
+    assert_eq!(kept, vec![vec![0], vec![5]], "the task's candidates are a vortex");
     let spoken = crate::transducer::raster::on_ground(Ground::One(0), || {
         let rule = crate::transducer::family::extract_rule(&train, &mut budget()).expect("the move extracts on 0");
         crate::transducer::family::mint_sentence(&rule, &train, &NoCrystal, 0).expect("and mints on 0")
@@ -79,7 +81,7 @@ fn speech_states_its_ground_and_court_reconstructs_under_it() {
     );
     let act = |ground: Option<Vec<u8>>| {
         let tape = sentence.to_bytes().expect("the record writes");
-        let said = Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground };
+        let said = Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground, perspective: None };
         decode_speech(&encode_speech_spoken(&[1; 32], task, 0, &[said]).expect("the speech frames")).expect("the speech reads")
     };
     assert_eq!(act(Some(vec![0])).grounds, vec![Some(vec![0])], "the stated ground rides the act");

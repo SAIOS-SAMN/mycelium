@@ -160,7 +160,9 @@ fn claim(session: &Session, key: &SigningKey, id: &[u8; 32], outputs: &[SectionS
     let Ok(outputs) = task::spoken_outputs(outputs) else {
         return Ok(Ok(Outcome::NoRule("an output is no sample")));
     };
-    let Some(solve) = task::encode_solve_spoken(key, id, &outputs, Some(tape), ground) else {
+    // The claim states the perspective its outputs were perceived under: the
+    // section's, which the rule was read through (track 26 S6).
+    let Some(solve) = task::encode_solve_spoken(key, id, &outputs, Some(tape), ground, &SectionSample::section_perspective()) else {
         return Ok(Ok(Outcome::NoRule("the outputs pass the solve act's fields")));
     };
     // A reconstruction the court's stroke did not finish answers UNREAD and resumes

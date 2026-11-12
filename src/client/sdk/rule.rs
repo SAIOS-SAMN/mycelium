@@ -32,7 +32,7 @@ use crate::transducer::sentence::{self, Form};
 use crate::transducer::sentence::{Acting, Vertex};
 pub use crate::transducer::family::statement::Unstated;
 pub use crate::transducer::sentence::form::clause::{
-    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, PlaneAxis, Pred, RegionKind, Stop, Tie, Value,
+    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, PlaneAxis, Pred, Ray, RegionKind, Stop, Tie, Value,
 };
 
 /// ONE STEP OF A RULE: a motion of the base, or a map of the hue fibre —
@@ -64,8 +64,9 @@ pub enum Step {
 /// WHAT A RULE CREATES relative to a selected body.
 #[derive(Clone, Debug)]
 pub enum Create {
-    /// A line from every site of the body along `ray`, to its stop.
-    Extend { ray: (i8, i8), paint: Paint, stop: Stop },
+    /// A line from every site of the body along `ray` (a translation of the
+    /// sample's rank), to its stop.
+    Extend { ray: Ray, paint: Paint, stop: Stop },
     /// The one body `template` selects, stamped centre on centre onto the
     /// body, which it replaces.
     Copy { template: Pred },
@@ -358,7 +359,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
             Step::Create(c) => {
                 flush(&mut pending, &mut out, &select);
                 let act = match c {
-                    Create::Extend { ray, paint, stop } => Act::Extend { ray: *ray, paint: paint.clone(), stop: *stop },
+                    Create::Extend { ray, paint, stop } => Act::Extend { ray: ray.clone(), paint: paint.clone(), stop: *stop },
                     Create::Copy { template } => Act::Copy { template: template.clone() },
                 };
                 out.push(Clause { select: select.clone(), act });

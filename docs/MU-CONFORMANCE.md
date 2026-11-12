@@ -86,13 +86,13 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 | Need | Act | Reply decoder | Fields read back |
 |---|---|---|---|
 | MUST | `task` (`[ACT_TASK][voice 32]`) | `decode_task` | citation, train, tests, each a sample of any rank (rank, extents, width, place, symbols; MU-SENSING §6) (an empty reply: no work) |
-| MUST | `solve` (`ACT_SOLVE`, claim kind 0; signed as `mycelium solve v4`, its outputs samples of any rank, with the rule's tape and, optionally, the ground the claim was spoken under; MU-SENSING §6.2) | `decode_solve`, `decode_solve_verdict` | the act: voice, task, outputs (samples), rule, stated ground (or none), signature; the verdict: code, paid S:G:T:H, refusal, modes |
+| MUST | `solve` (`ACT_SOLVE`, claim kind 0; signed as `mycelium solve v5`, its outputs samples of any rank, the perspective they were perceived under (track 26 S6), with the rule's tape and, optionally, the ground the claim was spoken under; MU-SENSING §6.2) | `decode_solve`, `decode_solve_verdict` | the act: voice, task, outputs (samples), stated perspective (pose sources and senses, roles), rule, stated ground (or none), signature; the verdict: code, paid S:G:T:H, refusal, modes |
 | MUST | `laws register` (`ACT_LAWS` mode 0) | `decode_register_reply` | law version, laws |
 | MAY | `task by citation` | `decode_task` | citation, train, tests |
 | MAY | `laws lexicon` (mode 3), `laws clock` (4), `laws parameters` (5), `laws statement` (6) | `decode_lexicon_reply`, `decode_clock_reply`, `decode_parameters_reply`, `decode_statement_reply` | as each decoder reads |
 | MAY | `laws concordance` (mode 7), `laws signature` (mode 8), `laws alignment` (mode 9) | `decode_concordance_reply`, `decode_signature_reply`, `decode_alignment_reply` | as the kernel profile's |
 | MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
-| MAY | `probe`, `peers`, `syllabus`, `speech` (each sentence with, optionally, the ground its claim was spoken under; MU-SENSING §6.2), `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
+| MAY | `probe`, `peers`, `syllabus`, `speech` (each sentence with, optionally, the ground its claim was spoken under and the perspective it was spoken under; MU-SENSING §6.2), `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
 | MAY | `solve factorisation` (`ACT_SOLVE`, claim kind 1, `SOLVE_KIND_FACTORISATION`; signed as `mycelium factorisation v2`: a train pair's motion and residue at any rank, the perspective it was perceived under (track 26 S6), and, optionally, the ground the claim was spoken under; MU-SENSING §3.9, §4) | `decode_factorisation`, `decode_factor_verdict` | the act: voice, task, pair, motion (sources, senses, periods), residue (links), stated perspective (pose sources and senses, roles), stated ground (or none), signature; the verdict: admitted, the residue of the residues (unclaimed, uncarried), or the refusal by name |
 
 **Claim kinds of the solve (track 26 S4c).** The solve act carries its

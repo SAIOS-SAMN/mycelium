@@ -453,6 +453,11 @@ pub struct SpeechAct {
     /// or none. Part of the claim, never of the task: the court
     /// reconstructs under it and never deduces a ground of its own.
     pub grounds: Vec<Option<Vec<u8>>>,
+    /// MU-SENSING §4, §6.2 (track 26 S6) — per sentence, in the same order,
+    /// the perspective it was spoken under, or none (the family read as
+    /// posted). Part of the claim, never of the task: the court reads its
+    /// copy of the family through it and never chooses one.
+    pub perspectives: Vec<Option<crate::transducer::perspective::Perspective>>,
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The derivation
     // of every word vertex travels inside the tape at v7, so two voices
     // sending one address are told apart by the tapes themselves and the
@@ -592,6 +597,11 @@ pub struct SolveAct {
     /// One output per test input, in the order they were served: a sample
     /// of any rank at `[test, i, output]` (track 26 S5).
     pub outputs: Vec<crate::transducer::sample::Sample>,
+    /// TRACK 26 S6 — THE PERSPECTIVE THE OUTPUTS WERE PERCEIVED UNDER
+    /// (MU-SENSING §4, §6.2): part of the claim, never of the task. The
+    /// court reads its copy of the task's pairs through it and reconstructs
+    /// the rule there; it never chooses a perspective.
+    pub perspective: crate::transducer::perspective::Perspective,
     /// The rule the voice extracted, when it speaks one. `None` is an
     /// answer with no rule behind it — the registry prices it differently.
     pub rule: Option<Vec<u8>>,

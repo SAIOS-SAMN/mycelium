@@ -73,7 +73,7 @@ fn sdk_speaks_every_act_the_server_judges() {
         (Action::Handoff, house::encode_handoff_read([1; 32])),
         (Action::Evidence, session::encode_evidence_request(&V)),
         (Action::Task, task::encode_task_request(&V)),
-        (Action::Solve, task::encode_solve_spoken(&key(9), &[5; 32], &[], None, None).expect("a solve frames")),
+        (Action::Solve, task::encode_solve_spoken(&key(9), &[5; 32], &[], None, None, &task::Perspective::of_sample(2)).expect("a solve frames")),
         (Action::Syllabus, session::encode_syllabus_request(&V)),
         (Action::Digests, session::encode_digests_request(&V)),
         (Action::Fetch, session::encode_fetch(&V, none, 1)),

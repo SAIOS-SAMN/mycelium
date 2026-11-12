@@ -21,7 +21,7 @@
 //! perspective's own test — and otherwise it is refused by name ([`Unread`]).
 
 use super::*;
-use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, PlaneAxis, Pred, RegionKind, Stop, Tie, Value};
+use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, PlaneAxis, Pred, Ray, RegionKind, Stop, Tie, Value};
 use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 use crate::transducer::spelled::{PaintedSite, SectionSite};
 
@@ -564,7 +564,7 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
     }
     let n = n?;
     let [first, second] = o.map(|c| i8::try_from(c / n).ok());
-    let ray = (first?, second?);
+    let ray = Ray::new(vec![first?, second?]);
     let slide = Clause { select: c.select.clone(), act: Act::Slide { ray, stop: Stop::Contact } };
     let same = pairs.iter().all(|p| {
         let carried = statement::speak_clauses(std::slice::from_ref(c), p.x, &p.bodies).ok();
@@ -748,8 +748,8 @@ pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], 
         let mut related = Some(false);
         if erased.iter().any(|e| !e.is_empty()) {
             related = match (r.separate(&erased, &still), slide_ray(&r, &erased)) {
-                (Some(select), Some(ray)) => {
-                    reacted.push(Clause { select, act: Act::Slide { ray, stop: Stop::Contact } });
+                (Some(select), Some((dr, dc))) => {
+                    reacted.push(Clause { select, act: Act::Slide { ray: Ray::new(vec![dr, dc]), stop: Stop::Contact } });
                     Some(true)
                 }
                 (Some(select), None) => {
@@ -1156,7 +1156,7 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[V
     rays.scoped()
         .map(|(key, rr)| {
             let [first, second] = <[u8; ALPHABET_SAMPLE_RANK]>::try_from(key.as_slice()).ok()?.map(|d| i8::from_le_bytes([d]));
-            let ray = (first, second);
+            let ray = Ray::new(vec![first, second]);
             let paint = match (rr.own, rr.hue) {
                 (true, _) => Paint::Own,
                 (false, Some(Some(h))) => Paint::Hue(h),

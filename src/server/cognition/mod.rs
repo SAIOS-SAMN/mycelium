@@ -51,7 +51,7 @@ pub use lease::LeaseReading;
 pub use court::fold::Proposal;
 pub use court::syllabus::{Asker, PageEnd, ServedPage};
 pub use court::selection::TaskJudgement;
-pub use court::task::{stated_ground, stated_ground_of, SolveVerdict, StatedGroundRefusal};
+pub use court::task::{stated_ground, stated_ground_of, stated_perspective, SolveVerdict, StatedGroundRefusal, StatedPerspectiveRefusal};
 pub use persistence::RestoreRefusal;
 pub use state::Court;
 pub use published::{PublishCost, Published};

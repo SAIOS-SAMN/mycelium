@@ -20,6 +20,7 @@
 //! Sites are written only at the two raster ends: the sensor's read, and
 //! the projection that speaks onto an output frame.
 
+mod collapse;
 mod enclosed;
 mod factor;
 mod ground;
@@ -36,6 +37,7 @@ mod turn;
 #[cfg(test)]
 mod tests;
 
+pub use collapse::{collapse_of, CandidateReading, Collapse, GroundReading};
 pub use enclosed::{Band, Enclosed};
 pub use factor::{factorisations, factorisations_need, need_of_motion, Factored, Factorisation, Motion};
 pub use ground::{Candidacy, Ground, Unground};

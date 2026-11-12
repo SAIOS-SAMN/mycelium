@@ -44,6 +44,7 @@ mod resume;
 mod room;
 mod ruling;
 mod solve;
+mod perspective;
 mod uplink;
 mod ledger;
 mod challenge;

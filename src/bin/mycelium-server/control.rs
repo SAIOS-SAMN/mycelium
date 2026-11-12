@@ -216,7 +216,7 @@ pub(crate) fn serve_control(s: &mut Channel, delimited: &Delimited, context: &Co
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, ground: stated, signed, .. }) =
+        let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, ground: stated, perspective, signed, .. }) =
             dialogue::decode_solve(&delimited.body)
         else {
             return true;
@@ -239,12 +239,21 @@ pub(crate) fn serve_control(s: &mut Channel, delimited: &Delimited, context: &Co
         // S4c): a task off it is refused by the alphabet's name alone, never
         // for its rank, and a claim on it is a factorisation
         // (the solve's claim kind `SOLVE_KIND_FACTORISATION`).
+        // THE CLAIM'S PERSPECTIVE (MU-SENSING §4, §6.2; track 26 S6): the
+        // court reads its own copy of the task's pairs, the train pairs here
+        // and the withheld pairs it bound at registration in the judging
+        // below, through the perspective the outputs were perceived under,
+        // and reconstructs there (`cognition::stated_perspective`); one it
+        // does not read the section under is refused by name. It never
+        // chooses a perspective, and the posted task is never rewritten.
         // #158 — the withheld pairs are not read here: the court judges on
         // the pairs it bound for the task at registration, by its citation.
         let (tid, open, ground) = {
             let Ok(reg) = context.registry.lock() else { return true };
             let g = reg.section(&cite).map(|section| match section {
-                Ok(t) => mycelium::cognition::stated_ground(&t.train, stated.as_deref()).map_err(|why| why.reason()),
+                Ok(t) => mycelium::cognition::stated_perspective(&t.train, &perspective)
+                    .map_err(|why| why.reason())
+                    .and_then(|train| mycelium::cognition::stated_ground(&train, stated.as_deref()).map_err(|why| why.reason())),
                 Err(_) => Err(mycelium::verdict::REFUSE_BEYOND_ALPHABET),
             });
             (cite, reg.open(&cite), g)
@@ -341,7 +350,15 @@ pub(crate) fn serve_control(s: &mut Channel, delimited: &Delimited, context: &Co
                     // OWED (78.153b): the solve's reconstruction mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
-                    let judgement = mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_task_solve_on_stroke(rule, &cite));
+                    // The perspective was read on the train pairs above; a
+                    // refusal here is the withheld pairs', by the same name.
+                    let judgement = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_task_solve_under(rule, &cite, &perspective)) {
+                        Ok(j) => j,
+                        Err(why) => {
+                            let refusal = refused(why.reason(), mycelium::transducer::sentence::ObstructionKind::Integrity);
+                            return ((dialogue::SOLVE_NOTHING, Mu::zero(), Some(refusal), None), k.take_offers());
+                        }
+                    };
                     // A9 (#158): a binding refused leaves the rule ⊤, by name.
                     if let Some(Err(why)) = &judgement.pi {
                         eprintln!("  π* not bound on a solved rule: {why:?}");

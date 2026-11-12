@@ -8,10 +8,16 @@
 use super::*;
 
 /// ONE SENTENCE WAITING ON A CITED FORM (`Court::awaiting`): the voice that
-/// spoke it, the task it was bound to, the tape, and the ground its claim
-/// was heard under (MU-SENSING §6.2, track 26 S5).
-pub(crate) type AwaitingSentence =
-    ([u8; 32], crate::transducer::address::Address, Element, crate::transducer::family::transduce::Ground<u8>);
+/// spoke it, the task it was bound to, the tape, the ground its claim was
+/// heard under (MU-SENSING §6.2, track 26 S5), and the perspective it was
+/// heard under where it stated one (track 26 S6).
+pub(crate) type AwaitingSentence = (
+    [u8; 32],
+    crate::transducer::address::Address,
+    Element,
+    crate::transducer::family::transduce::Ground<u8>,
+    Option<crate::cognition::court::task::HeardUnder>,
+);
 
 /// The court's evolving state: the installed generator basis + the germ
 /// admission ledger + the Čech peer table.
@@ -225,6 +231,13 @@ pub struct Court {
     /// 78.153 — forms ruled whose waiting citers' re-hearing was unread on
     /// the ruling's stroke: the court stroke hears them again. VOLATILE.
     pub(crate) rehear_due: crate::network::nerve::Keyed<()>,
+    /// MU-SENSING §4, §6.2 (track 26 S6) — THE PERSPECTIVE A SENTENCE IS
+    /// HEARD UNDER, while it is heard: the task, the stated perspective and
+    /// the court's copy of the task's family read through it. Every reader
+    /// of the family inside the adjudication reads this one
+    /// (`Court::family_heard`). VOLATILE: set and cleared by one hearing,
+    /// never persisted; the posted family is never rewritten.
+    pub(crate) heard_under: Option<crate::cognition::court::task::HeardUnder>,
     /// 78.153 — phase readings a stroke could not pay for (the mark kept,
     /// the window read whole at the next). Since boot.
     pub(crate) phase_unread: u64,

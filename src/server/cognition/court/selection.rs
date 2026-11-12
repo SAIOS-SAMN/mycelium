@@ -50,7 +50,38 @@ impl Court {
     /// of its own. The judged rule carries what was bound.
     pub fn judge_task_solve_on_stroke(&mut self, rule: &Element, task: &[u8]) -> TaskJudgement {
         let withheld: Vec<TrainPair> = self.withheld_of(task).to_vec();
-        let verdict = self.judge_solve_on_stroke(rule, &withheld);
+        let train: Vec<TrainPair> = match self.task_family.get(task) {
+            Some(t) => t.clone(),
+            None => Vec::new(),
+        };
+        self.judge_bound_pairs(rule, &train, &withheld)
+    }
+
+    /// THE SOLVE ON A REGISTERED TASK UNDER THE PERSPECTIVE IT STATES
+    /// (MU-SENSING §4, §6.2; track 26 S6): as
+    /// [`Court::judge_task_solve_on_stroke`], on the pairs this court bound
+    /// for `task` at registration, each read through the stated perspective
+    /// ([`stated_perspective`]) before the reconstruction. The bound pairs
+    /// are never rewritten and the court never chooses a perspective; one
+    /// it does not read the section under is refused by name.
+    pub fn judge_task_solve_under(
+        &mut self,
+        rule: &Element,
+        task: &[u8],
+        perspective: &crate::transducer::perspective::Perspective,
+    ) -> Result<TaskJudgement, StatedPerspectiveRefusal> {
+        let withheld = stated_perspective(self.withheld_of(task), perspective)?;
+        let train = match self.task_family.get(task) {
+            Some(t) => stated_perspective(t, perspective)?,
+            None => Vec::new(),
+        };
+        Ok(self.judge_bound_pairs(rule, &train, &withheld))
+    }
+
+    /// The judgement of `rule` on `withheld`, π* bound over `train` where it
+    /// is `Solved`.
+    fn judge_bound_pairs(&mut self, rule: &Element, train: &[TrainPair], withheld: &[TrainPair]) -> TaskJudgement {
+        let verdict = self.judge_solve_on_stroke(rule, withheld);
         if !matches!(verdict, SolveVerdict::Solved { .. }) {
             return TaskJudgement { verdict, judged: rule.clone(), pi: None };
         }
@@ -58,12 +89,8 @@ impl Court {
         let Some(form) = crate::transducer::sentence::from_element_form(rule) else {
             return TaskJudgement { verdict, judged: rule.clone(), pi: None };
         };
-        let train: Vec<TrainPair> = match self.task_family.get(task) {
-            Some(t) => t.clone(),
-            None => Vec::new(),
-        };
         let mut budget = self.physics.stroke();
-        let pi = bind_pi(&form, &train, &withheld, &*self, &mut budget);
+        let pi = bind_pi(&form, train, withheld, &*self, &mut budget);
         let judged = match &pi {
             Ok(b) => rule.clone().with_anchor(b.terms.clone()),
             Err(_) => rule.clone(),

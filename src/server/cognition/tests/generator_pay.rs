@@ -319,7 +319,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
 
         let tape = said.to_bytes().expect("the record writes");
         let ground = super::fixtures::speaker_ground(&cite_fam);
-        let spoken = [dialogue::Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground }];
+        let spoken = [dialogue::Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground, perspective: None }];
         let frame = dialogue::encode_speech_spoken(&voice, c_task, 1, &spoken).expect("the task frames");
         let act = dialogue::decode_speech(&frame).expect("the frame decodes");
         // 78.153: a stroke that holds the frame's reconstructions.

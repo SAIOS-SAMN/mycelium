@@ -302,7 +302,26 @@ as one of the vortex's sections, and nothing picks among them.
   (§6.2).
 - Under `Ground::None` the support is the whole sample. A writer that
   would leave a site needing a ground is refused.
-- Collapsing a vortex by a relation remains S6's.
+- **A vortex collapses by a relation** (ruled 2026-11-06 on #32 (3);
+  track 26 S6, stage 5), as the nesting's does (§3.6). Two relations
+  between the bodies and the ground are read per candidate, at any rank
+  and with no threshold (`transduce::collapse`, `Ground::collapse`):
+  - **Stands:** on every train input, a body stands on the candidate (its
+    one body covers a whole seam and a body lies inside it).
+  - **Painted on:** every pair's residue changes only the candidate's
+    sites: at every site where a held factorisation's speech and the
+    output differ, the symbol before or after is the candidate.
+
+  A candidate collapses the vortex where one of the two holds for it on
+  every pair and for no other candidate (`Collapse::Collapsed`, the
+  ground then `Ground::One`); otherwise the candidates stay superposed
+  (`Collapse::Superposed`). **A closing rule never collapses the ground:**
+  whether the family's rule closes under a candidate decides perception by
+  the solve, which inverts description and solution, and is kept only as
+  an observation per candidate. Claims
+  `ground_vortex_collapses_where_bodies_stand_on_one_candidate`,
+  `ground_vortex_collapses_where_residue_paints_one_candidate`,
+  `closing_rule_never_collapses_the_ground`.
 
 ### 3.5 Gauges are deduced
 
@@ -879,6 +898,17 @@ runs.
   `Residue` of contacts each alone reads). The cocycle closes where the
   turns compose around a triple, and otherwise names the turn around it.
   Claim `two_perspectives_of_one_sample_compared_as_a_cover`.
+- **A missing perspective is a demand** (ruled 2026-11-06 on #32 (2);
+  track 26 S6, stage 4). Where an overlap's agreement is a residue, the
+  cocycle does not close on the sample's 0-cochains: a chart one
+  perspective reads is missing from the other. The cover lists a typed
+  vertex (`cover::PerspectiveDemand`, `Cover::demand`, `Cover::demands`):
+  the sample's place, the overlap's two perspectives, and the residue,
+  which is the demand (the contacts each alone reads). Its key is its
+  coordinates written out (`PerspectiveDemand::key`), and a family's
+  samples list each vertex once (`cover::listed`). A congruent overlap
+  lists none, and nothing in the cover chooses the perspective that would
+  answer the demand. Claim `missing_perspective_is_listed_as_a_typed_demand`.
 - **Frame fixing is a perspective** (`raster::frame_fixing`): the moments
   of 78.54 name a pose, and `frame_fixed` reads the task through it. Claim
   `frame_fixing_is_a_perspective_reading`.
@@ -970,6 +1000,20 @@ so it always knows how many dimensions it read and that the world has more:
   (`alphabet::ALPHABET_SAMPLE_RANK`, a rank-2 sample and its place).
   A task off that section is perceived and stops by name
   (`Stop::BeyondAlphabet`), never truncated onto the letters' planes.
+- **Letters past `n = 3` are never written by hand** (ruled 2026-11-06 on
+  #32 (4)). Past the alphabet's section, readings go through section
+  samples: a sample of a larger rank is read as one section sample per
+  plane of two of its axes and per coordinate of the rest
+  (`transducer::sections::sections_of`, each a `Section` naming its plane
+  and where it stands), each a sample the alphabet admits. A plane a larger
+  rank opens receives a letter only by the presentation's growth (an
+  adjoined generator, `Derivation::adjoined`; germination; a court
+  admitting a letter for a prime, 37.7), never as a slot of the seventeen.
+  A search of the tree found no letter written by hand for a rank past the
+  section (the planes past `e3` appear only in the conformal algebra's
+  tests, as blades and bivectors). Claim
+  `letters_past_the_section_are_never_written_by_hand`. Spelling each
+  section of a rank-3 task in the mind's word path is open.
 
 ## 6. What the hypha holds
 
@@ -1140,9 +1184,29 @@ an axis as other than space `REFUSE_FACTOR_PERSPECTIVE_ROLE`, since the
 transduction factors every axis as a phase the bodies extend along. The
 mind perceives under a perspective (`TaskPercept::under`) and states the
 percept's own. The perspective is part of the claim, never of the task.
-Claim `claim_states_its_perspective_and_court_reconstructs_under_it`. The
-solve of outputs and speech read the alphabet's section in its default
-perspective and do not yet state one.
+Claim `claim_states_its_perspective_and_court_reconstructs_under_it`.
+
+**A solve of outputs and speech state their perspective** (track 26 S6,
+stage 3; ruled 2026-11-06 on #32 (1)). The solve of outputs carries the
+perspective its outputs were perceived under right after them, written as
+the claim of factorisation writes it, and is signed as `mycelium solve v5`.
+Each sentence of a speech carries the perspective it was spoken under
+(`carries` bit 3, after the ground; `Spoken.perspective`,
+`SpeechAct.perspectives`). The court reads its own copy of the task's
+pairs through the stated perspective (`cognition::stated_perspective`):
+the train pairs and the withheld pairs for a solve, and the bound family
+for a sentence, held for the whole adjudication and for a waiting
+sentence's re-hearing (`Court::family_heard`). One of another rank than
+the section is refused `REFUSE_PERSPECTIVE_RANK`, and one reading an axis
+as other than space `REFUSE_PERSPECTIVE_ROLE`, since the section's plane
+spans every axis it reads. A sentence stating none is heard on the family
+as posted. The court never chooses a perspective, and the posted task is
+never rewritten. The mind states the section's perspective, through which
+the word machinery read the scene (`SectionSample::section_perspective`).
+Claim `solve_and_speech_state_their_perspective_and_court_reconstructs_under_it`.
+Still open: the seat's solve call, which a house reads, and a word's
+install after its hearing, which reads the family as posted as it reads no
+stated ground.
 
 ## 7. Who owns a source's code
 
@@ -1223,7 +1287,7 @@ track 26 S4c).
 | **Closed (S4d, stage 2b):** the painted triple `(i64, i64, u8)`, its alias `Painted` and the incongruence reader's `Cell` | **Built** (track 26 S4d, stage 2b): `spelled::PaintedSite { site, symbol }` holds a `SectionSite` and its symbol, ordered as the triple was. The sensor's one reading, `raster::painted_sites`, returns it (`painted_of`, which returned the triple, is retired); the shells (`blade::outline`, `core`, `adjacent_ring`, `enclosed_interior`, `cut`, `magnified`, `reduced`, `tiled`, `bordered`), the layers, the orbit (`carry_painted`, `moves`), speech (`Speech.painted`, `remainder`, `statement::Spoken.painted`), the germ (`germinate`, `apply`), the local section, the incongruence reader and the scene frame (`cognition::frame_of`) read it. A scene laid back on its span is `SectionSite::span_of`. No wire, tape, task, word or chart address changes | `src/transducer/spelled.rs` (`PaintedSite`); claim `painted_sites_round_trip_through_their_span` |
 | **Closed (S4d, stage 2c):** the coordinate pairs `(i64, i64)` of the chart and its readers, the anchor's selection algebra, and the clause reader's planar tables | **Built** (track 26 S4d, stage 2c): held as `SectionSite` and `PaintedSite`. The chart's supports (`element::positions`, `pullback`, `blade::shape_of_section`, `section_moduli`, `sentence::incidence_of`, `orbit::positions_of`, `ring_dist_peel`, the confluence reader) read section sites; `perceive::on_grid` is retired for `SectionSite::of_family`. The anchor's evidence holds its footprint as section sites and its scene as painted sites, converted together with `Selection::eval`, the derive, `candidates::signature` and `keys::footprint_key`; its face neighbours and extremal codes are generated from the plane's rank. The clause reader holds each body's painted sites and the owner of each site at its canonical offset; `extent_of` is retired for `statement::corners_of`; `acts::pattern_key` writes a centred pattern of painted sites. Every codec writes a section site's coordinates in the plane's order (`SectionSite::put_canonical`), so no wire, task, word, chart or clause address changes. The act reading's own index cells and the frame acts were left planar here and are closed in stage 2d | `src/transducer/spelled.rs`; `src/transducer/anchor/`; `src/transducer/family/statement.rs`; claims `section_site_round_trips`, `corners_of_reads_least_and_greatest_on_each_axis` |
 | **Closed (S4d, stage 3):** the rule language's coordinates named as a raster's (`Coord::Height`, `Width`, `Top`, `Left`, `Bottom`, `Right`), `About::Grid`, and the section's planar names | **Built** (track 26 S4d, stage 3; coordinator decision): a coordinate along the plane names the perspective's plane axis it is read along (`Coord::Extent(PlaneAxis)`, `Least(PlaneAxis)`, `Greatest(PlaneAxis)`; `perspective::PlaneAxis`, the first or second space axis of `Perspective::plane`), each in the byte its planar name was written with; `About::Sample`; `dialogue::TaskSection`, `of_section`, `sample_of_painted`, `painted_within_sample`, `Step::symmetry_motion`, `symmetry_steps`. No wire, task, word, chart or clause address changes; the SDK names change inside v0.4.0's break | `src/transducer/perspective.rs` (`PlaneAxis`); `src/transducer/sentence/form/clause.rs`; claim `coord_round_trips_and_reads_its_planar_byte_by_role` |
-| **Closed (S4d, stage 2d): S4d's planar carriers in the act reading.** The act reading's own index cells (`(row, column, symbol)` triples read through a local adapter), the frame acts' planar fields (`Act::Panes`'s `along_rows`, `Act::Tile`'s `rows`/`cols`), the statement's frame as a pair of counts, and the "grid" test names | **Built** (track 26 S4d, stage 2d; coordinator decision): `family::acts` holds painted sites and section sites throughout (the residue and its pieces, connected through a shared face generated at the section's rank; the owner of each site at its canonical offset, `acts::Owners`; the connectors, echoes, slide and bends), the adapter removed. The frame acts name the plane: `Act::Panes { along: PlaneAxis }`, `Act::Tile { blocks }` with one count per plane axis in the plane's order, each in the bytes its planar fields were written with; they stay rank 2, the letters' plane by their mathematics, and their speaking (`statement::turned`, `turn_of`, `block_corner`, `scaled`) reads the plane through the perspective. `statement::Spoken.frame` is the output's extents per plane axis. `Speech::sample` replaces `Speech::grid`, and the tests' fixtures are `digits`. No wire, task, word, chart or clause address changes. Planar outside the act reading: `Speech.frame` and `perceive::frame_of` (the measured `Frame` beside them is a re-period per phase since S4, `Reperiod`), and the ray of `Act::Slide`/`Extend`, a clause field written as a pair. The ray is **ruled** (2026-11-06, #32; 78.180 ruling 6), not built: a translation versor of the sample's own rank, `n` components, assuming no plane | `src/transducer/family/acts.rs`; `src/transducer/family/statement.rs`; `src/transducer/sentence/form/clause.rs`; claims `frame_act_round_trips_and_reads_its_planar_bytes_by_axis`, `extract_rule_reads_panes_along_first_plane_axis`, `speak_clauses_frames_output_by_plane_axis` |
+| **Closed (S4d, stage 2d): S4d's planar carriers in the act reading.** The act reading's own index cells (`(row, column, symbol)` triples read through a local adapter), the frame acts' planar fields (`Act::Panes`'s `along_rows`, `Act::Tile`'s `rows`/`cols`), the statement's frame as a pair of counts, and the "grid" test names | **Built** (track 26 S4d, stage 2d; coordinator decision): `family::acts` holds painted sites and section sites throughout (the residue and its pieces, connected through a shared face generated at the section's rank; the owner of each site at its canonical offset, `acts::Owners`; the connectors, echoes, slide and bends), the adapter removed. The frame acts name the plane: `Act::Panes { along: PlaneAxis }`, `Act::Tile { blocks }` with one count per plane axis in the plane's order, each in the bytes its planar fields were written with; they stay rank 2, the letters' plane by their mathematics, and their speaking (`statement::turned`, `turn_of`, `block_corner`, `scaled`) reads the plane through the perspective. `statement::Spoken.frame` is the output's extents per plane axis. `Speech::sample` replaces `Speech::grid`, and the tests' fixtures are `digits`. No wire, task, word, chart or clause address changes. Planar outside the act reading: `Speech.frame` and `perceive::frame_of` (the measured `Frame` beside them is a re-period per phase since S4, `Reperiod`). The ray of `Act::Slide`/`Extend` is a translation versor of the sample's own rank since the ruling of 2026-11-06 on #32 (5): `clause::Ray`, one step per axis, its versor the translator by its steps (`Ray::versor`), written as its count of steps and each step; the clause reference's bytes change, no form's address does (a form writes its elements, the translator); claim `slide_ray_is_a_translation_versor_of_the_sample_rank` | `src/transducer/family/acts.rs`; `src/transducer/family/statement.rs`; `src/transducer/sentence/form/clause.rs`; claims `frame_act_round_trips_and_reads_its_planar_bytes_by_axis`, `extract_rule_reads_panes_along_first_plane_axis`, `speak_clauses_frames_output_by_plane_axis` |
 | The roles of the axes from a perspective; the fixed-axis constants retired (`GRID_AXES`, `GRID_PLANE`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`); `BASE_AXES` derived | **Built** (track 26 S4b) | `src/transducer/perspective.rs`; `alphabet::ALPHABET_BASE_N`, `slot_of_axis`, `sensor_plane` |
 | A link of rank `n`: a `Site` and the symbols at the source's width; the word, chart and field carriers read `SectionLink`, reached through `Link::section`, refused by name | **Built** (track 26 S4b); the stopped item of S5 closed | `src/transducer/sentence/link.rs` |
 | Connection by grade: bodies through a shared cell of grade `n − 1` at every rank; no fixed 4- or 6-neighbourhood | **Built** (track 26 S4b) | `sentence::incidence_of_sites`, `faces_of`, `surrounding`, `by_grade`; `transduce::Enclosed` |
@@ -1231,8 +1295,10 @@ track 26 S4c).
 | A claim of factorisation on the wire (the solve's claim kind 1, `SOLVE_KIND_FACTORISATION`), admitted by reconstruction, recorded and never paid (ruled); the mind speaking one claim per held factorisation of a task beyond the alphabet | **Built** (track 26 S4c) | `dialogue::factorisation`; `server::factorisation`; `client::sdk::mind::factor` |
 | The hypha posting, serving and addressing tasks of any rank; the word machinery's readers on the section, refused by the alphabet's name alone | **Built** (track 26 S4c) | `server::registry` (`post`, `section`), `server::route`; `PostedTask::envelope` |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
-| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2). Collapsing a ground's vortex is **ruled** (2026-11-06, #32; 78.180 ruling 6), not built: it collapses as the nesting's does, one candidate where a reading holds for it and not for the others, the candidates otherwise superposed. The readings: **Stands** (on every train input a body stands on the candidate) and **Painted on** (every pair's residue changes only the candidate's sites) collapse it, where one holds on every pair for that candidate and for no other kept candidate; **Closes** never does, since it decides perception by the solve and reads only on the alphabet's section, and is kept at most as an observation per candidate. Claims `ground_vortex_collapses_where_bodies_stand_on_one_candidate`, `ground_vortex_collapses_where_residue_paints_one_candidate`, `closing_rule_never_collapses_the_ground` | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
+| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2) | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
+| A ground's vortex collapsed by a relation (§3.4): `Stands` or `PaintedOn` holding for one candidate on every pair and for no other; otherwise superposed; a closing rule never collapses it | **Built** (track 26 S6, stage 5; ruled 2026-11-06 on #32 (3)) | `src/transducer/family/transduce/collapse.rs` (`collapse_of`, `GroundReading`, `Collapse`); `Ground::of`, `Ground::collapse` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
+| The solve of outputs and speech state their perspective: the solve after its outputs, each sentence by `carries` bit 3; the court reads its copy of the task's pairs through it and reconstructs there, refusing another rank or a non-space role by name (§6.2) | **Built** (track 26 S6, stage 3); the seat's solve call and a word's install after its hearing are open | `dialogue::SolveAct.perspective`, `Spoken.perspective`; `cognition::stated_perspective`; `Court::hear_speech_under`, `family_heard` |
 | **Closed (S4):** the dilation between the samples' "envelopes" (each sample's bounds, opened into its manifold by 78.179 §1) squared the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11, read by the fibre map and the frame's momentum | **Built** (track 26 S4): the re-period of each phase replaces it, read through the one measured carrier (`element::Reperiod::of_extents`, `p′ᵢ/pᵢ` axis by axis, refused for two ranks). A site is carried about the centres by its own phase's ratio (`carried_site`), and the momentum weighs each axis by its own re-period (`momentum_vanishes`); `envelope_dilation`, `exact_root` and `gcd_i64` are removed. An anisotropic change of extent now carries sites, and reads a momentum, where the dilation read an irrational scale and read neither. Claims `reperiod_carries_sites_between_extents_phase_by_phase`, `momentum_read_per_phase_across_anisotropic_reperiod` | `src/transducer/family/fibre_relation.rs`; `src/transducer/raster.rs` |
 | **Closed (S6):** the frame fixing ordered and reversed two fixed axes by moments over the painted sites and rewrote the samples (`frame_fixed`) where §4 makes the frame a perspective | **Built** (track 26 S6): the moments name a pose (`raster::frame_fixing`, a `Perspective`), and `frame_fixed` reads the task through it; the samples are never rewritten. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One`. The moments stay on the section's plane, of the rank the letters spell | `src/transducer/raster.rs` |
 | **Closed (S4):** the measured frame was four planar counts (`Frame { h_in, w_in, h_out, w_out }`, renamed `Reperiod` by the names pass) | **Built** (track 26 S4): `element::Reperiod` holds each phase's input and output period at the pair's own rank (`of_extents`, refused for two ranks), and the word's frame fibre is the re-period every phase shares (`shared`), a dilator where it is not 1; an anisotropic re-period shares none, as before. No word, chart or listing address changes. Claim `reperiod_is_read_per_phase_at_any_rank` | `src/transducer/element/residue.rs` |
@@ -1244,7 +1310,7 @@ track 26 S4c).
 | Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b), and the nesting's family-invariance reading (S4) | `transducer::perspective`; `transduce::Enclosure` |
 | A task on the wire as samples of rank `n`: the served task, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind perceives every rank since S4b and the hypha serves every rank since S4c; a solve's rule is reconstructed on the alphabet's section | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
 | **Closed (S4b):** a link was `(i64, i64, u8, u8)`, two axes and one-byte symbols. `sentence::Link` now carries a site of rank `n` and the symbols at the source's width; the alphabet's section reads `SectionLink`, a section site and two symbols (a named type since S4d, stage 2b) | **Built** (track 26 S4b) | `transducer::sentence::link` |
-| Perspective as a sensor motion (a pose beside the roles, shifted by a signed permutation or a recast; a sample read through it, never rewritten); the perspectives of one sample as a cover (contacts as 0-cochains, the turn on each overlap, the cocycle on triples, the residue held) | **Built** (track 26, S6). **Ruled, not built** (2026-11-06, #32; 78.180 ruling 6): a solve of outputs and speech state their perspective and a court reconstructs under it (today they read the section in its default); a mind asks for a perspective as a demand, a typed vertex naming the sample and the overlap, where the cocycle fails for a missing chart | `src/transducer/perspective.rs` (`Perspective::shifted`, `turn_to`, `read`, `SensorMotion`); `src/transducer/perspective/cover.rs` (`Cover`, `Agreement`, `Cocycle`) |
+| Perspective as a sensor motion (a pose beside the roles, shifted by a signed permutation or a recast; a sample read through it, never rewritten); the perspectives of one sample as a cover (contacts as 0-cochains, the turn on each overlap, the cocycle on triples, the residue held) | **Built** (track 26, S6). Ruled 2026-11-06 (#32; 78.180 ruling 6) and built in S6, stages 3 and 4: a solve of outputs and speech state their perspective and a court reconstructs under it (the row above); a mind asks for a perspective as a demand, a typed vertex naming the sample and the overlap, where the cocycle fails for a missing chart | `src/transducer/perspective.rs` (`Perspective::shifted`, `turn_to`, `read`, `SensorMotion`); `src/transducer/perspective/cover.rs` (`Cover`, `Agreement`, `Cocycle`, `PerspectiveDemand`); claim `missing_perspective_is_listed_as_a_typed_demand` |
 
 **The defect** ([ROADMAP track 26](../ROADMAP.md#26-sensing-any-source-at-any-rank);
 the issue linked there). The sensor and everything downstream are written

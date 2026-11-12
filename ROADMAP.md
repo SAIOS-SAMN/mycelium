@@ -92,7 +92,7 @@ domains changed (CHANGELOG › 0.4.0-rc.1). What it holds, each with its PR:
 | LAW-COUPLING v1: the dipole parcel per plane, the coupling on a turning plane, the light ledger (`forms::coupling`) | 78.175 | Proposed 2026-11-06, extending LAW-FIELD; fixtures read by both peers by hand, code readings owed |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32), [#134](https://github.com/SAIOS-SAMN/mycelium/issues/134) | Field stages 1–5 built; the remaining stages in progress on the client stream |
 | Track 10: the sovereign mind, thinking about adjudicated perception | [#135](https://github.com/SAIOS-SAMN/mycelium/issues/135) | In progress on the client stream |
-| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Ruled 2026-11-06 (78.180 ruling 6), to build: no letter written by hand past `n = 3` (section samples, letters adjoined only by the presentation's growth); the ray a translation versor of the sample's rank |
+| The alphabet past `n = 3`; `Act::Slide`/`Extend`'s planar ray (the `Frame` defect closed: `Reperiod` per phase) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Ruled 2026-11-06 (78.180 ruling 6) and built (branch `rebuild-sn-integration`): no letter written by hand past `n = 3` (`transducer::sections`, section samples; letters adjoined only by the presentation's growth); the ray a translation versor of the sample's rank (`clause::Ray`). Spelling each section of a rank-3 task in the mind's word path is open |
 | Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25, [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) | Drafted for v0.5.0 (#178, #181); the writing of X1's parts waits on #160 |
 | Documentation audit: bounded documents, status out of prose | — | Open |
 
@@ -2066,11 +2066,14 @@ Each phase is one commit:
      `perspective_shift_is_a_sensor_motion`,
      `two_perspectives_of_one_sample_compared_as_a_cover`,
      `frame_fixing_is_a_perspective_reading`. No wire or address change.
-     Ruled 2026-11-06 (78.180 ruling 6), to build: a mind asks for a
-     perspective as a demand, a typed vertex naming the sample and the
-     overlap where the cocycle fails for a missing chart; a ground's vortex
+     Ruled 2026-11-06 (78.180 ruling 6) and built (stages 4 and 5, branch
+     `rebuild-sn-integration`): a mind asks for a perspective as a demand,
+     a typed vertex naming the sample and the overlap where the cocycle
+     fails for a missing chart (`cover::PerspectiveDemand`, claim
+     `missing_perspective_is_listed_as_a_typed_demand`); a ground's vortex
      collapses as the nesting's does, by Stands or Painted on holding for
-     one kept candidate alone on every pair, never by Closes (claims
+     one kept candidate alone on every pair, never by Closes
+     (`transduce::collapse`, `Ground::collapse`; claims
      `ground_vortex_collapses_where_bodies_stand_on_one_candidate`,
      `ground_vortex_collapses_where_residue_paints_one_candidate`,
      `closing_rule_never_collapses_the_ground`).
@@ -2081,9 +2084,13 @@ Each phase is one commit:
      another rank or a non-space role by name; the mind perceives under a
      perspective (`TaskPercept::under`). Claim
      `claim_states_its_perspective_and_court_reconstructs_under_it`.
-     Ruled 2026-11-06 (78.180 ruling 6), to build: the solve of outputs and
-     speech state their perspective, and a court reconstructs under it
-     (today they read the section in its default).
+     Ruled 2026-11-06 (78.180 ruling 6) and built (stage 3, branch
+     `rebuild-sn-integration`, a wire change inside v0.4.0's break): the
+     solve of outputs and speech state their perspective (signed
+     `mycelium solve v5`; a sentence's `carries` bit 3), and a court
+     reconstructs under it, on the pairs it bound at registration (claim
+     `solve_and_speech_state_their_perspective_and_court_reconstructs_under_it`).
+     Open: the seat's solve call and a word's install after its hearing.
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where

@@ -169,3 +169,37 @@ fn frame_fixing_is_a_perspective_reading() {
     }
     assert_ne!(perspective.pose(), &SignedPermutation::identity(2), "the moments name a pose for this scene");
 }
+
+/// RULED 2026-11-06 ON #32 (2) — A MISSING PERSPECTIVE IS A DEMAND: where an
+/// overlap's cocycle does not close because a chart is missing (one
+/// perspective reads the sample's axis as a sequence, so the contacts along
+/// it are read by the other alone), the cover lists a typed vertex naming
+/// the sample's place and the overlap, the residue being the demand. A
+/// congruent overlap lists none; a cover of poses alone lists nothing; the
+/// family's listing holds each vertex once, by its key.
+#[test]
+fn missing_perspective_is_listed_as_a_typed_demand() {
+    use crate::transducer::perspective::cover::listed;
+    let s = block();
+    let p = Perspective::of_sample(3);
+    let turn = SignedPermutation::new(vec![(2, Sense::Reversed), (0, Sense::Kept), (1, Sense::Reversed)]).expect("a signed permutation");
+    let turned = p.shifted(&SensorMotion::Pose(turn)).expect("a pose");
+    let sequenced = turned.shifted(&SensorMotion::Recast { axis: 1, role: Role::Sequence }).expect("an axis read");
+    let cover = Cover::of(&s, vec![p.clone(), turned.clone(), sequenced.clone()]).expect("one rank");
+    assert_eq!(cover.demand(0, 1), None, "a pose reads the same bodies: no chart is missing");
+    let along_zero: Vec<Contact> = cover.contacts(0).expect("read").into_iter().filter(|c| c.axis == 0).collect();
+    let demands = cover.demands();
+    assert_eq!(demands.len(), 2, "the two overlaps with the sequenced perspective each list one");
+    for (d, first) in demands.iter().zip([&p, &turned]) {
+        assert_eq!(d.place, s.place().clone(), "the vertex names the sample");
+        assert_eq!((&d.first, &d.second), (first, &sequenced), "and the overlap");
+        assert_eq!((d.first_only.clone(), d.second_only.clone()), (along_zero.clone(), Vec::new()), "the residue is the demand");
+    }
+    assert_ne!(demands[0].key(), demands[1].key(), "two overlaps are two vertices");
+    let poses = Cover::of(&s, vec![p.clone(), turned.clone()]).expect("one rank");
+    assert!(poses.demands().is_empty(), "a cover whose overlaps are congruent lists no demand");
+    let other = Sample::new(vec![2, 3, 2], 1, vec![1; 12], Place::new(vec![0, 1, 1])).expect("a sample");
+    let family = listed(&[&s, &s, &other], &[p, sequenced]).expect("one rank");
+    assert_eq!(family.len(), 2, "each vertex once: the repeated sample lists nothing new, the other sample its own");
+    assert_eq!(family[1].place, other.place().clone());
+}

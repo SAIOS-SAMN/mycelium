@@ -161,8 +161,10 @@ fn role_of(b: u8) -> Option<Role> {
 
 /// THE PERSPECTIVE WRITTEN: its rank, each read axis's source and sense in
 /// the pose, then each read axis's role. `None` where a rank or a source
-/// passes its `u16` field.
-fn put_perspective(out: &mut Vec<u8>, p: &Perspective) -> Option<()> {
+/// passes its `u16` field. One writing for every claim that states its
+/// perspective: the factorisation, the solve of outputs and each sentence
+/// of a speech (track 26 S6).
+pub(crate) fn put_perspective(out: &mut Vec<u8>, p: &Perspective) -> Option<()> {
     put_u16_count(out, p.rank())?;
     for &(source, sense) in p.pose().images() {
         put_u16_count(out, source)?;
@@ -174,7 +176,7 @@ fn put_perspective(out: &mut Vec<u8>, p: &Perspective) -> Option<()> {
 
 /// The perspective read back, or `None` where its pose is no signed
 /// permutation or a role byte names none.
-fn take_perspective(b: &[u8], p: &mut usize) -> Option<Perspective> {
+pub(crate) fn take_perspective(b: &[u8], p: &mut usize) -> Option<Perspective> {
     let rank = take_u16_count(b, p)?;
     if rank > b.len().checked_sub(*p)? {
         return None;
