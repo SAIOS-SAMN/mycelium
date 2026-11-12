@@ -2,7 +2,7 @@
 
 Exact rational Clifford geometric algebra $\mathcal{C}l(p, q)(\mathbb{Q})$ in pure Rust.
 
-Zero floating-point numbers. Zero approximations. Zero unsafe code.
+No floating-point numbers, no approximations, and no unsafe code (denied by the workspace's lints).
 
 `mycelium-algebra` implements the exact multivector algebra $\mathcal{C}l(p, q)$ over the field of rational numbers $\mathbb{Q}$ (via `num-rational::BigRational`). Every multivector carries its dimension $n$ and the bitmask of its negative generators, computing exact geometric products, inner products, wedge products, reversions, and inversions for arbitrary quadratic signatures.
 
@@ -10,8 +10,8 @@ Zero floating-point numbers. Zero approximations. Zero unsafe code.
 
 - **Exact Arithmetic:** All scalars and components are exact arbitrary-precision rationals ($\mathbb{Q}$). No IEEE-754 floats, no epsilon checks, no rounding drift.
 - **Arbitrary Signatures $\mathcal{C}l(p, q)$:** Supports Euclidean, pseudo-Euclidean, Minkowski, and Conformal signatures.
-- **Conformal Geometric Algebra $\mathcal{C}l(n+1, 1)$:** First-class support for conformal models of $\mathbb{Q}^n$ with null generators $e_+$ ($e_+^2 = +1$) and $e_-$ ($e_-^2 = -1$).
-- **No Unsafe Code:** Strictly `#![forbid(unsafe_code)]`.
+- **Conformal Geometric Algebra $\mathcal{C}l(n+1, 1)$:** the conformal models of $\mathbb{Q}^n$ as a case of the signature, with the generators $e_+$ ($e_+^2 = +1$) and $e_-$ ($e_-^2 = -1$).
+- **No unsafe code:** `unsafe_code` is denied by the workspace's lint table.
 - **Standalone:** Zero dependency on blockchain, networking, or runtime components. Depends only on `num-rational`, `num-bigint`, and `num-traits`.
 
 ## Usage
@@ -23,28 +23,25 @@ Add `mycelium-algebra` to your `Cargo.toml`:
 mycelium-algebra = "0.4.0-rc.1"
 ```
 
-### Example: Exact Rotations and Reflections
+### Example: the exact geometric product
 
 ```rust
-use mycelium_algebra::{Clifford, Mv, E1, E2, E3};
+use mycelium_algebra::{Mv, E1, E2};
 use num_rational::BigRational;
 
-fn main() {
-    // Exact unit vector e1 in Cl(3, 0)
-    let e1 = Mv::generator(1);
-    let e2 = Mv::generator(2);
+let one = BigRational::from_integer(1.into());
+let e1 = Mv::blade(E1, one.clone());
+let e2 = Mv::blade(E2, one.clone());
 
-    // Exact geometric product: e1 * e2 = e12 (bivector)
-    let bivector = e1.geo(&e2);
+// e1 e2 is the bivector e12.
+let bivector = e1.geo(&e2);
+assert_eq!(bivector, Mv::blade(E1 | E2, one.clone()));
 
-    // e1 * e1 = 1 (Euclidean basis vector squares to +1)
-    let scalar_one = e1.geo(&e1);
-    assert!(scalar_one.is_one());
+// A Euclidean generator squares to +1.
+assert_eq!(e1.geo(&e1), Mv::scalar(one));
 
-    // Anti-commutation: e2 * e1 = -e12
-    let reverse = e2.geo(&e1);
-    assert_eq!(bivector.add(&reverse), Mv::zero());
-}
+// The generators anticommute: e2 e1 = -e12.
+assert!(bivector.add(&e2.geo(&e1)).is_zero());
 ```
 
 ## Mathematical Foundations
