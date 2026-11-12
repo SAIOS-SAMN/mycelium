@@ -11,7 +11,6 @@
 pub mod actions;
 pub mod axioms;
 pub mod budget;
-pub mod meter;
 mod calibration;
 pub mod pivot_fibre;
 mod circuits;

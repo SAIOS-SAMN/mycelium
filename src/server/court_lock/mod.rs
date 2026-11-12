@@ -20,7 +20,6 @@
 //! court through this one guard, so the book counts every hold.
 
 use crate::cognition::Court;
-use crate::physics::meter::{Bound, Overrun, StrokeMeter};
 use crate::physics::Budget;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, MutexGuard, OnceLock, TryLockError};
@@ -32,9 +31,6 @@ struct LockCounts {
     took: u64,
     waited: u64,
     blocked: u64,
-    /// 78.182 item 5 — waiters answered `Deferred` while this site held
-    /// past its stroke.
-    deferred: u64,
 }
 
 struct Book {
@@ -147,88 +143,14 @@ pub fn yield_to_waiters() {
     }
 }
 
-/// The site `at`'s counts, made where the book has none, and `f` run on
-/// them; answers the site's place in the book, the number a meter names its
-/// holder by.
-fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut LockCounts)) -> usize {
-    if let Some(i) = book.sites.iter().position(|s| s.at == at) {
-        f(&mut book.sites[i]);
-        return i;
+fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut LockCounts)) {
+    if let Some(s) = book.sites.iter_mut().find(|s| s.at == at) {
+        f(s);
+        return;
     }
-    let mut s = LockCounts { at, took: 0, waited: 0, blocked: 0, deferred: 0 };
+    let mut s = LockCounts { at, took: 0, waited: 0, blocked: 0 };
     f(&mut s);
     book.sites.push(s);
-    book.sites.len() - 1
-}
-
-/// 78.182 item 5 (#221) — THE METERS OF THE HELD SLOTS: a chain of meters
-/// a hold claims a free one of for its lock, and a waiter finds its lock's
-/// by the lock's address, both without a lock. The chain grows by one meter
-/// where every meter is claimed (each link set once, never taken back), so
-/// it is as long as the most courts this process ever held at once: one in
-/// a server, as many as run beside each other in a test binary. No width is
-/// chosen.
-struct MeterLink {
-    meter: StrokeMeter,
-    next: OnceLock<&'static MeterLink>,
-}
-
-static METERS: MeterLink = MeterLink { meter: StrokeMeter::new(), next: OnceLock::new() };
-
-/// Every meter of the chain, from the first.
-fn meters() -> impl Iterator<Item = &'static StrokeMeter> {
-    std::iter::successors(Some(&METERS), |l| l.next.get().copied()).map(|l| &l.meter)
-}
-
-/// A free meter claimed for `slot`: the first free one of the chain, or a
-/// new link where every one is claimed.
-fn claim(slot: usize, hold: u64, holder: u64, stroke: u64) -> Option<Bound> {
-    // A lock's address is never zero, the free slot's mark: no meter is
-    // claimed for it, and the chain is not grown for it.
-    if slot == 0 {
-        return None;
-    }
-    let mut link: &'static MeterLink = &METERS;
-    loop {
-        if let Some(b) = link.meter.claim(slot, hold, holder, stroke) {
-            return Some(b);
-        }
-        link = link.next.get_or_init(|| Box::leak(Box::new(MeterLink { meter: StrokeMeter::new(), next: OnceLock::new() })));
-    }
-}
-
-/// The lock's address: the slot its meter is claimed for.
-fn slot_of(m: &Mutex<Court>) -> usize {
-    std::ptr::from_ref(m) as usize
-}
-
-/// The meter claimed for `slot`, if a hold claimed one.
-fn meter_of(slot: usize) -> Option<(&'static StrokeMeter, Overrun)> {
-    meters().find_map(|m| m.overrun(slot).map(|o| (m, o)))
-}
-
-/// WHY A TAKE OF THE COURT WAS REFUSED.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Refused {
-    /// The lock is poisoned: a holder panicked under it.
-    Poisoned,
-    /// 78.182 item 5 — the hold this take waited behind had spent past its
-    /// stroke: the take is answered at once, never blocked, and the holder
-    /// is flagged for preemption at its next metered read. `holder` is the
-    /// site holding the court, as the book names it.
-    Deferred { holder: Option<&'static str>, spent: u64, stroke: u64, hold: u64 },
-}
-
-thread_local! {
-    /// The takes THIS thread was answered `Deferred`: a reflex worker reads
-    /// it across a judgement, so an act its judge left unanswered for a
-    /// deferral is answered with the deferral (`mycelium-server`).
-    static DEFERRED_HERE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
-}
-
-/// The takes this thread was answered `Deferred` since it started.
-pub fn deferred_here() -> u64 {
-    DEFERRED_HERE.with(std::cell::Cell::get)
 }
 
 /// THE COURT, HELD BY ONE NAMED SITE, WITH THE HOLD'S ONE STROKE. Never a
@@ -236,26 +158,11 @@ pub fn deferred_here() -> u64 {
 /// stroke beside the court, so an input-sized read under the lock spends
 /// it (78.153b).
 pub struct CourtGuard<'a> {
-    /// Released in field order after `Drop::drop`: the meter is let go
-    /// first (in `drop`), then this lock, then `wake` tells the waiters.
     guard: MutexGuard<'a, Court>,
     stroke: Budget,
     at: &'static str,
     /// This thread's granted reads at the take (`physics::spent_here`).
     spent_at: u64,
-    /// The meter this hold claimed, released before the lock.
-    meter: Option<Bound>,
-    _wake: Wake,
-}
-
-/// Dropped after the lock: every release is told to the waiters, metered
-/// or not, so a waiter parked on a release never misses one.
-struct Wake;
-
-impl Drop for Wake {
-    fn drop(&mut self) {
-        crate::physics::meter::released();
-    }
 }
 
 impl CourtGuard<'_> {
@@ -298,22 +205,17 @@ impl Drop for CourtGuard<'_> {
             }
             b.holder = None;
         }
-        if let Some(m) = self.meter.take() {
-            m.release();
-        }
     }
 }
 
 /// Take the court at site `at` with the hold's one stroke (`Court::stroke`,
-/// the court's own metabolism); refused where the lock is poisoned, or
-/// `Deferred` where the hold it waits behind has spent past its stroke
-/// (78.182 item 5).
-pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>, Refused> {
-    let slot = slot_of(m);
-    let mut seen = crate::physics::meter::releases();
+/// the court's own metabolism); `Err(())` where the lock is poisoned, as
+/// `lock()` refuses.
+#[expect(clippy::result_unit_err, reason = "`held!` keeps `lock()`'s shape at every site: a poisoned lock is the one refusal, and it carries nothing to name")]
+pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>, ()> {
     let (mut guard, waited) = match m.try_lock() {
         Ok(g) => (g, false),
-        Err(TryLockError::Poisoned(_)) => return Err(Refused::Poisoned),
+        Err(TryLockError::Poisoned(_)) => return Err(()),
         Err(TryLockError::WouldBlock) => {
             if let Ok(mut b) = BOOK.lock() {
                 if let Some(n) = b.blocked_now.checked_add(1) {
@@ -330,14 +232,12 @@ pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>,
                 }
             }
             WAITING.fetch_add(1, Ordering::AcqRel);
-            let taken = wait_for(m, slot, &mut seen);
+            let g = m.lock();
             WAITING.fetch_sub(1, Ordering::AcqRel);
             SERVED.fetch_add(1, Ordering::AcqRel);
-            (taken?, true)
+            (g.map_err(|_| ())?, true)
         }
     };
-    let mut hold = 0;
-    let mut site = 0;
     if let Ok(mut b) = BOOK.lock() {
         b.holder = Some(at);
         b.advances_at = advances();
@@ -347,8 +247,7 @@ pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>,
         if let Some(n) = b.hold.checked_add(1) {
             b.hold = n;
         }
-        hold = b.hold;
-        site = with_site(&mut b, at, |s| {
+        with_site(&mut b, at, |s| {
             s.took += 1;
             if waited {
                 s.waited += 1;
@@ -357,48 +256,7 @@ pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>,
     }
     HOLDS_HERE.with(|h| h.set(h.get().wrapping_add(1)));
     let stroke = guard.stroke();
-    // A stroke past 2⁶⁴ reads is never passed: it meters as unbounded.
-    let limit = match u64::try_from(stroke.remaining()) {
-        Ok(n) => n,
-        Err(_) => u64::MAX,
-    };
-    // A book past 2⁶⁴ sites names its holder by no place: the meter stands
-    // unclaimed, and its waiters wait as for an unmetered hold.
-    let meter = match u64::try_from(site) {
-        Ok(site) => claim(slot, hold, site, limit),
-        Err(_) => None,
-    };
-    Ok(CourtGuard { guard, stroke, at, spent_at: crate::physics::spent_here(), meter, _wake: Wake })
-}
-
-/// 78.182 item 5 — A WAIT THAT READS THE HOLD IT WAITS BEHIND. The waiter
-/// tries the lock; while it is held, it reads the holder's meter without a
-/// lock, and a hold spent past its stroke answers it `Deferred` at once and
-/// flags the holder. Otherwise it parks until a release or an overrun.
-fn wait_for<'a>(m: &'a Mutex<Court>, slot: usize, seen: &mut u64) -> Result<MutexGuard<'a, Court>, Refused> {
-    loop {
-        match m.try_lock() {
-            Ok(g) => return Ok(g),
-            Err(TryLockError::Poisoned(_)) => return Err(Refused::Poisoned),
-            Err(TryLockError::WouldBlock) => {}
-        }
-        if let Some((meter, o)) = meter_of(slot) {
-            meter.preempt();
-            DEFERRED_HERE.with(|d| d.set(d.get().wrapping_add(1)));
-            let holder = BOOK.lock().ok().and_then(|mut b| {
-                let i = usize::try_from(o.holder).ok()?;
-                let s = b.sites.get_mut(i)?;
-                s.deferred += 1;
-                if s.deferred.is_power_of_two() {
-                    eprintln!("  court lock {} held past its stroke (spent {} of {}): deferred {}", s.at, o.spent, o.stroke, s.deferred);
-                }
-                Some(s.at)
-            });
-            return Err(Refused::Deferred { holder, spent: o.spent, stroke: o.stroke, hold: o.hold });
-        }
-        crate::physics::meter::wait(*seen, &|| meter_of(slot).is_some());
-        *seen = crate::physics::meter::releases();
-    }
+    Ok(CourtGuard { guard, stroke, at, spent_at: crate::physics::spent_here() })
 }
 
 /// `held!(court)` — `court.lock()` counted at this file and line, with the

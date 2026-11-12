@@ -100,19 +100,6 @@ pub(crate) fn answer(s: &mut Channel, delimited: Delimited) {
     let _ = answer_written(s, delimited);
 }
 
-thread_local! {
-    /// The replies THIS thread tried to write: a reflex worker reads it
-    /// across a judgement, so an act left unanswered for a deferred take of
-    /// the court is answered with the deferral, and an act answered is never
-    /// answered twice (78.182 item 5).
-    static ANSWERS_HERE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
-}
-
-/// The replies this thread tried to write since it started.
-pub(crate) fn answers_here() -> u64 {
-    ANSWERS_HERE.with(std::cell::Cell::get)
-}
-
 /// `answer`, saying whether the reply was WRITTEN: false where the envelope
 /// would not encode or the asker had gone (a reply that missed the asker's
 /// wait). The catch-up door counts it (`Court::serve`); a write that fails
@@ -120,7 +107,6 @@ pub(crate) fn answers_here() -> u64 {
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
 pub(crate) fn answer_written(s: &mut Channel, delimited: Delimited) -> bool {
-    ANSWERS_HERE.with(|a| a.set(a.get().wrapping_add(1)));
     let refused = || eprintln!("  court reply refused: body {} over the wire budget", delimited.body.len());
     let Some(body) = crate::tuniversal::express(&delimited.body) else {
         refused();
