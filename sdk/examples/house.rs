@@ -23,7 +23,9 @@
 //!    universal core tube (`ACT_UPLINK`): the hypha rebuilds it under the
 //!    universal laws and admits it, the reserve having signed every network
 //!    clause in step 2 (track 24 B3, B4).
-//! 6. Conformance — `conformance::run(endpoint, key, &[Profile::Kernel])`:
+//! 6. The basket — the reserve states its survival basket (#238), each
+//!    element's portion by whole counts, and reads it back from its universe.
+//! 7. Conformance — `conformance::run(endpoint, key, &[Profile::Kernel])`:
 //!    every MUST act of the kernel profile, checked by decoded exact values;
 //!    an act the hypha deferred is reported deferred, with its deficit.
 //!
@@ -180,11 +182,12 @@ fn main() -> ExitCode {
         },
     }
     let crossed = reserve_and_cross(&session, &key);
+    let basket = state_basket(&session, &key);
 
     println!("\nconformance, kernel profile ({endpoint}):");
     let report = run(endpoint, &key, &[Profile::Kernel]);
     print!("{report}");
-    match report.conforms() && crossed {
+    match report.conforms() && crossed && basket {
         true => ExitCode::SUCCESS,
         false => ExitCode::from(1),
     }
@@ -199,6 +202,52 @@ fn lawful() -> Option<Transition> {
     let nucleus = membrane_at(&body.centre, &q(1))?;
     let after = BodyState { nucleus: turn.sandwich(&nucleus), body: carried_body(&body, &turn)? };
     Some(Transition { motion: turn, heights: (7, 8), bodies: vec![(BodyState { nucleus, body }, after)], hues: Default::default(), fluxes: Vec::new() })
+}
+
+/// #238 — THE RESERVE STATES ITS SURVIVAL BASKET, each element's
+/// person-year portion held as its dipole by whole counts (water's oxygen and
+/// hydrogen, here), then reads its universe back: whether the basket the
+/// court holds is the basket stated. A basket stated already stands, never
+/// an edit.
+fn state_basket(session: &Session, key: &mycelium_sdk::prelude::SigningKey) -> bool {
+    use mycelium_sdk::forms::{Crossing, Place};
+    use mycelium_sdk::house::tuniversal::{Origin, TPoint};
+    use mycelium_sdk::house::{
+        decode_domain_reply, decode_universe_reading, encode_universe_read, encode_universe_statement, BasketEntry, BigUint, Stated,
+        UniverseStatement,
+    };
+    let domain = key.verifying_key().to_bytes();
+    let count = |n: u32| BigUint::from(n);
+    let basket = vec![BasketEntry::of(1, count(110), count(0), count(110)), BasketEntry::of(8, count(55), count(440), count(110))];
+    let at = TPoint { origin: Origin { genesis: domain, epoch: 0 }, h: 0, lanes: [0, 0, 0, 0].into(), k: 0 };
+    let crossing = Crossing::still(Place { at, parents: Vec::new() }, vec![1]);
+    let Some(frame) = UniverseStatement { domain, stated: Stated::Basket(basket.clone()) }.sign(crossing, key).and_then(|s| encode_universe_statement(&s)) else {
+        println!("basket: the statement does not write");
+        return false;
+    };
+    match session.speak(frame).map(|r| decode_domain_reply(&r)) {
+        Ok(Some(f)) => println!("basket: {f:?}"),
+        Ok(None) => println!("basket: a reply this build does not read"),
+        Err(e) => println!("basket: {e}"),
+    }
+    match session.speak(encode_universe_read(domain)).map(|r| decode_universe_reading(&r)) {
+        Ok(Some(read)) if read.basket == basket => {
+            println!("basket: held as stated, {} elements", read.basket.len());
+            true
+        }
+        Ok(Some(read)) => {
+            println!("basket: the court holds another basket, {} elements", read.basket.len());
+            false
+        }
+        Ok(None) => {
+            println!("basket: a universe reading this build does not read");
+            false
+        }
+        Err(e) => {
+            println!("basket: {e}");
+            false
+        }
+    }
 }
 
 /// TRACK 24 B3, B4 — THE HOUSE CROSSES ITS UNIVERSAL CORE TUBE: its one

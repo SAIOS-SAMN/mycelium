@@ -131,13 +131,18 @@ fn state_records_geometry_and_basket_once() {
     let out = ConvertOut { tier: verifying(&reserve(4)), holder: [7; 32], identity: [8; 32], g: 4, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [1; 32] };
     let convert = |k: &mut Court, nonce: u8| k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { nonce: [nonce; 32], ..out.clone() })).signed(&reserve(4)));
     assert_eq!(convert(&mut k, 1), Handed::Refused(HandoffRefusal::NoBasket), "the reserve unit is the reserve's basket");
-    for bad in [Vec::new(), vec![(8, (3, 1)), (1, (2, 1))], vec![(1, (0, 1))]] {
-        assert_eq!(state(&mut k, 4, Stated::Basket(bad), &reserve(4)), Founded::Malformed);
+    let mut lying = e(8, 3, 24, 0);
+    lying.mass += 1u8;
+    let mut split = e(8, 3, 24, 0);
+    split.protons += 1u8;
+    for bad in [Vec::new(), vec![e(8, 3, 24, 0), e(1, 2, 0, 0)], vec![e(1, 0, 0, 0)], vec![e(0, 1, 0, 0)], vec![lying], vec![split], vec![e(1, 1, 0, 4)]] {
+        assert_eq!(state(&mut k, 4, Stated::Basket(bad), &reserve(4)), Founded::Malformed, "#238: an entry that does not hold its dipole");
     }
-    // Ammonia stated as its elements' masses, with water and iron.
-    let basket = vec![(1, (21, 1)), (7, (14, 1)), (8, (160, 1)), (26, (1, 10))];
+    // Ammonia stated as its elements' portions, with water and iron: each
+    // portion its whole counts, the mass its first-degree hold.
+    let basket = vec![e(1, 21, 0, 21), e(7, 2, 14, 10), e(8, 20, 160, 40), e(26, 1, 30, 26)];
     assert!(matches!(state(&mut k, 4, Stated::Basket(basket.clone()), &reserve(4)), Founded::Stated { .. }));
-    assert_eq!(state(&mut k, 4, Stated::Basket(vec![(1, (1, 1))]), &reserve(4)), Founded::AlreadyStated);
+    assert_eq!(state(&mut k, 4, Stated::Basket(vec![e(1, 1, 0, 1)]), &reserve(4)), Founded::AlreadyStated);
     assert!(matches!(convert(&mut k, 2), Handed::Sealed { .. }), "converted once its basket stands");
     let read = k.universe_reading(&verifying(&domain(4)));
     assert_eq!((read.originated, read.geometry.clone(), read.parent, read.basket.clone()), (false, Some(space), None, basket.clone()));
@@ -268,7 +273,7 @@ fn universe_acts_round_trips() {
         assert_eq!(decode_domain_request(&encode_origin(&signed)), Some(DomainRequest::Origin(signed)));
     }
     let l2 = Geometry::Torus { periods: vec![(7, 3)], metric: Metric::L2 };
-    for stated in [Stated::Geometry(curved((7, 3))), Stated::Geometry(l2), Stated::Basket(vec![(1, (1, 2)), (26, (3, 1))]), Stated::Join([2; 32])] {
+    for stated in [Stated::Geometry(curved((7, 3))), Stated::Geometry(l2), Stated::Basket(vec![e(1, 2, 0, 1), e(26, 3, 90, 60)]), Stated::Join([2; 32])] {
         let s = Statement { domain: verifying(&domain(5)), stated }.signed(&reserve(5));
         let mut asked = encode_statement(&s).expect("encodes");
         assert_eq!(decode_domain_request(&asked), Some(DomainRequest::State(s)));
@@ -276,7 +281,7 @@ fn universe_acts_round_trips() {
         assert_eq!(decode_domain_request(&asked), None);
     }
     assert_eq!(decode_domain_request(&encode_universe_read([3; 32])), Some(DomainRequest::ReadUniverse([3; 32])));
-    let r = UniverseReading { originated: true, geometry: Some(torus()), parent: Some(Parent::Unwitnessed), basket: vec![(8, (1, 1))] };
+    let r = UniverseReading { originated: true, geometry: Some(torus()), parent: Some(Parent::Unwitnessed), basket: vec![e(8, 1, 8, 6)] };
     assert_eq!(decode_universe_reading(&encode_universe_reading(&r)), Some(r));
     for f in [Founded::AlreadyStated, Founded::NotACore, Founded::NotAUniverse, Founded::Malformed] {
         assert_eq!(decode_domain_reply(&encode_domain_reply(&f)), Some(f));
@@ -285,4 +290,10 @@ fn universe_acts_round_trips() {
     assert_eq!(decode_handoff_request(&encode_handoff(&core).expect("encodes")), Some(HandoffRequest::Signed(core)));
     let flat = Mouth { tube: Some(Tube { core: false, ..core_tube((2, 1)).tube.expect("a tube") }), ..core_tube((2, 1)) };
     assert_ne!(flat.citation(), core_tube((2, 1)).citation(), "a core is its own throat");
+}
+
+/// #238 — a basket entry: `nuclei` nuclei of the element of `element`
+/// protons, with `neutrons` neutrons and `bound` held electron states in all.
+fn e(element: u16, nuclei: u32, neutrons: u32, bound: u32) -> crate::anastome::dialogue::universe::BasketEntry {
+    crate::anastome::dialogue::universe::BasketEntry::of(element, nuclei.into(), neutrons.into(), bound.into())
 }

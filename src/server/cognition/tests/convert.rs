@@ -56,8 +56,9 @@ fn designate(k: &mut Court, tier: &SigningKey, nonce: u8) -> Founded {
 
 /// 78.139 — the survival basket stated by the sitting reserve `x`.
 fn basket(k: &mut Court) {
-    use crate::anastome::dialogue::universe::{Statement, Stated};
-    let s = Statement { domain: verifying(&domain()), stated: Stated::Basket(vec![(1, (1, 1)), (8, (8, 1))]) };
+    use crate::anastome::dialogue::universe::{BasketEntry, Statement, Stated};
+    let entry = |element: u16, nuclei: u32, neutrons: u32, bound: u32| BasketEntry::of(element, nuclei.into(), neutrons.into(), bound.into());
+    let s = Statement { domain: verifying(&domain()), stated: Stated::Basket(vec![entry(1, 1, 0, 1), entry(8, 1, 8, 6)]) };
     assert!(matches!(k.state(&s.signed(&x())), Founded::Stated { .. }));
 }
 

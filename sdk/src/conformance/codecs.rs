@@ -309,7 +309,8 @@ fn domain_origin() -> Result<String, String> {
 }
 
 fn domain_statement() -> Result<String, String> {
-    let stated = d::universe::Stated::Basket(vec![(1, (1, 1)), (8, (2, 3))]);
+    let entry = |element: u16, nuclei: u32, neutrons: u32, bound: u32| d::universe::BasketEntry::of(element, nuclei.into(), neutrons.into(), bound.into());
+    let stated = d::universe::Stated::Basket(vec![entry(1, 1, 0, 1), entry(8, 2, 16, 12)]);
     let signed = d::universe::Statement { domain: voice(), stated }.sign(super::probes::crossing(voice()), &key()).ok_or("the statement does not sign")?;
     let replies = [dom::Founded::Stated { at: stamp(), receipt: CITATION }, dom::Founded::AlreadyStated, dom::Founded::NotAUniverse];
     let bytes = d::universe::encode_statement(&signed).ok_or("the statement does not encode")?;
@@ -348,7 +349,7 @@ fn domain_universe() -> Result<String, String> {
     use d::universe::{decode_universe_reading, encode_universe_read, encode_universe_reading, UniverseReading};
     same("the universe read", dom::decode_domain_request(&encode_universe_read(voice())), dom::DomainRequest::ReadUniverse(voice()))?;
     let g = super::probes::genesis();
-    let r = UniverseReading { originated: true, geometry: Some(g.geometry), parent: Some(g.parent), basket: vec![(1, (1, 1))] };
+    let r = UniverseReading { originated: true, geometry: Some(g.geometry), parent: Some(g.parent), basket: vec![d::universe::BasketEntry::of(1, 1u8.into(), 0u8.into(), 1u8.into())] };
     same("the universe", decode_universe_reading(&encode_universe_reading(&r)), r)?;
     Ok("the read and the universe decode".to_string())
 }
