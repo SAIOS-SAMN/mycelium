@@ -21,3 +21,8 @@ mod signature;
 pub use multivector::{axes, base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP, MAX_N};
 pub use ray::projective_ratio;
 pub use signature::{Clifford, SignatureRefusal};
+
+/// The crate's README, compiled as a doctest, so its example is the API's.
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
