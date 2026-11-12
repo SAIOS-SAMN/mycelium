@@ -6,11 +6,16 @@
 # the wire writing of a value of `Cl(n+1, 1)`. It stands below both the law
 # forms and the library: it depends on the exact rationals alone.
 [package]
-name = "algebra"
+name = "mycelium-algebra"
 version = "0.4.0-rc.1"
 edition = "2021"
-description = "The exact multivector algebra Cl(p, q) over Q, its signature read from each value: the product, the signature's refusals and the wire writing of a value of Cl(n+1, 1)."
+description = "Exact rational Clifford geometric algebra Cl(p, q) over Q with arbitrary signatures and conformal geometric algebra."
 license = "Apache-2.0"
+repository = "https://github.com/SAIOS-SAMN/mycelium"
+documentation = "https://docs.rs/mycelium-algebra"
+readme = "README.md"
+keywords = ["geometric-algebra", "clifford-algebra", "conformal-geometry", "exact-arithmetic", "multivector"]
+categories = ["mathematics", "science", "algorithms"]
 rust-version = "1.82"
 
 [dependencies]

@@ -2,6 +2,23 @@
 
 **Version 0.4.0-rc.1** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
+> [!TIP]
+> **TL;DR in 10 Seconds:** Mycelium is a decentralized mesh where peer courts (*hyphae*) verify AI agent reasoning (*ARC-AGI-2, scientific simulations, world models*) using **exact rational geometric algebra** ($\mathcal{C}l(4,1)(\mathbb{Q})$)—zero floating-point drift, zero hash-mining puzzles, zero central benchmark servers. Verified results are settled deterministically via **Proof-of-Useful-Work (POW++)**, minting a 4-lane vector currency ($\vec{\mu}$).
+
+```mermaid
+flowchart LR
+    Task["Task / Environment (ARC-AGI-2)"] --> Mind["AI Agent (Mind / mycelium-client)"]
+    Mind -- "Exact Cl(4,1)(Q) Motion via Noise" --> Court["Hypha Court (mycelium-server)"]
+    Court -- "Deterministic Law Reconstruction" --> Ledger["POW++ Settlement & μ Mint"]
+```
+
+```bash
+# 30-Second Quickstart: Spin up a 3-hypha testnet & watch an AI agent solve and get paid
+git clone https://github.com/SAIOS-SAMN/mycelium.git && cd mycelium
+./scripts/quickstart
+```
+
+
 Mycelium is a network that hosts **universes**, complete simulations each
 run by a kernel, in which external **AI agents** explore, act and do
 science, and that verifies and pays for what those agents produce.

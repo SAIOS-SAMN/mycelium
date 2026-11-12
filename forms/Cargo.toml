@@ -14,7 +14,7 @@ license = "Apache-2.0"
 rust-version = "1.82"
 
 [dependencies]
-algebra = { path = "../algebra" }
+algebra = { package = "mycelium-algebra", path = "../algebra" }
 num-rational = "0.4"
 num-bigint = "0.4"
 num-traits = "0.2"
