@@ -13,15 +13,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "algebra"
-version = "0.4.0-rc.1"
-dependencies = [
- "num-bigint",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -362,7 +353,7 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 name = "forms"
 version = "0.4.0-rc.1"
 dependencies = [
- "algebra",
+ "mycelium-algebra",
  "num-bigint",
  "num-rational",
  "num-traits",
@@ -543,7 +534,6 @@ checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 name = "mycelium"
 version = "0.4.0-rc.1"
 dependencies = [
- "algebra",
  "blake3",
  "ctrlc",
  "ed25519-dalek",
@@ -551,6 +541,7 @@ dependencies = [
  "fs2",
  "getrandom 0.2.17",
  "inotify",
+ "mycelium-algebra",
  "num-bigint",
  "num-integer",
  "num-rational",
@@ -565,6 +556,15 @@ dependencies = [
  "tikv-jemalloc-ctl",
  "tikv-jemallocator",
  "tiny-keccak",
+]
+
+[[package]]
+name = "mycelium-algebra"
+version = "0.4.0-rc.1"
+dependencies = [
+ "num-bigint",
+ "num-rational",
+ "num-traits",
 ]
 
 [[package]]
