@@ -447,3 +447,26 @@ fn owes_strokes_is_true_only_with_task_on_board() {
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [4; 32], train, tests: Vec::new() }, offer));
     assert!(mind.owes_strokes(), "a task waiting: owed strokes");
 }
+
+/// CANDIDATE 2 — THE MIND'S FIRST MOTION (MU-CLIENT §4.13, Issue #246):
+/// An empty mind (no contemplation wells, no comprehending scenes, and empty language)
+/// that pulls an offer from the court takes that first offer in unconditionally as its
+/// first motion. Subsequent novel offers still adhere to geometric coupling.
+#[test]
+fn first_motion_takes_initial_pulled_task_into_perception() {
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("first_motion"));
+    let train = one_cell_steps();
+    let mut offer = Offer::of(&train);
+    offer.first_motion = true;
+    let id = [15u8; 32];
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id, train, tests: Vec::new() }, offer));
+
+    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| mind.task_inflow(&mut outcome));
+    mind.field = field;
+
+    assert!(mind.board.court.task.is_none(), "first motion task taken onto perception boundary");
+    assert!(mind.perceiving(), "perception carrier active for first motion");
+}
+

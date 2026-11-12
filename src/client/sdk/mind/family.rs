@@ -315,11 +315,11 @@ pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRu
         }
     }
     // THE TWO-PAIR CLAUSE RULE, UNDETERMINED (the ruling of
-    // 2026-10-22, its three guards): exactly two pairs, so each sibling set
-    // is one pair (guard 3); the family's rule is the act reader's clauses
-    // (guard 1 — a vertex fit stays unknown); and it closes both pairs
+    // 2026-10-22, its three guards): at least two pairs, so each sibling set
+    // has training context (guard 3); the family's rule is the act reader's clauses
+    // (guard 1 — a vertex fit stays unknown); and it closes all pairs
     // exactly, no remainder, the sample each output (guard 2).
-    let unexempt = match (train.len() == 2, rule.form.elements.is_empty()) {
+    let unexempt = match (train.len() >= 2, rule.form.elements.is_empty()) {
         _ if failed.is_empty() => None,
         (false, _) => Some(Unexempt::Pairs),
         (true, true) => Some(Unexempt::Vertex),

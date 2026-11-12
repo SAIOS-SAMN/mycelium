@@ -51,6 +51,10 @@ pub(crate) struct Offer {
     pub(crate) crossed: bool,
     pub(crate) waited: u64,
     pub(crate) landed: Option<u64>,
+    /// MU-CLIENT §4.13, Candidate 2 (Issue #246): the sovereign mind's first
+    /// motion. A hungry mind with an empty corpus and empty language perceives its
+    /// first pulled task unconditionally.
+    pub(crate) first_motion: bool,
 }
 
 impl Offer {
@@ -63,7 +67,7 @@ impl Offer {
                 charts.insert(body.moduli.key().as_bytes(), ());
             }
         }
-        Offer { charts: charts.scoped().map(|(k, _)| k).collect(), crossed: false, waited: 0, landed: None }
+        Offer { charts: charts.scoped().map(|(k, _)| k).collect(), crossed: false, waited: 0, landed: None, first_motion: false }
     }
 }
 
@@ -94,7 +98,7 @@ impl Mind {
     /// across the last return and still couples to nothing lapses, let go;
     /// otherwise it crosses this return.
     pub(crate) fn lapse_offers(&mut self) {
-        let task = self.board.court.task.as_ref().map(|(e, o)| (o.crossed, self.couples(&e.id, &o.charts)));
+        let task = self.board.court.task.as_ref().map(|(e, o)| (o.crossed, self.couples(&e.id, &o.charts) || o.first_motion));
         match task {
             Some((true, false)) => self.let_go_task(),
             Some(_) => {

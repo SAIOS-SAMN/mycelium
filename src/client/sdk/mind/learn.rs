@@ -44,8 +44,16 @@ impl Mind {
                 // and a task off it stops perceived (`perceive_task`).
                 let envelope = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task(&b));
                 let section = envelope.and_then(|e| entity.perceive_task(&e, super::perceive::SceneKind::Task));
+                let is_first = entity.contemplation.wells.is_empty()
+                    && entity.comprehending.is_empty()
+                    && entity.language.spoken_charts().is_empty()
+                    && entity.board.corpus.size().0 == 0;
                 entity.board.court.task = section.map(|env| {
-                    let offer = super::offer::Offer { landed, ..super::offer::Offer::of(&env.train) };
+                    let offer = super::offer::Offer {
+                        landed,
+                        first_motion: is_first,
+                        ..super::offer::Offer::of(&env.train)
+                    };
                     (env, offer)
                 });
                 if entity.board.court.task.is_some() {
