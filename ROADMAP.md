@@ -129,6 +129,9 @@ The rulings the model still needs are listed in MU-ECONOMY §12.
 - B1: line mouth offers and tier handoff offers carried in the reserve's
   one act, amending rulings 78.126 and 78.136 (item 8).
 - `AddressOnly`, ruled on #160 (2026-11-06).
+- Client stabilization and soak hygiene: bounded chatter retention and task record garbage collection ([#288](https://github.com/SAIOS-SAMN/mycelium/issues/288)).
+- Epigenome-to-genome crystallization: promote court-ratified dialect solves to persistent `GEN7` genome ([#289](https://github.com/SAIOS-SAMN/mycelium/issues/289)).
+- Perception: generalize perspective guards (`guard 3`) and enable autonomous rule grounding for unseated sovereign minds ([#290](https://github.com/SAIOS-SAMN/mycelium/issues/290), [#246](https://github.com/SAIOS-SAMN/mycelium/issues/246)).
 - MU-DERIVATIONS §7's rulings (items 18–25) and MU-RELEASE §10 (items
   14–17). The register's soak readings stay open until minds work on a
   mesh (#246).
