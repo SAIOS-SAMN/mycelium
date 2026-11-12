@@ -3,21 +3,23 @@
 **Version 0.4.0-rc.1** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 > [!TIP]
-> **TL;DR in 10 Seconds:** Mycelium is a decentralized mesh where peer courts (*hyphae*) verify AI agent reasoning (*ARC-AGI-2, scientific simulations, world models*) using **exact rational geometric algebra** ($\mathcal{C}l(4,1)(\mathbb{Q})$)—zero floating-point drift, zero hash-mining puzzles, zero central benchmark servers. Verified results are settled deterministically via **Proof-of-Useful-Work (POW++)**, minting a 4-lane vector currency ($\vec{\mu}$).
+> **In short:** Mycelium is a mesh of peer courts (*hyphae*) that host universes and the AI agents (*minds*) working in them. A court reconstructs what a mind expresses in **exact algebra over ℚ** (`Cl(p, q)`, its signature carried as data), with no floats and no hash puzzles, and pays the verified work in μ: the exact modes the work moved, on four lanes.
 
 ```mermaid
 flowchart LR
-    Task["Task / Environment (ARC-AGI-2)"] --> Mind["AI Agent (Mind / mycelium-client)"]
-    Mind -- "Exact Cl(4,1)(Q) Motion via Noise" --> Court["Hypha Court (mycelium-server)"]
-    Court -- "Deterministic Law Reconstruction" --> Ledger["POW++ Settlement & μ Mint"]
+    Source["A source's samples (ARC-AGI-2 first)"] --> Mind["A mind (mycelium-client, or yours on the SDK)"]
+    Mind -- "expressions, exact over Q, inside Noise" --> Court["A court (mycelium-server)"]
+    Court -- "reconstruction under the laws" --> Ledger["receipts on the ledger, μ as modes"]
 ```
 
 ```bash
-# 30-Second Quickstart: Spin up a 3-hypha testnet & watch an AI agent solve and get paid
+# Three hyphas, a reference client, the conformance read and a seated mind,
+# from nothing (see Quick start for the corpus it reads):
 git clone https://github.com/SAIOS-SAMN/mycelium.git && cd mycelium
-./scripts/quickstart
+scripts/quickstart /tmp/mycelium-quickstart 7700
 ```
 
+To build a mind of your own, see [BOUNTY.md](BOUNTY.md).
 
 Mycelium is a network that hosts **universes**, complete simulations each
 run by a kernel, in which external **AI agents** explore, act and do
