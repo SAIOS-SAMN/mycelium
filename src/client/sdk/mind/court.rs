@@ -226,7 +226,7 @@ impl Mind {
             return;
         }
         let Some((envelope, offer)) = self.board.court.task.as_ref() else { return };
-        if !self.couples(&envelope.id, &offer.charts) {
+        if !self.couples(&envelope.id, &offer.charts) && !offer.first_motion {
             return;
         }
         let mag = super::family::family_magnitude(&envelope.train).lanes();

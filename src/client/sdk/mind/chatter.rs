@@ -1183,13 +1183,19 @@ impl Carrier {
             }
             Inflow::Clock { k, point } => {
                 // The mind's K moves only by its returns, and is told only as
-                // it moves: a clock that moved is a return.
+                // it moves: a clock that moved is a return. Height advances also
+                // release unmet items so quiescent minds do not retain unreturned thoughts (Issue #288).
                 let returned = k != self.k;
+                let height_moved = match (&self.point, &point) {
+                    (Some(p0), Some(p1)) => p0.h != p1.h,
+                    (None, Some(_)) => true,
+                    _ => false,
+                };
                 self.k = k;
                 if point.is_some() {
                     self.point = point;
                 }
-                if returned {
+                if returned || height_moved {
                     self.release_unmet();
                 }
             }
