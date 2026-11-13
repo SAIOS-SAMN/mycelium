@@ -149,6 +149,7 @@ impl Court {
             drain_cursor: _,
             quote_cursor: _,
             physics: _,
+            rate: _,
             acts: _,
             deferred_words,
             taught_voice,

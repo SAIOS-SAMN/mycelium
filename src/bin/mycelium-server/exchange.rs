@@ -399,6 +399,18 @@ impl Exchange {
                     crate::court_lock::step("court stroke");
                     // 78.153b — the stroke the hold was taken with.
                     k.court_cycle_on(reads);
+                    // 78.183 §7.5 — the metabolic rate per lane, read once
+                    // per bell span: E, Y, the holding and the open draw.
+                    if let Some(span) = k.close_rate() {
+                        eprintln!(
+                            "  court rate h {} | E {:?} Y {:?} M {:?} drawn {:?}",
+                            k.chain().head_height(),
+                            span.map(|l| l.entropic),
+                            span.map(|l| l.syntropic),
+                            span.map(|l| l.holding),
+                            span.map(|l| l.drawn)
+                        );
+                    }
                     // 78.125 (law version 5) — the windows the reach closes,
                     // sealed once.
                     if let Some(r) = &reach {
