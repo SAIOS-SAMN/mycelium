@@ -520,6 +520,9 @@ impl Mind {
     /// conversation, which acts on it (`Carrier::loops_read`). Same word, two
     /// minds, two readings: each field is its own.
     pub(crate) fn read_hearings(&mut self) -> usize {
+        if crate::physics::halted() {
+            return 0;
+        }
         // THE CONVERSATION'S DOOR, emptied: the mind's own speech for the
         // court leaves at once — it is no hearing — and what it heard enters
         // the sensory buffer, where it waits at most across one return

@@ -169,3 +169,30 @@ fn wind_preserves_quote_dwell_across_non_short_strokes() {
     let _ = mind.wind(&stop);
     assert!(!mind.board.court.dwell_elapsed, "dwell_elapsed clears on the following stroke");
 }
+
+/// MU-CLIENT §7.1, #307 — A MIND HONOURS ITS STOP AND HALT INSIDE A STROKE.
+/// When stopped or halted, a stroke returns without entering heavy work
+/// (demands, pivots, hearings, task pulls), remaining reads 0, and the winding
+/// completes promptly.
+#[test]
+fn wind_honours_stop_and_halt() {
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("stopping"));
+    let stop = std::sync::atomic::AtomicBool::new(true);
+    let wound = mind.wind(&stop);
+    assert_eq!(wound.moved, [false; 4]);
+    assert_eq!(wound.returns, 0);
+
+    // When physics::halt() is called, even with stop=false, the budget is spent
+    // and inner loops break.
+    let stop_false = std::sync::atomic::AtomicBool::new(false);
+    crate::physics::halt();
+    assert!(crate::physics::halted());
+    let mut budget = mind.stroke();
+    assert_eq!(budget.remaining(), 0);
+    assert!(!budget.spend());
+    let wound2 = mind.wind(&stop_false);
+    assert_eq!(wound2.moved, [false; 4]);
+    assert_eq!(wound2.returns, 0);
+
+    crate::physics::unhalt_for_test();
+}

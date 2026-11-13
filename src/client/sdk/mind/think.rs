@@ -337,14 +337,20 @@ impl Mind {
     /// symmetry the mind measured (Expansion 4) — is adjoined as its letters.
     pub(crate) fn drain_demands(&mut self, budget: &mut crate::physics::Budget) -> Vec<Vec<u8>> {
         let kept = std::mem::take(&mut self.contemplation.vortex_symmetries);
-        if !kept.is_empty() {
+        if !kept.is_empty() && !crate::physics::halted() && budget.remaining() > 0 {
             self.adjoin_letters(&kept, budget);
         }
         let taken = self.contemplation.drain_demands();
         let mut bound: Vec<Vec<u8>> = Vec::new();
         let mut separating: Vec<(crate::transducer::cga::Mv, crate::transducer::stalk::Invariant, Vec<Vec<u8>>)> = Vec::new();
         for (i, a) in taken.iter().enumerate() {
+            if crate::physics::halted() || budget.remaining() == 0 {
+                break;
+            }
             for b in taken.iter().skip(i + 1) {
+                if crate::physics::halted() || budget.remaining() == 0 {
+                    break;
+                }
                 let (Some(ra), Some(rb), [ca, ..], [cb, ..]) = (&a.residue, &b.residue, a.charts.as_slice(), b.charts.as_slice()) else { continue };
                 if ca != cb {
                     continue;
@@ -356,6 +362,9 @@ impl Mind {
             }
         }
         for d in taken {
+            if crate::physics::halted() || budget.remaining() == 0 {
+                break;
+            }
             // The chart its letter is filed on: the cover's least by its own
             // coordinate — content, never an arrival (rule 15).
             let least = d.charts.iter().fold(None, |least: Option<&crate::transducer::stalk::Invariant>, c| match least {
@@ -368,12 +377,18 @@ impl Mind {
                 false => d.families,
             };
             for family in scenes {
+                if crate::physics::halted() || budget.remaining() == 0 {
+                    break;
+                }
                 if self.compose_or_construct_on(&r, least, &family, budget) && !bound.contains(&family) {
                     bound.push(family);
                 }
             }
         }
         for (c, chart, families) in separating {
+            if crate::physics::halted() || budget.remaining() == 0 {
+                break;
+            }
             let family = match families.as_slice() {
                 [f, ..] => f.clone(),
                 [] => Vec::new(),
@@ -414,6 +429,9 @@ impl Mind {
         family: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> bool {
+        if crate::physics::halted() || budget.remaining() == 0 {
+            return false;
+        }
         use crate::observe::{note_mind, Constructed};
         use crate::transducer::sentence::rung::{known, learn_by, posit};
         if self.speak_composition(residue, chart, family) || known(residue) || self.speak_conjugate(residue, chart, family) {
@@ -867,6 +885,9 @@ impl Mind {
         budget: &mut crate::physics::Budget,
     ) {
         for (rotor, chart) in adjoined {
+            if crate::physics::halted() || budget.remaining() == 0 {
+                break;
+            }
             // THE GÖDEL STEP, READ THROUGH THIS MIND'S OWN LETTERS (78.47): if
             // adjoined-by-closure reads 0, this is the reading that says why
             // (GD1). SPELLED by the held letters — adjoined ones included — it
@@ -1011,6 +1032,9 @@ impl Mind {
         let mut budget = self.physics.stroke();
         let mut spoken = 0usize;
         for w in &added {
+            if crate::physics::halted() || budget.remaining() == 0 {
+                break;
+            }
             spoken += self.pivot_on(w, &mut budget);
             // MU-CLIENT §5.4 (S3) — and the retirements the word, now held,
             // makes visible: proposed to the court, never applied here.

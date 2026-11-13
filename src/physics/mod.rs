@@ -29,6 +29,8 @@ pub mod equilibrium;
 mod tests;
 
 pub use budget::{halt, halted, spent_here, Budget, Depleted, Reserve};
+#[cfg(test)]
+pub use budget::unhalt_for_test;
 pub use calibration::{
     aperture_cycle, boot_stroke, calibrate, calibration_of, capacity, cores_of, expansion_unit, footprint_of, idle_park, minimal_stroke, sealed,
     spend_unit, stroke_floor, stroke_floor_of, Calibration, Sealed, Uncalibrated, Unstroked, STROKES_PER_RESERVE,

@@ -776,6 +776,9 @@ impl Mind {
     }
 
     fn admit_scene_on_ground(&mut self, p: Perceived) {
+        if crate::physics::halted() {
+            return;
+        }
         let mut budget = self.physics.stroke();
         if let Some(a) = p.admission {
             self.land_admission(a, &mut budget);
