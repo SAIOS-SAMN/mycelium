@@ -79,3 +79,79 @@ fn ascertain_on_knows_rule_on_three_pairs() {
     let (outcome, _) = ascertain_on(&MindLanguage::new(), &train, &rule);
     assert!(matches!(outcome, Ascertained::Known), "known by its perspectives: {outcome:?}");
 }
+
+/// 1x1 whole-frame dihedral symmetry (`blocks = [1, 1]`, non-identity turn)
+/// is extracted by `read_tiles` via `read_acts` and ascertained across the family.
+#[test]
+fn read_tiles_1x1_dihedral_symmetry() {
+    crate::transducer::raster::stand_on(0);
+    // 90° turn (`t = 4`: `[a, b] -> [b, first - 1 - a]`):
+    let train = vec![
+        (digits(&["10", "20"]), digits(&["21", "00"])),
+        (digits(&["300", "400", "000"]), digits(&["043", "000", "000"])),
+        (digits(&["56", "00"]), digits(&["05", "06"])),
+    ];
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    let clauses = crate::transducer::family::acts::read_acts(
+        &crate::transducer::sentence::Form::default(),
+        &train,
+        &mut budget,
+    )
+    .expect("read_acts should extract 1x1 Tile");
+    assert!(
+        clauses.iter().any(|c| matches!(
+            &c.act,
+            crate::transducer::sentence::clause::Act::Tile { blocks: [1, 1], turns } if turns == &[4]
+        )),
+        "expected 1x1 Tile turn 4, got {clauses:?}"
+    );
+    let elements = crate::transducer::sentence::rule_element::lower_all(&clauses).expect("lower_all");
+    let rule = crate::transducer::sentence::rule_of_form(crate::transducer::sentence::Form {
+        elements,
+        ..crate::transducer::sentence::Form::default()
+    });
+    let epi = MindLanguage::new();
+    let (outcome, _) = ascertain_on(&epi, &train, &rule);
+    assert!(
+        matches!(outcome, Ascertained::Known | Ascertained::Undetermined),
+        "expected Known or Undetermined, got {outcome:?}"
+    );
+    let test_in = digits(&["70", "80"]);
+    let (outputs, _) = crate::client::sdk::mind::family::tests_spoken(&epi, &rule, &[test_in]);
+    assert_eq!(outputs, Some(vec![digits(&["87", "00"])]));
+}
+
+/// Autonomous conformal grounding from `TaskPercept` derives a `Tile` rule
+/// when `extract_on` / `ascertain_on` would otherwise stop at `Stop::Unknown`.
+#[test]
+fn ground_from_percept_solves_unknown_conformal_symmetry() {
+    crate::transducer::raster::stand_on(0);
+    let train = vec![
+        (digits(&["10", "20"]), digits(&["21", "00"])),
+        (digits(&["300", "400", "000"]), digits(&["043", "000", "000"])),
+    ];
+    let tests = vec![digits(&["70", "80"])];
+    let to_sample = |s: &crate::transducer::family::SectionSample| {
+        let ex = s.extents();
+        let symbols: Vec<u8> = s.sites().map(|(_, h)| h).collect();
+        crate::transducer::sample::Sample::new(ex.to_vec(), 1, symbols, crate::transducer::sample::Place::new(vec![0, 0]))
+            .expect("valid sample")
+    };
+    let s_train: Vec<_> = train.iter().map(|(x, y)| (to_sample(x), to_sample(y))).collect();
+    let s_tests: Vec<_> = tests.iter().map(to_sample).collect();
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    let percept = crate::transducer::family::transduce::TaskPercept::of(&s_train, &s_tests, &mut budget).expect("valid percept");
+
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("conformal"));
+    let id = [9u8; 32];
+    mind.board.percepts.insert(id, percept);
+
+    let scene = crate::client::sdk::mind::perceive::Scene {
+        id: id.to_vec(),
+        train,
+        tests,
+        reading: crate::client::sdk::mind::perceive::SceneKind::Task,
+    };
+    let (_, outputs) = mind.ground_from_percept(&scene).expect("TaskPercept conformal symmetry should ground");
+    assert_eq!(outputs, vec![digits(&["87", "00"])]);
+}

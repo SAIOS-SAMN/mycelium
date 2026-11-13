@@ -818,8 +818,13 @@ impl Mind {
         }
         self.note_task(&id, reading, |t| t.perspectives = p.perspectives);
         let scene = Scene { id, train, tests, reading };
-        match p.known {
-            Some((rule, Some(outputs))) if reading != SceneKind::Feed || !scene.tests.is_empty() => match self.construct_solve(&rule, &scene.train) {
+        let resolved = match p.known {
+            Some((rule, Some(outputs))) => Some((rule, outputs)),
+            None if matches!(p.stop, Stop::Unknown | Stop::NoRule) => self.ground_from_percept(&scene),
+            _ => None,
+        };
+        match resolved {
+            Some((rule, outputs)) if reading != SceneKind::Feed || !scene.tests.is_empty() => match self.construct_solve(&rule, &scene.train) {
                 Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted, ground: crate::transducer::raster::ground() }),
                 None => {
                     self.stopped(&scene.id, reading, Stop::Unminted);
@@ -827,10 +832,79 @@ impl Mind {
                 }
             },
             _ => {
+                if reading == SceneKind::Task && matches!(p.stop, Stop::Unknown | Stop::NoRule) {
+                    if let Ok(id) = <[u8; 32]>::try_from(scene.id.as_slice()) {
+                        if self.board.percepts.contains(&id) {
+                            self.speak_factorisations(&id);
+                        }
+                    }
+                }
                 self.stopped(&scene.id, reading, p.stop);
                 self.await_scene(scene);
             }
         }
+    }
+
+    /// Autonomous conformal grounding from `TaskPercept`: when `extract_on` /
+    /// `ascertain_on` stops at `Stop::Unknown` or `Stop::NoRule`, checks whether
+    /// all training pairs share a zero-residue conformal `SignedPermutation`
+    /// that lowers to a non-identity `RuleElement::Tile` rule closing every
+    /// training pair and `scene.tests`.
+    pub(crate) fn ground_from_percept(&self, scene: &Scene) -> Option<(SentenceRule, Vec<crate::transducer::family::SectionSample>)> {
+        use super::family::{disagreement_on, tests_spoken};
+        use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
+        use crate::transducer::sentence::clause::Pred;
+        use crate::transducer::sentence::rule_element::{Lowered, RuleElement};
+        use crate::transducer::sentence::{rule_of_form, Form};
+
+        if scene.tests.is_empty() || scene.train.is_empty() {
+            return None;
+        }
+        let percept = self.board.percepts.get(&scene.id)?;
+        if percept.train.len() != scene.train.len() {
+            return None;
+        }
+        let [first, ..] = percept.train.as_slice() else {
+            return None;
+        };
+        for cand in first.factored.held() {
+            if !cand.residue.is_empty() {
+                continue;
+            }
+            let Some(turn) = perm_to_tile_turn(&cand.motion.permutation) else {
+                continue;
+            };
+            if turn == 0 {
+                continue;
+            }
+            let all_match = percept.train.iter().zip(&scene.train).all(|(pf, (x, y))| {
+                let ex = x.extents();
+                let same_extents = ex == y.extents();
+                let square_if_needed = turn < 4 || ex[0] == ex[1];
+                same_extents
+                    && square_if_needed
+                    && pf.factored.held().iter().any(|f| f.residue.is_empty() && f.motion.permutation == cand.motion.permutation)
+            });
+            if !all_match {
+                continue;
+            }
+            let form = Form {
+                elements: vec![Lowered {
+                    select: Pred::All,
+                    parts: false,
+                    element: RuleElement::Tile { blocks: [1; ALPHABET_SAMPLE_RANK], turns: vec![turn] },
+                }],
+                ..Form::default()
+            };
+            let rule = rule_of_form(form);
+            if scene.train.iter().any(|(x, y)| disagreement_on(&self.language, &rule, x, y).is_err()) {
+                continue;
+            }
+            if let (Some(outputs), _) = tests_spoken(&self.language, &rule, &scene.tests) {
+                return Some((rule, outputs));
+            }
+        }
+        None
     }
 
     /// A TASK'S SAMPLES PERCEIVED AT THE SAMPLES' OWN RANK (MU-SENSING §0, §5;
@@ -976,5 +1050,22 @@ impl Mind {
             crate::transducer::address::put_key_bytes(&mut buf, &crate::transducer::sheaf::stratum_root(&self.language.words_on(&chart)).bytes());
         }
         crate::transducer::address::Address::new(buf)
+    }
+}
+
+/// Maps a rank-2 `SignedPermutation` to its `Act::Tile` dihedral turn code (`0..8`).
+fn perm_to_tile_turn(perm: &crate::transducer::family::transduce::SignedPermutation) -> Option<u8> {
+    let m = perm.matrix();
+    let [r0, r1] = m.as_slice() else { return None };
+    match (r0.as_slice(), r1.as_slice()) {
+        ([1, 0], [0, 1]) => Some(0),
+        ([1, 0], [0, -1]) => Some(1),
+        ([-1, 0], [0, 1]) => Some(2),
+        ([-1, 0], [0, -1]) => Some(3),
+        ([0, 1], [-1, 0]) => Some(4),
+        ([0, -1], [1, 0]) => Some(5),
+        ([0, 1], [1, 0]) => Some(6),
+        ([0, -1], [-1, 0]) => Some(7),
+        _ => None,
     }
 }
