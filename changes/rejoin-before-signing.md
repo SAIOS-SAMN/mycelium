@@ -1,0 +1,3 @@
+### A restarted hypha takes back its own receipts from its peers before it signs
+
+A court's own receipts reach its disk only at intervals, so a hard stop lost the newest, and the restarted court signed those places again: it equivocated against itself and its bond burned (#273). At boot, before the first ask that can sign, the hypha now asks each peer for the receipts of its own line above its restored head (`ACT_RECEIPTS` with its own key as the signer). It back-fills any peer receipt they cite, holds each that continues its head exactly (`ReceiptChain::rejoin`, refused by name otherwise), and signs above them. Live: hypha c was killed with SIGKILL under load and restarted; it took back the 42 receipts the kill lost, and neither peer recorded an equivocation.

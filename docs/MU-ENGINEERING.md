@@ -261,7 +261,15 @@ restart. Every other document points here and describes no other path.
 7. **Open:** what holds the mesh when every node stops at once. By item 1,
    a mesh with every node stopped holds nothing.
 
-**Status: ruled, not built.** The tree still writes and reads the layouts
+**Status: ruled; the rejoin of a court's own line built.** At boot,
+before the first ask that can sign, a hypha asks each peer for the
+receipts of its own line above the head it restored, back-fills any
+peer's receipt they cite, and holds what continues its head exactly
+(`ReceiptChain::rejoin`, `Court::rejoin_own`,
+`src/bin/mycelium-server/rejoin.rs`). It then signs above them, so a
+hard stop no longer makes it sign a place twice. The rest of item 5
+(holding the court's state in memory and reconstructing it from peers)
+is not built. The tree still writes and reads the layouts
 below. Each retires as holding in memory is built (#273), and until then
 this table is the record of what the code writes:
 

@@ -31,6 +31,7 @@ mod offer;
 mod persist;
 mod proofs;
 mod published;
+mod rejoin;
 mod syllabus;
 mod transport;
 mod tuniversal;
@@ -671,6 +672,11 @@ fn main() {
     if let Some(boot) = crate::court_lock::held!(court).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
         read_published_cover(&boot, &mesh);
     }
+    // #273, MU-ENGINEERING §8 — THE REJOIN, before the first ask that can
+    // sign (a peer's digest admitted at boot may sign through its prefix):
+    // this court's own receipts its peers hold above the restored head are
+    // taken back, so nothing is signed again at a place already signed.
+    let _ = rejoin::rejoin(&mesh, &court, &join_peers, &tag);
     for p in &join_peers {
         if p == &addr {
             continue;

@@ -5,3 +5,4 @@ mod line;
 mod order;
 mod pack;
 mod shed;
+mod rejoin;

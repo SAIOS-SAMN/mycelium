@@ -100,6 +100,8 @@ pub fn next_mark() -> u64 {
 
 mod line;
 mod node;
+mod rejoin;
+pub use rejoin::RejoinRefusal;
 pub(crate) mod signing;
 pub use line::{replace_durably, LineWrite};
 
