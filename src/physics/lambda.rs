@@ -10,8 +10,8 @@ use super::calibration::aperture_cycle;
 /// path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Lambda {
-    /// The horizon, in strokes.
-    Strokes(u64),
+    /// The horizon, in court cycles (78.183 §7.1).
+    Cycles(u64),
     /// No round trip measured to this peer.
     Unmeasured,
     /// The product does not fit the carrier the ledger counts in.
@@ -24,7 +24,7 @@ pub enum Lambda {
 /// a reserve).
 pub fn from_transport(rtt: std::num::NonZeroU64, strokes: std::num::NonZeroU64) -> Lambda {
     match rtt.get().checked_mul(strokes.get()) {
-        Some(n) => Lambda::Strokes(n),
+        Some(n) => Lambda::Cycles(n),
         None => Lambda::BeyondTheLedger,
     }
 }

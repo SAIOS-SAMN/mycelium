@@ -704,7 +704,7 @@ impl Mind {
         // by what the page brought; a page refused on reconstruction measures
         // nothing. The stroke takes the measure once.
         if heard.is_some() {
-            crate::physics::StrokeOutcome::add(&mut self.learned_mu, &mu);
+            crate::physics::WindingOutcome::add(&mut self.learned_mu, &mu);
             // 78.73 — PLASTIC: each court-admitted word this mind took in
             // reshaped its language on the lanes the word occupies.
             if at.is_some() {

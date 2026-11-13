@@ -398,7 +398,7 @@ impl Exchange {
                 let (offers, deficit, tick) = h.run(|k, reads| {
                     crate::court_lock::step("court stroke");
                     // 78.153b — the stroke the hold was taken with.
-                    k.court_stroke_on(reads);
+                    k.court_cycle_on(reads);
                     // 78.125 (law version 5) — the windows the reach closes,
                     // sealed once.
                     if let Some(r) = &reach {
@@ -649,7 +649,7 @@ impl Exchange {
                     None => None,
                     Some(floor) => {
                         match mycelium::physics::transport_deadline(floor) {
-                            mycelium::physics::Lambda::Strokes(n) => Some(n),
+                            mycelium::physics::Lambda::Cycles(n) => Some(n),
                             mycelium::physics::Lambda::BeyondTheLedger
                             | mycelium::physics::Lambda::Unmeasured => None,
                         }
@@ -675,7 +675,7 @@ impl Exchange {
                     if o.get(&pid).is_none() {
                         o.insert(&pid, mycelium::physics::Circuits::default());
                     }
-                    o.get_mut(&pid).and_then(|c| c.stroke(u64::from(due)))
+                    o.get_mut(&pid).and_then(|c| c.cycle(u64::from(due)))
                 });
                 if !due {
                     continue;
@@ -1101,7 +1101,7 @@ impl Exchange {
                 let shelf = crate::tuniversal::shelf();
                 let _ = match genesis_written.load(std::sync::atomic::Ordering::Relaxed) {
                     true => shelf.park_until_moved(park_seen),
-                    false => shelf.park(park_seen, mycelium::physics::stroke_floor()),
+                    false => shelf.park(park_seen, mycelium::physics::park_floor()),
                 };
             }
             park_seen = crate::tuniversal::shelf().seen();

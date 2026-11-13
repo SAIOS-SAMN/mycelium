@@ -144,7 +144,7 @@ fn read_phase_on_keeps_only_window_mark() {
 /// its window was one receipt or none; the court stroke takes the reading
 /// when the circuit count crosses a multiple of `aperture_cycle()`.
 #[test]
-fn court_stroke_reads_phase_at_circuit_aperture() {
+fn court_cycle_reads_phase_at_circuit_aperture() {
     let mut k = Court::new();
     let w = crate::transducer::element::from_connection(
         &crate::transducer::alphabet::Word::identity(),
@@ -165,7 +165,7 @@ fn court_stroke_reads_phase_at_circuit_aperture() {
             .and_then(|n| n.checked_add(2))
             .expect("two apertures fit the clock this test runs on");
         assert!(strokes <= bound, "a one-listing docket circuits every stroke: {:?}", k.docket_circuits());
-        k.court_stroke();
+        k.court_cycle();
         let c = k.docket_circuits().circuits();
         // 78.153: the reading is TAKEN where its stroke pays for it, and
         // counted unread where it does not; either way it is asked exactly

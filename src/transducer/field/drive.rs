@@ -125,7 +125,7 @@ impl Contemplation {
                 crystallized.push(e);
             }
         }
-        let circuit = self.ring.stroke(u64::from(wraps > 0));
+        let circuit = self.ring.cycle(u64::from(wraps > 0));
         Expanded { spent, pivoted, crystallized, circuit, adjoined }
     }
 

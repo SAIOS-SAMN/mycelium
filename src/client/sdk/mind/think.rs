@@ -108,7 +108,7 @@ impl Mind {
         // 78.52, MU-CLIENT §4.4(4) — A THOUGHT THIS PERCEPTION BROUGHT ROUND
         // IS SPOKEN AT ITS RETURN: its ground waits for the winding carrier,
         // which transcribes it against this mind's own letters in the stroke
-        // it returned in (`returns_of_stroke`).
+        // it returned in (`returns_of_winding`).
         // 78.100 D1 — the words its sentences taught enter its language:
         // transcribed and stood now, and said at the mind's return.
         // MU-CLIENT §5.4 (E1) — each under the scene that taught it.

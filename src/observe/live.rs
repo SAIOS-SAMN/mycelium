@@ -50,7 +50,7 @@ pub struct Now {
     pub k: u64,
     pub h: Option<u64>,
     /// The boundary its present stroke began at.
-    pub stroke_boundary: u64,
+    pub winding_boundary: u64,
     /// Whether it is parked — resting or blocked between windings — rather
     /// than working inside a law.
     pub parked: bool,
@@ -114,12 +114,12 @@ impl Live {
     }
 
     /// THE WINDING CARRIER BEGINS A STROKE at the mind's K and height `h`.
-    pub fn stroke_began(&self, k: u64, h: Option<u64>) {
+    pub fn winding_began(&self, k: u64, h: Option<u64>) {
         let Ok(mut s) = self.slot.lock() else { return };
         s.now.stroke += 1;
         s.now.k = k;
         s.now.h = h;
-        s.now.stroke_boundary = s.now.boundary;
+        s.now.winding_boundary = s.now.boundary;
     }
 
     /// THE WINDING CARRIER PARKS (`true`, as it rests or blocks) OR WAKES.
@@ -187,8 +187,8 @@ pub fn wake_with(wake: std::sync::mpsc::Sender<()>) {
 
 /// THE PROCESS'S WINDING CARRIER BEGINS A STROKE at the mind's K and
 /// height `h`.
-pub fn stroke_began(k: u64, h: Option<u64>) {
-    PROCESS.stroke_began(k, h);
+pub fn winding_began(k: u64, h: Option<u64>) {
+    PROCESS.winding_began(k, h);
 }
 
 /// THE PROCESS'S WINDING CARRIER PARKS (`true`) OR WAKES.
@@ -233,14 +233,14 @@ fn standing(n: &Now) -> String {
         None => "no height carried".to_string(),
     };
     format!(
-        "winding carrier: in {} · boundary {} (stroke {} began at boundary {}) · K {} · {h}",
+        "winding carrier: in {} · boundary {} (winding {} began at boundary {}) · K {} · {h}",
         match n.law {
             "" => "no law yet",
             l => l,
         },
         n.boundary,
         n.stroke,
-        n.stroke_boundary,
+        n.winding_boundary,
         n.k
     )
 }

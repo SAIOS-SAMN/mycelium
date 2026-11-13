@@ -25,7 +25,7 @@ use super::memory::{memory_of, read_cgroup_limit, read_mem_available_kib, Memory
 /// no read, or held nothing at its end, measured no read's size: refused
 /// with the reading that caused it.
 pub fn footprint_of(retained: i128, reads: u64) -> Result<std::num::NonZeroU64, Uncalibrated> {
-    let unread = Uncalibrated::Footprint(Unstroked::Retained { retained, reads });
+    let unread = Uncalibrated::Footprint(FootprintUnread::Retained { retained, reads });
     let (Ok(held), Some(spent)) = (u64::try_from(retained), std::num::NonZeroU64::new(reads)) else {
         return Err(unread);
     };
@@ -111,7 +111,7 @@ impl Sealed {
 /// WHY THE CALIBRATION STROKE MEASURED NO READ'S SIZE (D2.5): the arm of
 /// `Uncalibrated::Footprint`, carrying the reading that refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Unstroked {
+pub enum FootprintUnread {
     /// The allocator's per-thread counters do not read.
     Allocator,
     /// The stroke's reads did not carry its work to the end: the founding
@@ -151,7 +151,7 @@ fn founding_motions() -> [crate::transducer::cga::Mv; 2] {
 
 /// THE MINIMAL STROKE (D2.5): the reads the founding motions' modes need
 /// (`cga::modes_need`, D3.1), the least work a process does. Refused
-/// `Unstroked::Incomplete` where a founding motion has no need to read.
+/// `FootprintUnread::Incomplete` where a founding motion has no need to read.
 /// Its inputs are fixed motions, so it is derived once and held.
 pub fn minimal_stroke() -> Result<std::num::NonZeroU64, Uncalibrated> {
     *MINIMAL.get_or_init(founding_need)
@@ -162,7 +162,7 @@ static MINIMAL: std::sync::OnceLock<Result<std::num::NonZeroU64, Uncalibrated>> 
 
 /// The founding motions' modes' need, summed.
 fn founding_need() -> Result<std::num::NonZeroU64, Uncalibrated> {
-    let incomplete = Uncalibrated::Footprint(Unstroked::Incomplete);
+    let incomplete = Uncalibrated::Footprint(FootprintUnread::Incomplete);
     let mut need = 0u64;
     for motion in founding_motions() {
         let n = crate::transducer::cga::modes_need(&motion).and_then(|n| u64::try_from(n).ok()).ok_or(incomplete)?;
@@ -179,16 +179,16 @@ fn founding_need() -> Result<std::num::NonZeroU64, Uncalibrated> {
 /// is refused by name.
 pub fn boot_stroke(held: impl Fn() -> Option<i128>) -> Result<std::num::NonZeroU64, Uncalibrated> {
     use crate::transducer::cga::motion_modes;
-    let incomplete = Uncalibrated::Footprint(Unstroked::Incomplete);
+    let incomplete = Uncalibrated::Footprint(FootprintUnread::Incomplete);
     let need = usize::try_from(minimal_stroke()?.get()).map_err(|_| incomplete)?;
     let [turn, slide] = founding_motions();
     let mut stroke = super::Budget { remaining: need };
-    let before = held().ok_or(Uncalibrated::Footprint(Unstroked::Allocator))?;
+    let before = held().ok_or(Uncalibrated::Footprint(FootprintUnread::Allocator))?;
     let spent = super::spent_here();
     let turned = motion_modes(&turn, &mut stroke);
     let slid = motion_modes(&slide, &mut stroke);
     let reads = super::spent_here() - spent;
-    let after = held().ok_or(Uncalibrated::Footprint(Unstroked::Allocator))?;
+    let after = held().ok_or(Uncalibrated::Footprint(FootprintUnread::Allocator))?;
     let (Some(Ok(turned)), Some(Ok(slid))) = (turned, slid) else {
         return Err(incomplete);
     };
@@ -262,11 +262,11 @@ static CALIBRATED_STROKE_FLOOR: std::sync::OnceLock<std::time::Duration> = std::
     clippy::disallowed_types,
     reason = "law 9 — the parking floor is told to the scheduler in its own units; no reading is taken from it"
 )]
-pub fn stroke_floor() -> std::time::Duration {
+pub fn park_floor() -> std::time::Duration {
     // An uncalibrated host parks nothing: no floor was read, and the server,
     // client and soak binaries refuse to boot on it, naming the arm
     // (`calibrate`). A park of no duration is the scheduler's yield.
-    *CALIBRATED_STROKE_FLOOR.get_or_init(|| match stroke_floor_of(scheduler_hz(), timer_slack_ns()) {
+    *CALIBRATED_STROKE_FLOOR.get_or_init(|| match park_floor_of(scheduler_hz(), timer_slack_ns()) {
         Ok(d) => d,
         Err(_) => std::time::Duration::ZERO,
     })
@@ -281,11 +281,11 @@ pub enum Uncalibrated {
     Cores,
     /// The host publishes neither its scheduler tick (`CONFIG_HZ`) nor its
     /// timer slack (`timerslack_ns`): no floor for a park reads.
-    StrokeFloor,
+    ParkFloor,
     /// The process says no memory limit and the host no available bytes.
     Memory,
     /// The boot calibration stroke measured no read's size (D2.5).
-    Footprint(Unstroked),
+    Footprint(FootprintUnread),
     /// The process's capacity `C` does not fit the minimal stroke in one
     /// spend: `capacity` reads, `minimal` the least stroke (D2.5).
     Unfit { capacity: u64, minimal: u64 },
@@ -305,11 +305,11 @@ pub fn cores_of(read: std::io::Result<std::num::NonZeroUsize>) -> Result<std::nu
     clippy::disallowed_types,
     reason = "law 9 — the parking floor, in the scheduler's own units, read off what the host publishes"
 )]
-pub fn stroke_floor_of(hz: Option<u32>, slack_ns: Option<u64>) -> Result<std::time::Duration, Uncalibrated> {
+pub fn park_floor_of(hz: Option<u32>, slack_ns: Option<u64>) -> Result<std::time::Duration, Uncalibrated> {
     match (hz, slack_ns) {
         (Some(hz), _) => Ok(std::time::Duration::from_secs(1) / hz),
         (None, Some(ns)) if ns > 0 => Ok(std::time::Duration::from_nanos(ns)),
-        _ => Err(Uncalibrated::StrokeFloor),
+        _ => Err(Uncalibrated::ParkFloor),
     }
 }
 
@@ -342,7 +342,7 @@ pub fn calibration_of(limit: Option<u64>, available_kib: Option<u64>, held: impl
 /// returns the seal it finds, with no second stroke.
 pub fn calibrate() -> Result<Sealed, Uncalibrated> {
     cores_of(std::thread::available_parallelism())?;
-    stroke_floor_of(scheduler_hz(), timer_slack_ns())?;
+    park_floor_of(scheduler_hz(), timer_slack_ns())?;
     let (limit, kib) = (read_cgroup_limit(), read_mem_available_kib());
     memory_of(limit, kib)?;
     if let Some(calibration) = SEALED.get() {
@@ -373,7 +373,7 @@ fn scheduler_hz() -> Option<u32> {
     reason = "law 9 — a park is told to the scheduler in its own units; the pace is strokes"
 )]
 pub fn idle_park(rtt: Option<std::num::NonZeroU64>) -> std::time::Duration {
-    let floor = stroke_floor();
+    let floor = park_floor();
     match rtt.and_then(|r| u32::try_from(r.get()).ok()).and_then(|n| floor.checked_mul(n)) {
         Some(d) => d,
         None => floor,

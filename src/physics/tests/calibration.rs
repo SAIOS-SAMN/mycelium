@@ -8,7 +8,7 @@ use super::super::*;
 fn spend_unit_ratio_is_exact_and_stroke_floor_positive() {
     assert_eq!(spend_unit() * STROKES_PER_RESERVE, capacity(), "a whole number of spends");
     assert_eq!(u64::from(aperture_cycle()), STROKES_PER_RESERVE, "the aperture is the ratio");
-    let floor = stroke_floor();
+    let floor = park_floor();
     assert!(!floor.is_zero(), "the floor is a measurement, never zero");
     assert_eq!(idle_park(None), floor, "an unmeasured wire parks one stroke, the unit");
     assert_eq!(idle_park(std::num::NonZeroU64::new(3)), floor * 3, "a measured wire parks its round trip");
@@ -112,7 +112,7 @@ fn footprint_is_bytes_per_read_on_fixture_stroke() {
 /// end than at the start.
 #[test]
 fn footprint_of_refuses_unread_stroke() {
-    let refused = |retained, reads| Err(Uncalibrated::Footprint(Unstroked::Retained { retained, reads }));
+    let refused = |retained, reads| Err(Uncalibrated::Footprint(FootprintUnread::Retained { retained, reads }));
     assert_eq!(footprint_of(328, 0), refused(328, 0), "no read spent");
     assert_eq!(footprint_of(0, 2), refused(0, 2), "nothing held");
     assert_eq!(footprint_of(-64, 2), refused(-64, 2), "less held than before");
@@ -120,22 +120,22 @@ fn footprint_of_refuses_unread_stroke() {
 
 /// D2.5 — A HOST WHOSE STROKE CANNOT COMPLETE IS REFUSED BY NAME: where the
 /// allocator's counters do not read, the boot stroke is
-/// `Uncalibrated::Footprint(Unstroked::Allocator)`, never a size guessed.
+/// `Uncalibrated::Footprint(FootprintUnread::Allocator)`, never a size guessed.
 #[test]
-fn boot_stroke_refuses_unread_allocator() {
-    assert_eq!(boot_stroke(|| None), Err(Uncalibrated::Footprint(Unstroked::Allocator)));
+fn calibration_refuses_unread_allocator() {
+    assert_eq!(boot_stroke(|| None), Err(Uncalibrated::Footprint(FootprintUnread::Allocator)));
 }
 
 /// D2.5 — A STROKE THAT HOLDS NOTHING IS REFUSED BY NAME: where the
 /// allocator reads the same before and after (a process whose allocations
 /// the counters do not see), the boot stroke spent its reads and measured
-/// no size. The boot is refused `Unstroked::Retained { retained: 0, .. }`,
+/// no size. The boot is refused `FootprintUnread::Retained { retained: 0, .. }`,
 /// carrying the reads spent, never a size guessed, and no capacity is
 /// derived from it.
 #[test]
 fn stroke_that_holds_nothing_refuses() {
     match calibration_of(None, Some(4), || Some(0)) {
-        Err(Uncalibrated::Footprint(Unstroked::Retained { retained: 0, reads })) => assert!(reads > 0, "the stroke read"),
+        Err(Uncalibrated::Footprint(FootprintUnread::Retained { retained: 0, reads })) => assert!(reads > 0, "the stroke read"),
         other => panic!("a stroke that holds nothing is refused by name: {other:?}"),
     }
 }
@@ -169,10 +169,10 @@ fn open_physics_reads_capacity_measured() {
 /// slack, the grant every shorter ask is rounded to; else refused by name —
 /// never a nanosecond asked in its place.
 #[test]
-fn stroke_floor_reads_slack_where_hz_unpublished() {
-    let ns = |hz, slack| stroke_floor_of(hz, slack).map(|d| d.as_nanos());
+fn park_floor_reads_slack_where_hz_unpublished() {
+    let ns = |hz, slack| park_floor_of(hz, slack).map(|d| d.as_nanos());
     assert_eq!(ns(Some(250), Some(50_000)), Ok(4_000_000), "the tick, where published");
     assert_eq!(ns(None, Some(50_000)), Ok(50_000), "the slack, where it is not");
-    assert_eq!(stroke_floor_of(None, None), Err(Uncalibrated::StrokeFloor));
-    assert_eq!(stroke_floor_of(None, Some(0)), Err(Uncalibrated::StrokeFloor), "a zero slack is no floor");
+    assert_eq!(park_floor_of(None, None), Err(Uncalibrated::ParkFloor));
+    assert_eq!(park_floor_of(None, Some(0)), Err(Uncalibrated::ParkFloor), "a zero slack is no floor");
 }

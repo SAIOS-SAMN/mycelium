@@ -418,7 +418,7 @@ impl Session {
         // A dwell the ledger cannot count caps nothing, and the sample
         // stands as measured.
         let cap = match crate::physics::persist_dwell(floor) {
-            crate::physics::Lambda::Strokes(n) => n,
+            crate::physics::Lambda::Cycles(n) => n,
             crate::physics::Lambda::BeyondTheLedger => u64::MAX,
             crate::physics::Lambda::Unmeasured => return,
         };
@@ -441,7 +441,7 @@ impl Session {
         let ratio = u64::from(crate::physics::aperture_cycle());
         // As above: a dwell beyond the ledger caps nothing.
         let cap = match crate::physics::persist_dwell(floor) {
-            crate::physics::Lambda::Strokes(n) => n,
+            crate::physics::Lambda::Cycles(n) => n,
             crate::physics::Lambda::BeyondTheLedger => u64::MAX,
             crate::physics::Lambda::Unmeasured => return,
         };

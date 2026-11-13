@@ -1029,7 +1029,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **The ledger** | 45, 78.21, 78.24 | a tick is a frame `{S,G,T,H}`; the stamp `h:vk:k` keys a partial order carried as a trie; every act a node citing what it acts on by coordinates; no wall clock anywhere | `chronometry/{chain,receipt,era}.rs`, `server/cognition/cite.rs` | landed (LD2, LD1, ACT1: every holding by an act, the clock reading, a k-step one orbit, a ruling's economy applied at the node that admits its receipt — EC1, ACT1 closed) |
 | **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/persistence/`, `cech/persist.rs`, `economy/persist.rs`, `client/sdk/vocabulary/persist.rs` | landed (LD3); the court writes `MYT2` (`snapshot/layout.rs`) and refuses `MYT1` and `MYC7` by name (`snapshot/read.rs`); the genome is `GEN7` (`vocabulary/persist.rs`, court-admitted words only, 78.49) and refuses `GEN6`, `GEN5` and `GEN4` by name; the thoughts file retired; RM1 adds the remainder leaf |
 | **The learning curve** | 78.1, 78.3, 78.16–78.19 | a mind's perspective is its orbital elements; learning is the change of those elements by closures and refinements; a phase lands when its reading moves | `observe/{phase,carriage}.rs` | landed (LC1, CO1, PG1, SP1, CQ1, PH5). LC2 open: the first non-zero reading |
-| **POW++** | 74, 78.22, 78.33, MU-ECONOMY | four proofs named apart (multi-axial convergence settlement, MU-ECONOMY §0): POUW (a closure ruled, mint on closure), POWC (lineages falling into one well, independent or sharing a cause and disagreeing before meeting; a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and POWV (verification, a share of the release); priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/reconstruct.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_reconstruction` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer (the uncalled refine and condense arms are retired); `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
+| **POW++** | 74, 78.22, 78.33, MU-ECONOMY | four proofs named apart (multi-axial convergence settlement, MU-ECONOMY §0): POUW (a closure ruled, mint on closure), POWC (lineages falling into one well, independent or sharing a cause and disagreeing before meeting; a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and POWV (verification, a share of the release); priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/reconstruct.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_cycle_on` → `docket_reconstruction` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer (the uncalled refine and condense arms are retired); `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `client/sdk/mind/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
 | **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/`, `client/sdk/mind/think.rs` (`construct_and_adjoin`) | PARTIAL: a residue the mind cannot say is constructed and its rotation adjoined as the mind's own letter (`construct_and_adjoin`, called from `client/sdk/mind/perceive.rs` and from `compose_or_construct_on` in `client/sdk/mind/think.rs`). AL1 open: the odd constructor as a letter and the mode-first peel — the slice's S1 (U15's triad) closes both. SP2 is part of the client's objective (MU-CLIENT §1 item 6, §5.5): minds speak to minds to harden language from the minds' dialects; the frames run (chatter, 78.161, 78.163), hearing in the hearer's own shells with its windings and pivots is owed (MU-CLIENT §5.3, §7.1); DL1 open; the Gödel step's backlog read first (GD1) |
 | **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `field/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/vocabulary/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1); the demand taker landed (`drain_demands`, 78.109 C1). FX1's edge-credit tables RETIRED: the flux is the mind's field, threaded on the complex's lines; an orbit's return or a tube's cancelled net flux releases what relaxed, and the mind drains and descends there (MU-CLIENT §4.5) |
@@ -4036,7 +4036,7 @@ a theorem of chapters 13–15.
 **Invariant.** No class enters the ledger from a non-good overlap; classes
 have equal keys on every hypha; the union is never materialised.
 
-**Binding.** `Court::glue_fetched`, `court_stroke`, `refine_chart`,
+**Binding.** `Court::glue_fetched`, `court_cycle`, `refine_chart`,
 `apply_verdict` (chapter 23).
 
 ### 17.9 M9 — Torsion bridge
@@ -4553,7 +4553,7 @@ as before. `mod.rs` holds declarations and re-exports only.
   use.
 - `apply_verdict` on `RULING_SLASHED` of an address in `cited_by`:
   each citer returns to `provisional` with `provisional_tu` now; the next
-  `court_stroke` reconstructs it without the citation.
+  `court_cycle` reconstructs it without the citation.
 - `cocycle_at: Keyed<(Versor, u64, [u8;32], [u8;32], [u8;32])>`: the
   fifth field is the class key (15.4); `snapshot`/`restore`
   and the MYC2 ledger record it.
@@ -5262,7 +5262,7 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   in `ruled_addrs`; `resolve_form` reads `cavity_book`; `serve_ruled` never
   serves it.
 - A form with no bundle and empty `cited_by` after its last citer retires
-  relocates on the next `court_stroke`.
+  relocates on the next `court_cycle`.
 - **Condensation retires what it derives** (3.8, ruled 2026-09-08): a
   torse or a punctured bundle that closes what its cited forms close with
   more reach or a shorter description relocates them to the cavity,
@@ -6685,7 +6685,7 @@ remainder and a closed remainder is not minted again (idempotence by
 receipt, 23.8), so no chain of mints is infinite. A vortex and a held
 thought are states, not non-termination. No clause compares lanes with
 each other or with a constant, and no order on `μ⃗` is invoked. Code:
-`Physics::stroke`, `Budget::spend`, `StrokeOutcome`, `lane_moves`. Proof:
+`Physics::stroke`, `Budget::spend`, `WindingOutcome`, `lane_moves`. Proof:
 the enumeration gate (every loop spends or walks a boundary),
 a test that a stroke terminates on a zero outcome.
 
@@ -12654,7 +12654,7 @@ The engine's time is TUniversal and each node's own `K`, never a wall clock (law
 1. **Three clocks, named apart on every reading.** TUniversal is the mesh's height, the receipt chain's head as this node admitted it, `1 + max(h(prev), parent heights)` (47.2): the one clock every node shares and the only one comparable across nodes. A court's `K` is its own count and a voice's `K` its own (72.1d); two `K`s on two nodes are two clocks, and the clocks' ratio is not a disparity of time. Disparity is read in height only: per peer, the last height this node admitted from it and the gap to its own head; across nodes, the spread `max − min` of heads. A gap in height is a reading of replication (13.7, CV5), never a fault and never a threshold (rule 5).
 2. **`Reading::Clock` per court**, typed and served: its `K`, its head height, the genesis it started from, per peer the last admitted height and the gap, and the heights at which its ledger, registry and eras were last persisted, so that "how long since persisted" is a difference of heights and of `K`, never of seconds.
 3. **A per-voice clock**: its `K`, its court's height when last heard, its genome's last-persist height.
-4. **The console header places every source on TUniversal first**, by height with its own `K` and the spread, before any other reading; no wall-clock value appears on the console or in any reading. As corrected by 78.152: what remains is the one scheduler floor, `physics::stroke_floor`, the bound of a park on no work, told to the OS scheduler and read by no one; every bound on work is counted in strokes or in final-point advances.
+4. **The console header places every source on TUniversal first**, by height with its own `K` and the spread, before any other reading; no wall-clock value appears on the console or in any reading. As corrected by 78.152: what remains is the one scheduler floor, `physics::park_floor`, the bound of a park on no work, told to the OS scheduler and read by no one; every bound on work is counted in strokes or in final-point advances.
 5. **Every reading is quoted against height and `K`.**
 
 **A tick is a frame (amendment).** `S, G, T, H` are the four dimensions of one tick: each TUniversal tick is a FRAME of the `{S, G, T, H}` manifold, so the ledger has four dimensions, not solely a height; height is the tick count along the causal order of 45.3, and the same tick's extent reads on `T` as a duration in receipts, on `S` as a scale, on `G` as a gauge count and on `H` as a fibre span (65.4).
@@ -12665,7 +12665,7 @@ The engine's time is TUniversal and each node's own `K`, never a wall clock (law
 - (iv) `Reading::Clock` carries per source the stamp and per tick window the frame, and the console prints every source by its stamp.
 - (v) Disparity is read on the tick and per lane: two nodes at one height whose frames differ hold different manifolds of the same moment, and that difference is content, never a fault (13.7, rule 5).
 
-Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.rs` (`KStepReceipt::print`, `CoreStamp`), `src/server/cognition/reads.rs` (`core_stamp`), `src/bin/mycelium-server/console.rs`, `src/physics/calibration.rs` (`stroke_floor`).
+Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.rs` (`KStepReceipt::print`, `CoreStamp`), `src/server/cognition/reads.rs` (`core_stamp`), `src/bin/mycelium-server/console.rs`, `src/physics/calibration.rs` (`park_floor`).
 
 ### 78.22 Framing refusals, and a citation is coordinates, never a copy (LD0, LD1)
 
@@ -13698,7 +13698,7 @@ Code: `src/server/cognition/court/era.rs` (`fold_head`);
   at each close) is superseded by 78.67.
 
 Code: `src/physics/stroke.rs` (`Physics::spend`, `book_contacts`, `relax`,
-`stroke_floor`); `src/client/sdk/mind/boot.rs` (`physics`,
+`park_floor`); `src/client/sdk/mind/boot.rs` (`physics`,
 `physics_mut`); `src/transducer/cga/motion.rs` (`period_of`);
 `src/physics/metabolism.rs` (`note_orbit`).
 
@@ -15408,7 +15408,7 @@ The mesh keeps one clock, TUniversal: a point read off the keepers' signed readi
 
 **Amended forward (v0.5.0 recut, MU-ENGINEERING §9): the point stands in the expression.** The lane byte is retired and the frame is `[len u32 LE][expression]`, a length and opaque bytes. The point moves off the envelope into the expression: `[act][point][point len u16 LE]`, a count of `0` with no point bytes where the speaker has read none (`src/anastome/dialogue/expression.rs`). Every speaker writes the slot, so the door answers every expression with its final point and the pointed-connection book is retired. A Noise door tells the opening from a plaintext envelope by the first four bytes. No legacy reader: an expression without its count is refused whole.
 
-The SDK read: `Session::tuniversal` and `Mind::tuniversal` return the last final point read (`None` before the first); a game kernel holds its clock to it, stamps what it publishes with `TPoint::print`, and keeps its own step clock (78.124). The only remaining earth clock is the scheduler floor `physics::stroke_floor`, told to the OS scheduler and read by no one (78.21(4) as corrected); the court's idle park ends at the first motion. With a majority of keepers down time does not advance: nothing new is final, the door's point stands and the watchdog is not woken. Open: whether a later quorum point citing two differing finals at one tick resolves that tick on the main line, and issuance net of genesis is not separable in `issued` after a treasury fold. Code: `src/chronometry/tuniversal/` (`keepers.rs`, `reading.rs`, `point.rs`, `navigate.rs`, `shelf.rs`, `record.rs`), `src/server/cognition/reads.rs` (`keeper_tick`, `pinpoint`, `unpack`, `unroll`), `src/network/wire.rs`, `src/bin/mycelium-server/tuniversal.rs`, `src/bin/mycelium-server/court_lock.rs` (`spawn_watchdog`), `src/client/sdk/session.rs` (`Session::tuniversal`), `src/physics/calibration.rs` (`stroke_floor`); tests `src/chronometry/tuniversal/tests/`.
+The SDK read: `Session::tuniversal` and `Mind::tuniversal` return the last final point read (`None` before the first); a game kernel holds its clock to it, stamps what it publishes with `TPoint::print`, and keeps its own step clock (78.124). The only remaining earth clock is the scheduler floor `physics::park_floor`, told to the OS scheduler and read by no one (78.21(4) as corrected); the court's idle park ends at the first motion. With a majority of keepers down time does not advance: nothing new is final, the door's point stands and the watchdog is not woken. Open: whether a later quorum point citing two differing finals at one tick resolves that tick on the main line, and issuance net of genesis is not separable in `issued` after a treasury fold. Code: `src/chronometry/tuniversal/` (`keepers.rs`, `reading.rs`, `point.rs`, `navigate.rs`, `shelf.rs`, `record.rs`), `src/server/cognition/reads.rs` (`keeper_tick`, `pinpoint`, `unpack`, `unroll`), `src/network/wire.rs`, `src/bin/mycelium-server/tuniversal.rs`, `src/bin/mycelium-server/court_lock.rs` (`spawn_watchdog`), `src/client/sdk/session.rs` (`Session::tuniversal`), `src/physics/calibration.rs` (`park_floor`); tests `src/chronometry/tuniversal/tests/`.
 
 #### 78.152b TUniversal never waits on a court's load
 

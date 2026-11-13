@@ -70,7 +70,7 @@ fn court_reconstruct_resumes_unread_to_whole_verdict() {
 /// resumes it, and rules it; a word that leaves a remainder on its family is
 /// still slashed, once its reconstruction is read.
 #[test]
-fn court_stroke_rules_word_across_unfinished_strokes() {
+fn court_cycle_rules_word_across_unfinished_strokes() {
     crate::transducer::raster::stand_on(0);
     let (word, one, wider) = fixture();
     let addr = word.address();
@@ -79,7 +79,7 @@ fn court_stroke_rules_word_across_unfinished_strokes() {
     while !ruling.ruled_contains(&addr) {
         strokes += 1;
         assert!(strokes <= 4096, "the docket rules the word");
-        ruling.court_stroke();
+        ruling.court_cycle();
         assert_eq!(ruling.court_slashed, 0, "a good word is never slashed, on any stroke");
     }
     assert!(ruling.reconstruction_cursors.is_empty(), "its reconstruction is ruled and keeps no cursor");
@@ -89,7 +89,7 @@ fn court_stroke_rules_word_across_unfinished_strokes() {
     while refusing.provisional.contains(&addr) {
         strokes += 1;
         assert!(strokes <= 4096, "the docket rules the word");
-        refusing.court_stroke();
+        refusing.court_cycle();
     }
     assert_eq!(refusing.court_slashed, 1, "the form that does not close its family is slashed once");
     assert!(!refusing.ruled_contains(&addr), "and never ruled");

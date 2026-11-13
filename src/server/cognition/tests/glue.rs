@@ -393,7 +393,7 @@ fn glue_fetched_holds_attached_word() {
     own.bind_identity(own_vk);
     let held = word(1);
     assert_eq!(own.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
-    own.court_stroke();
+    own.court_cycle();
     let peer_word = word(2);
     let mut cover = crate::network::nerve::HomeTrie::new();
     let outcome = fetched(&mut own, &peer_word, peer, own_vk, &mut cover);

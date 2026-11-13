@@ -1390,7 +1390,7 @@ Uncalibrated>` reads the cores and the stroke floor (D2.6), then
    (`minimal_stroke` = `modes_need` of the turn of the plane of the first
    two axes plus that of the slide along the first axis, D3.1); it reads
    the motions' modes and measures `b = ⌈ retained / reads ⌉` (`footprint_of`). A
-   stroke that cannot complete is `Uncalibrated::Footprint(Unstroked::
+   stroke that cannot complete is `Uncalibrated::Footprint(FootprintUnread::
    {Allocator, Incomplete, Retained { retained, reads }})`.
 3. `C = ⌊M_proc / b⌋` exactly (`Calibration::of`), refused
    `Uncalibrated::Unfit { capacity, minimal }` where one spend `⌊C / 8⌋`
@@ -1513,7 +1513,7 @@ Tests: `physics::tests::calibration` (`capacity_equals_memory_over_footprint`,
 `memory_of_reads_cgroup_limit_before_available`,
 `cgroup_limit_of_reads_least_limit_on_path`,
 `footprint_is_bytes_per_read_on_fixture_stroke`,
-`footprint_of_refuses_unread_stroke`, `boot_stroke_refuses_unread_allocator`,
+`footprint_of_refuses_unread_stroke`, `calibration_refuses_unread_allocator`,
 `stroke_that_holds_nothing_refuses`, `unreadable_memory_refuses_boot`,
 `open_physics_reads_capacity_measured`); `mycelium-server tests::pacing`
 (`quiet_peer_not_asked_again_while_final_point_still`,
@@ -1637,11 +1637,11 @@ stroke) has a size of a GiB. The ratio algebra
 **Status.** **Built** (2026-10-31, the live-readings ruling) for the
 physics and transport arms; the reserve's own `Calibration` organ landed
 with D2.5 (2026-11-04): `Uncalibrated::{Memory, Footprint}` beside `Cores`
-and `StrokeFloor`, and cores no longer multiply the reserve.
+and `ParkFloor`, and cores no longer multiply the reserve.
 `physics::calibrate() -> Result<Sealed, Uncalibrated>` reads every arm the
-host must say, `Uncalibrated::{Cores, StrokeFloor, Memory, Footprint}`;
+host must say, `Uncalibrated::{Cores, ParkFloor, Memory, Footprint}`;
 the server, client and soak binaries refuse to boot naming the arm, and
-the reserve has no one-core arm. `stroke_floor_of(hz, slack)`: one tick
+the reserve has no one-core arm. `park_floor_of(hz, slack)`: one tick
 where `CONFIG_HZ` is published, else the thread's `timerslack_ns`, else
 refused (the one-nanosecond ask is deleted; an unbooted uncalibrated
 library parks nothing). `idle_park(Option<NonZeroU64>)` parks the floor, the
@@ -1655,7 +1655,7 @@ read is `channel::Paced` under `Pace::Polled` (`src/network/channel.rs`),
 the same stall bound refilled on progress and the round trip counted in
 polls from the write (`Paced::first_byte_at`); `pace_of` refuses
 `Unmeasured`, and `read_budgeted` below names that read. Tests: `physics::tests::calibration`
-(`calibration_refuses_unread_cores`, `stroke_floor_reads_slack_where_hz_unpublished`),
+(`calibration_refuses_unread_cores`, `park_floor_reads_slack_where_hz_unpublished`),
 `physics::tests::lambda::from_transport_counts_rtt_in_strokes` (its
 same-stroke-zero claim dropped, §2 item 13), `mycelium-server tests::patience`
 (`read_budgeted_refuses_unmeasured_stall`, `rtt_is_nonzero_by_measurement`;
@@ -1676,7 +1676,7 @@ the derivation as specified.
 **Governs.**
 
 - The reserve scale (cores, memory), as in D2.5.
-- The scheduler floor of every park on no work (`stroke_floor`, 78.152:
+- The scheduler floor of every park on no work (`park_floor`, 78.152:
   the one scheduler floor).
 - How long an idle carrier parks.
 - How long a read waits on a silent peer. `usize::MAX` stalls a thread
@@ -1707,16 +1707,16 @@ memory). Low for the 1-stroke arms.
   per thread at `/proc/thread-self/timerslack_ns` (Linux ≥ 4.6;
   `/proc/self/timerslack_ns` on older paths). Derived:
   ```text
-  stroke_floor = 1 s / CONFIG_HZ                where /boot/config-<release> publishes CONFIG_HZ
+  park_floor = 1 s / CONFIG_HZ                where /boot/config-<release> publishes CONFIG_HZ
                = timerslack_ns · 1 ns           else, where the operating system publishes the slack
-               refused: Uncalibrated::StrokeFloor   else
+               refused: Uncalibrated::ParkFloor   else
   ```
   The ask then equals the grant and no literal remains.
 - **`idle_park` 1 stroke, `from_transport` `max(1)`.** The measured rtt is
   never 0: `read_budgeted` (`transport.rs:230`) returns `first_byte_at`,
   counted after `polls += 1`, so a reply on the first poll reads 1. Type
   the rtt `NonZeroU64` at the measurement, and `r.max(1)` is dead. The
-  `None => 1` arm parks exactly one `stroke_floor`, the unit itself, so it
+  `None => 1` arm parks exactly one `park_floor`, the unit itself, so it
   becomes `Park::Floor` with no literal. Callers of `from_transport` pass
   `aperture_cycle()` (8) or `reserve_max()` (≥ 16); type
   `strokes: NonZeroU64` and the `max(1)` goes. The test
@@ -1741,7 +1741,7 @@ memory). Low for the 1-stroke arms.
 
 **Implementation scope.**
 
-- `src/physics/calibration.rs` (the calibration organ, `stroke_floor`,
+- `src/physics/calibration.rs` (the calibration organ, `park_floor`,
   `idle_park(Option<NonZeroU64>)`,
   `from_transport(NonZeroU64, NonZeroU64)`).
 - `src/bin/mycelium-server/transport.rs` (`read_budgeted(…, Stall)`,
@@ -1752,7 +1752,7 @@ memory). Low for the 1-stroke arms.
   - `calibration_refuses_unread_cores`,
     `calibration_refuses_unread_memory` (fixtures that inject the
     refusal).
-  - `stroke_floor_reads_slack_where_hz_unpublished`.
+  - `park_floor_reads_slack_where_hz_unpublished`.
   - `rtt_is_nonzero_by_measurement`.
   - `stall_beyond_reads_to_stream_end`.
   - `read_budgeted_refuses_unmeasured_stall`.
@@ -1780,7 +1780,7 @@ empty polls.
 
 **Governs.** Liveness: how long a one-shot CLI or a court ask waits on a
 peer before counting it silent. On a 16-core, 31-GiB host, `R = 496`
-gives `3 968` empty polls of `stroke_floor` each. On a 1-core host with
+gives `3 968` empty polls of `park_floor` each. On a 1-core host with
 no memory reading it gives `128`. The `5` gives `40` polls to every
 unmeasured peer.
 
@@ -2731,7 +2731,7 @@ pub(crate) fn tell_peer(endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)>
 Inside `tell_peer_within` (`:192–196`) the hint becomes the stall budget
 `Λ(5) = Strokes(5·A) = 40`; `read_budgeted` refills the budget on every
 byte of progress, so 40 bounds a STALL (consecutive empty polls), each
-poll parked one `stroke_floor()`.
+poll parked one `park_floor()`.
 
 **Governs.** Liveness of every hypha-to-hypha ask that has no
 measurement in hand: `tell_peer` is called directly at `exchange.rs:200`

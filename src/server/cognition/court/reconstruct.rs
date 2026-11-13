@@ -274,14 +274,14 @@ impl Court {
     /// The lapse sweep runs on every stroke, on its own budget
     /// (`lapse_silent`): the book's sink never waits on a sealed close.
     #[cfg(test)]
-    pub(crate) fn court_stroke(&mut self) {
+    pub(crate) fn court_cycle(&mut self) {
         let mut budget = self.physics.stroke();
-        self.court_stroke_on(&mut budget);
+        self.court_cycle_on(&mut budget);
     }
 
-    /// [`Court::court_stroke`] ON THE HOLD'S STROKE (78.153b): the binary's
+    /// [`Court::court_cycle`] ON THE HOLD'S STROKE (78.153b): the binary's
     /// court loop hands in the one stroke its hold was taken with.
-    pub fn court_stroke_on(&mut self, budget: &mut crate::physics::Budget) {
+    pub fn court_cycle_on(&mut self, budget: &mut crate::physics::Budget) {
         // E4 — what every other act paid since the last stroke, counted
         // toward the grants (an install, a solve and a demand closure count
         // each at its own act).
@@ -293,7 +293,7 @@ impl Court {
         self.physics.book_contacts(crate::transducer::family::pairing::contact_lanes());
         crate::observe::step("court stroke: docket reconstruction");
         let circuit = self.docket_reconstruction(budget);
-        if let Some((n, period)) = self.docket_circuits.stroke(u64::from(circuit)) {
+        if let Some((n, period)) = self.docket_circuits.cycle(u64::from(circuit)) {
             // ONCE PER APERTURE, NOT PER CIRCUIT. A docket that fits one
             // budget completes a circuit every stroke, so "written once
             // per circuit" was written every stroke: 43,596 of these in
@@ -460,7 +460,7 @@ impl Court {
         };
         loop {
             let before = progress(self);
-            self.court_stroke();
+            self.court_cycle();
             let after = progress(self);
             if (after.is_empty() && self.rehear_due.is_empty()) || after == before {
                 return;

@@ -78,7 +78,7 @@ pub(crate) fn defer_unread_with(tcp: TcpStream, mesh: &Mesh, delimited: Delimite
 /// begun (D2.6; `tell_peer_within` resolves it as a first ask).
 pub(crate) fn pace_of(stall: Stall) -> Option<Pace> {
     match stall {
-        Stall::Strokes(n) => Some(Pace::Polled(Some(n))),
+        Stall::Cycles(n) => Some(Pace::Polled(Some(n))),
         Stall::Beyond => Some(Pace::Polled(None)),
         Stall::Unmeasured => None,
     }
@@ -217,7 +217,7 @@ pub(crate) fn is_deferred(reply: &[u8]) -> bool {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Stall {
     /// At most this many consecutive polls that move no byte.
-    Strokes(std::num::NonZeroUsize),
+    Cycles(std::num::NonZeroUsize),
     /// Until the stream's own end (end of file or reset): a one-shot ask
     /// whose wait no measurement bounds, or a deadline past the ledger's
     /// count. No poll counter.
@@ -233,8 +233,8 @@ impl Stall {
     /// stream's own end; unmeasured, `Unmeasured` (a zero is no measurement).
     pub(crate) fn of(l: mycelium::physics::Lambda) -> Stall {
         match l {
-            mycelium::physics::Lambda::Strokes(n) => match usize::try_from(n).map(std::num::NonZeroUsize::new) {
-                Ok(Some(n)) => Stall::Strokes(n),
+            mycelium::physics::Lambda::Cycles(n) => match usize::try_from(n).map(std::num::NonZeroUsize::new) {
+                Ok(Some(n)) => Stall::Cycles(n),
                 Ok(None) => Stall::Unmeasured,
                 Err(_) => Stall::Beyond,
             },
@@ -251,7 +251,7 @@ impl Stall {
     pub(crate) fn resolved(self) -> Stall {
         match self {
             Stall::Unmeasured => match std::num::NonZeroUsize::new(mycelium::physics::aperture_cycle() as usize) {
-                Some(a) => Stall::Strokes(a),
+                Some(a) => Stall::Cycles(a),
                 None => Stall::Unmeasured,
             },
             s => s,
@@ -505,7 +505,7 @@ pub(crate) fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, sample: u64) {
         None => mycelium::physics::persist_dwell(sample),
     };
     let cap = match dwell {
-        mycelium::physics::Lambda::Strokes(n) => n,
+        mycelium::physics::Lambda::Cycles(n) => n,
         mycelium::physics::Lambda::BeyondTheLedger
         | mycelium::physics::Lambda::Unmeasured => u64::MAX,
     };
@@ -524,7 +524,7 @@ pub(crate) fn note_rtt_timeout(mesh: &Mesh, id: impl AsRef<[u8]>) {
         return;
     };
     let cap = match mycelium::physics::persist_dwell(floor) {
-        mycelium::physics::Lambda::Strokes(n) => n,
+        mycelium::physics::Lambda::Cycles(n) => n,
         mycelium::physics::Lambda::BeyondTheLedger
         | mycelium::physics::Lambda::Unmeasured => u64::MAX,
     };

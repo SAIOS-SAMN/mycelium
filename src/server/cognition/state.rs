@@ -665,7 +665,7 @@ pub struct Court {
     /// Listings whose field has a non-Flat chart — the court's docket, written
     /// in write_field, read in key order.
     pub(crate) open: crate::network::nerve::Keyed<()>,
-    /// Keyed cursor into `open` for court_stroke.
+    /// Keyed cursor into `open` for court_cycle.
     pub(crate) open_cursor: Option<Vec<u8>>,
     /// The docket's circuits (45.7, S13.3): the circuits of `open` the court
     /// stroke completed and the strokes the last one took, written once

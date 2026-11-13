@@ -101,7 +101,7 @@ fn task_inflow_takes_offer_in_restored_language() {
     assert!(mind.couples(&[7; 32], &cell.charts), "an offer on a chart its language speaks on couples");
     assert!(!mind.couples(&[8; 32], &Offer::of(&two_hours_of_a_slide()).charts), "one on charts it does not speak on couples to nothing");
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [7; 32], train: one_cell_steps(), tests: Vec::new() }, cell));
-    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut outcome = crate::physics::WindingOutcome::default();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| mind.task_inflow(&mut outcome));
     mind.field = field;
@@ -152,7 +152,7 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
     let mut quiet = Mind::open("127.0.0.1:1", Voice::named("quiet"));
     quiet.open_feed(still.clone());
     let mut field = std::mem::take(&mut quiet.field);
-    field.think(|| quiet.corpus_inflow(&mut crate::physics::StrokeOutcome::default()));
+    field.think(|| quiet.corpus_inflow(&mut crate::physics::WindingOutcome::default()));
     quiet.field = field;
     assert_eq!(quiet.board.corpus.size().0, 1, "both placed, one met and taken off the corpus");
     let stayed = [still.join("feed/a-three.task").exists(), still.join("feed/b-one.task").exists()];
@@ -165,7 +165,7 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
     field.think(|| {
         let rang = crate::transducer::mind::with_field(|f| f.orbits.admit_hues(&[(1, 2), (2, 1)], 1, &Thread::Free).is_some());
         assert!(matches!(rang, Ok(true)), "a 𝒢 orbit on the support {{1, 2}}");
-        mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
+        mind.corpus_inflow(&mut crate::physics::WindingOutcome::default());
     });
     mind.field = field;
     assert!(!home.join("feed/b-one.task").exists() && home.join("feed/.done/b-one.task").exists(), "the family on the orbit's coordinate is met and taken in");
@@ -203,7 +203,7 @@ fn corpus_inflow_meets_language_charts_at_rest() {
     let mut field = std::mem::take(&mut mind.field);
     let (quiet, excited) = field.think(|| {
         let quiet = mind.contemplation.is_empty() && matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
-        mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
+        mind.corpus_inflow(&mut crate::physics::WindingOutcome::default());
         mind.settle_perception();
         let excited = matches!(crate::transducer::mind::with_field(|f| !f.orbits.focus().is_empty()), Ok(true));
         (quiet, excited)
@@ -277,7 +277,7 @@ fn absorb_taught_holds_residue_as_open_question() {
     field.think(|| {
         // A cycle on the support {1, 3} — the hues the residue's map moves.
         let _ = crate::transducer::mind::with_field(|f| f.orbits.admit_hues(&[(1, 3), (3, 1)], 1, &crate::transducer::cech::Thread::Free));
-        mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
+        mind.corpus_inflow(&mut crate::physics::WindingOutcome::default());
     });
     mind.field = field;
     assert!(mind.board.open_residues.is_empty(), "met where the field rings, taken into thought, it leaves the carrier");
@@ -312,7 +312,7 @@ fn task_inflow_leaves_uncoupled_task_to_lapse() {
     let train = one_cell_steps();
     let offer = Offer::of(&train);
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [7; 32], train, tests: Vec::new() }, offer));
-    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut outcome = crate::physics::WindingOutcome::default();
     mind.task_inflow(&mut outcome);
     assert!(mind.board.court.task.is_some() && !mind.perceiving(), "uncoupled: left where it landed, nothing perceived");
     let mut b = budget();
@@ -439,13 +439,13 @@ fn pull_task_asks_only_under_strain_or_unexhausted_empty_corpus() {
 /// A MIND WITH A COURT'S TASK ON ITS BOARD OWES ITS OWN STROKES (ruled
 /// 2026-10-24); one that holds nothing owes none and may block.
 #[test]
-fn owes_strokes_is_true_only_with_task_on_board() {
+fn owes_windings_is_true_only_with_task_on_board() {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("quiescent"));
-    assert!(!mind.owes_strokes(), "nothing held: quiescent");
+    assert!(!mind.owes_windings(), "nothing held: quiescent");
     let train = one_cell_steps();
     let offer = Offer::of(&train);
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [4; 32], train, tests: Vec::new() }, offer));
-    assert!(mind.owes_strokes(), "a task waiting: owed strokes");
+    assert!(mind.owes_windings(), "a task waiting: owed strokes");
 }
 
 /// CANDIDATE 2 — THE MIND'S FIRST MOTION (MU-CLIENT §4.13, Issue #246):
@@ -462,7 +462,7 @@ fn first_motion_takes_initial_pulled_task_into_perception() {
     let id = [15u8; 32];
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id, train, tests: Vec::new() }, offer));
 
-    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut outcome = crate::physics::WindingOutcome::default();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| mind.task_inflow(&mut outcome));
     mind.field = field;
@@ -507,7 +507,7 @@ fn first_motion_with_uncoupled_syllabus_words_takes_task_in() {
     let offer = Offer { first_motion: is_first, ..base_offer };
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id, train: uncoupled_train.to_vec(), tests: Vec::new() }, offer));
 
-    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut outcome = crate::physics::WindingOutcome::default();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| mind.task_inflow(&mut outcome));
     mind.field = field;

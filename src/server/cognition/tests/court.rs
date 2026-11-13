@@ -143,7 +143,7 @@ let b = vec![(0, 0, 4), (0, 1, 4), (0, 3, 3)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
-home.court_stroke();
+home.court_cycle();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
@@ -159,7 +159,7 @@ assert!(
 /// Adopt writes a field entry and a deflation so the stroke can rule
 /// a client-minted connection. Ruled listings do not starve later ones.
 #[test]
-fn court_stroke_skips_ruled_adopted_listings() {
+fn court_cycle_skips_ruled_adopted_listings() {
 use crate::transducer::element::from_connection;
 fn conn(shift: i64) -> Element {
     from_connection(
@@ -190,9 +190,9 @@ let ruled_n = |k: &Court, addrs: &[crate::transducer::address::Address]| {
         })
         .count()
 };
-k.court_stroke();
+k.court_cycle();
 assert_eq!(ruled_n(&k, &addrs), cap, "one stroke rules a spend of unruled listings, not already-ruled ones");
-k.court_stroke();
+k.court_cycle();
 assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by already-ruled ones");
 }
 
@@ -229,7 +229,7 @@ assert_eq!(k.volume_of_simplex(&Invariant::counts(&[9])), [0; 4], "a chart with 
 /// circuit — where a cursor that resumed after the last key it served and
 /// stopped at the end of the order never reached it.
 #[test]
-fn court_stroke_circuit_reaches_listing_below_cursor() {
+fn court_cycle_circuit_reaches_listing_below_cursor() {
 use crate::transducer::element::from_connection;
 fn conn(shift: i64) -> Element {
     from_connection(
@@ -247,7 +247,7 @@ for i in 0..(cap + 1) {
     let mut adopt = k.stroke();
     assert!(matches!(k.install_adopted(&conn(2 * (i as i64 + 1)), [1; 32], &mut adopt), Adoption::Installed));
 }
-k.court_stroke();
+k.court_cycle();
 assert_eq!(k.docket_circuits().circuits(), 0, "one stroke over cap + 1 listings is not a circuit");
 // The stroke above yielded keys, so the docket's cursor stands.
 let resume = k.open_cursor.clone().expect("one stroke over the docket set the cursor");
@@ -267,7 +267,7 @@ let mut strokes = 0;
 while !k.ruled_contains(addr.as_bytes()) {
     strokes += 1;
     assert!(strokes <= 3, "the listing below the cursor is ruled within one circuit");
-    k.court_stroke();
+    k.court_cycle();
 }
 let docket = k.docket_circuits();
 assert!(docket.circuits() >= 1, "the circuit passed the end of the docket: {docket:?}");
@@ -462,7 +462,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
     assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
-    home.court_stroke();
+    home.court_cycle();
     let spoken =
         home.provisional.scoped().next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
@@ -515,7 +515,7 @@ fn own_section_is_empty_without_rederivation() {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
     assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
-    home.court_stroke();
+    home.court_cycle();
     let spoken = home.provisional.scoped().next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
     let offered = spoken.address();

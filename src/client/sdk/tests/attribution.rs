@@ -64,7 +64,7 @@ fn intake_reads_family_share_beside_magnitude() {
     mind.comprehending.insert(id, (section.clone(), crate::transducer::address::Address::from(Vec::new())));
     mind.board.court.task = Some((section, offer));
     let before = crate::observe::mind();
-    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut outcome = crate::physics::WindingOutcome::default();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| mind.task_inflow(&mut outcome));
     mind.field = field;

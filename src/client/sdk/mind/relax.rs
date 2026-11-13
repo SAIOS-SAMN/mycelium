@@ -4,13 +4,13 @@
 // court's language where it is due, and regenerates.
 
 use crate::client::sdk::*;
-use crate::physics::StrokeOutcome;
+use crate::physics::WindingOutcome;
 
 impl Mind {
-    pub(crate) fn relax(&mut self, outcome: &mut StrokeOutcome) {
+    pub(crate) fn relax(&mut self, outcome: &mut WindingOutcome) {
         let _ = self.shed();
         let (pivoted, _) = self.expand_ideas();
-        StrokeOutcome::add(&mut outcome.pivoted, &pivoted);
+        WindingOutcome::add(&mut outcome.pivoted, &pivoted);
         let _ = self.pivot_thoughts();
         self.language_inflow();
         self.physics_mut().regenerate();

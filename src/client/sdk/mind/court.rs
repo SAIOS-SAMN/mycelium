@@ -11,7 +11,7 @@
 //! goes on, and takes the answer at its next admission.
 
 use crate::client::sdk::*;
-use crate::physics::{Physics, StrokeOutcome};
+use crate::physics::{Physics, WindingOutcome};
 use crate::transducer::element::measure_lanes;
 
 /// THE COURT'S PACE, carried from tick to tick: the language and the
@@ -58,7 +58,7 @@ pub(crate) struct CourtPace {
     pub(crate) syncing: bool,
     pub(crate) schooling: bool,
     pub(crate) solving: crate::network::nerve::Keyed<()>,
-    probed: StrokeOutcome,
+    probed: WindingOutcome,
     /// The solves this mind was paid for since it began (a bounty or a floor
     /// filed), the events that raise the reading of its holding at a court.
     /// An observation of the mind's work, never a goal the mind steers by
@@ -99,13 +99,13 @@ impl Mind {
     /// THE COURT'S WORD FLOWS IN FIRST: every answer the carrier landed is
     /// taken, in the order it was asked, and what the probes it answered
     /// closed and pressed is this tick's.
-    pub(crate) fn court_inflow(&mut self, outcome: &mut StrokeOutcome) {
+    pub(crate) fn court_inflow(&mut self, outcome: &mut WindingOutcome) {
         self.drain_answers();
         if let Some(p) = self.hypha.tuniversal() {
             self.board.court.last_height = self.board.court.last_height.max(p.h);
         }
         let probed = std::mem::take(&mut self.board.court.probed);
-        StrokeOutcome::add(&mut outcome.closed, &probed.closed);
+        WindingOutcome::add(&mut outcome.closed, &probed.closed);
     }
 
     /// 50.9, 21 step 3 — WHAT THE MIND OWES THE COURT flows out: the
@@ -124,7 +124,7 @@ impl Mind {
     /// quote is asked (the language moved, the court's height rose, or a dwell
     /// elapsed). Then, while the mind holds no language, the syllabus is
     /// asked for.
-    pub(crate) fn quote_inflow(&mut self, outcome: &mut StrokeOutcome) {
+    pub(crate) fn quote_inflow(&mut self, outcome: &mut WindingOutcome) {
         let lang = self.atlas_standing_counts();
         if let Some(q) = self.board.court.quoted.take() {
             let pace = &mut self.board.court;
@@ -161,7 +161,7 @@ impl Mind {
     /// EACH DEMAND OF EACH LISTING, answered by the held closed form that
     /// reproduces it on its own chart (50.5, L8r): one spend per form spoken,
     /// its probe's closure recorded where it lands.
-    fn answer_demands(&mut self, clusters: &[Cluster], outcome: &mut StrokeOutcome) {
+    fn answer_demands(&mut self, clusters: &[Cluster], outcome: &mut WindingOutcome) {
         let mut spend = self.stroke();
         for cluster in clusters {
             let mut pos = 0usize;
@@ -185,7 +185,7 @@ impl Mind {
                     }
                     let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
                     let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.byte(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
-                    StrokeOutcome::add(&mut outcome.asserted, &mag);
+                    WindingOutcome::add(&mut outcome.asserted, &mag);
                     let cited_word = word.clone();
                     let demand_links = links.clone();
                     self.ask(
@@ -196,7 +196,7 @@ impl Mind {
                                 crate::anastome::dialogue::ProbeClosure::Closed => {
                                     entity.physics_mut().relieve(&mag);
                                     entity.physics_mut().syntropy(&mag);
-                                    StrokeOutcome::add(&mut entity.board.court.probed.closed, &mag);
+                                    WindingOutcome::add(&mut entity.board.court.probed.closed, &mag);
                                     entity.assert_closed_twist(&cited_word, &demand_links);
                                 }
                                 crate::anastome::dialogue::ProbeClosure::Residue(_) => entity.physics_mut().bump(&mag),
@@ -221,7 +221,7 @@ impl Mind {
     /// the metabolism cannot yet carry, waits where it landed, and one that
     /// still couples to nothing at its second return lapses
     /// (`lapse_offers`); one scene is perceived at a time.
-    pub(crate) fn task_inflow(&mut self, outcome: &mut StrokeOutcome) {
+    pub(crate) fn task_inflow(&mut self, outcome: &mut WindingOutcome) {
         if self.perceiving() {
             return;
         }
@@ -235,7 +235,7 @@ impl Mind {
         }
         let Some((crate::anastome::dialogue::TaskSection { id, train, tests }, _)) = self.board.court.task.take() else { return };
         self.physics_mut().bump(&mag);
-        StrokeOutcome::add(&mut outcome.fed, &mag);
+        WindingOutcome::add(&mut outcome.fed, &mag);
         super::family::note_fed(&train, &mag);
         self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::SceneKind::Task });
     }
