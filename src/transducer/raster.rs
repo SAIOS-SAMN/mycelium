@@ -88,6 +88,11 @@ pub fn void() -> Result<u8, Unground> {
     })
 }
 
+/// IS A FAMILY GROUND SCOPE OPEN ON THIS THREAD (`on_ground` / `on_ground_of`)?
+pub fn is_scoped() -> bool {
+    GROUND.with(|c| c.borrow().is_some())
+}
+
 /// READ `f` ON THE GROUND OF `family`: the family's ground opened for every
 /// perception, speech and reconstruction inside it, UNLESS a family is already open
 /// on this thread, whose ground stands (the siblings a perspective derives

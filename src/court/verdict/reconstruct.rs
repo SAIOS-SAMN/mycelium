@@ -413,9 +413,46 @@ pub fn reconstruct_form_on_resume<'r>(
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,
 ) -> ReconstructionOutcome {
-    match family {
-        Some(fam) => crate::transducer::raster::on_ground_of(fam, || reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor)),
-        None => reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor),
+    let Some(fam) = family else {
+        return reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor);
+    };
+    if crate::transducer::raster::is_scoped() {
+        return reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor);
+    }
+    // MU-SENSING §3.8 / #319: when a family's ground is a vortex of multiple
+    // candidates and no single ground was opened by the caller (e.g. a peer
+    // witnessing an offer or a docket circuit), reconstruct across each
+    // perspective in order rather than running under `Ground::Vortex` where
+    // `raster::void()` fails with `Unstated::NoEnclosure` (`REFUSE_RULE_UNFRAMED`).
+    let ground = crate::transducer::raster::ground_of(fam);
+    let perspectives = ground.perspectives();
+    if let [g] = perspectives.as_slice() {
+        return crate::transducer::raster::on_ground(g.clone(), || {
+            reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor)
+        });
+    }
+    if perspectives.is_empty() {
+        return crate::transducer::raster::on_ground(ground, || {
+            reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor)
+        });
+    }
+    let mut idx = cursor.perspective.min(perspectives.len() - 1);
+    loop {
+        let g = perspectives[idx].clone();
+        let out = crate::transducer::raster::on_ground(g, || {
+            reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor)
+        });
+        match out {
+            ReconstructionOutcome::Clean | ReconstructionOutcome::Unread => return out,
+            ReconstructionOutcome::Refused(r) => {
+                if idx + 1 < perspectives.len() {
+                    idx += 1;
+                    *cursor = ReconstructionCursor { perspective: idx, ..Default::default() };
+                } else {
+                    return ReconstructionOutcome::Refused(r);
+                }
+            }
+        }
     }
 }
 
