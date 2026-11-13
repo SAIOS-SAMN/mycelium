@@ -117,7 +117,7 @@ fn release_rewrite_pays_every_named_voice() {
     t.escrow_award(&super::word(addr), vec![[1; 32]], [8, 0, 4, 0], at(1, [1; 32]));
     t.escrow_award(&super::word(addr), vec![[2; 32]], [8, 0, 4, 0], at(1, [1; 32]));
     let released = at(5, [5; 32]);
-    let share = t.release_rewrite(&addr, released).expect("two parties stood it");
+    let share = t.release_rewrite(&addr, &crate::economy::modes::Modes::new(), released).expect("two parties stood it");
     assert_eq!(share, [4, 0, 2, 0], "one quantity, split per lane, lanes never meeting");
     let share = share.n();
     assert_eq!(t.balance_mu(&[1; 32]), share, "the voice that stood it");
@@ -127,7 +127,55 @@ fn release_rewrite_pays_every_named_voice() {
         mints.iter().all(|e| (e.at, e.receipt, e.arm) == (released.0, released.1, Some(Arm::Powr))),
         "each mint stands at the act that released it and pays POWR (78.33, EC1)"
     );
-    assert!(t.release_rewrite(&addr, released).is_none(), "the escrow is spent once");
+    assert!(t.release_rewrite(&addr, &crate::economy::modes::Modes::new(), released).is_none(), "the escrow is spent once");
+}
+
+/// MU-ECONOMY §2.5 — POWR CARRIES THE MODES OF THE FAMILY THE REDUCTION
+/// ABSORBS. A rewrite escrowed at `[6, 0, 0, 0]`, stood by two voices, whose
+/// absorbed family moved a symbol's creation (2) and its erasure (1) on S:
+/// each voice is minted 3 of S as 2 of the creation and 1 of the erasure,
+/// never at the founding mode, and the invariant holds mode by mode.
+#[test]
+fn release_rewrite_carries_the_absorbed_modes() {
+    use crate::economy::modes::{Mode, Modes, S};
+    let mut t = Treasury::new();
+    let addr = [6u8; 32];
+    t.escrow_award(&super::word(addr), vec![[1; 32], [2; 32]], [6, 0, 0, 0], at(1, [1; 32]));
+    let create = Mode::SymbolCreation { from_ground: 0, to_symbol: 3, forward: true };
+    let erase = Mode::SymbolCreation { from_ground: 0, to_symbol: 3, forward: false };
+    let mut absorbed = Modes::new();
+    absorbed.add_mode(create.clone(), crate::core::q::Q::from_integer(2.into()));
+    absorbed.add_mode(erase.clone(), crate::core::q::Q::from_integer(1.into()));
+    let share = t.release_rewrite(&addr, &absorbed, at(5, [5; 32])).expect("two parties stood it");
+    assert_eq!(share, [3, 0, 0, 0], "the escrowed yield, split per lane");
+    let held = t.balance_mu(&[1; 32]);
+    assert_eq!(held.modes().amount_of(&create), Some(&crate::core::q::Q::from_integer(2.into())), "the absorbed creation");
+    assert_eq!(held.modes().amount_of(&erase), Some(&crate::core::q::Q::from_integer(1.into())), "and erasure");
+    assert!(held.modes().amount_of(&Mode::founding(S).expect("S")).is_none(), "never the founding mode");
+    assert!(t.audit().is_ok(), "the invariant holds mode by mode");
+}
+
+/// MU-ECONOMY §2.5 — A CITATION SHARE CARRIES THE CITED WORD'S CLOSURE
+/// MODES, never the citer's. An install minting `[8, 0, 4, 0]` at the
+/// founding modes cites a word whose share is 2 of S as a symbol's creation:
+/// the cited word's discoverer is minted that creation, the voices the rest
+/// of the citer's mint, and the invariant holds mode by mode.
+#[test]
+fn citation_share_carries_the_cited_modes() {
+    use crate::economy::modes::{Mode, Modes, S};
+    let (voice, cited) = ([1; 32], [2; 32]);
+    let mut t = Treasury::new();
+    let addr = [9u8; 32];
+    t.escrow_award(&super::word(addr), vec![voice], [8, 0, 4, 0], at(1, [9; 32]));
+    let create = Mode::SymbolCreation { from_ground: 0, to_symbol: 5, forward: true };
+    let mut modes = Modes::new();
+    modes.add_mode(create.clone(), crate::core::q::Q::from_integer(2.into()));
+    let share = Mu::of_modes(modes);
+    let _ = t.settle_recursive(&addr, &[(cited, share.clone())], &Mu::counts([8, 0, 4, 0]), None, &[], at(2, [9; 32]));
+    assert_eq!(t.balance_mu(&cited), share, "the discoverer holds the cited word's creation, mode by mode");
+    assert!(t.balance_mu(&cited).modes().amount_of(&Mode::founding(S).expect("S")).is_none(), "not the citer's founding mode");
+    assert_eq!(t.balance_mu(&voice), [6, 0, 4, 0], "the voices take the rest");
+    assert!(t.audit().is_ok(), "the invariant holds mode by mode");
 }
 
 /// A mint with no payee is a mint to nobody: an escrow naming no voice
@@ -137,7 +185,7 @@ fn release_rewrite_refuses_escrow_without_voice() {
     let mut t = Treasury::new();
     let addr = [4u8; 32];
     t.escrow_award(&super::word(addr), Vec::new(), [8, 0, 0, 0], at(1, [1; 32]));
-    assert!(t.release_rewrite(&addr, at(5, [5; 32])).is_none(), "no party, no release");
+    assert!(t.release_rewrite(&addr, &crate::economy::modes::Modes::new(), at(5, [5; 32])).is_none(), "no party, no release");
     assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
 }
 

@@ -177,10 +177,13 @@ k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
 // 𝒯 (the flux over the carried mass) are each over 8 sites, and H, the
 // shell count, stands as it is.
 assert_eq!(
-    k.treasury().minted(),
-    crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes"),
+    k.treasury().minted().lanes(),
+    crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes").lanes(),
     "mint is what the form measured over its family — the coboundary and the ground it covered — not a bound listing's magnitude"
 );
+// MU-ECONOMY §2.5 — the mint holds the closure's modes, the voices' gluing
+// and their rest included, never a founding mode.
+assert!(k.treasury().minted().modes().modes().all(|(m, _)| !matches!(m, crate::economy::modes::Mode::Founding { .. })), "held on the closure's modes");
 }
 
 /// §6, on a court that has actually moved value rather than a treasury in
@@ -377,10 +380,13 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     // μ IS A SHARE OF THE FRAME (78.170 O1): the frame is 18×12, so the
     // three recolours' S, G and 𝒯 are over 216 sites and H stands.
     assert_eq!(
-        k.treasury().minted(),
-        crate::economy::Mu::counts(three_closed_deflation).over([216, 216, 216, 1]).expect("non-zero wholes"),
+        k.treasury().minted().lanes(),
+        crate::economy::Mu::counts(three_closed_deflation).over([216, 216, 216, 1]).expect("non-zero wholes").lanes(),
         "the amount is the deflation those three closed and nothing else"
     );
+    // MU-ECONOMY §2.5 — held on the three recolours' hue moves, never a
+    // founding mode.
+    assert!(k.treasury().minted().modes().modes().all(|(m, _)| !matches!(m, crate::economy::modes::Mode::Founding { .. })), "held on the closure's modes");
 }
 
 /// A SENTENCE IS TAUGHT AT ITS LEARNER'S EXPENSE (ruled
