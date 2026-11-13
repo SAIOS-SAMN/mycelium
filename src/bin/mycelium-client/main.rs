@@ -236,7 +236,7 @@ fn main() {
             }
         });
     }
-    while !stop.load(Ordering::SeqCst) {
+    while !stop.load(Ordering::SeqCst) && !mycelium::physics::halted() {
         // MU-CLIENT §4.12 — the winding carrier's stroke: the mind's own
         // motion, acting at its returns.
         let wound = mind.wind(&stop);

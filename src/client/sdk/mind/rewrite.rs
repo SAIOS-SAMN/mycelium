@@ -127,6 +127,9 @@ impl Mind {
         candidates.extend(self.language.vocabulary.read().standing_with(&at));
         let mut said = Vec::new();
         for c in &candidates {
+            if crate::physics::halted() {
+                break;
+            }
             let Some(rw) = self.retirement_of(c) else { continue };
             if self.propose_rewrite(rw.clone()) {
                 said.push(rw);
