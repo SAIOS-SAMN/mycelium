@@ -246,7 +246,10 @@ sub-kind 17), signed by the domain's sitting reserve:
 
 The hypha names elements by Z alone. A universe's own properties for each
 kind (its neutron counts, its seals, its chemistry) are its own physics,
-never the network's.
+never the network's. *Amended 2026-11-13 (78.184):* where μ is created,
+the hypha reads each kind as the coupled nucleon dipole of its stated
+`(Z, Q)` (MU-EQUATIONS §6.13). `Q` stays the universe's own; the hypha
+reads it, never sets it.
 
 ### 3a.2 The grant (Built)
 
@@ -266,6 +269,11 @@ domain's reserve:
 - **Every grant is drawn from what the court has earned** (its fees and
   tolls), never minted. Genesis is earned-only; a grant the court's
   earnings cannot cover is refused by name (`GrantRefusal::Short`).
+  *Superseded for founding 2026-11-13 (78.184):* μ is created at each
+  manifest against the elemental rows of its nuclei and granted in
+  proportion to the kernel's ledger alignment (MU-EQUATIONS §6.13). On a
+  fresh mesh this refused every manifest `Short` (netstratum, 2026-11-13,
+  aligned on all four clauses). Not yet built (#327).
 
 Clients do not receive grants. A client earns μ from zero by verified work
 (§2), or is funded in a mesh's genesis allocation.

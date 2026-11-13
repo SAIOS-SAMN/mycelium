@@ -312,7 +312,9 @@ operator's delegation, on #169's follow-up; 78.180 ruling 3):
 
 ## 3. Issuance
 
-New μ enters only when a closure is verified. The closing orbit advanced
+New μ enters only when a closure is verified, or, since 2026-11-13, when a
+manifest founds nuclei: μ created against their elemental rows (78.184;
+MU-EQUATIONS §6.13). The closing orbit advanced
 the lanes by its modes, and that advance is minted to the closer's
 holding, per closed pair as a share of the pair's frame (§1): a solve that
 repaints one site of a `30 × 30` output is paid `1/900` on G, not one
@@ -795,7 +797,11 @@ universe's reserve:
   not.
 - **A new universe receives a founding grant** answering its manifest, and
   growth grants sized by the closures judged in it, each a transfer and
-  never a mint (Concordance 5.7; MU-HOSTING §3a).
+  never a mint (Concordance 5.7; MU-HOSTING §3a). *Amended 2026-11-13
+  (78.184):* μ is created at each manifest against the elemental row of
+  the nuclei it carries, and granted in proportion to the kernel's ledger
+  alignment (MU-EQUATIONS §6.13). Growth by measured discharge stands
+  beside it.
 
 ### 10.3 Why one connecting reserve
 

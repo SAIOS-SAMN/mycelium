@@ -1506,7 +1506,7 @@ one exact rational per lane, `economy::Mu` (MU-ECONOMY §1).
 ```text
 map fee_l = gas_l · p_l                        exact; S priced on the route's span (a rational), G, T, H on gas
 retrieval fee = (0, 0, 0, units · p_H)
-founding grant_l = kinds · p_l                 exact (p_l the read price, §6.2)
+founding grant_l = kinds · p_l                 exact (p_l the read price, §6.2); superseded 2026-11-13 by §6.13 (78.184)
 tariff charge = (rate_s · mass out, 0, 0, rate_h · information out)      exact
 tariff part   = share · charge per recipient, the keeper the rest       exact; the parts sum to the charge
 convert-out μ_l = rate_l · g                                            exact
@@ -1585,6 +1585,52 @@ this codec.
 
 Sources: MU-ECONOMY §1, §9; MU-RECURSION A21. Code:
 `src/economy/mu.rs::Mu::put`, `::take`.
+
+#### 6.13 The elemental row: μ created at the manifest (78.184, ruled 2026-11-13)
+
+A nucleus of element `Z` with `Q` neutrons, as its universe states it in a
+basket entry (`BasketEntry`, #282), is ONE coupled body, the nucleon dipole
+(LAW-COUPLING v2, 78.181). `Z` and `Q` are coupled:
+
+```text
+intrinsically   R = −p                          the rest point: the dipole's push balances its phase, p ⊕ R = 0
+algebraically   p = (Z − Q)/(Z + Q)  ∈ (−1, 1)  the push, a rate composed by the flow law ⊕ (FORMS-COUPLING)
+geometrically   D(p) = Z/Q                      the dilation, a boost on S
+                R                               the turn of the dipole's plane, on H
+whole           3W = 3(Z + Q)                   the nucleon whole (= M, the basket's mass)
+```
+
+The ELEMENTAL ROW of `(Z, Q)` is the modes its motion advances on
+`S:G:T:H`, read by the multi-axial machinery (`cga::motion_modes`) over one
+full rotational completion:
+
+```text
+motion(Z, Q)   = D(p) ∘ T_R                     the boost composed with the turn by R
+row(Z, Q)      = modes( motion(Z, Q) carried to its order ℓ )   K = 1 on its plane (Rotor::order)
+```
+
+μ CREATED at a manifest, and distributed by ledger alignment:
+
+```text
+created_l     = Σ_Z  n_Z · row(Z, Q_Z)_l                  n_Z the nuclei per Z the manifest carries
+share(k)      = conversed(k) / served                      kernel k's clauses reading Converses over the clauses the register serves (ACT_LAWS mode 9)
+granted_l(k)  = share(k) · created_l                       exact; a partial alignment receives a partial creation
+```
+
+The row and the creation carry modes (MU-ECONOMY §1), never four numbers.
+μ follows its nuclei: nuclei of `Z` crossing a tube carry `row(Z, Q_Z)`
+each, and on dissipation it recycles as the connection tax (Concordance
+5.8). Each universe's table is its own: `Q_Z` is the universe's, read from
+its stated basket, so no table of any universe is held by the hypha.
+
+**Open.** The hypha reads the dipole from the stated `(Z, Q)`; the rest
+point `R = −p` then holds by construction. A check that a stated `Q` is the
+rest point of its `Z` needs the universe's phase `R` stated beside it (its
+electron phase; xylarium E018). Until then the basket's invariants
+(`BasketEntry::holds`) are the check.
+
+Sources: proposal 78.184; LAW-COUPLING v2 (78.181); xylarium docs/model.md
+(E018, the rest point). Code: not yet built (#327).
 
 ## 7. The metabolism
 
