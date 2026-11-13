@@ -136,6 +136,31 @@ The rulings the model still needs are listed in MU-ECONOMY §12.
   14–17). The register's soak readings stay open until minds work on a
   mesh (#246).
 
+**3. Server stream, in order (2026-11-13).** Each item passes only on its
+live reading on the standing mesh.
+
+| Item | Issue | State |
+|---|---|---|
+| Rejoin before signing: a restarted hypha reconstructs from its peers before it signs, so a crash or reboot cannot self-equivocate | [#273](https://github.com/SAIOS-SAMN/mycelium/issues/273) | Next. The single-hypha rejoin needs no ruling; a stop of the whole mesh is the open question |
+| The live stroke: a per-lane draw on the reserve that regenerates by return, built on the flow law, the keep and the faces the hypha serves ([78.183](docs/proposals/78.183-the-live-stroke.md)) | [#308](https://github.com/SAIOS-SAMN/mycelium/issues/308) | After #273; Q1–Q7 answered under the 2026-11-13 direction (physics, not laws) |
+| Enrol a hypha into a running mesh after its mint, and let it leave | [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) | After #308; xylarium waits on it |
+| Mints carry the cited closure's modes | [#311](https://github.com/SAIOS-SAMN/mycelium/issues/311), PR #312 | Draft; held until a court mints an install or citation live |
+| A stale standing reading on the observer | [#310](https://github.com/SAIOS-SAMN/mycelium/issues/310), PR #296 | Draft; the hypothesis did not reproduce idle (2026-11-13) |
+| One Noise session per peer, reused, in place of a handshake per ask | [#309](https://github.com/SAIOS-SAMN/mycelium/issues/309) | Waiting on the operator |
+| X1's parts and the versor plane naming (X2) | [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) | Waiting on a ruling |
+| A mind honours its stop inside a long stroke (client stream) | [#307](https://github.com/SAIOS-SAMN/mycelium/issues/307) | Filed for the client stream |
+
+**Ruled 2026-11-13** (one operator for every kernel):
+- Universal physics is held by the hypha and handed out through the
+  Concordance; a kernel's in-universe physics stays in the kernel
+  ([MU-HOSTING §5a.2a](docs/MU-HOSTING.md#5a2a-what-the-hypha-hands-out-and-what-stays-in-the-kernel),
+  #304). A new universal form enters only when a crossing states its
+  object.
+- One body-state signature across kernels, `Cl(13,1)`, superseding
+  netstratum's `Cl(5,4)`; ruled, not yet served (#305).
+- Xylarium's universal core is the antipolar face of a tube it stands on
+  (78.176); fixtures 1–4 reproduced by xylarium (#306).
+
 ## 1. Settlement: the xSEPTUM Note
 
 **Specified** in [`docs/MU-XSEPTUM.md`](docs/MU-XSEPTUM.md). Lands in
