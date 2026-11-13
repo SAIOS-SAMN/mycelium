@@ -56,6 +56,7 @@ pub(crate) fn endpoint(home: &Path, at: Option<&str>) -> Option<String> {
 pub(crate) struct Ask<'a> {
     pub(crate) court: Option<&'a str>,
     pub(crate) reading: Option<&'a str>,
+    pub(crate) json: bool,
 }
 
 /// A key's hex prefix as bytes: an even count of hex digits, at most 32
@@ -102,6 +103,17 @@ impl Ask<'_> {
     }
 }
 
+fn fail(json: bool, plain: &str, msg: &str) -> ! {
+    if json {
+        if let Ok(s) = serde_json::to_string_pretty(&serde_json::json!({ "error": msg })) {
+            println!("{s}");
+        }
+    } else {
+        println!("{plain}");
+    }
+    std::process::exit(2)
+}
+
 /// ASK, RENDER, EXIT. Exit 0 with a rendering, 2 where no hypha answered —
 /// the rendering then says why, so a `watch` shows the refusal in place.
 /// CQ1 — the question is the prefix the operator names; the hypha serves
@@ -109,30 +121,39 @@ impl Ask<'_> {
 pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
     let (prefix, keep) = match ask.prefix() {
         Ok(p) => p,
-        Err(why) => {
-            println!("{RED}{why}{RESET}");
-            std::process::exit(2)
-        }
+        Err(why) => fail(ask.json, &format!("{RED}{why}{RESET}"), &why),
     };
     let Some(endpoint) = endpoint(home, at) else {
-        println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
-        std::process::exit(2)
+        fail(
+            ask.json,
+            &format!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind"),
+            "no address to ask: pass --at ADDR, or --home a home whose mesh names its bind",
+        )
     };
     let Some(query) = observe::encode_query(&prefix) else {
-        println!("{RED}the prefix passes its length field{RESET}");
-        std::process::exit(2)
+        fail(
+            ask.json,
+            &format!("{RED}the prefix passes its length field{RESET}"),
+            "the prefix passes its length field",
+        )
     };
     // THE OPERATOR'S ONE ASK READS TO THE STREAM'S END (D2.7): nothing is
     // measured before it, so no count bounds it — the reserve it waited was
     // burst capacity in reads, never a round trip — and the process ends
     // with the peer.
     let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, query, crate::transport::Stall::Beyond) else {
-        println!("{RED}{endpoint} did not answer{RESET}");
-        std::process::exit(2)
+        fail(
+            ask.json,
+            &format!("{RED}{endpoint} did not answer{RESET}"),
+            &format!("{endpoint} did not answer"),
+        )
     };
     let Some((total, mut held)) = observe::decode_reply(&reply) else {
-        println!("{RED}{endpoint} answered with no reading this build reads{RESET} ({} bytes)", reply.len());
-        std::process::exit(2)
+        fail(
+            ask.json,
+            &format!("{RED}{endpoint} answered with no reading this build reads{RESET} ({} bytes)", reply.len()),
+            &format!("{endpoint} answered with no reading this build reads ({} bytes)", reply.len()),
+        )
     };
     // What the body budget cut stays said after the kind is kept.
     // In the count's own carrier: `held` is the reply's entries, and the
@@ -143,11 +164,20 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
         held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, tag)| tag == t || tag == observe::TAG_ASKED));
     }
     let Some(total) = (held.len() as u64).checked_add(cut) else {
-        println!("{RED}{endpoint} answered a total past any count{RESET}");
-        std::process::exit(2)
+        fail(
+            ask.json,
+            &format!("{RED}{endpoint} answered a total past any count{RESET}"),
+            &format!("{endpoint} answered a total past any count"),
+        )
     };
-    for line in render(&endpoint, total, &held) {
-        println!("{line}");
+    if ask.json {
+        if let Ok(s) = serde_json::to_string_pretty(&render_json(&endpoint, total, &held, &[])) {
+            println!("{s}");
+        }
+    } else {
+        for line in render(&endpoint, total, &held) {
+            println!("{line}");
+        }
     }
     std::process::exit(0)
 }
@@ -162,8 +192,7 @@ pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
         Some(name) => observe::READING_NAMES.iter().find(|(n, _)| *n == name).map(|&(_, t)| t),
     };
     let Some(query) = observe::encode_query(&[]) else {
-        println!("{RED}the question does not write{RESET}");
-        std::process::exit(2)
+        fail(ask.json, &format!("{RED}the question does not write{RESET}"), "the question does not write")
     };
     let mut entries: Vec<(String, String)> = match std::fs::read_dir(dir) {
         Ok(rd) => rd
@@ -174,32 +203,45 @@ pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
                 (!name.starts_with('.') && !endpoint.is_empty()).then_some((name, endpoint))
             })
             .collect(),
-        Err(e) => {
-            println!("{RED}no rendezvous at {}{RESET}: {e}", dir.display());
-            std::process::exit(2)
-        }
+        Err(e) => fail(
+            ask.json,
+            &format!("{RED}no rendezvous at {}{RESET}: {e}", dir.display()),
+            &format!("no rendezvous at {}: {e}", dir.display()),
+        ),
     };
     entries.sort();
     let mut held: Vec<observe::KeyedReading> = Vec::new();
     let mut silent: Vec<String> = Vec::new();
+    let mut silent_plain: Vec<String> = Vec::new();
     for (voice, endpoint) in &entries {
         match chatter::ask(endpoint, &query) {
             Ok(reply) => match observe::decode_reply(&reply) {
                 Some((_, readings)) => held.extend(readings),
-                None => silent.push(format!(
-                    "{RED}mind {voice:.8}… at {endpoint} answered with no reading this build reads{RESET} ({} bytes)",
-                    reply.len()
-                )),
+                None => {
+                    let msg = format!("mind {voice:.8}… at {endpoint} answered with no reading this build reads ({} bytes)", reply.len());
+                    silent_plain.push(format!("{RED}{msg}{RESET}"));
+                    silent.push(msg);
+                }
             },
-            Err(e) => silent.push(format!("{RED}mind {voice:.8}… at {endpoint} did not answer{RESET}: {e}")),
+            Err(e) => {
+                let msg = format!("mind {voice:.8}… at {endpoint} did not answer: {e}");
+                silent_plain.push(format!("{RED}{msg}{RESET}"));
+                silent.push(msg);
+            }
         }
     }
     if let Some(t) = tag {
         held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, g)| g == t));
     }
     let total = held.len() as u64;
-    for line in render(&dir.display().to_string(), total, &held).into_iter().chain(silent.iter().cloned()) {
-        println!("{line}");
+    if ask.json {
+        if let Ok(s) = serde_json::to_string_pretty(&render_json(&dir.display().to_string(), total, &held, &silent)) {
+            println!("{s}");
+        }
+    } else {
+        for line in render(&dir.display().to_string(), total, &held).into_iter().chain(silent_plain) {
+            println!("{line}");
+        }
     }
     let answered = entries.len() > silent.len();
     std::process::exit(if answered { 0 } else { 2 })
@@ -714,4 +756,197 @@ fn memory(m: &Memory) -> Vec<String> {
         ),
         format!("    {growth}"),
     ]
+}
+
+fn hex_key(key: &[u8; 32]) -> String {
+    let mut out = String::with_capacity(64);
+    for b in key {
+        use std::fmt::Write;
+        let _ = write!(out, "{b:02x}");
+    }
+    out
+}
+
+/// Machine-readable JSON rendering of observer readings (`--console --json`).
+pub(crate) fn render_json(endpoint: &str, total: u64, held: &[observe::KeyedReading], silent: &[String]) -> serde_json::Value {
+    let sources: Vec<serde_json::Value> = by_source(held)
+        .into_iter()
+        .map(|(source, readings)| {
+            let (kind, key) = match source {
+                Source::Court(vk) => ("court", vk),
+                Source::Mind(vk) => ("mind", vk),
+            };
+            serde_json::json!({
+                "kind": kind,
+                "key": hex_key(&key),
+                "short": short(&key),
+                "readings": readings.iter().map(reading_json).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+    serde_json::json!({
+        "endpoint": endpoint,
+        "total": total,
+        "held": held.len(),
+        "sources": sources,
+        "silent": silent,
+    })
+}
+
+fn reading_json(r: &Reading) -> serde_json::Value {
+    use serde_json::json;
+    match r {
+        Reading::Memory(m) => json!({
+            "kind": "memory",
+            "first_allocated": m.first_allocated,
+            "last_allocated": m.last_allocated,
+            "first_resident": m.first_resident,
+            "last_resident": m.last_resident,
+            "peak_resident": m.peak_resident,
+            "samples": m.samples,
+            "first_k": m.first_k,
+            "last_k": m.last_k,
+        }),
+        Reading::Court(c) => json!({
+            "kind": "court",
+            "k": c.k,
+            "basis": c.basis,
+            "treasury": c.treasury,
+            "reopened": c.reopened,
+            "torsion_words": c.torsion_words,
+            "room_broken": c.room_broken,
+            "room_overflowed": c.room_overflowed,
+            "overflowed": c.overflowed,
+            "served": c.served.iter().map(|(kind, count)| json!({ "kind": kind, "count": count })).collect::<Vec<_>>(),
+            "digest_askers": c.digest_askers.iter().map(|(v, count)| json!({ "key": hex_key(v), "count": count })).collect::<Vec<_>>(),
+            "folds": observe::FOLD_OUTCOMES.iter().zip(c.folds).map(|(outcome, count)| json!({ "outcome": outcome, "count": count })).collect::<Vec<_>>(),
+            "serve": observe::SERVE_AXES.iter().zip(c.serve).map(|(axis, count)| json!({ "axis": axis, "count": count })).collect::<Vec<_>>(),
+            "tuniversal": {
+                "final_point": c.tuniversal.final_point.as_ref().map(|p| p.print()),
+                "advances": c.tuniversal.advances,
+                "keepers": c.tuniversal.keepers.len(),
+                "edges": c.tuniversal.residue.edges.len(),
+            },
+        }),
+        Reading::Clock(observe::Clock::Court(c)) => json!({
+            "kind": "clock",
+            "head": c.head,
+            "k": c.k,
+            "genesis": c.genesis.map(|(id, epoch)| json!({ "id": hex_key(&id), "epoch": epoch })),
+            "peers": c.peers.iter().map(|(vk, height, gap)| json!({ "key": hex_key(vk), "height": height, "gap": gap })).collect::<Vec<_>>(),
+            "persisted": c.persisted,
+            "folded": c.folded,
+            "unmeasured": c.unmeasured,
+            "unstamped": c.unstamped,
+        }),
+        Reading::Economy(e) => json!({
+            "kind": "economy",
+            "arms": mycelium::economy::Arm::ALL.iter().map(|arm| {
+                let i = arm.index();
+                json!({
+                    "arm": arm.name(),
+                    "paid": format!("{:?}", e.paid[i]),
+                    "burned": format!("{:?}", e.burned[i]),
+                })
+            }).collect::<Vec<_>>(),
+            "tuition": { "rows": e.tuition.rows, "mu": format!("{:?}", e.tuition.mu) },
+            "accounts": e.accounts.iter().map(|a| json!({
+                "who": hex_key(&a.who),
+                "balance": format!("{:?}", a.balance),
+                "bond": format!("{:?}", a.bond),
+                "held": format!("{:?}", a.held),
+            })).collect::<Vec<_>>(),
+        }),
+        Reading::Phase(p) => json!({
+            "kind": "phase",
+            "h0": p.h0,
+            "h1": p.h1,
+            "windows": p.windows,
+            "deflated": p.deflated,
+            "held": p.held,
+            "sections": p.sections,
+            "strata": p.strata,
+            "lineages": p.lineages,
+            "installed": p.installed,
+            "retired": p.retired,
+            "axes": p.axes,
+            "splits": p.splits,
+            "adjoined_by_closure": p.adjoined_by_closure,
+        }),
+        Reading::Adjudication(a) => json!({
+            "kind": "adjudication",
+            "ratified": a.ratified,
+            "stood": a.stood,
+            "awaiting": a.awaiting,
+            "deferred": a.deferred,
+            "refused": a.refused.iter().map(|&(kind, count)| json!({
+                "kind": kind,
+                "label": mycelium::transducer::sentence::RefusalKind::of(kind).map(|k| k.label()),
+                "count": count,
+            })).collect::<Vec<_>>(),
+            "obstructed": mycelium::transducer::sentence::ObstructionKind::ALL.iter().zip(a.obstructed).map(|(k, count)| json!({ "kind": k.label(), "count": count })).collect::<Vec<_>>(),
+            "body_faults": observe::BODY_FAULTS.iter().zip(a.body_faults).map(|(fault, count)| json!({ "fault": fault, "count": count })).collect::<Vec<_>>(),
+            "body_lifted": a.body_lifted,
+        }),
+        Reading::Replication(r) => json!({
+            "kind": "replication",
+            "signers": r.signers.iter().map(|(vk, axes)| json!({ "key": hex_key(vk), "axes": axes.as_slice() })).collect::<Vec<_>>(),
+            "unattributed": r.unattributed.as_slice(),
+        }),
+        Reading::Carriage(c) => json!({
+            "kind": "carriage",
+            "rows": c.rows.iter().map(|row| json!({
+                "carrier": row.carrier,
+                "kind": row.kind,
+                "records": row.records,
+                "bytes": row.bytes,
+                "largest": row.largest,
+            })).collect::<Vec<_>>(),
+        }),
+        Reading::Asked(n) => json!({ "kind": "asked", "count": n }),
+        Reading::Acts(a) => json!({ "kind": "acts", "lines": a.lines() }),
+        Reading::Carriers(c) => json!({ "kind": "carriers", "lines": c.lines() }),
+        Reading::Relay(r) => json!({ "kind": "relay", "lines": r.lines() }),
+        Reading::Mind(m) => json!({ "kind": "mind", "lines": m.lines() }),
+        Reading::Agreements(a) => json!({ "kind": "agreements", "lines": a.lines() }),
+        Reading::Dispatched(d) => json!({ "kind": "dispatched", "lines": d.lines() }),
+        Reading::Judged(j) => json!({ "kind": "judged", "lines": j.lines() }),
+        Reading::Boundary(b) => json!({ "kind": "boundary", "lines": b.lines() }),
+        Reading::Channels(c) => json!({ "kind": "channels", "lines": c.lines() }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn render_json_serializes_court_and_memory_readings() {
+        let vk = [0xABu8; 32];
+        let src = Source::Court(vk);
+        let mem = Memory {
+            first_allocated: 1024,
+            last_allocated: 2048,
+            first_resident: 4096,
+            last_resident: 4096,
+            peak_resident: 8192,
+            samples: 2,
+            first_k: 1,
+            last_k: 5,
+        };
+        let held = vec![
+            (src.key(observe::TAG_MEMORY), Reading::Memory(mem)),
+            (src.key(observe::TAG_ASKED), Reading::Asked(1)),
+        ];
+        let val = render_json("127.0.0.1:8500", 2, &held, &[]);
+        assert_eq!(val["endpoint"], "127.0.0.1:8500");
+        assert_eq!(val["total"], 2);
+        assert_eq!(val["held"], 2);
+        assert_eq!(val["sources"][0]["kind"], "court");
+        assert_eq!(val["sources"][0]["key"], "ab".repeat(32));
+        assert_eq!(val["sources"][0]["readings"][0]["kind"], "memory");
+        assert_eq!(val["sources"][0]["readings"][0]["last_k"], 5);
+        assert_eq!(val["sources"][0]["readings"][1]["kind"], "asked");
+        assert_eq!(val["sources"][0]["readings"][1]["count"], 1);
+    }
 }
