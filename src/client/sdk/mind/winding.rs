@@ -216,7 +216,7 @@ impl Mind {
             }
         }
         let mut outcome = StrokeOutcome::default();
-        let stopping = || stop.load(std::sync::atomic::Ordering::SeqCst);
+        let stopping = || stop.load(std::sync::atomic::Ordering::SeqCst) || crate::physics::halted();
         // 1. ADMISSION — what the carriers landed.
         self.at_law("admission: the court's answers");
         self.court_inflow(&mut outcome);
@@ -228,13 +228,15 @@ impl Mind {
             self.pull_task();
         }
         self.at_law("admission: hearings read");
-        self.read_hearings();
+        if !stopping() {
+            self.read_hearings();
+        }
         let occluded = matches!(self.transport(), TransportAperture::Occluded { .. });
         // AN OCCLUDED WIRE IS READ AGAIN, NEVER ABANDONED: the impedance
         // decays only on an exchange, so with nothing in flight one discovery
         // asks the nerve, and its answer or its refusal is the impedance read
         // again.
-        if occluded && self.hypha.in_flight() == 0 {
+        if occluded && self.hypha.in_flight() == 0 && !stopping() {
             self.discover();
         }
         if !occluded && !stopping() {
@@ -267,16 +269,22 @@ impl Mind {
             self.at_law("motion: rest");
             self.relax(&mut outcome);
         }
-        self.at_law("motion: the pivots");
-        let _ = self.pivot_thoughts();
-        StrokeOutcome::add(&mut outcome.learned, &self.take_learned_mu());
+        if !stopping() {
+            self.at_law("motion: the pivots");
+            let _ = self.pivot_thoughts();
+            StrokeOutcome::add(&mut outcome.learned, &self.take_learned_mu());
+        }
         let mut vent = self.stroke();
-        self.at_law("motion: the vent");
-        let _ = self.vent_into_field(&mut vent);
+        if !stopping() {
+            self.at_law("motion: the vent");
+            let _ = self.vent_into_field(&mut vent);
+        }
         // MU-CLIENT §4.13 — the dialect sheds what nothing live references,
         // the thoughts the field released having left.
-        self.at_law("motion: the shed");
-        let _ = self.shed();
+        if !stopping() {
+            self.at_law("motion: the shed");
+            let _ = self.shed();
+        }
         // The docket, the one taker: every demand bound, each binding a
         // close of a thought of its scene.
         self.at_law("motion: the docket taken");
@@ -414,23 +422,25 @@ impl Mind {
                 scenes.push(family.clone());
             }
         }
-        self.at_law("returns: thoughts transcribed");
-        let thoughts = self.transcribe_closed(budget);
-        // MU-CLIENT §5.4 (E1) — each under the scene its thought was
-        // perceived in.
-        for (word, family) in thoughts {
-            let _ = self.assert_word_on(&word, &[], &family);
-        }
-        // MU-CLIENT §4.4(3) — what each returned thought holds against its
-        // orbit (its slips) is worked at its return.
-        self.at_law("returns: slips worked");
-        self.contemplation.work_returned();
-        // 78.167 D1 — the given meanings a newly known word stood beside,
-        // reduced again where the mind's orbits return.
-        self.at_law("returns: given meanings reduced again");
-        let rederived = crate::transducer::sentence::rung::re_reduce_given();
-        if rederived > 0 {
-            crate::observe::note_mind(|m| m.asks[4] += rederived);
+        if !crate::physics::halted() {
+            self.at_law("returns: thoughts transcribed");
+            let thoughts = self.transcribe_closed(budget);
+            // MU-CLIENT §5.4 (E1) — each under the scene its thought was
+            // perceived in.
+            for (word, family) in thoughts {
+                let _ = self.assert_word_on(&word, &[], &family);
+            }
+            // MU-CLIENT §4.4(3) — what each returned thought holds against its
+            // orbit (its slips) is worked at its return.
+            self.at_law("returns: slips worked");
+            self.contemplation.work_returned();
+            // 78.167 D1 — the given meanings a newly known word stood beside,
+            // reduced again where the mind's orbits return.
+            self.at_law("returns: given meanings reduced again");
+            let rederived = crate::transducer::sentence::rung::re_reduce_given();
+            if rederived > 0 {
+                crate::observe::note_mind(|m| m.asks[4] += rederived);
+            }
         }
         let n = match came_round.and_then(|t| field.checked_add(t)) {
             Some(n) => n,
@@ -448,6 +458,9 @@ impl Mind {
     /// for its own return (no scene) — and nothing held for a scene whose
     /// thought did not return.
     fn act_at_return(&mut self, scenes: &[Vec<u8>]) {
+        if crate::physics::halted() {
+            return;
+        }
         self.at_law("act at a return: a waiting scene read again");
         self.comprehend_waiting();
         self.at_law("act at a return: what the courts are owed");

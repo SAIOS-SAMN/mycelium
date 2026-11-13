@@ -40,6 +40,11 @@ pub fn halt() {
     HALTED.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
+#[cfg(test)]
+pub fn unhalt_for_test() {
+    HALTED.store(false, std::sync::atomic::Ordering::Relaxed);
+}
+
 /// Whether a stop was asked for: read by a loop that spends no token yet
 /// (78.113's prime search, until BD1 reaches it), so the stop reaches it too.
 pub fn halted() -> bool {
@@ -57,6 +62,9 @@ pub struct Budget {
 impl Budget {
     /// Reads still granted on this token.
     pub fn remaining(&self) -> usize {
+        if HALTED.load(std::sync::atomic::Ordering::Relaxed) {
+            return 0;
+        }
         self.remaining
     }
 
