@@ -583,6 +583,8 @@ pub struct Court {
     pub(crate) quote_cursor: Option<Vec<u8>>,
     /// Polytonic kinematic pressure + torsion (per lane).
     pub(crate) physics: crate::physics::Physics,
+    /// 78.183 §7.5 — the metabolic rate per lane over the bell spans.
+    pub(crate) rate: crate::physics::rate::Rate,
     /// THIS COURT'S ACTS AS THEY HAPPEN (2026-09-29): its syllabus and fetch
     /// pages and where each ended, and the solves it judged — kept by the
     /// handlers themselves, read into `observe::Acts` at the question.

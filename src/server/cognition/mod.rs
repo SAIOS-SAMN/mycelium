@@ -36,6 +36,7 @@ mod persistence;
 mod points;
 mod reduce;
 mod rejoin;
+mod rate;
 pub use rejoin::Rejoined;
 mod room;
 pub mod seat;

@@ -11,3 +11,4 @@ mod outflow;
 mod source;
 mod stroke;
 mod equilibrium;
+mod rate;

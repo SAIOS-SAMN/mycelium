@@ -23,6 +23,7 @@ pub mod metabolism;
 pub mod outflow;
 pub mod source;
 mod stroke;
+pub mod rate;
 pub mod equilibrium;
 
 #[cfg(test)]
