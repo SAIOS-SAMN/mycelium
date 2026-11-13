@@ -1022,3 +1022,58 @@ fn form_orbits_reconstruct_reads_edge_holonomy_on_flat_transport() {
     assert!(!ToralPeriod::from_pair(5, 0).closes());
     assert_eq!(ToralPeriod::OPEN.yield_units(), None);
 }
+
+/// #319: when a multi-pair family has a `Ground::Vortex` (several ambient
+/// enclosing candidates) and a witness or docket reconstructs a rule with no
+/// single ground open on the thread, `reconstruct_form_on_resume` unpacks the
+/// vortex's perspectives (`Ground::One` per candidate) rather than evaluating
+/// `raster::void()` under `Ground::Vortex` and slashing with `REFUSE_RULE_UNFRAMED`.
+#[test]
+fn reconstruct_form_unpacks_vortex_ground_perspectives() {
+    use crate::transducer::family::transduce::Ground;
+    use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family, NoCrystal, SectionSample};
+    use crate::transducer::raster::{ground_of, on_ground};
+    use crate::transducer::sample::{Place, Sample};
+    use crate::transducer::sentence::as_element_form;
+
+    let sample = |rows: &[&str]| -> SectionSample {
+        let h = rows.len();
+        let w = rows[0].len();
+        let data: Vec<u8> = rows
+            .iter()
+            .flat_map(|r| r.bytes().map(|b| b - b'0'))
+            .collect();
+        let s = Sample::new(vec![h, w], 1, data, Place::new(vec![0, 0])).expect("sample");
+        SectionSample::of(s).expect("section sample")
+    };
+
+    // Both `5` (left/top/bottom seams) and `0` (right seam) are ambient,
+    // enclosing, and unmoved, so `ground_of(&family)` is `Ground::Vortex`.
+    let family = vec![
+        (sample(&["5550", "5150"]), sample(&["5550", "5510"])),
+        (sample(&["55500", "51500"]), sample(&["55500", "55100"])),
+    ];
+    let g = ground_of(&family);
+    assert!(matches!(g, Ground::Vortex(ref cs) if cs.contains(&5) && cs.contains(&0)), "expected vortex containing 5 and 0, got {g:?}");
+
+    // Extract the rule under `Ground::One(5)` (clearing the moved `1` to void `5`).
+    let rule = on_ground(Ground::One(5), || {
+        let frames = perceive_family(&family);
+        let mut b = crate::physics::Physics::default().stroke_n(extraction_spend(&family, &frames));
+        extract_rule_on(&family, &frames, &NoCrystal, &mut b)
+            .expect("rule extracts under Ground::One(5)")
+    });
+    let element = as_element_form(&rule.form, [1, 0, 0, 0]).expect("tape");
+
+    // Witness reconstruction with NO ground open on the thread must succeed
+    // across the vortex's perspectives rather than failing with REFUSE_RULE_UNFRAMED.
+    let mut b = super::fixtures::budget();
+    let verdict = reconstruct_form_at(
+        &element,
+        &|_| None,
+        Some(&family),
+        &NoCrystal,
+        &mut b,
+    );
+    assert_eq!(verdict.map(|r| r.reason), None, "vortex ground perspective should reconstruct cleanly");
+}

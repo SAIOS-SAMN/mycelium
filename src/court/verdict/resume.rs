@@ -119,6 +119,7 @@ impl Stage {
 /// are read again, by address, at the next stroke.
 #[derive(Clone, Debug, Default)]
 pub struct ReconstructionCursor {
+    pub(crate) perspective: usize,
     pub(crate) stage: Stage,
     pub(crate) at: usize,
     pub(crate) frames: Vec<super::body::Perceived>,
