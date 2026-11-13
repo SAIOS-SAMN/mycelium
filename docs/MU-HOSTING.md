@@ -584,6 +584,37 @@ universe does inside is constrained only where it reaches the core.
 | The court holds no in-universe state: anchors carry a commitment, chained and never judged | **Built** | `LedgerEntry`, `Court::ledger_on` (MU-CHRONOMETRY §3) |
 | A universe's tiers relaying inside (offices, lines, houses) | The kernel's own | Concordance 6.2a |
 
+### 5a.2a What the hypha hands out, and what stays in the kernel
+
+The universal physics every kernel abides by is held by the hypha and
+served through the Concordance. A kernel reads it from a court; it never
+restates it, and never proposes its own physics into it.
+
+**Served by the hypha (universal):**
+
+| Physics | Served as | Where |
+|---|---|---|
+| The six universal laws (conformal kinematics in Cl(4,1), momentum, rigidity, time, reservoir, continuity), at `LAW_VERSION` | the register and the verifier (`ACT_LAWS` modes 0–2) | `physics::laws` |
+| The register's parameters | `ACT_LAWS` mode 5 | `physics::laws::PARAMETERS` |
+| The core law forms: reference, passage, coordinate, coupling (faces, flow law, dipole), turning (Cl(p,q), signature carried as data) | the clause register, signature, alignment (`ACT_LAWS` modes 7–9); the crate a kernel links | `forms/`, MU-CONCORDANCE §0.2 |
+| The body coordinate `origin/h:S:G:T:H:K` and the TUniversal position | every stamp, read as content | `forms::coordinate`, MU-CHRONOMETRY |
+| The founding: μ per lane and the nuclei per Z a universe holds | manifest, grant, read-endowment (`ACT_DOMAIN` 17, 18) | §3a.1–3a.4 |
+| The element account: the network's nuclei sum to zero | read-endowment | §3a.4 |
+| Conservation at the tube: a fold's nets per identity per lane, the carried lines, holonomy at the vertex | reconstruction at admission | §5a.3 |
+| A universe's geometry, basket, join, ledger, map, traverse, retrieve | `ACT_DOMAIN` 8–16, 19 | §3a.8 |
+
+**The kernel's own (never the hypha's):** a universe's constants, its
+matter's properties per kind (neutron counts, shells, seals, chemistry;
+§3a.1), its in-universe dynamics (two-pole equilibria, an atom's fill,
+plasma release, a throat's interior), its founding table and its body-state
+signature. Two kernels may share code for these between themselves; the
+hypha neither sees nor re-derives it. Where such dynamics reach the tube,
+the hypha checks only what crosses, under the universal laws above.
+
+**A new universal form** enters only when a crossing kind states its
+object and the hypha must check it there (§5a.3, "Never on a declared
+law id alone"). A formula that no crossing states stays in the kernel.
+
 ### 5a.3 The boundary: the universal core tube
 
 The universal core tube is the universe's only uplink. What crosses it
