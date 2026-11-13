@@ -1,0 +1,3 @@
+### The elemental row: Z coupled to Q, and μ created at the manifest (78.184 §3)
+
+Ruled 2026-11-13: a nucleus is one coupled nucleon dipole of its universe's stated `(Z, Q)`. Z and Q are coupled intrinsically (the rest point `R = −p`), algebraically (the push `p = (Z − Q)/(Z + Q)`, a flow-law rate) and geometrically (the dilation `D(p) = Z/Q` on S and the turn by `R` on H). Its elemental row is the modes of that motion over one full rotation. The formulas are MU-EQUATIONS §6.13, and the GLOSSARY defines **Elemental row**. Dated amendment notes, with the text they amend kept in place: Concordance 5.7, MU-ECONOMY §3 and §10.2, MU-HOSTING §3a.1 and §3a.2, MU-EQUATIONS §6.12. The build is #327.

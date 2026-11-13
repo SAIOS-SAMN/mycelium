@@ -141,14 +141,15 @@ live reading on the standing mesh.
 
 | Item | Issue | State |
 |---|---|---|
-| Rejoin before signing: a restarted hypha reconstructs from its peers before it signs, so a crash or reboot cannot self-equivocate | [#273](https://github.com/SAIOS-SAMN/mycelium/issues/273) | Next. The single-hypha rejoin needs no ruling; a stop of the whole mesh is the open question |
-| The live stroke: a per-lane draw on the reserve that regenerates by return, built on the flow law, the keep and the faces the hypha serves ([78.183](docs/proposals/78.183-the-live-stroke.md)) | [#308](https://github.com/SAIOS-SAMN/mycelium/issues/308) | After #273; Q1–Q7 answered under the 2026-11-13 direction (physics, not laws) |
+| Rejoin before signing: a restarted hypha reconstructs from its peers before it signs, so a crash or reboot cannot self-equivocate | [#273](https://github.com/SAIOS-SAMN/mycelium/issues/273) | Built (#315), proven live on a hard kill. Open: a stop of the whole mesh (two host reboots on 2026-11-13 each needed founding again) |
+| The live stroke: a per-lane draw on the reserve that regenerates by return, built on the flow law, the keep and the faces the hypha serves ([78.183](docs/proposals/78.183-the-live-stroke.md)) | [#308](https://github.com/SAIOS-SAMN/mycelium/issues/308) | Ruled (§7). The renames (#317) and the rate reading P1a (#323) landed. P1b failed live twice (a stroke sized from its own flux closes on itself) and is held for a ruling on what sizes a stroke |
+| μ created at the manifest against elemental rows (Z coupled to Q as one nucleon dipole), granted in proportion to ledger alignment ([78.184](docs/proposals/78.184-elemental-mu.md), MU-EQUATIONS §6.13) | [#327](https://github.com/SAIOS-SAMN/mycelium/issues/327) | Ruled 2026-11-13; building, row first. Netstratum (4 of 4 clauses) and xylarium (2 of 4) are aligned and wait on it |
 | Enrol a hypha into a running mesh after its mint, and let it leave | [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) | After #308; xylarium waits on it |
 | Mints carry the cited closure's modes | [#311](https://github.com/SAIOS-SAMN/mycelium/issues/311), PR #312 | Draft; held until a court mints an install or citation live |
-| A stale standing reading on the observer | [#310](https://github.com/SAIOS-SAMN/mycelium/issues/310), PR #296 | Draft; the hypothesis did not reproduce idle (2026-11-13) |
+| A stale standing reading on the observer | [#310](https://github.com/SAIOS-SAMN/mycelium/issues/310) | Closed: not a defect (the observer reads one question behind); #296 closed |
 | One Noise session per peer, reused, in place of a handshake per ask | [#309](https://github.com/SAIOS-SAMN/mycelium/issues/309) | Waiting on the operator |
 | X1's parts and the versor plane naming (X2) | [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) | Waiting on a ruling |
-| A mind honours its stop inside a long stroke (client stream) | [#307](https://github.com/SAIOS-SAMN/mycelium/issues/307) | Filed for the client stream |
+| A mind honours its stop inside a long stroke (client stream) | [#307](https://github.com/SAIOS-SAMN/mycelium/issues/307) | Fixed by #314, read live |
 
 **Ruled 2026-11-13** (one operator for every kernel):
 - Universal physics is held by the hypha and handed out through the
@@ -160,6 +161,11 @@ live reading on the standing mesh.
   netstratum's `Cl(5,4)`; ruled, not yet served (#305).
 - Xylarium's universal core is the antipolar face of a tube it stands on
   (78.176); fixtures 1–4 reproduced by xylarium (#306).
+- "Stroke" names one thing, the reserve's per-lane motion (78.183 §7,
+  #316); the reach is the rebalance of entropy and syntropy (§7.5).
+- μ is created at each manifest against elemental rows, a nucleus being the
+  coupled nucleon dipole of its stated `(Z, Q)`, and granted in proportion
+  to ledger alignment (78.184, MU-EQUATIONS §6.13).
 
 ## 1. Settlement: the xSEPTUM Note
 
