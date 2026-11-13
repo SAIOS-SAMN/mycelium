@@ -42,6 +42,8 @@ pub(crate) struct CourtPace {
     pub(crate) reading_acts: bool,
     /// One peer discovery in flight at a time.
     pub(crate) discovering: bool,
+    /// One speech ask from chatter in flight at a time (MU-CLIENT §5.1, #318).
+    pub(crate) speaking_agreed: bool,
     synced: bool,
     last_synced_height: u64,
     pub(crate) quoting: bool,

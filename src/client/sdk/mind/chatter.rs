@@ -159,6 +159,7 @@ pub struct Chat {
     dir: std::path::PathBuf,
     /// The clock last handed to the carrier, so it is handed only as it moves.
     told: Option<u64>,
+    told_h: Option<u64>,
     #[cfg(test)]
     agreed: std::sync::Arc<std::sync::Mutex<Keyed<()>>>,
 }
@@ -495,6 +496,7 @@ impl Mind {
             field_work,
             dir: dir.to_path_buf(),
             told: None,
+            told_h: None,
             #[cfg(test)]
             agreed,
         });
@@ -533,7 +535,13 @@ impl Mind {
                 None => None,
             };
             match next {
-                Some(FieldWork::Speak { body, agreed }) => self.speak_agreed(body, agreed),
+                Some(FieldWork::Speak { body, agreed }) => match self.board.court.speaking_agreed {
+                    true => self.board.field_waiting.push_back(FieldWork::Speak { body, agreed }),
+                    false => {
+                        self.board.court.speaking_agreed = true;
+                        self.speak_agreed(body, agreed);
+                    }
+                },
                 // A peer's frame under a question's coordinates is held with
                 // the question at once: it is a receipt, never a hearing.
                 Some(FieldWork::Answered { key, frame }) => self.hold_answer_frame(&key, frame),
@@ -565,28 +573,46 @@ impl Mind {
             if !budget.spend() {
                 break;
             }
+            let was_crossed = !self.board.field_waiting_crossed.is_empty();
             let next = match self.board.field_waiting_crossed.pop_front() {
                 Some(w) => Some(w),
                 None => self.board.field_waiting.pop_front(),
             };
             let Some(w) = next else { break };
-            read += 1;
             match w {
                 // MU-CLIENT §7.1 R1 — the rings are read off the field, on
                 // the perception carrier; what they read is understood where
                 // it lands (`understand_read`). MU-CLIENT §5.5 — a word's
                 // evidence is read on its scene first (`converge`).
                 FieldWork::Hear { speaker, said, words, evidence } => {
+                    read += 1;
                     self.at_law("admission: a hearing (hear)");
                     self.hear_with_evidence(speaker, said, words, evidence);
                 }
                 FieldWork::ReadLoops(p) => {
+                    read += 1;
                     self.at_law("admission: a hearing (loops read)");
                     self.read_loops(p);
                 }
-                // The buffer holds no speech (the door posts it at once).
-                FieldWork::Speak { body, agreed } => self.speak_agreed(body, agreed),
-                FieldWork::Answered { key, frame } => self.hold_answer_frame(&key, frame),
+                // Speech from chatter is gated: at most one in flight at a time (MU-CLIENT §5.1, #318).
+                FieldWork::Speak { body, agreed } => match self.board.court.speaking_agreed {
+                    true => {
+                        match was_crossed {
+                            true => self.board.field_waiting_crossed.push_front(FieldWork::Speak { body, agreed }),
+                            false => self.board.field_waiting.push_front(FieldWork::Speak { body, agreed }),
+                        }
+                        break;
+                    }
+                    false => {
+                        read += 1;
+                        self.board.court.speaking_agreed = true;
+                        self.speak_agreed(body, agreed);
+                    }
+                },
+                FieldWork::Answered { key, frame } => {
+                    read += 1;
+                    self.hold_answer_frame(&key, frame);
+                }
             }
         }
         self.board.hearings_wait = !self.board.field_waiting.is_empty() || !self.board.field_waiting_crossed.is_empty();
@@ -600,7 +626,8 @@ impl Mind {
         self.at_law("admission: speech for the court");
         self.ask(
             move |s| s.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some(),
-            move |_, heard| {
+            move |entity, heard| {
+                entity.board.court.speaking_agreed = false;
                 if heard && agreed {
                     crate::observe::note_mind(|m| m.agreed += 1);
                 }
@@ -1129,10 +1156,12 @@ impl Mind {
         let k = self.own_k();
         let point = self.hypha.tuniversal();
         let Some(chat) = self.chat.as_mut() else { return };
-        if chat.told == Some(k) {
+        let h = point.as_ref().map(|p| p.h);
+        if chat.told == Some(k) && chat.told_h == h {
             return;
         }
         chat.told = Some(k);
+        chat.told_h = h;
         let _ = chat.to.send(Inflow::Clock { k, point });
     }
 }
@@ -1144,7 +1173,7 @@ impl Mind {
     pub(crate) fn field_work_for_test(&mut self) -> Sender<FieldWork> {
         let (to, _inflow) = channel::<Inflow>();
         let (field, field_work) = channel::<FieldWork>();
-        self.chat = Some(Chat { to, field_work, dir: std::path::PathBuf::new(), told: None, agreed: std::sync::Arc::new(std::sync::Mutex::new(Keyed::new())) });
+        self.chat = Some(Chat { to, field_work, dir: std::path::PathBuf::new(), told: None, told_h: None, agreed: std::sync::Arc::new(std::sync::Mutex::new(Keyed::new())) });
         field
     }
 

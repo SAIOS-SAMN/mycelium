@@ -509,3 +509,31 @@ fn lapse_field_waiting_lapses_hearing_at_second_return() {
     assert_eq!(mind.read_hearings(), 0, "nothing left to read");
     assert!(!mind.board.hearings_wait, "nothing owed for it");
 }
+
+/// AT MOST ONE SPEECH FROM CHATTER IN FLIGHT AT A TIME (MU-CLIENT §5.1, #318):
+/// when multiple speech acts arrive from chatter, exactly one is posted to the
+/// hypha carrier, and further speech waits in field_waiting until the in-flight
+/// speech lands, preventing carrier flooding.
+#[test]
+fn read_hearings_gates_speech_to_one_in_flight() {
+    use crate::client::sdk::mind::chatter::FieldWork;
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("speech in flight"));
+    let field = mind.field_work_for_test();
+    field.send(FieldWork::Speak { body: vec![1, 2, 3], agreed: false }).expect("queued 1");
+    field.send(FieldWork::Speak { body: vec![4, 5, 6], agreed: false }).expect("queued 2");
+
+    assert_eq!(mind.read_hearings(), 0, "door emptied; first speech dispatched to carrier");
+    assert!(mind.board.court.speaking_agreed, "speech marked in flight");
+    assert_eq!(mind.board.field_waiting.len(), 1, "second speech queued in field_waiting");
+
+    // While speech is in flight, subsequent read_hearings does not dispatch the second speech
+    assert_eq!(mind.read_hearings(), 0, "speech still in flight: second speech remains waiting");
+    assert_eq!(mind.board.field_waiting.len(), 1, "second speech still in field_waiting");
+
+    // Simulate landing callback
+    mind.board.court.speaking_agreed = false;
+    // Next reading dispatches the waiting speech
+    assert_eq!(mind.read_hearings(), 1, "pipeline clear: second speech is read and dispatched");
+    assert!(mind.board.court.speaking_agreed, "second speech now in flight");
+    assert!(mind.board.field_waiting.is_empty(), "field_waiting now empty");
+}
