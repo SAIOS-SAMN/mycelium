@@ -691,6 +691,12 @@ pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], 
         }
         return sized(&mut r, carried, &every);
     }
+    if let Some(clause) = read_tiles(&r) {
+        let all = vec![clause];
+        if r.rederives(&all)? {
+            return Ok(all);
+        }
+    }
     // THE BODIES NO CARRIAGE MOVES, and what became of each.
     let moved_charts: Vec<&crate::transducer::stalk::Invariant> = carried
         .iter()
@@ -1830,7 +1836,7 @@ fn read_panes(r: &PredicateTable<'_, '_>) -> Option<Clause> {
 /// admits none on some pair, or the pairs share none.
 fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
     // On each pair, the count of the input's frames along each axis of the
-    // plane: a whole number on every axis, the output not the input's frame.
+    // plane: a whole number on every axis (including 1x1 non-identity turns).
     let factors: Vec<Option<[usize; ALPHABET_SAMPLE_RANK]>> = r
         .pairs
         .iter()
@@ -1840,7 +1846,7 @@ fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
             for (b, (x, y)) in blocks.iter_mut().zip(ex.iter().zip(&ey)) {
                 *b = y.checked_rem(*x).filter(|&rem| rem == 0).map(|_| y / x)?;
             }
-            (ey != ex).then_some(blocks)
+            Some(blocks)
         })
         .collect();
     let blocks = match factors.as_slice() {
@@ -1864,6 +1870,9 @@ fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
             })
         };
         turns.push((0u8..8).find(|&t| fits(t))?);
+    }
+    if blocks == [1; ALPHABET_SAMPLE_RANK] && turns.iter().all(|&t| t == 0) {
+        return None;
     }
     let mut counts = [0u8; ALPHABET_SAMPLE_RANK];
     for (c, b) in counts.iter_mut().zip(blocks) {
