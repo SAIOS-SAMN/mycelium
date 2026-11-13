@@ -462,9 +462,9 @@ fn read_hearings_reads_one_budget_rest_wait() {
         field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     }
     assert_eq!(mind.read_hearings(), reads, "its budget's worth read");
-    assert!(mind.board.hearings_wait && mind.owes_strokes(), "one left: it waits, and strokes are owed");
+    assert!(mind.board.hearings_wait && mind.owes_windings(), "one left: it waits, and strokes are owed");
     assert_eq!(mind.read_hearings(), 1, "the one left read");
-    assert!(!mind.board.hearings_wait && !mind.owes_strokes(), "nothing waits");
+    assert!(!mind.board.hearings_wait && !mind.owes_windings(), "nothing waits");
 }
 
 /// THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
@@ -481,7 +481,7 @@ fn read_hearings_defers_while_task_waits() {
     let offer = Offer::of(&train);
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [2; 32], train, tests: Vec::new() }, offer));
     assert_eq!(mind.read_hearings(), 0, "a task on the board: no hearing read");
-    assert!(mind.board.hearings_wait && mind.owes_strokes(), "the hearing waits, and strokes are owed");
+    assert!(mind.board.hearings_wait && mind.owes_windings(), "the hearing waits, and strokes are owed");
     mind.board.court.task = None;
     mind.board.court.pulling = true;
     assert_eq!(mind.read_hearings(), 0, "a task asked for: no hearing read");

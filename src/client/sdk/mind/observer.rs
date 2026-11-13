@@ -59,8 +59,8 @@ impl Mind {
     }
 
     /// THE WINDING CARRIER BEGINS A STROKE.
-    pub(crate) fn stroke_begins(&mut self) {
-        live::stroke_began(self.own_k(), self.hypha.tuniversal().map(|p| p.h));
+    pub(crate) fn winding_begins(&mut self) {
+        live::winding_began(self.own_k(), self.hypha.tuniversal().map(|p| p.h));
         self.at_law("stroke");
     }
 

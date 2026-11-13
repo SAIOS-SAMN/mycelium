@@ -129,7 +129,7 @@ impl Mind {
         if coupled {
             return;
         }
-        let past_aperture = matches!(aperture, Some(crate::physics::Lambda::Strokes(n)) if o.waited >= n);
+        let past_aperture = matches!(aperture, Some(crate::physics::Lambda::Cycles(n)) if o.waited >= n);
         let next_final = match (o.landed, finality) {
             (Some(at), Some(now)) => now > at,
             (None, Some(_)) => true,

@@ -44,7 +44,7 @@
 //! witness (MU-CLIENT §7.2); its observer reads it as it stands (`observe::live`).
 
 use crate::client::sdk::*;
-use crate::physics::StrokeOutcome;
+use crate::physics::WindingOutcome;
 use std::sync::atomic::AtomicBool;
 
 /// THE BOARD: the boundaries this mind is open on, and what the field keeps
@@ -200,7 +200,7 @@ impl Mind {
     fn stroke_in_field(&mut self, stop: &AtomicBool) -> Wound {
         // The observer reads where the carrier stands at every law it enters
         // (`observe::live`, `mind::observer`).
-        self.stroke_begins();
+        self.winding_begins();
         if self.board.saved_len != Some(self.language.genome_len()) {
             self.at_law("genome written");
             let _ = self.save_kept_genome();
@@ -215,7 +215,7 @@ impl Mind {
                 }
             }
         }
-        let mut outcome = StrokeOutcome::default();
+        let mut outcome = WindingOutcome::default();
         let stopping = || stop.load(std::sync::atomic::Ordering::SeqCst) || crate::physics::halted();
         // 1. ADMISSION — what the carriers landed.
         self.at_law("admission: the court's answers");
@@ -272,7 +272,7 @@ impl Mind {
         if !stopping() {
             self.at_law("motion: the pivots");
             let _ = self.pivot_thoughts();
-            StrokeOutcome::add(&mut outcome.learned, &self.take_learned_mu());
+            WindingOutcome::add(&mut outcome.learned, &self.take_learned_mu());
         }
         let mut vent = self.stroke();
         if !stopping() {
@@ -329,7 +329,7 @@ impl Mind {
     /// open — the act at the return, each scene's held outflow leaving at its
     /// own thought's return. Answers how many returned.
     pub(crate) fn act_on_returns(&mut self, budget: &mut crate::physics::Budget, bound: Vec<Vec<u8>>, open: bool) -> u64 {
-        let (returns, mut scenes) = self.returns_of_stroke(budget);
+        let (returns, mut scenes) = self.returns_of_winding(budget);
         // MU-CLIENT §4.13, 78.168 — a thought the field released (its orbit
         // dissipated, sealed, or a perception's returned) is bound, as a
         // demand bound is: its scene's return.
@@ -408,7 +408,7 @@ impl Mind {
     /// came round — each transcribed against the mind's own letters and its
     /// word said under its scene (held for that scene's return). Answers how
     /// many, and the scenes they returned in.
-    fn returns_of_stroke(&mut self, budget: &mut crate::physics::Budget) -> (u64, Vec<Vec<u8>>) {
+    fn returns_of_winding(&mut self, budget: &mut crate::physics::Budget) -> (u64, Vec<Vec<u8>>) {
         let field = match crate::transducer::mind::with_field(|f| f.take_returns()) {
             Ok(n) => n,
             // No field stands in the thread's slots: none of its orbits is
@@ -488,7 +488,7 @@ impl Mind {
     /// tubes' relief, and the contacts' order. 68.5 — and the stroke's
     /// thermodynamic ledger TAKEN, once, into the mind's observe reading,
     /// after the spend so the stroke's own draws stand in it.
-    fn book_tick(&mut self, outcome: &StrokeOutcome) {
+    fn book_tick(&mut self, outcome: &WindingOutcome) {
         let seen = crate::transducer::family::pairing::contact_lanes();
         let mut moved = outcome.moved();
         moved[2] = false;

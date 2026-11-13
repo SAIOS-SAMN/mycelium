@@ -60,7 +60,7 @@ fn task_arrival_moves_no_orbit() {
     let k_before = mind.own_k();
     assert_eq!(k_before, 0);
 
-    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut outcome = crate::physics::WindingOutcome::default();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| mind.task_inflow(&mut outcome));
     mind.field = field;
@@ -85,7 +85,7 @@ fn mind_declines_a_scene_its_field_does_not_bind() {
     assert!(!mind.couples(&id, &offer.charts), "an empty mind couples to no novel chart");
 
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id, train: uncoupled_train, tests: Vec::new() }, offer));
-    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut outcome = crate::physics::WindingOutcome::default();
     mind.task_inflow(&mut outcome);
 
     assert!(mind.board.court.task.is_some() && !mind.perceiving(), "uncoupled: not taken onto perception carrier");

@@ -1699,8 +1699,8 @@ Sources: MU-RECURSION S10, 45.7, S13.2, #34. Code:
 #### 7.6 Scheduler floor, idle park and transport horizons
 
 ```text
-stroke_floor   = 1 s / CONFIG_HZ                (or the least wait the kernel grants)
-idle_park      = stroke_floor · max(rtt, 1)      (one stroke where no rtt is measured)
+park_floor   = 1 s / CONFIG_HZ                (or the least wait the kernel grants)
+idle_park      = park_floor · max(rtt, 1)      (one stroke where no rtt is measured)
 Λ(rtt, n)      = rtt · max(n, 1)  strokes        (BeyondTheLedger where it overflows)
 persist_dwell  = Λ(rtt, aperture_cycle)
 quiet ask      = due where never asked, or advances(final point) > advances at the last ask   (D2.5)
@@ -1721,7 +1721,7 @@ yet written or adopted) parks one floor at a time, since its own cycles
 write the first receipt and ask the peers that give it its origin.
 
 Sources: MU-RECURSION 47.5, 45.7, 78.152, PH1. Code:
-`src/physics/calibration.rs::stroke_floor`, `::idle_park`,
+`src/physics/calibration.rs::park_floor`, `::idle_park`,
 `src/physics/lambda.rs::from_transport`, `::persist_dwell`,
 `::transport_deadline`, `src/physics/circuits.rs::Circuits::stroke`,
 `src/bin/mycelium-server/transport.rs::quiet_due`.

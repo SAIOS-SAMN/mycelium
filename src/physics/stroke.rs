@@ -439,7 +439,7 @@ impl Physics {
 /// One stroke's outcome: six modes, each a μ⃗ on the four lanes. Lane-wise
 /// sums across modes are allowed; nothing is summed or compared across lanes.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct StrokeOutcome {
+pub struct WindingOutcome {
     pub fed: [u64; 4],
     pub pivoted: [u64; 4],
     pub stood: [u64; 4],
@@ -448,7 +448,7 @@ pub struct StrokeOutcome {
     pub learned: [u64; 4],
 }
 
-impl StrokeOutcome {
+impl WindingOutcome {
     pub fn add(dst: &mut [u64; 4], src: &[u64; 4]) {
         for (d, s) in dst.iter_mut().zip(src) {
             metabolism::step_or_refuse(d, *s);

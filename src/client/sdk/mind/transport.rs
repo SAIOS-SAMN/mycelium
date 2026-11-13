@@ -18,14 +18,14 @@ impl Mind {
 
     /// REST (MU-CLIENT §7.1; ruled 2026-10-24): the mind blocks until a
     /// carrier lands something — never a clock — where nothing it holds
-    /// needs its own strokes to progress (`owes_strokes`); otherwise it parks
+    /// needs its own strokes to progress (`owes_windings`); otherwise it parks
     /// at the measured transport. A seated mind's mail read is held at the
     /// relay and its landing wakes the mind (`read_mail_page`).
     pub fn rest(&self) {
         // The observer's asker waits while the carrier works and stops at a
         // park (`live::call`).
         crate::observe::live::park(true);
-        match self.owes_strokes() {
+        match self.owes_windings() {
             true => self.hypha.rest(self.transport_rtt()),
             false => self.hypha.block(),
         }
@@ -37,7 +37,7 @@ impl Mind {
     /// lane run short under tension (the reserve regenerates only on
     /// strokes); a court's task on the board (it is taken in or lapses only
     /// as strokes pass); hearings left queued past a stroke's budget.
-    pub(crate) fn owes_strokes(&self) -> bool {
+    pub(crate) fn owes_windings(&self) -> bool {
         let dwell = self.board.court.dwelling();
         let feed = self.board.feed_waits || self.board.hearings_wait;
         let questions = self.board.question_waits;

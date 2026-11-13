@@ -186,7 +186,7 @@ fn dwell_holds_only_wanted_pressured_lane() {
         [0, 7, 0, 0],
         "a stroke that needs G dwells G's pressure only"
     );
-    let outcome = StrokeOutcome { pivoted: [0, 3, 0, 0], ..Default::default() };
+    let outcome = WindingOutcome { pivoted: [0, 3, 0, 0], ..Default::default() };
     assert_eq!(outcome.moved(), g, "the stroke moved G and no other lane");
-    assert_eq!(StrokeOutcome::default().moved(), [false; 4], "a stroke that moved nothing");
+    assert_eq!(WindingOutcome::default().moved(), [false; 4], "a stroke that moved nothing");
 }

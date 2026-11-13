@@ -162,7 +162,7 @@ impl TShelf {
     }
 
     /// PARK UNTIL SOMETHING MOVED SINCE `seen`, bounded by `floor`, the one
-    /// scheduler floor (`physics::stroke_floor`, 78.152): a court still
+    /// scheduler floor (`physics::park_floor`, 78.152): a court still
     /// booting (its genesis not yet written or adopted) has work its cycles
     /// do before anything arrives, so it parks one floor at a time; the wait
     /// ends on the first motion and the floor is told to the scheduler and

@@ -86,14 +86,14 @@ assert_eq!(tense[0], s0, "T pressure does not steal spatial room: {tense:?}");
 
 /// Extra court strokes of a fixed corpus do not grow the hot set.
 #[test]
-fn court_stroke_idle_keeps_hot_set_fixed() {
+fn court_cycle_idle_keeps_hot_set_fixed() {
 let mut k = Court::new();
 k.set_height(5);
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "the sentence is listed");
 speak_pair(&mut k, &a, &b, [2; 32]);
-k.court_stroke();
+k.court_cycle();
 let hot = (
     k.field_hot_len(),
     k.pending.len(),
@@ -102,7 +102,7 @@ let hot = (
     k.provisional.len(),
 );
 for _ in 0..16 {
-    k.court_stroke();
+    k.court_cycle();
 }
 assert_eq!(
     (

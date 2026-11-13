@@ -105,7 +105,7 @@ impl Paced {
                     }
                     // A poll costs the processor its scheduler floor (the
                     // stroke-duration ruling), never a measured wait.
-                    std::thread::sleep(crate::physics::stroke_floor());
+                    std::thread::sleep(crate::physics::park_floor());
                 }
                 Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
                 Err(e) => break Err(e),

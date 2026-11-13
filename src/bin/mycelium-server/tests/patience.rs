@@ -36,7 +36,7 @@ fn aperture() -> usize {
 
 /// A stall of exactly `n` strokes.
 fn strokes(n: usize) -> Stall {
-    Stall::Strokes(std::num::NonZeroUsize::new(n).expect("non-zero"))
+    Stall::Cycles(std::num::NonZeroUsize::new(n).expect("non-zero"))
 }
 
 /// AN UNMEASURED PEER WAITS THE MESH'S MEASURED FLOOR: windows with floors
