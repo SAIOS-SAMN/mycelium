@@ -134,12 +134,13 @@ impl Mind {
                 self.hypha.waiting_by_path().iter().map(|(n, k)| format!("{k} {n}")).collect::<Vec<_>>().join(" · ")
             ),
             format!(
-                "asks in flight: quote {} · task {} · sync {} · syllabus {} · solves {} · a quote landed {} · a task landed {}",
+                "asks in flight: quote {} · task {} · sync {} · syllabus {} · solves {} · speech {} · a quote landed {} · a task landed {}",
                 pace.quoting,
                 pace.pulling,
                 pace.syncing,
                 pace.schooling,
                 pace.solving.len(),
+                pace.speaking_agreed,
                 pace.quoted.is_some(),
                 pace.task.is_some()
             ),
