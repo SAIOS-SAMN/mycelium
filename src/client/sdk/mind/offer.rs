@@ -121,7 +121,7 @@ impl Mind {
         let aperture = self.transport_rtt().map(crate::physics::persist_dwell);
         let finality = self.hypha.tuniversal().map(|p| p.h);
         let coupled = match self.board.court.task.as_ref() {
-            Some((e, o)) => self.couples(&e.id, &o.charts),
+            Some((e, o)) => self.couples(&e.id, &o.charts) || o.first_motion,
             None => return,
         };
         let Some((_, o)) = self.board.court.task.as_mut() else { return };

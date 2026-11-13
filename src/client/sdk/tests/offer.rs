@@ -449,9 +449,10 @@ fn owes_strokes_is_true_only_with_task_on_board() {
 }
 
 /// CANDIDATE 2 — THE MIND'S FIRST MOTION (MU-CLIENT §4.13, Issue #246):
-/// An empty mind (no contemplation wells, no comprehending scenes, and empty language)
-/// that pulls an offer from the court takes that first offer in unconditionally as its
-/// first motion. Subsequent novel offers still adhere to geometric coupling.
+/// A mind holding no thought (empty contemplation wells and empty comprehending queue)
+/// that pulls an offer from the court to which nothing it holds couples takes that offer
+/// in as its first motion, even if syllabus words on other charts are held in its language.
+/// Subsequent novel offers adhere to geometric coupling.
 #[test]
 fn first_motion_takes_initial_pulled_task_into_perception() {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("first_motion"));
@@ -469,4 +470,82 @@ fn first_motion_takes_initial_pulled_task_into_perception() {
     assert!(mind.board.court.task.is_none(), "first motion task taken onto perception boundary");
     assert!(mind.perceiving(), "perception carrier active for first motion");
 }
+
+#[test]
+fn first_motion_with_uncoupled_syllabus_words_takes_task_in() {
+    crate::transducer::raster::stand_on(0);
+    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("syllabus_words"));
+    let [(x, y)] = <[_; 1]>::try_from(one_cell_steps()).expect("one pair");
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| {
+        let mut b = budget();
+        let frames = perceive_family(&[(x.clone(), y.clone())]);
+        let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
+        let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
+        mind.language.moduli_admit(&crate::transducer::element::Held::of(word));
+    });
+    mind.field = field;
+
+    assert!(!mind.language.spoken_charts().is_empty(), "mind holds syllabus words");
+    assert!(mind.contemplation.wells.is_empty(), "wells empty");
+    assert!(mind.comprehending.is_empty(), "comprehending empty");
+    assert!(!mind.perceiving(), "perception carrier free");
+
+    // An offer on a disjoint chart does not couple
+    let uncoupled_train = two_hours_of_a_slide();
+    let id = [16u8; 32];
+    let base_offer = Offer::of(&uncoupled_train);
+    assert!(!mind.couples(&id, &base_offer.charts), "task charts do not couple to held syllabus words");
+
+    let is_first = !mind.couples(&id, &base_offer.charts)
+        && mind.contemplation.wells.is_empty()
+        && mind.comprehending.is_empty()
+        && !mind.perceiving();
+    assert!(is_first, "qualifies as first motion");
+
+    let offer = Offer { first_motion: is_first, ..base_offer };
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id, train: uncoupled_train.to_vec(), tests: Vec::new() }, offer));
+
+    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| mind.task_inflow(&mut outcome));
+    mind.field = field;
+
+    assert!(mind.board.court.task.is_none(), "first motion admitted uncoupled task into perception");
+    assert!(mind.perceiving(), "perception carrier active");
+}
+
+#[test]
+fn lapse_standing_task_honors_first_motion() {
+    use crate::chronometry::tuniversal::{Origin, TPoint};
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("first_motion_standing"));
+    let id = [17u8; 32];
+    let train = one_cell_steps();
+    let offer = Offer { landed: Some(10), first_motion: true, ..Offer::of(&train) };
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id, train, tests: Vec::new() }, offer));
+
+    let hear = |mind: &mut Mind, h: u64| {
+        let p = TPoint { origin: Origin::default(), h, lanes: [1, 0, 0, 0].into(), k: 1 };
+        mind.ask(move |s| s.hear_point(Some(p)), |_, ()| {});
+        let mut polls = 0u32;
+        while mind.hypha.tuniversal().map(|p| p.h) != Some(h) && polls < (1 << 24) {
+            std::thread::yield_now();
+            polls += 1;
+        }
+        assert_eq!(mind.hypha.tuniversal().map(|p| p.h), Some(h), "the final is carried");
+    };
+
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| mind.lapse_standing_task());
+    hear(&mut mind, 10);
+    field.think(|| mind.lapse_standing_task());
+    hear(&mut mind, 11);
+    field.think(|| mind.lapse_standing_task());
+    mind.field = field;
+
+    assert!(mind.board.court.task.is_some(), "first motion task does not lapse at next final");
+    assert_eq!(mind.board.offers_passed[PASSED_TASK], 0, "task not passed as lapsed");
+}
+
 
