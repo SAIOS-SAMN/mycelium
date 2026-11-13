@@ -35,6 +35,8 @@ pub use reads::HELD_KINDS;
 mod persistence;
 mod points;
 mod reduce;
+mod rejoin;
+pub use rejoin::Rejoined;
 mod room;
 pub mod seat;
 mod signatory;
