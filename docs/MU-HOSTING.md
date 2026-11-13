@@ -602,12 +602,12 @@ restates it, and never proposes its own physics into it.
 | The element account: the network's nuclei sum to zero | read-endowment | §3a.4 |
 | Conservation at the tube: a fold's nets per identity per lane, the carried lines, holonomy at the vertex | reconstruction at admission | §5a.3 |
 | A universe's geometry, basket, join, ledger, map, traverse, retrieve | `ACT_DOMAIN` 8–16, 19 | §3a.8 |
+| The body-state signature: one across kernels, `Cl(13,1)` (`Cl(n+1,1)` at n = 12, the Hopf carrier S¹¹ → CP⁵; ruled by the operator 2026-11-13, superseding netstratum's `Cl(5,4)` of 2026-11-12) | **Ruled, not yet served**: FORMS-TURNING carries a signature as data; the ruled signature enters the register with its fixtures at the next turning version | `forms::turning` |
 
 **The kernel's own (never the hypha's):** a universe's constants, its
 matter's properties per kind (neutron counts, shells, seals, chemistry;
 §3a.1), its in-universe dynamics (two-pole equilibria, an atom's fill,
-plasma release, a throat's interior), its founding table and its body-state
-signature. Two kernels may share code for these between themselves; the
+plasma release, a throat's interior) and its founding table. Two kernels may share code for these between themselves; the
 hypha neither sees nor re-derives it. Where such dynamics reach the tube,
 the hypha checks only what crosses, under the universal laws above.
 
