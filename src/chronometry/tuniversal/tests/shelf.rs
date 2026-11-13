@@ -38,3 +38,18 @@ fn tshelf_park_until_moved_wakes_on_act_and_judgement() {
         assert_eq!(woke.acts, seen.acts + 1, "woken by the one motion");
     }
 }
+
+/// 78.153c — an observer's question wakes a court parked idle (#234), so the
+/// standing it asks for is published by the next stroke; the question is
+/// counted apart from the acts.
+#[test]
+fn tshelf_park_until_moved_wakes_on_question() {
+    let shelf = std::sync::Arc::new(TShelf::new());
+    let seen = shelf.seen();
+    let s2 = std::sync::Arc::clone(&shelf);
+    let waker = std::thread::spawn(move || s2.asked());
+    let woke = shelf.park_until_moved(seen);
+    waker.join().expect("joins");
+    assert_eq!(woke.questions, seen.questions + 1, "woken by the question");
+    assert_eq!(woke.acts, seen.acts, "a question is not an act");
+}

@@ -17,6 +17,10 @@ struct ShelfState {
     heard: Option<TPoint>,
     /// Envelopes read at the door, counted: an act arriving is work.
     acts: u64,
+    /// Observer questions left for the court stroke, counted: the standing
+    /// a question asks for is published only by a stroke, so a question is
+    /// work for a parked court (78.153c).
+    questions: u64,
 }
 
 /// THE SHELF. A watchdog or the court loop reads it without the court.
@@ -34,6 +38,7 @@ pub struct TShelf {
 pub struct Seen {
     pub advances: u64,
     pub acts: u64,
+    pub questions: u64,
 }
 
 impl TShelf {
@@ -65,7 +70,8 @@ impl TShelf {
 
     /// What a reader sees now.
     pub fn seen(&self) -> Seen {
-        Seen { advances: self.advances(), acts: self.held().acts }
+        let h = self.held();
+        Seen { advances: self.advances(), acts: h.acts, questions: h.questions }
     }
 
     /// A FINAL POINT raised (from the keepers' quorum, TU-3): held where it
@@ -146,8 +152,28 @@ impl TShelf {
         self.moved.notify_all();
     }
 
+    /// A QUESTION LEFT FOR THE COURT STROKE (78.153c): the observer asked for
+    /// the standing, which only a stroke publishes, so a parked reader is
+    /// woken to run one. Without it an idle court parked unbounded (#234)
+    /// answered every question with the standing of its last motion: court
+    /// b's read K 37 for hours against its K 13842 (standing mesh,
+    /// 2026-11-13).
+    pub fn asked(&self) {
+        {
+            let mut h = match self.held.lock() {
+                Ok(h) => h,
+                Err(e) => e.into_inner(),
+            };
+            if let Some(n) = h.questions.checked_add(1) {
+                h.questions = n;
+            }
+        }
+        self.moved.notify_all();
+    }
+
     /// #234 (ruled 2026-11-11, option (a)) — PARK UNTIL SOMETHING MOVED SINCE
-    /// `seen`, with no bound: the final point advanced or an act arrived. What
+    /// `seen`, with no bound: the final point advanced, an act arrived or a
+    /// question was left (`asked`). What
     /// an idle court at rest waits for — its next due event is the next
     /// motion, so it burns nothing while none comes. Answers what it saw on
     /// waking.
@@ -156,7 +182,7 @@ impl TShelf {
             Ok(h) => h,
             Err(e) => e.into_inner(),
         };
-        let moved = |h: &ShelfState| h.acts != seen.acts || self.advances() != seen.advances;
+        let moved = |h: &ShelfState| h.acts != seen.acts || h.questions != seen.questions || self.advances() != seen.advances;
         drop(self.moved.wait_while(guard, |h| !moved(h)));
         self.seen()
     }
@@ -176,7 +202,7 @@ impl TShelf {
             Ok(h) => h,
             Err(e) => e.into_inner(),
         };
-        let moved = |h: &ShelfState| h.acts != seen.acts || self.advances() != seen.advances;
+        let moved = |h: &ShelfState| h.acts != seen.acts || h.questions != seen.questions || self.advances() != seen.advances;
         match moved(&guard) {
             true => drop(guard),
             false => drop(self.moved.wait_timeout_while(guard, floor, |h| !moved(h))),

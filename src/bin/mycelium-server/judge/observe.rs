@@ -106,6 +106,9 @@ pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Conte
             // (01:15–01:32, 2026-10-01), each refused at the console's
             // 0.5–0.7 s, and b, the lighter court, all 34.
             STANDING_ASKED.store(true, std::sync::atomic::Ordering::Relaxed);
+            // 78.153c — and the court woken to answer it: a court parked
+            // idle (#234) runs no stroke until something moves.
+            crate::tuniversal::shelf().asked();
             let before = UNANSWERED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             if let Some(asked) = before.checked_add(1) {
                 observe::replace(own, Reading::Asked(asked));
