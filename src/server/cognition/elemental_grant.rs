@@ -34,7 +34,11 @@ impl Court {
         let served = register().ok()?;
         let mut reads = self.physics.stroke();
         let read = self.alignment(Some(reserve), &mut reads).ok()?;
-        let readings = read.kernels.into_iter().find(|k| k.kernel == reserve).map(|k| k.clauses).unwrap_or_default();
+        // A reserve the ledger names no event of reads every clause Unread.
+        let readings = match read.kernels.into_iter().find(|k| k.kernel == reserve) {
+            Some(k) => k.clauses,
+            None => Vec::new(),
+        };
         let conversed = served
             .iter()
             .filter(|r| readings.iter().any(|c| c.id == r.clause.id && matches!(c.reading, ClauseReading::Converses { .. })))
