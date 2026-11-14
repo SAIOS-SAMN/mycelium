@@ -75,7 +75,7 @@ pub(crate) fn crossing(domain: [u8; 32]) -> mycelium::anastome::dialogue::crossi
 
 /// A MANIFEST of one kind of nuclei, one hydrogen nucleus, under a nonce.
 pub(crate) fn manifest(domain: [u8; 32]) -> Manifest {
-    let nuclei: Nuclei = vec![(1, num_bigint::BigUint::from(1u8))];
+    let nuclei: Nuclei = vec![(mycelium::anastome::dialogue::endowment::Nucleus { z: 1, q: 0 }, num_bigint::BigUint::from(1u8))];
     Manifest { domain, nuclei, nonce: mycelium::chronometry::payload_hash(b"mycelium conformance manifest") }
 }
 

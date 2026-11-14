@@ -222,7 +222,7 @@ fn universe_act_off_the_core_refused_not_through_core() {
     assert_eq!(k.map(&map.signed(&line), Some(fp(10))), Mapped::Boundary(off(UniverseAct::Map)));
     let statement = Statement { domain, stated: Stated::Geometry(Geometry::Curved((1, 1))) };
     assert_eq!(k.state(&statement.signed(&line)), Founded::Boundary(off(UniverseAct::Statement)));
-    let manifest = Manifest { domain, nuclei: vec![(1, num_bigint::BigUint::from(1u8))], nonce: [2; 32] };
+    let manifest = Manifest { domain, nuclei: vec![(crate::anastome::dialogue::endowment::Nucleus { z: 1, q: 0 }, num_bigint::BigUint::from(1u8))], nonce: [2; 32] };
     assert_eq!(k.manifest(&manifest.signed(&line).expect("signs")), Granted::Boundary(off(UniverseAct::Manifest)));
     let out = ConvertOut { tier: vk(&line), holder: [50; 32], identity: [7; 32], g: 10, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [3; 32] };
     assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out)).signed(&line)), Handed::Boundary(off(UniverseAct::ConversionOut)));

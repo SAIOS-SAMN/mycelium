@@ -239,9 +239,13 @@ is founded from. Both come from the hypha through one exchange, the
 
 A kernel that has founded a domain posts a **manifest** (`ACT_DOMAIN`
 sub-kind 17), signed by the domain's sitting reserve:
-- its **nuclei per Z**: the element kinds the universe is founded from,
-  each by its atomic number Z, in ascending order, each with a count that
-  is a positive integer of any size (a founding is astronomical);
+- its **nuclei per nucleus** `(Z protons, Q neutrons)`: the kinds the
+  universe is founded from, in ascending `(Z, Q)`, each with a count that is
+  a positive integer of any size (a founding is astronomical). Isotopes stay
+  apart. Wire: `(Z u16 LE, Q u32 LE, count)` per entry, signed under
+  `"mycelium manifest v2"`. *(Until 2026-11-13 each entry was keyed by Z
+  alone, `"mycelium manifest v1"`, which summed the neutrons away. Changed
+  under 78.184: Z is coupled to Q, never keyed by Z alone.)*
 - a nonce, so two equal requests are two manifests.
 
 The hypha names elements by Z alone. A universe's own properties for each
@@ -249,17 +253,23 @@ kind (its neutron counts, its seals, its chemistry) are its own physics,
 never the network's. *Amended 2026-11-13 (78.184):* where μ is created,
 the hypha reads each kind as the coupled nucleon dipole of its stated
 `(Z, Q)` (MU-EQUATIONS §6.13). `Q` stays the universe's own; the hypha
-reads it, never sets it.
+reads it, never sets it. Each kernel translates its own letters onto
+protons and neutrons at its uplink.
 
 ### 3a.2 The grant (Built)
 
 The court answers a manifest with a **grant**, a transfer of μ to the
 domain's reserve:
 - **The founding grant** answers the first manifest after the domain's
-  origin. A manifest carrying `n` kinds of nuclei is granted the court's
-  read price for `n` units of gas on every lane, `n · (1 + y_l/R)` exactly
-  (MU-EQUATIONS §6.2): enough to stake for the
-  universe's first crossing's coordinates.
+  origin. *Built 2026-11-13 (78.184, #327):* the court creates
+  `Σ n · row(Z, Q)` for the nuclei it carries (MU-EQUATIONS §6.13), scales
+  it by the kernel's alignment share, and mints it to the reserve; the
+  court's earned balance is not drawn. Every later manifest creates the
+  same way, with any growth part beside it. A kernel conversing on no
+  clause is refused `Unaligned`. *(Before: a manifest carrying `n` kinds
+  of nuclei was granted the court's read price for `n` units of gas on
+  every lane, `n · (1 + y_l/R)` exactly (MU-EQUATIONS §6.2), drawn from
+  what the court earned.)*
 - **A growth grant** answers each later manifest, sized by the measured
   discharge of the closures the court judged in that universe since its
   previous grant. With no closure judged there is no growth grant: a
@@ -606,7 +616,7 @@ restates it, and never proposes its own physics into it.
 | The register's parameters | `ACT_LAWS` mode 5 | `physics::laws::PARAMETERS` |
 | The core law forms: reference, passage, coordinate, coupling (faces, flow law, dipole), turning (Cl(p,q), signature carried as data) | the clause register, signature, alignment (`ACT_LAWS` modes 7–9); the crate a kernel links | `forms/`, MU-CONCORDANCE §0.2 |
 | The body coordinate `origin/h:S:G:T:H:K` and the TUniversal position | every stamp, read as content | `forms::coordinate`, MU-CHRONOMETRY |
-| The founding: μ per lane and the nuclei per Z a universe holds | manifest, grant, read-endowment (`ACT_DOMAIN` 17, 18) | §3a.1–3a.4 |
+| The founding: μ created against the elemental rows of the nuclei per `(Z, Q)` a universe states, granted by alignment | manifest, grant, read-endowment (`ACT_DOMAIN` 17, 18) | §3a.1–3a.4, MU-EQUATIONS §6.13 |
 | The element account: the network's nuclei sum to zero | read-endowment | §3a.4 |
 | Conservation at the tube: a fold's nets per identity per lane, the carried lines, holonomy at the vertex | reconstruction at admission | §5a.3 |
 | A universe's geometry, basket, join, ledger, map, traverse, retrieve | `ACT_DOMAIN` 8–16, 19 | §3a.8 |

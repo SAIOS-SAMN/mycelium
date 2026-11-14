@@ -1605,9 +1605,21 @@ The ELEMENTAL ROW of `(Z, Q)` is the modes its motion advances on
 full rotational completion:
 
 ```text
-motion(Z, Q)   = D(p) ∘ T_R                     the boost composed with the turn by R
-row(Z, Q)      = modes( motion(Z, Q) carried to its order ℓ )   K = 1 on its plane (Rotor::order)
+row(Z, Q) = 3W · { S: the boost D(Z/Q), once          (none at the throat Z = Q; none at Q = 0)
+                   H: one full turn of the axis plane  (K = 1, the completion itself) }
 ```
+
+`R = −p` gives the dipole's side, which the boost's direction carries
+(`D(Z/Q)` against `D(Q/Z)`). A completed turn is one whole turn on either
+side, so its mode carries no side.
+
+*Superseded reading (kept for the record, 2026-11-13):* the row was first
+written as the modes of `D(p) ∘ T_R` carried to its order `ℓ`. At the rest
+point the flow law gives `D(p)·D(R) = D(p ⊕ R) = D(0)`, the identity, so
+that motion moved nothing. And a rational circular turn has finite order
+only at a few angles (Niven), so `ℓ` mostly does not exist. Ruled
+2026-11-13: the boost and the completed turn are read apart, weighed by
+`3W`.
 
 μ CREATED at a manifest, and distributed by ledger alignment:
 
@@ -1630,7 +1642,7 @@ electron phase; xylarium E018). Until then the basket's invariants
 (`BasketEntry::holds`) are the check.
 
 Sources: proposal 78.184; LAW-COUPLING v2 (78.181); xylarium docs/model.md
-(E018, the rest point). Code: not yet built (#327).
+(E018, the rest point). Code: `economy::elemental::row`; the creation and the share `Court::elemental_creation`, `Court::alignment_share` (`server/cognition/elemental_grant.rs`), applied in `Court::manifest` (#327).
 
 ## 7. The metabolism
 

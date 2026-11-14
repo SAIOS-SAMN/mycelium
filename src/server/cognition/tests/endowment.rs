@@ -38,10 +38,15 @@ fn universe(origin: bool) -> Court {
     k
 }
 
+/// One nucleus of `z` protons and `q` neutrons.
+fn nucleus(z: u16, q: u32) -> crate::anastome::dialogue::endowment::Nucleus {
+    crate::anastome::dialogue::endowment::Nucleus { z, q }
+}
+
 /// A package of hydrogen, carbon and iron nuclei, counted astronomically.
 fn manifest(nonce: u8) -> Manifest {
     let big = |e: u32| BigUint::from(10u8).pow(e);
-    Manifest { domain: verifying(&key(DOMAIN)), nuclei: vec![(1, big(60)), (6, big(58)), (26, big(55))], nonce: [nonce; 32] }
+    Manifest { domain: verifying(&key(DOMAIN)), nuclei: vec![(nucleus(1, 0), big(60)), (nucleus(6, 6), big(58)), (nucleus(26, 30), big(55))], nonce: [nonce; 32] }
 }
 
 fn signed(m: Manifest, by: u8) -> SignedManifest {
@@ -70,30 +75,33 @@ fn manifest_round_trips_with_reading() {
     assert_eq!(decode_endowment_reading(&encode_endowment_reading(&reading).expect("writes")), Some(reading));
 }
 
-/// THE FOUNDING GRANT, FROM WHAT THE COURT EARNED. A universe's first
-/// manifest is granted the court's read price for one unit of gas per lane
-/// per kind of nuclei it carries — moved from the court's balance to the
-/// reserve, never minted — and the reading says so: founding granted, the
-/// universe's nuclei those of its manifest. A second manifest waits while
-/// the first is not applied in the universe's ledger; the same manifest is
-/// never granted twice.
+/// THE FOUNDING GRANT, CREATED AGAINST THE ELEMENTAL ROWS (78.184, ruled
+/// 2026-11-13; MU-EQUATIONS §6.13). A universe's first manifest creates
+/// `Σ n · row(Z, Q)` for the nuclei it carries, scaled by the kernel's
+/// alignment share, and mints it to the reserve; the court's earned balance
+/// is not drawn. The reading says so: founding granted, the universe's
+/// nuclei those of its manifest. A second manifest waits while the first is
+/// not applied in the universe's ledger; the same manifest is never granted
+/// twice. (Until 2026-11-13 the founding grant was `kinds · p_l`, a transfer
+/// from what the court earned, refused `Short` on a fresh mesh.)
 #[test]
-fn manifest_grants_founding_from_court_balance() {
+fn manifest_creates_founding_against_elemental_rows() {
     let mut k = universe(true);
     let anchor = k.anchor();
     let court_vk = k.identity;
     k.treasury.genesis(court_vk, [100, 100, 100, 100], anchor);
     let reserve = verifying(&key(RESERVE));
-    let price = k.read_price().expect("a price");
     let before = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
     let m = manifest(1);
+    let share = k.alignment_share(&reserve_domain()).expect("the alignment reads");
+    let created = k.elemental_creation(&m.nuclei).expect("every nucleus has a row");
     let Granted::Sealed { mu, founding, .. } = k.manifest(&signed(m.clone(), RESERVE)) else { panic!("granted") };
     assert!(founding, "the first is the founding grant");
-    let three = crate::core::q::Q::from_integer(3.into());
-    assert_eq!(Some(mu.clone()), price.scaled(&three), "three kinds of nuclei: three units of gas per lane at the read price");
+    assert_eq!(mu, crate::economy::Mu::of_modes(created.scaled(&share).expect("scales")), "the creation, scaled by the alignment share");
+    assert!(!mu.is_zero(), "a manifest of nuclei creates");
     let after = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
-    assert_eq!(Ok(after.0), before.0.draw(&mu), "out of the court's earned balance");
-    assert_eq!(after.1, before.1.add(&mu), "into the reserve: a transfer, never a mint");
+    assert_eq!(after.0, before.0, "the court's earned balance is not drawn");
+    assert_eq!(after.1, before.1.add(&mu), "into the reserve: created, a mint");
     let r = k.endowment_reading(&reserve_domain()).expect("reads");
     assert_eq!(r.founding, mu);
     assert_eq!(r.nuclei, m.nuclei, "the universe holds its manifest's nuclei");
@@ -107,8 +115,9 @@ fn reserve_domain() -> [u8; 32] {
 }
 
 /// A GRANT IS REFUSED BY NAME: signed by another key than the sitting
-/// reserve; a domain with no origin; nuclei unordered or of a zero count; and
-/// a court that has earned too little — nothing moved, nothing minted.
+/// reserve; a domain with no origin; nuclei unordered or of a zero count —
+/// nothing moved, nothing minted. A court that has earned nothing still
+/// grants the founding creation (78.184): the fresh mesh's `Short` is gone.
 #[test]
 fn manifest_refuses_unsigned_malformed_or_short_grant() {
     let mut unoriginated = universe(false);
@@ -123,7 +132,7 @@ fn manifest_refuses_unsigned_malformed_or_short_grant() {
     let mut zero = manifest(1);
     zero.nuclei[0].1 = BigUint::from(0u8);
     assert_eq!(k.manifest(&signed(zero, RESERVE)), Granted::Refused(GrantRefusal::Malformed));
-    assert_eq!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::Short), "a court that earned nothing grants nothing");
+    assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { founding: true, .. }), "a court that earned nothing creates the founding grant");
 }
 
 /// THE GRANTS SURVIVE A RESTART: written on the court's own node and read
