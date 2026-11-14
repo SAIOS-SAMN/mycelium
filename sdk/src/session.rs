@@ -77,8 +77,8 @@ pub use mycelium::sdk::deferral_of;
 /// peers, a probe of a target, and the evidence a court holds for the
 /// voice.
 pub use mycelium::anastome::dialogue::{
-    encode_digests_request, encode_evidence_request, encode_fetch, encode_peers_request, encode_probe, encode_quote_request, encode_speech,
-    encode_syllabus_request, ChartOf,
+    decode_quote_reply, encode_digests_request, encode_evidence_request, encode_fetch, encode_peers_request, encode_probe, encode_quote_request,
+    encode_speech, encode_syllabus_request, ChartOf,
 };
 
 /// The reference mind: a voice with its genome and epigenome.
