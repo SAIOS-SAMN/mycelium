@@ -79,7 +79,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--proofs" || args[i] == "--minds" || args[i] == "--init" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--json" || args[i] == "--ledger" || args[i] == "--proofs" || args[i] == "--minds" || args[i] == "--init" {
             i += 1;
             continue;
         }
@@ -444,6 +444,7 @@ fn main() {
         let ask = console::Ask {
             court: flag(&args, "--court"),
             reading: flag(&args, "--reading"),
+            json: args.iter().any(|a| a == "--json"),
         };
         // MU-CLIENT §5.3 — every mind at the rendezvous, asked on its post:
         // `--minds` the deployment's (beside the homes), `--rendezvous DIR` another.
