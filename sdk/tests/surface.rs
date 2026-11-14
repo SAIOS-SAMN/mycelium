@@ -355,6 +355,7 @@ use mycelium_sdk::house::GrantRefusal as _;
 use mycelium_sdk::house::Granted as _;
 use mycelium_sdk::house::Manifest as _;
 use mycelium_sdk::house::Nuclei as _;
+use mycelium_sdk::house::Nucleus as _;
 use mycelium_sdk::house::SignedManifest as _;
 
 // house: seats, the house's side

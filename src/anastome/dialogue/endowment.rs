@@ -4,9 +4,11 @@
 // where μ is bought, staked and yields). Two sub-kinds of ACT_DOMAIN.
 //
 //! A MANIFEST (sub-kind 17) is a universe's request for a package: an exact
-//! COUNT OF NUCLEI per Z, unit-free and the same in every universe — each
-//! kernel maps its own matter onto Z and converts with its own nucleon mass,
-//! never stated upward. Signed by the domain's SITTING RESERVE, as its
+//! COUNT OF NUCLEI per nucleus `(Z protons, Q neutrons)`, the coupled
+//! nucleon dipole (78.184 §3, ruled 2026-11-13: Z is coupled to Q, never
+//! keyed by Z alone; MU-EQUATIONS §6.13), so isotopes stay apart. Each
+//! kernel translates its own letters onto protons and neutrons at its
+//! uplink; the hypha reads the pair, never sets it. Signed by the domain's SITTING RESERVE, as its
 //! statements are. The court answers it with a GRANT: a transfer from its
 //! own earned μ to the reserve, never a mint — the first manifest after the
 //! origin is the FOUNDING grant, each later one a GROWTH grant. READ-ENDOWMENT
@@ -14,12 +16,13 @@
 //!
 //! ```text
 //! MANIFEST       [ACT_DOMAIN][domain 32][0x80 0x00][17][count u16 LE]
-//!                (Z u16 LE, count: Mv scalar, an integer ≥ 1)… [nonce 32][sig 64]
+//!                (Z u16 LE, Q u32 LE, count: Mv scalar, an integer ≥ 1)… [nonce 32][sig 64]
 //! READ-ENDOWMENT [ACT_DOMAIN][domain 32][0x80 0x00][18]
 //! ```
 //!
-//! Signed bytes: `"mycelium manifest v1" ‖ domain ‖ the entries as written ‖
-//! nonce`.
+//! Signed bytes: `"mycelium manifest v2" ‖ domain ‖ the entries as written ‖
+//! nonce`. (v1 keyed each entry by Z alone and summed the neutrons away,
+//! retired 2026-11-13.)
 
 use super::atlas::{byte, head, key32};
 use super::crossing_record::{crossed, Crossing};
@@ -33,23 +36,32 @@ use num_rational::BigRational as Q;
 pub const KIND_MANIFEST: u8 = 17;
 /// FORMAT: sub-kind byte of ACT_DOMAIN for an endowment read.
 pub const KIND_READ_ENDOWMENT: u8 = 18;
-const MANIFEST: &[u8] = b"mycelium manifest v1";
+const MANIFEST: &[u8] = b"mycelium manifest v2";
 
-/// NUCLEI PER Z: ascending `Z`, each once, every count a positive integer of
-/// any size (a package is astronomical).
-pub type Nuclei = Vec<(u16, BigUint)>;
+/// ONE NUCLEUS, the coupled nucleon dipole (78.184 §3): `z` protons and `q`
+/// neutrons, ordered protons first.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Nucleus {
+    pub z: u16,
+    pub q: u32,
+}
 
-/// The nuclei well formed: not empty, `Z` strictly ascending, every count
-/// at least one.
+/// NUCLEI PER NUCLEUS: ascending `(Z, Q)`, each once, every count a positive
+/// integer of any size (a package is astronomical).
+pub type Nuclei = Vec<(Nucleus, BigUint)>;
+
+/// The nuclei well formed: not empty, `(Z, Q)` strictly ascending, every
+/// nucleus with a proton, every count at least one.
 pub fn nuclei_hold(n: &Nuclei) -> bool {
     let zero = BigUint::from(0u8);
-    !n.is_empty() && n.windows(2).all(|w| matches!(w, [x, y] if x.0 < y.0)) && n.iter().all(|(_, c)| *c > zero)
+    !n.is_empty() && n.windows(2).all(|w| matches!(w, [x, y] if x.0 < y.0)) && n.iter().all(|(k, c)| k.z > 0 && *c > zero)
 }
 
 pub(crate) fn put_nuclei(out: &mut Vec<u8>, n: &Nuclei) -> Option<()> {
     out.extend_from_slice(&u16::try_from(n.len()).ok()?.to_le_bytes());
-    for (z, c) in n {
-        out.extend_from_slice(&z.to_le_bytes());
+    for (k, c) in n {
+        out.extend_from_slice(&k.z.to_le_bytes());
+        out.extend_from_slice(&k.q.to_le_bytes());
         Mv::scalar(Q::from_integer(num_bigint::BigInt::from(c.clone()))).to_bytes(out);
     }
     Some(())
@@ -63,12 +75,14 @@ pub(crate) fn take_nuclei(b: &[u8], p: &mut usize) -> Option<Nuclei> {
         .map(|_| {
             let z = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
             *p += 2;
-            let q = Mv::from_bytes(b, p)?.scalar_part();
-            if !q.is_integer() {
+            let neutrons = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+            *p += 4;
+            let count = Mv::from_bytes(b, p)?.scalar_part();
+            if !count.is_integer() {
                 return None;
             }
-            let c = q.to_integer().to_biguint()?;
-            Some((z, c))
+            let c = count.to_integer().to_biguint()?;
+            Some((Nucleus { z, q: neutrons }, c))
         })
         .collect()
 }
@@ -173,6 +187,10 @@ pub enum GrantRefusal {
     Malformed,
     /// This manifest was granted already.
     Granted,
+    /// 78.184 — the domain's kernel converses on none of the register's
+    /// clauses (or its alignment does not read), so nothing is created for
+    /// it, and no growth part stands beside.
+    Unaligned,
     /// The domain's last grant is not yet applied in its ledger: one in flight.
     InFlight,
     /// What the court has earned does not cover the grant on a lane.
@@ -199,6 +217,7 @@ impl GrantRefusal {
             GrantRefusal::Overflow => 9,
             GrantRefusal::LineRefused => 10,
             GrantRefusal::NoNewClosures => 11,
+            GrantRefusal::Unaligned => 12,
         }
     }
 
@@ -214,6 +233,7 @@ impl GrantRefusal {
             GrantRefusal::Overflow,
             GrantRefusal::LineRefused,
             GrantRefusal::NoNewClosures,
+            GrantRefusal::Unaligned,
         ]
         .into_iter()
         .find(|r| r.byte() == b)

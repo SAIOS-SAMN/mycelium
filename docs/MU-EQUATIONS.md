@@ -1642,7 +1642,7 @@ electron phase; xylarium E018). Until then the basket's invariants
 (`BasketEntry::holds`) are the check.
 
 Sources: proposal 78.184; LAW-COUPLING v2 (78.181); xylarium docs/model.md
-(E018, the rest point). Code: `economy::elemental::row` (#327, step 1).
+(E018, the rest point). Code: `economy::elemental::row`; the creation and the share `Court::elemental_creation`, `Court::alignment_share` (`server/cognition/elemental_grant.rs`), applied in `Court::manifest` (#327).
 
 ## 7. The metabolism
 

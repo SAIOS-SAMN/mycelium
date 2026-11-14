@@ -125,12 +125,12 @@ pub use mycelium::anastome::dialogue::universe::{
     Statement as UniverseStatement,
 };
 
-/// THE ENDOWMENT: a universe's manifest (nuclei per Z, signed by its sitting
+/// THE ENDOWMENT: a universe's manifest (nuclei per nucleus (Z protons, Q neutrons), signed by its sitting
 /// reserve), the grant that answers it or its refusal by name, and the
 /// endowment read.
 pub use mycelium::anastome::dialogue::endowment::{
     decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_manifest, nuclei_hold, EndowmentReading, GrantRead, GrantRefusal,
-    Granted, Manifest, Nuclei, SignedManifest,
+    Granted, Manifest, Nuclei, Nucleus, SignedManifest,
 };
 /// A count of nuclei: a positive integer of any size.
 pub use num_bigint::BigUint;

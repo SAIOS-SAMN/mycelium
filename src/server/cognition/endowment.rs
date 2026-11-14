@@ -123,18 +123,26 @@ pub(crate) fn take_closed(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Mu)>
         .collect()
 }
 
-/// Two nuclei counts summed per Z, exact, in ascending Z.
+/// Two nuclei counts summed per nucleus `(Z, Q)`, exact, in ascending
+/// `(Z, Q)`: isotopes stay apart (78.184 §3).
 fn add_nuclei(a: &Nuclei, b: &Nuclei) -> Nuclei {
     let mut sum: Keyed<num_bigint::BigUint> = Keyed::new();
-    for (z, c) in a.iter().chain(b) {
-        let key = z.to_be_bytes();
+    for (k, c) in a.iter().chain(b) {
+        let mut key = k.z.to_be_bytes().to_vec();
+        key.extend_from_slice(&k.q.to_be_bytes());
         let now = match sum.get(&key) {
             Some(held) => held + c,
             None => c.clone(),
         };
         sum.insert(key, now);
     }
-    sum.scoped().filter_map(|(k, c)| Some((u16::from_be_bytes(k.as_slice().try_into().ok()?), c.clone()))).collect()
+    sum.scoped()
+        .filter_map(|(k, c)| {
+            let z = u16::from_be_bytes(k.get(0..2)?.try_into().ok()?);
+            let q = u32::from_be_bytes(k.get(2..6)?.try_into().ok()?);
+            Some((crate::anastome::dialogue::endowment::Nucleus { z, q }, c.clone()))
+        })
+        .collect()
 }
 
 impl Court {
@@ -204,36 +212,45 @@ impl Court {
             return refuse(GrantRefusal::InFlight);
         }
         let founding = held.is_empty();
-        let mu = match founding {
-            // THE FOUNDING GRANT, THE PHYSICS (ruled 2026-10-14): the
-            // variety of matter — the read price for one unit of gas per lane
-            // per kind of nuclei the manifest counts, `kinds · p_l` exactly
-            // (MU-DERIVATIONS D2.3).
-            true => {
-                let Some(price) = self.read_price() else { return refuse(GrantRefusal::Overflow) };
-                let kinds = crate::core::q::Q::from_integer(m.nuclei.len().into());
-                let Some(mu) = price.scaled(&kinds) else { return refuse(GrantRefusal::Overflow) };
-                mu
-            }
-            // 78.155c — A GROWTH GRANT, THE MATHEMATICS (ruled
-            // 2026-10-14): the measured discharge of the closures the court
-            // judged in this universe since its previous grant — the
-            // endowment grows only as its minds develop traversable
-            // mathematics. None judged: no growth grant. Never estimated
-            // ahead of a closure.
-            false => match self.growth_size(&m.domain) {
-                Ok(c) => c,
-                Err(why) => return refuse(why),
-            },
+        // 78.184 (ruled 2026-11-13) — μ CREATED against the elemental rows of
+        // the nuclei this manifest carries (MU-EQUATIONS §6.13), at every
+        // manifest, granted in proportion to the kernel's ledger alignment.
+        // It replaces the founding grant's draw on what the court earned
+        // (`kinds · p_l`, refused `Short` on a fresh mesh).
+        let created = match self.elemental_creation(&m.nuclei) {
+            Ok(c) => c,
+            Err(_) => return refuse(GrantRefusal::Malformed),
         };
-        let earned = self.treasury.balance_mu(&self.identity);
-        if !mu.shortfall(&earned).is_zero() {
-            return refuse(GrantRefusal::Short);
+        let Some(share) = self.alignment_share(&m.domain) else { return refuse(GrantRefusal::Unaligned) };
+        let Some(created) = created.scaled(&share) else { return refuse(GrantRefusal::Overflow) };
+        let created = Mu::of_modes(created);
+        // 78.155c — A GROWTH GRANT beside it, THE MATHEMATICS (ruled
+        // 2026-10-14): the measured discharge of the closures the court
+        // judged in this universe since its previous grant, a transfer from
+        // what the court earned. None judged: no growth part.
+        let growth = match founding {
+            true => None,
+            false => self.growth_size(&m.domain).ok(),
+        };
+        if let Some(g) = &growth {
+            let earned = self.treasury.balance_mu(&self.identity);
+            if !g.shortfall(&earned).is_zero() {
+                return refuse(GrantRefusal::Short);
+            }
+        }
+        if created.is_zero() && growth.is_none() {
+            return refuse(GrantRefusal::Unaligned);
         }
         let cite = Cite::Stated { domain: m.domain, kind: KIND_MANIFEST, body: hash };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], reserve, |_| vec![cite.clone()]) else { return refuse(GrantRefusal::LineRefused) };
-        if self.treasury.pay(self.identity, reserve, mu.clone(), (r.stamp, r.chain_hash.bytes())).is_err() {
-            return refuse(GrantRefusal::Short);
+        let anchor = (r.stamp, r.chain_hash.bytes());
+        let minted = self.treasury.mint_to(reserve, created, anchor, None);
+        let mut mu = minted;
+        if let Some(g) = growth {
+            if self.treasury.pay(self.identity, reserve, g.clone(), anchor).is_err() {
+                return refuse(GrantRefusal::Short);
+            }
+            mu = mu.add(&g);
         }
         let mut now = held;
         now.push(HeldGrant { manifest: s.clone(), hash, mu: mu.clone(), founding, at: r.stamp, receipt: r.chain_hash.bytes() });
