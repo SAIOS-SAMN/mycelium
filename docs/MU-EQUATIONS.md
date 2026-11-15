@@ -1624,9 +1624,19 @@ only at a few angles (Niven), so `ℓ` mostly does not exist. Ruled
 μ CREATED at a manifest, and distributed by ledger alignment:
 
 ```text
-created_l     = Σ_Z  n_Z · row(Z, Q_Z)_l                  n_Z the nuclei per Z the manifest carries
+created_l     = Σ_Z  n_Z · row(Z, Q_Z)_l                  n_Z the nuclei per Z the manifest carries (as built in #331, whole at the manifest; superseded by delivery, below)
 share(k)      = conversed(k) / served                      kernel k's clauses reading Converses over the clauses the register serves (ACT_LAWS mode 9)
 granted_l(k)  = share(k) · created_l                       exact; a partial alignment receives a partial creation
+```
+
+**Delivery per final point** (78.184 §5, ruled 2026-11-14). The entry is
+`(Z, Q, R)`, R the signed electron winding on H. The beat is derived from
+TUniversal's temporal plane, never stated:
+
+```text
+d_T(h)      = ΔT / (T₀ + ΔT) = 1 − T₀ / T(h)     T₀ the T lane at the founding's final point (> 0), ΔT = T(h) − T₀
+beat_h      = d_T(h) − d_T(h_prev)                delivered at each final-point advance, applied at the universe's next anchor
+created_l,h = share(k) · Σ n_(Z,Q,R) · row_l · beat_h      μ created only for what each beat delivers
 ```
 
 The row and the creation carry modes (MU-ECONOMY §1), never four numbers.
