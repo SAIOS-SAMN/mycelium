@@ -97,7 +97,7 @@ fn manifest_creates_founding_against_elemental_rows() {
     let created = k.elemental_creation(&m.nuclei).expect("every nucleus has a row");
     let Granted::Sealed { mu, founding, .. } = k.manifest(&signed(m.clone(), RESERVE)) else { panic!("granted") };
     assert!(founding, "the first is the founding grant");
-    let held = k.grants.get(&reserve_domain()).and_then(|g| g.first().cloned()).expect("held");
+    let held = k.grants.get(&reserve_domain()).and_then(|g| g.iter().find(|g| g.founding).cloned()).expect("held");
     assert_eq!(held.allotment, crate::economy::Mu::of_modes(created.scaled(&share).expect("scales")), "the allotment, scaled by the alignment share");
     assert!(!held.allotment.is_zero(), "a manifest of nuclei creates an allotment");
     assert!(mu.is_zero(), "delivered per final point (78.184 §5), nothing at the manifest");
@@ -294,7 +294,7 @@ fn founding_allotment_is_delivered_per_final_point_along_the_temporal_plane() {
     assert!(founding);
     assert!(mu.is_zero(), "nothing is minted at the manifest");
     assert_eq!(k.treasury.balance_mu(&reserve), before, "the reserve holds nothing yet");
-    let allotment = k.grants.get(&reserve_domain()).and_then(|g| g.first().map(|g| g.allotment.clone())).expect("an allotment");
+    let allotment = k.grants.get(&reserve_domain()).and_then(|g| g.iter().find(|g| g.founding).map(|g| g.allotment.clone())).expect("an allotment");
     assert!(!allotment.is_zero(), "the allotment is created against the nuclei");
     assert!(k.deliver_at(&at(10, q(0, 1))).is_empty(), "T = 0: no temporal work, nothing delivered");
     assert!(k.deliver_at(&at(11, q(3, 1))).is_empty(), "the first T > 0 fixes T₀ and delivers nothing");
