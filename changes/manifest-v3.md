@@ -1,0 +1,3 @@
+### Manifest v3: each entry carries its electron phase R (78.184 §5, #327 step 4)
+
+A manifest entry is `(Z u16, Q u32, R, count)`, signed under `"mycelium manifest v3"`. R is the electron phase share at capture: an exact rational in `[−1, 1]` turns, signed by the dipole's face, or `0` to leave the capture to the kernel's physics. One isotope at two phases is two entries, ordered and summed apart. `Nucleus::at_rest` reads the rest point `R = −(Z − Q)/(Z + Q)` at zero spin. It is not applied yet: a spinning core's torsion offsets the rest point, and that offset is still to be ruled. Wire change: ACT_DOMAIN 17 and the held grants, so the mesh is founded again.

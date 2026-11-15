@@ -16,14 +16,24 @@
 //!
 //! ```text
 //! MANIFEST       [ACT_DOMAIN][domain 32][0x80 0x00][17][count u16 LE]
-//!                (Z u16 LE, Q u32 LE, count: Mv scalar, an integer ≥ 1)… [nonce 32][sig 64]
+//!                (Z u16 LE, Q u32 LE, R: Mv scalar in [−1, 1], count: Mv scalar, an integer ≥ 1)…
+//!                [nonce 32][sig 64]
 //! READ-ENDOWMENT [ACT_DOMAIN][domain 32][0x80 0x00][18][offset u32 LE]
 //!                answered by the page [hash 32][total u32 LE][offset u32 LE][chunk] (#332)
 //! ```
 //!
-//! Signed bytes: `"mycelium manifest v2" ‖ domain ‖ the entries as written ‖
+//! Signed bytes: `"mycelium manifest v3" ‖ domain ‖ the entries as written ‖
 //! nonce`. (v1 keyed each entry by Z alone and summed the neutrons away,
-//! retired 2026-11-13.)
+//! retired 2026-11-13; v2 carried no electron phase, retired 2026-11-14.)
+//!
+//! R (78.184 §5, ruled 2026-11-14) is the electron phase share at capture,
+//! an exact rational in `[−1, 1]` turns, signed by the dipole's face: `+` on
+//! the Z face, `−` on the Q face, `0` at the throat. A stated `R ≠ 0` stands
+//! at the rest point `p ⊕ R = 0`, `R = −(Z − Q)/(Z + Q)`, at zero spin
+//! (`Nucleus::at_rest`); the check is not applied until the torsion offset of
+//! a spinning core is ruled. `R = 0` leaves the capture to the kernel's
+//! physics. `Q` is whole nucleons, so a phase is stated from the whole `(Z, Q)`
+//! the entry lists.
 
 use super::atlas::{byte, head, key32};
 use super::crossing_record::{crossed, Crossing};
@@ -37,25 +47,51 @@ use num_rational::BigRational as Q;
 pub const KIND_MANIFEST: u8 = 17;
 /// FORMAT: sub-kind byte of ACT_DOMAIN for an endowment read.
 pub const KIND_READ_ENDOWMENT: u8 = 18;
-const MANIFEST: &[u8] = b"mycelium manifest v2";
+const MANIFEST: &[u8] = b"mycelium manifest v3";
 
-/// ONE NUCLEUS, the coupled nucleon dipole (78.184 §3): `z` protons and `q`
-/// neutrons, ordered protons first.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// ONE NUCLEUS, the coupled nucleon dipole (78.184 §3, §5): `z` protons,
+/// `q` neutrons and `r` the electron phase share at capture (exact, in
+/// `[−1, 1]` turns), ordered protons first.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Nucleus {
     pub z: u16,
     pub q: u32,
+    pub r: Q,
+}
+
+impl Nucleus {
+    /// A nucleus whose capture is left to its kernel's physics (`R = 0`).
+    pub fn of(z: u16, q: u32) -> Nucleus {
+        Nucleus { z, q, r: Q::from_integer(0.into()) }
+    }
+
+    /// Whether a stated phase stands at the rest point: `R = 0` (left to the
+    /// kernel), or `R = −p` exactly with `p = (Z − Q)/(Z + Q)` (78.184 §5).
+    pub fn at_rest(&self) -> bool {
+        use num_traits::Zero;
+        if self.r.is_zero() {
+            return true;
+        }
+        let (z, q) = (Q::from_integer(self.z.into()), Q::from_integer(self.q.into()));
+        match crate::economy::elemental::push(&z, &q) {
+            Some(p) => self.r == -p,
+            None => false,
+        }
+    }
 }
 
 /// NUCLEI PER NUCLEUS: ascending `(Z, Q)`, each once, every count a positive
 /// integer of any size (a package is astronomical).
 pub type Nuclei = Vec<(Nucleus, BigUint)>;
 
-/// The nuclei well formed: not empty, `(Z, Q)` strictly ascending, every
-/// nucleus with a proton, every count at least one.
+/// The nuclei well formed: not empty, `(Z, Q, R)` strictly ascending, every
+/// nucleus with a proton and a phase in `[−1, 1]`, every count at least one.
 pub fn nuclei_hold(n: &Nuclei) -> bool {
     let zero = BigUint::from(0u8);
-    !n.is_empty() && n.windows(2).all(|w| matches!(w, [x, y] if x.0 < y.0)) && n.iter().all(|(k, c)| k.z > 0 && *c > zero)
+    let one = Q::from_integer(1.into());
+    !n.is_empty()
+        && n.windows(2).all(|w| matches!(w, [x, y] if x.0 < y.0))
+        && n.iter().all(|(k, c)| k.z > 0 && k.r <= one && k.r >= -one.clone() && *c > zero)
 }
 
 pub(crate) fn put_nuclei(out: &mut Vec<u8>, n: &Nuclei) -> Option<()> {
@@ -63,6 +99,7 @@ pub(crate) fn put_nuclei(out: &mut Vec<u8>, n: &Nuclei) -> Option<()> {
     for (k, c) in n {
         out.extend_from_slice(&k.z.to_le_bytes());
         out.extend_from_slice(&k.q.to_le_bytes());
+        Mv::scalar(k.r.clone()).to_bytes(out);
         Mv::scalar(Q::from_integer(num_bigint::BigInt::from(c.clone()))).to_bytes(out);
     }
     Some(())
@@ -78,12 +115,13 @@ pub(crate) fn take_nuclei(b: &[u8], p: &mut usize) -> Option<Nuclei> {
             *p += 2;
             let neutrons = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
             *p += 4;
+            let r = Mv::from_bytes(b, p)?.scalar_part();
             let count = Mv::from_bytes(b, p)?.scalar_part();
             if !count.is_integer() {
                 return None;
             }
             let c = count.to_integer().to_biguint()?;
-            Some((Nucleus { z, q: neutrons }, c))
+            Some((Nucleus { z, q: neutrons, r }, c))
         })
         .collect()
 }
@@ -284,6 +322,7 @@ pub enum GrantRefusal {
     /// clauses (or its alignment does not read), so nothing is created for
     /// it, and no growth part stands beside.
     Unaligned,
+
     /// The domain's last grant is not yet applied in its ledger: one in flight.
     InFlight,
     /// What the court has earned does not cover the grant on a lane.

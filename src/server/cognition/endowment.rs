@@ -123,26 +123,18 @@ pub(crate) fn take_closed(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Mu)>
         .collect()
 }
 
-/// Two nuclei counts summed per nucleus `(Z, Q)`, exact, in ascending
-/// `(Z, Q)`: isotopes stay apart (78.184 §3).
+/// Two nuclei counts summed per nucleus `(Z, Q, R)`, exact, in ascending
+/// order: isotopes and phases stay apart (78.184 §3, §5).
 fn add_nuclei(a: &Nuclei, b: &Nuclei) -> Nuclei {
-    let mut sum: Keyed<num_bigint::BigUint> = Keyed::new();
+    let mut sum: Vec<(crate::anastome::dialogue::endowment::Nucleus, num_bigint::BigUint)> = Vec::new();
     for (k, c) in a.iter().chain(b) {
-        let mut key = k.z.to_be_bytes().to_vec();
-        key.extend_from_slice(&k.q.to_be_bytes());
-        let now = match sum.get(&key) {
-            Some(held) => held + c,
-            None => c.clone(),
-        };
-        sum.insert(key, now);
+        match sum.iter_mut().find(|(held, _)| held == k) {
+            Some((_, held)) => *held += c,
+            None => sum.push((k.clone(), c.clone())),
+        }
     }
-    sum.scoped()
-        .filter_map(|(k, c)| {
-            let z = u16::from_be_bytes(k.get(0..2)?.try_into().ok()?);
-            let q = u32::from_be_bytes(k.get(2..6)?.try_into().ok()?);
-            Some((crate::anastome::dialogue::endowment::Nucleus { z, q }, c.clone()))
-        })
-        .collect()
+    sum.sort_by(|x, y| x.0.cmp(&y.0));
+    sum
 }
 
 impl Court {
@@ -195,6 +187,11 @@ impl Court {
         if !nuclei_hold(&m.nuclei) {
             return refuse(GrantRefusal::Malformed);
         }
+        // 78.184 §5 — the rest-point check of a stated phase (`Nucleus::at_rest`)
+        // is not applied yet: a spinning core offsets the rest point by its
+        // torsion (operator to xylarium, 2026-11-15: "R needs offset on
+        // pressure from torsion"), and the bare `p ⊕ R = 0` would refuse every
+        // phase a spinning universe states. Applied once the offset is ruled.
         let Some(hash) = m.hash() else { return refuse(GrantRefusal::Malformed) };
         let held: Vec<HeldGrant> = match self.grants.get(&m.domain) {
             Some(g) => g.clone(),
