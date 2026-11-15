@@ -192,3 +192,41 @@ fn ground_from_percept_solves_conformal_turn_and_dilation() {
     let (_, outputs) = mind.ground_from_percept(&scene).expect("TaskPercept turn + dilation should ground");
     assert_eq!(outputs, vec![digits(&["6655", "6655", "0000", "0000"])]);
 }
+
+/// Autonomous conformal grounding lowers a consistent residue symbol map
+/// (`Act::Recolour`) composed with a dihedral turn (`Tile`) and dilation
+/// (`Dilate`) from `TaskPercept`.
+#[test]
+fn ground_from_percept_solves_conformal_turn_and_recolour() {
+    crate::transducer::raster::stand_on(0);
+    // Recolour (1->7, 2->8, 3->9) + 90° turn (t = 4) + 2x dilation:
+    // ["10", "20"] -> recolour ["70", "80"] -> turn 4 ["87", "00"] -> 2x ["8877", "8877", "0000", "0000"]
+    let train = vec![
+        (digits(&["10", "20"]), digits(&["8877", "8877", "0000", "0000"])),
+        (digits(&["03", "00"]), digits(&["0000", "0000", "0099", "0099"])),
+    ];
+    let tests = vec![digits(&["10", "30"])];
+    let to_sample = |s: &crate::transducer::family::SectionSample| {
+        let ex = s.extents();
+        let symbols: Vec<u8> = s.sites().map(|(_, h)| h).collect();
+        crate::transducer::sample::Sample::new(ex.to_vec(), 1, symbols, crate::transducer::sample::Place::new(vec![0, 0]))
+            .expect("valid sample")
+    };
+    let s_train: Vec<_> = train.iter().map(|(x, y)| (to_sample(x), to_sample(y))).collect();
+    let s_tests: Vec<_> = tests.iter().map(to_sample).collect();
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    let percept = crate::transducer::family::transduce::TaskPercept::of(&s_train, &s_tests, &mut budget).expect("valid percept");
+
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("conformal-recolour"));
+    let id = [11u8; 32];
+    mind.board.percepts.insert(id, percept);
+
+    let scene = crate::client::sdk::mind::perceive::Scene {
+        id: id.to_vec(),
+        train,
+        tests,
+        reading: crate::client::sdk::mind::perceive::SceneKind::Task,
+    };
+    let (_, outputs) = mind.ground_from_percept(&scene).expect("TaskPercept recolour + turn + dilation should ground");
+    assert_eq!(outputs, vec![digits(&["9977", "9977", "0000", "0000"])]);
+}
