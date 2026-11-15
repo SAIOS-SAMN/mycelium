@@ -41,3 +41,20 @@ fn rate_closes_per_bell_on_each_lane_own_events() {
     let next = r.close(&p, 3).expect("the next bell");
     assert_eq!((next[0].entropic, next[0].syntropic), (0, 0), "events are read once, per span");
 }
+
+/// P1b — THE IMPULSE serves the need where the holding is ample, draws what
+/// is left where it is scarce, releases half at the throat and draws
+/// nothing with no need, per lane, exact.
+#[test]
+fn impulse_is_need_against_the_holding_per_lane() {
+    use crate::physics::rate::impulse;
+    let got = impulse([10, 1000, 500, 0], [1_000_000, 10, 500, 700]);
+    assert_eq!(got[0], Some(9), "ample: ⌊10·10⁶/(10 + 10⁶)⌋, about the need");
+    assert_eq!(got[1], Some(9), "scarce: ⌊1000·10/1010⌋, about what is left");
+    assert_eq!(got[2], Some(250), "throat: half");
+    assert_eq!(got[3], Some(0), "no need: nothing");
+    for (l, (n, m)) in [(10u64, 1_000_000u64), (1000, 10), (500, 500), (0, 700)].into_iter().enumerate() {
+        let drawn = got[l].expect("reads");
+        assert!(drawn <= m && drawn <= n, "lane {l}: never past the holding nor the need");
+    }
+}

@@ -91,3 +91,14 @@ pub fn open_draw(entropic: u64, syntropic: u64, holding: u64) -> Option<u64> {
     let product = u128::from(entropic).checked_mul(u128::from(holding))?;
     u64::try_from(product / u128::from(events)).ok()
 }
+
+/// 78.183 §7, P1b (ruled 2026-11-15) — THE IMPULSE a turn draws on each
+/// lane: the open share of the lane's holding with the turn's NEED as its
+/// reach, `⌊need · M / (need + M)⌋`. Ample (`M ≫ need`) it serves the need;
+/// scarce (`M ≪ need`) it draws what is left; at the throat (`need = M`) it
+/// releases half; with no need it draws nothing. `drawn + kept = M`
+/// exactly, `kept = ⌈M² / (need + M)⌉`. `None` on a lane whose product
+/// passes the carrier (rule 11).
+pub fn impulse(need: [u64; 4], holding: [u64; 4]) -> [Option<u64>; 4] {
+    std::array::from_fn(|l| open_draw(need[l], holding[l], holding[l]))
+}
