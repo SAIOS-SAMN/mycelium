@@ -36,7 +36,11 @@ use crate::network::nerve::Keyed;
 use crate::transducer::address::{put_key_count, take_key_count};
 
 /// ONE GRANT THIS COURT MADE: the manifest it answered (signed, whole), its
-/// hash, the μ moved, founding or growth, and the act's stamp and chain hash.
+/// hash, the μ moved so far, founding or growth, the act's stamp and chain
+/// hash, and its DELIVERY (78.184 §5, ruled 2026-11-14): the allotment
+/// created against its nuclei, delivered per final point along TUniversal's
+/// temporal plane, `T₀` the T lane at its first final point with `T > 0`,
+/// and the share `d_T` delivered so far.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct HeldGrant {
     pub(crate) manifest: SignedManifest,
@@ -45,6 +49,9 @@ pub(crate) struct HeldGrant {
     pub(crate) founding: bool,
     pub(crate) at: Stamp,
     pub(crate) receipt: [u8; 32],
+    pub(crate) allotment: Mu,
+    pub(crate) t0: Option<crate::core::q::Q>,
+    pub(crate) delivered: crate::core::q::Q,
 }
 
 impl HeldGrant {
@@ -54,6 +61,15 @@ impl HeldGrant {
         out.push(u8::from(self.founding));
         self.at.put_canonical(out);
         out.extend_from_slice(&self.receipt);
+        self.allotment.put(out);
+        match &self.t0 {
+            None => out.push(0),
+            Some(t) => {
+                out.push(1);
+                crate::transducer::cga::Mv::scalar(t.clone()).to_bytes(out);
+            }
+        }
+        crate::transducer::cga::Mv::scalar(self.delivered.clone()).to_bytes(out);
         Some(())
     }
 
@@ -70,7 +86,20 @@ impl HeldGrant {
         let at = Stamp::take_canonical(b, p)?;
         let receipt: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;
-        Some(HeldGrant { manifest, hash, mu, founding, at, receipt })
+        let allotment = Mu::take_from(b, p)?;
+        let t0 = match *b.get(*p)? {
+            0 => {
+                *p += 1;
+                None
+            }
+            1 => {
+                *p += 1;
+                Some(crate::transducer::cga::Mv::from_bytes(b, p)?.scalar_part())
+            }
+            _ => return None,
+        };
+        let delivered = crate::transducer::cga::Mv::from_bytes(b, p)?.scalar_part();
+        Some(HeldGrant { manifest, hash, mu, founding, at, receipt, allotment, t0, delivered })
     }
 }
 
@@ -126,14 +155,16 @@ pub(crate) fn take_closed(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Mu)>
 /// Two nuclei counts summed per nucleus `(Z, Q, R)`, exact, in ascending
 /// order: isotopes and phases stay apart (78.184 §3, §5).
 fn add_nuclei(a: &Nuclei, b: &Nuclei) -> Nuclei {
+    // Each nucleus is entered at its place in the nucleus order, so the
+    // sum stands ascending as it is built (rule 4: no sort by measurement).
     let mut sum: Vec<(crate::anastome::dialogue::endowment::Nucleus, num_bigint::BigUint)> = Vec::new();
     for (k, c) in a.iter().chain(b) {
-        match sum.iter_mut().find(|(held, _)| held == k) {
-            Some((_, held)) => *held += c,
-            None => sum.push((k.clone(), c.clone())),
+        let at = sum.partition_point(|(held, _)| held < k);
+        match sum.get_mut(at) {
+            Some((held, n)) if held == k => *n += c,
+            _ => sum.insert(at, (k.clone(), c.clone())),
         }
     }
-    sum.sort_by(|x, y| x.0.cmp(&y.0));
     sum
 }
 
@@ -241,8 +272,12 @@ impl Court {
         let cite = Cite::Stated { domain: m.domain, kind: KIND_MANIFEST, body: hash };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], reserve, |_| vec![cite.clone()]) else { return refuse(GrantRefusal::LineRefused) };
         let anchor = (r.stamp, r.chain_hash.bytes());
-        let minted = self.treasury.mint_to(reserve, created, anchor, None);
-        let mut mu = minted;
+        // 78.184 §5 — the creation is the ALLOTMENT, delivered per final
+        // point along TUniversal's temporal plane (`deliver_at`), never
+        // minted whole here: whole at the manifest it minted without bound
+        // against any stated count (#331, found by xylarium 2026-11-14).
+        let allotment = created;
+        let mut mu = Mu::zero();
         if let Some(g) = growth {
             if self.treasury.pay(self.identity, reserve, g.clone(), anchor).is_err() {
                 return refuse(GrantRefusal::Short);
@@ -250,7 +285,17 @@ impl Court {
             mu = mu.add(&g);
         }
         let mut now = held;
-        now.push(HeldGrant { manifest: s.clone(), hash, mu: mu.clone(), founding, at: r.stamp, receipt: r.chain_hash.bytes() });
+        now.push(HeldGrant {
+            manifest: s.clone(),
+            hash,
+            mu: mu.clone(),
+            founding,
+            at: r.stamp,
+            receipt: r.chain_hash.bytes(),
+            allotment,
+            t0: None,
+            delivered: crate::core::q::Q::from_integer(0.into()),
+        });
         self.grants.insert(m.domain, now);
         // The closures a grant answered are its own: the next growth grant
         // counts only those judged after it.

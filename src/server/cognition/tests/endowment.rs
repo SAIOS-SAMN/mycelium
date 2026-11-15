@@ -97,13 +97,15 @@ fn manifest_creates_founding_against_elemental_rows() {
     let created = k.elemental_creation(&m.nuclei).expect("every nucleus has a row");
     let Granted::Sealed { mu, founding, .. } = k.manifest(&signed(m.clone(), RESERVE)) else { panic!("granted") };
     assert!(founding, "the first is the founding grant");
-    assert_eq!(mu, crate::economy::Mu::of_modes(created.scaled(&share).expect("scales")), "the creation, scaled by the alignment share");
-    assert!(!mu.is_zero(), "a manifest of nuclei creates");
+    let held = k.grants.get(&reserve_domain()).and_then(|g| g.first().cloned()).expect("held");
+    assert_eq!(held.allotment, crate::economy::Mu::of_modes(created.scaled(&share).expect("scales")), "the allotment, scaled by the alignment share");
+    assert!(!held.allotment.is_zero(), "a manifest of nuclei creates an allotment");
+    assert!(mu.is_zero(), "delivered per final point (78.184 §5), nothing at the manifest");
     let after = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
     assert_eq!(after.0, before.0, "the court's earned balance is not drawn");
-    assert_eq!(after.1, before.1.add(&mu), "into the reserve: created, a mint");
+    assert_eq!(after.1, before.1, "the reserve receives nothing until the first beat");
     let r = k.endowment_reading(&reserve_domain()).expect("reads");
-    assert_eq!(r.founding, mu);
+    assert_eq!(r.founding, mu, "the founding read is what was delivered: nothing yet");
     assert_eq!(r.nuclei, m.nuclei, "the universe holds its manifest's nuclei");
     assert!(matches!(r.grants.as_slice(), [g] if g.founding && !g.applied));
     assert_eq!(k.manifest(&signed(m, RESERVE)), Granted::Refused(GrantRefusal::Granted), "never twice");
@@ -266,4 +268,41 @@ fn manifest_v3_carries_the_electron_phase_and_reads_its_rest_point() {
     let mut over = m.clone();
     over.nuclei = vec![(Nucleus { z: 1, q: 0, r: q(3, 2) }, BigUint::from(1u8))];
     assert!(!nuclei_hold(&over.nuclei), "a phase past one turn is no entry");
+}
+
+/// 78.184 §5 — DELIVERY PER FINAL POINT. A founding grant mints nothing at
+/// the manifest: its allotment is delivered along TUniversal's temporal
+/// plane. The first final point with `T > 0` fixes `T₀` and delivers
+/// nothing; then `d_T = 1 − T₀/T` of the allotment has arrived by each
+/// point: half at `T = 2T₀`, three quarters at `4T₀`. A point read twice
+/// delivers nothing more, and a point with `T = 0` delivers nothing.
+#[test]
+fn founding_allotment_is_delivered_per_final_point_along_the_temporal_plane() {
+    use crate::chronometry::tuniversal::{Origin, TPoint};
+    use crate::economy::Mu;
+    let q = |n: i64, d: i64| crate::core::q::Q::new(n.into(), d.into());
+    let at = |h: u64, t: crate::core::q::Q| TPoint {
+        origin: Origin { genesis: [7; 32], epoch: 0 },
+        h,
+        lanes: Mu::of([q(0, 1), q(0, 1), t, q(0, 1)]).expect("lanes"),
+        k: 0,
+    };
+    let mut k = universe(true);
+    let reserve = verifying(&key(RESERVE));
+    let before = k.treasury.balance_mu(&reserve);
+    let Granted::Sealed { mu, founding, .. } = k.manifest(&signed(manifest(1), RESERVE)) else { panic!("granted") };
+    assert!(founding);
+    assert!(mu.is_zero(), "nothing is minted at the manifest");
+    assert_eq!(k.treasury.balance_mu(&reserve), before, "the reserve holds nothing yet");
+    let allotment = k.grants.get(&reserve_domain()).and_then(|g| g.first().map(|g| g.allotment.clone())).expect("an allotment");
+    assert!(!allotment.is_zero(), "the allotment is created against the nuclei");
+    assert!(k.deliver_at(&at(10, q(0, 1))).is_empty(), "T = 0: no temporal work, nothing delivered");
+    assert!(k.deliver_at(&at(11, q(3, 1))).is_empty(), "the first T > 0 fixes T₀ and delivers nothing");
+    let half = k.deliver_at(&at(12, q(6, 1)));
+    assert_eq!(half.len(), 1);
+    assert_eq!(Some(half[0].1.clone()), allotment.scaled(&q(1, 2)), "T = 2T₀: half the allotment");
+    let more = k.deliver_at(&at(13, q(12, 1)));
+    assert_eq!(Some(more[0].1.clone()), allotment.scaled(&q(1, 4)), "T = 4T₀: three quarters in all, a quarter this beat");
+    assert!(k.deliver_at(&at(14, q(12, 1))).is_empty(), "a point with T unmoved delivers nothing more");
+    assert_eq!(k.treasury.balance_mu(&reserve), before.add(&allotment.scaled(&q(3, 4)).expect("scales")), "three quarters held by the reserve");
 }

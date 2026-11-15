@@ -264,10 +264,14 @@ protons and neutrons at its uplink.
 The court answers a manifest with a **grant**, a transfer of μ to the
 domain's reserve:
 - **The founding grant** answers the first manifest after the domain's
-  origin. *Built 2026-11-13 (78.184, #327):* the court creates
-  `Σ n · row(Z, Q)` for the nuclei it carries (MU-EQUATIONS §6.13), scales
-  it by the kernel's alignment share, and mints it to the reserve; the
-  court's earned balance is not drawn. Every later manifest creates the
+  origin. *Built 2026-11-15 (78.184 §5, #327 step 5):* the court creates
+  the allotment `Σ n · row(Z, Q)` for the nuclei it carries (MU-EQUATIONS
+  §6.13), scaled by the kernel's alignment share, and delivers it per final
+  point along TUniversal's temporal plane: `d_T = 1 − T₀/T(h)` of it by
+  final point `h`, each advance's beat minted to the reserve. Nothing is
+  minted at the manifest, and the court's earned balance is not drawn.
+  *(2026-11-13 to 2026-11-15 the whole creation was minted at the manifest,
+  which minted without bound against any stated count.)* Every later manifest creates the
   same way, with any growth part beside it. A kernel conversing on no
   clause is refused `Unaligned`. *(Before: a manifest carrying `n` kinds
   of nuclei was granted the court's read price for `n` units of gas on
