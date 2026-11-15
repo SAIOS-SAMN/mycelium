@@ -566,6 +566,14 @@ impl<V, C: Coordinate> Keyed<V, C> {
         }
     }
 
+    /// [`Keyed::cursor`], each read spent on `lane`, the lane of what the
+    /// walk reads along (78.183 §8 (a)).
+    pub fn cursor_on<'a>(&'a self, from: Option<&[u8]>, lane: forms::coordinate::Lane, budget: &'a mut crate::physics::Budget) -> Cursor<'a, V, C> {
+        let mut c = self.cursor(from, budget);
+        c.lane = Some(lane);
+        c
+    }
+
     /// At most `budget` entries in key order after `from`, continuing past
     /// the last key from the first and ending where it began (45.7). `None`
     /// starts at the first key. The last yielded key is the resume cursor;
@@ -595,6 +603,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
                 None => self.scoped(),
             },
             budget,
+            lane: None,
             last: from.clone(),
             from,
             wrapped: false,
