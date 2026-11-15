@@ -340,31 +340,12 @@ impl Mind {
         if !kept.is_empty() && !crate::physics::halted() && budget.remaining() > 0 {
             self.adjoin_letters(&kept, budget);
         }
-        let taken = self.contemplation.drain_demands();
         let mut bound: Vec<Vec<u8>> = Vec::new();
-        let mut separating: Vec<(crate::transducer::cga::Mv, crate::transducer::stalk::Invariant, Vec<Vec<u8>>)> = Vec::new();
-        for (i, a) in taken.iter().enumerate() {
-            if crate::physics::halted() || budget.remaining() == 0 {
+        let mut by_chart: crate::network::nerve::Keyed<crate::transducer::cga::Mv> = crate::network::nerve::Keyed::new();
+        while !crate::physics::halted() && budget.remaining() > 0 {
+            let Some(d) = self.contemplation.take_next_demand() else {
                 break;
-            }
-            for b in taken.iter().skip(i + 1) {
-                if crate::physics::halted() || budget.remaining() == 0 {
-                    break;
-                }
-                let (Some(ra), Some(rb), [ca, ..], [cb, ..]) = (&a.residue, &b.residue, a.charts.as_slice(), b.charts.as_slice()) else { continue };
-                if ca != cb {
-                    continue;
-                }
-                let commutator = ra.geo(rb).geo(&ra.reverse()).geo(&rb.reverse());
-                if !crate::transducer::sentence::presentation::is_still(&commutator) {
-                    separating.push((commutator, ca.clone(), a.families.clone()));
-                }
-            }
-        }
-        for d in taken {
-            if crate::physics::halted() || budget.remaining() == 0 {
-                break;
-            }
+            };
             // The chart its letter is filed on: the cover's least by its own
             // coordinate — content, never an arrival (rule 15).
             let least = d.charts.iter().fold(None, |least: Option<&crate::transducer::stalk::Invariant>, c| match least {
@@ -372,9 +353,27 @@ impl Mind {
                 _ => Some(c),
             });
             let Some(r) = d.residue else { continue };
+            let sep = match d.charts.as_slice() {
+                [first_chart, ..] => {
+                    let key = first_chart.key();
+                    let sep = by_chart.get(key.as_bytes()).and_then(|prev| {
+                        let commutator = prev.geo(&r).geo(&prev.reverse()).geo(&r.reverse());
+                        (!crate::transducer::sentence::presentation::is_still(&commutator)).then_some((commutator, first_chart.clone()))
+                    });
+                    if by_chart.get(key.as_bytes()).is_none() {
+                        by_chart.insert(key.as_bytes(), r.clone());
+                    }
+                    sep
+                }
+                [] => None,
+            };
             let scenes: Vec<Vec<u8>> = match d.families.is_empty() {
                 true => vec![Vec::new()],
                 false => d.families,
+            };
+            let sep_family = match scenes.as_slice() {
+                [f, ..] => f.clone(),
+                [] => Vec::new(),
             };
             for family in scenes {
                 if crate::physics::halted() || budget.remaining() == 0 {
@@ -384,16 +383,11 @@ impl Mind {
                     bound.push(family);
                 }
             }
-        }
-        for (c, chart, families) in separating {
-            if crate::physics::halted() || budget.remaining() == 0 {
-                break;
+            if let Some((commutator, chart)) = sep {
+                if !crate::physics::halted() && budget.remaining() > 0 {
+                    let _ = self.compose_or_construct_on(&commutator, Some(&chart), &sep_family, budget);
+                }
             }
-            let family = match families.as_slice() {
-                [f, ..] => f.clone(),
-                [] => Vec::new(),
-            };
-            let _ = self.compose_or_construct_on(&c, Some(&chart), &family, budget);
         }
         bound
     }
