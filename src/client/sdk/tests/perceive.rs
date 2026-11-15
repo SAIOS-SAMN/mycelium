@@ -37,6 +37,37 @@ fn perceive_scene_lands_and_drain_demands_binds_escape() {
     assert_eq!(k, returned, "K moved by exactly the returns");
 }
 
+#[test]
+fn drain_demands_under_tight_budget_does_not_orphan_remaining() {
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("bounded-demands"));
+    let [first, second] = two_hours_of_a_slide();
+    let id1 = [1u8; 32];
+    let id2 = [2u8; 32];
+    let mut field = std::mem::take(&mut mind.field);
+    let (taken_before, b1, b2) = field.think(|| {
+        mind.perceive_scene(Scene { id: id1.to_vec(), train: vec![first.clone(), second.clone()], tests: Vec::new(), reading: SceneKind::Task });
+        mind.settle_perception();
+        mind.perceive_scene(Scene { id: id2.to_vec(), train: vec![second, first], tests: Vec::new(), reading: SceneKind::Task });
+        mind.settle_perception();
+
+        let mut zero = crate::physics::Physics::default().stroke_n(0);
+        let b0 = mind.drain_demands(&mut zero);
+        assert!(b0.is_empty(), "zero budget must not bind or orphan demands");
+        let taken_before = mind.contemplation.demands_taken.len();
+        assert_eq!(taken_before, 0, "zero budget must not mark any demand taken");
+
+        let mut b = budget();
+        let b1 = mind.drain_demands(&mut b);
+        let mut b_again = budget();
+        let b2 = mind.drain_demands(&mut b_again);
+        (taken_before, b1, b2)
+    });
+    mind.field = field;
+    assert_eq!(taken_before, 0);
+    assert!(!b1.is_empty(), "demands left untaken under zero budget must still bind on the next stroke");
+    assert!(b2.is_empty(), "once drained, the same demands are not taken twice");
+}
+
 /// MU-CLIENT §7.1 — EVERY SCENE STOPS EXACTLY ONCE, where its comprehension
 /// stopped (ruled 2026-10-18). The slide taken as a feed's
 /// family and as a court's task each stops at one step of the path to a
