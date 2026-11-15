@@ -118,10 +118,7 @@ pub(crate) fn answer_written(s: &mut Channel, delimited: Delimited) -> bool {
                     Err(mycelium::network::noise::NoiseRefusal::OverBudget { .. }) => None,
                     Err(_) => Some(false),
                 },
-                Channel::Plain(p) => match delimited.encode() {
-                    Some(bytes) => Some(p.write_all(&bytes).is_ok()),
-                    None => None,
-                },
+                Channel::Plain(p) => delimited.encode().map(|bytes| p.write_all(&bytes).is_ok()),
             }
         }
     };
