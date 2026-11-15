@@ -310,8 +310,9 @@ impl Court {
     /// found by a walk of the whole ladder (no last key is read off a trie).
     fn prune_ladder(&mut self, reads: &mut crate::physics::Budget) {
         let mut latest: Vec<TPoint> = Vec::new();
+        // 78.183 P2 — the ladder's final points are read on T.
         for (_, c) in self.atlas.ledgers.scoped() {
-            if !reads.spend() {
+            if !reads.spend_on(&forms::coordinate::Lane::T) {
                 return;
             }
             latest.extend(c.iter().next_back().map(|e| e.entry.point.clone()));
@@ -322,7 +323,7 @@ impl Court {
             .atlas
             .ladder
             .scoped()
-            .take_while(|_| reads.spend())
+            .take_while(|_| reads.spend_on(&forms::coordinate::Lane::T))
             .filter(|(k, p)| Some(k) != newest.as_ref() && !latest.is_empty() && latest.iter().all(|l| l.origin == p.origin && l.h > p.h))
             .map(|(k, _)| k)
             .collect();
