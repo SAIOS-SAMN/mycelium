@@ -344,6 +344,10 @@ use mycelium_sdk::house::universe::Parent as _;
 
 // house: the endowment
 use mycelium_sdk::house::decode_endowment_reading as _;
+use mycelium_sdk::house::decode_endowment_page as _;
+use mycelium_sdk::house::encode_endowment_read_at as _;
+use mycelium_sdk::house::read_endowment as _;
+use mycelium_sdk::house::EndowmentPage as _;
 use mycelium_sdk::house::decode_grant_reply as _;
 use mycelium_sdk::house::encode_endowment_read as _;
 use mycelium_sdk::house::encode_manifest as _;

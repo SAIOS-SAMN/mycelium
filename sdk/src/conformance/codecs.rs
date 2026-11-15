@@ -363,7 +363,7 @@ fn domain_universe() -> Result<String, String> {
 
 fn domain_endowment() -> Result<String, String> {
     use d::endowment::{decode_endowment_reading, encode_endowment_read, encode_endowment_reading, EndowmentReading, GrantRead};
-    same("the endowment read", dom::decode_domain_request(&encode_endowment_read(voice())), dom::DomainRequest::ReadEndowment(voice()))?;
+    same("the endowment read", dom::decode_domain_request(&encode_endowment_read(voice())), dom::DomainRequest::ReadEndowment(voice(), 0))?;
     let m = super::probes::manifest(voice());
     let grant = GrantRead { manifest: m.hash().ok_or("the manifest has no hash")?, mu: share()?, founding: true, applied: false };
     let earned = mycelium::economy::Mu::counts([9, 9, 9, 9]);

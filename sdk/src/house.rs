@@ -129,7 +129,7 @@ pub use mycelium::anastome::dialogue::universe::{
 /// reserve), the grant that answers it or its refusal by name, and the
 /// endowment read.
 pub use mycelium::anastome::dialogue::endowment::{
-    decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_manifest, nuclei_hold, EndowmentReading, GrantRead, GrantRefusal,
+    decode_endowment_page, decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_endowment_read_at, encode_manifest, read_endowment, EndowmentPage, nuclei_hold, EndowmentReading, GrantRead, GrantRefusal,
     Granted, Manifest, Nuclei, Nucleus, SignedManifest,
 };
 /// A count of nuclei: a positive integer of any size.

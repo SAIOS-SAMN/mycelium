@@ -141,8 +141,8 @@ fn domain_universe(session: &Speaker, domain: [u8; 32]) -> Result<String, String
 }
 
 fn domain_endowment(session: &Speaker, domain: [u8; 32]) -> Result<String, String> {
-    let reply = spoken(session, endowment::encode_endowment_read(domain))?;
-    let read = endowment::decode_endowment_reading(&reply).ok_or_else(|| undecoded(&reply, "an endowment"))?;
+    // #332 — read in pages, assembled and checked against the reading's hash.
+    let read = endowment::read_endowment(domain, |ask| spoken(session, ask).ok()).ok_or("the endowment's pages did not assemble into a reading")?;
     Ok(format!("earned μ {}, {} grants to this universe", read.earned, read.grants.len()))
 }
 

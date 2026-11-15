@@ -188,8 +188,8 @@ pub enum DomainRequest {
     /// its sitting reserve; answered with a grant.
     Manifest(Box<super::endowment::SignedManifest>),
     /// 78.155b — what the court can grant and has granted, read; nothing
-    /// sealed.
-    ReadEndowment([u8; 32]),
+    /// sealed. #332: the page at the byte offset of the encoded reading.
+    ReadEndowment([u8; 32], u32),
     /// 78.154 (4), #159 — a COORDINATE RETRIEVAL: the receipts at a final
     /// point's tick, priced and drawn from the staker's stake.
     Retrieve(Box<super::retrieve::SignedRetrieve>),
@@ -568,7 +568,10 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             let s = super::endowment::take_manifest(domain, rest, &mut p)?;
             return (p == rest.len()).then_some(DomainRequest::Manifest(Box::new(s)));
         }
-        super::endowment::KIND_READ_ENDOWMENT => return (rest.len() == p + 1).then_some(DomainRequest::ReadEndowment(domain)),
+        super::endowment::KIND_READ_ENDOWMENT => {
+            let offset = u32::from_le_bytes(rest.get(p + 1..p + 5)?.try_into().ok()?);
+            return (rest.len() == p + 5).then_some(DomainRequest::ReadEndowment(domain, offset));
+        }
         // #159 — a coordinate retrieval.
         super::retrieve::KIND_RETRIEVE => {
             p += 1;
