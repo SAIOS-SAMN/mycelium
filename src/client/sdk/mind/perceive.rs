@@ -848,8 +848,8 @@ impl Mind {
     /// Autonomous conformal grounding from `TaskPercept`: when `extract_on` /
     /// `ascertain_on` stops at `Stop::Unknown` or `Stop::NoRule`, checks whether
     /// all training pairs share a zero-residue conformal `SignedPermutation`
-    /// that lowers to a non-identity `RuleElement::Tile` rule closing every
-    /// training pair and `scene.tests`.
+    /// and uniform scale `(up, down)` that lowers to `RuleElement::Tile` /
+    /// `RuleElement::Dilate` closing every training pair and `scene.tests`.
     pub(crate) fn ground_from_percept(&self, scene: &Scene) -> Option<(SentenceRule, Vec<crate::transducer::family::SectionSample>)> {
         use super::family::{disagreement_on, tests_spoken};
         use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
@@ -864,9 +864,10 @@ impl Mind {
         if percept.train.len() != scene.train.len() {
             return None;
         }
-        let [first, ..] = percept.train.as_slice() else {
+        let ([first, ..], [(first_x, first_y), ..]) = (percept.train.as_slice(), scene.train.as_slice()) else {
             return None;
         };
+        let (up, down) = uniform_scale(first_x.extents(), first_y.extents())?;
         for cand in first.factored.held() {
             if !cand.residue.is_empty() {
                 continue;
@@ -874,29 +875,36 @@ impl Mind {
             let Some(turn) = perm_to_tile_turn(&cand.motion.permutation) else {
                 continue;
             };
-            if turn == 0 {
+            if turn == 0 && up == 1 && down == 1 {
                 continue;
             }
             let all_match = percept.train.iter().zip(&scene.train).all(|(pf, (x, y))| {
                 let ex = x.extents();
-                let same_extents = ex == y.extents();
+                let same_scale = uniform_scale(ex, y.extents()) == Some((up, down));
                 let square_if_needed = turn < 4 || ex[0] == ex[1];
-                same_extents
+                same_scale
                     && square_if_needed
                     && pf.factored.held().iter().any(|f| f.residue.is_empty() && f.motion.permutation == cand.motion.permutation)
             });
             if !all_match {
                 continue;
             }
-            let form = Form {
-                elements: vec![Lowered {
+            let mut elements = Vec::new();
+            if turn != 0 {
+                elements.push(Lowered {
                     select: Pred::All,
                     parts: false,
                     element: RuleElement::Tile { blocks: [1; ALPHABET_SAMPLE_RANK], turns: vec![turn] },
-                }],
-                ..Form::default()
-            };
-            let rule = rule_of_form(form);
+                });
+            }
+            if up > 1 || down > 1 {
+                elements.push(Lowered {
+                    select: Pred::All,
+                    parts: false,
+                    element: RuleElement::Dilate { up, down },
+                });
+            }
+            let rule = rule_of_form(Form { elements, ..Form::default() });
             if scene.train.iter().any(|(x, y)| disagreement_on(&self.language, &rule, x, y).is_err()) {
                 continue;
             }
@@ -1068,4 +1076,27 @@ fn perm_to_tile_turn(perm: &crate::transducer::family::transduce::SignedPermutat
         ([0, -1], [-1, 0]) => Some(7),
         _ => None,
     }
+}
+
+/// Uniform integer dilation `(up, down)` between `ex` and `ey`, one of them `1`.
+fn uniform_scale(ex: [usize; 2], ey: [usize; 2]) -> Option<(u8, u8)> {
+    if ex.contains(&0) || ey.contains(&0) {
+        return None;
+    }
+    if ex == ey {
+        return Some((1, 1));
+    }
+    if ey[0] % ex[0] == 0 && ey[1] % ex[1] == 0 {
+        let (u0, u1) = (ey[0] / ex[0], ey[1] / ex[1]);
+        if u0 == u1 && u0 > 1 {
+            return u8::try_from(u0).ok().map(|u| (u, 1));
+        }
+    }
+    if ex[0] % ey[0] == 0 && ex[1] % ey[1] == 0 {
+        let (d0, d1) = (ex[0] / ey[0], ex[1] / ey[1]);
+        if d0 == d1 && d0 > 1 {
+            return u8::try_from(d0).ok().map(|d| (1, d));
+        }
+    }
+    None
 }
