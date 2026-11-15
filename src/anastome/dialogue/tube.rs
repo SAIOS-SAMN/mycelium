@@ -139,7 +139,7 @@ pub fn is_spin_4(f: &Mv) -> bool {
 }
 
 fn is_even(f: &Mv) -> bool {
-    [1u32, 3, 5].iter().all(|g| f.grade(*g).is_zero())
+    f.is_zero() || f.parity() == Some(false)
 }
 
 /// 78.140 — WHETHER A FRAME IS A MOTION OF FLAT SPACE: a rotation and a
@@ -280,4 +280,23 @@ pub fn decode_tube_reading(b: &[u8]) -> Option<Option<TubeReading>> {
     let to_level = Level::take(rest, &mut p)?;
     let mass = take_q(rest, &mut p)?;
     (p == rest.len()).then_some(Some(TubeReading { from_place, to_place, from_level, to_level, mass }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::transducer::cga::axes;
+
+    #[test]
+    fn is_even_checks_arbitrary_grade_n_parity() {
+        let one = BigRational::from_integer(1.into());
+        // 6-blade (even, grade 6 > 5) and 7-blade (odd, grade 7 > 5).
+        let six_mask = axes(6).fold(0usize, |m, b| m | b);
+        let seven_mask = axes(7).fold(0usize, |m, b| m | b);
+        let even6 = Mv::blade(six_mask, one.clone());
+        let odd7 = Mv::blade(seven_mask, one);
+        assert!(is_even(&Mv::zero()));
+        assert!(is_even(&even6));
+        assert!(!is_even(&odd7));
+    }
 }
