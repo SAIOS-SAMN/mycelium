@@ -126,14 +126,16 @@ pub(crate) fn take_closed(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Mu)>
 /// Two nuclei counts summed per nucleus `(Z, Q, R)`, exact, in ascending
 /// order: isotopes and phases stay apart (78.184 §3, §5).
 fn add_nuclei(a: &Nuclei, b: &Nuclei) -> Nuclei {
+    // Each nucleus is entered at its place in the nucleus order, so the
+    // sum stands ascending as it is built (rule 4: no sort by measurement).
     let mut sum: Vec<(crate::anastome::dialogue::endowment::Nucleus, num_bigint::BigUint)> = Vec::new();
     for (k, c) in a.iter().chain(b) {
-        match sum.iter_mut().find(|(held, _)| held == k) {
-            Some((_, held)) => *held += c,
-            None => sum.push((k.clone(), c.clone())),
+        let at = sum.partition_point(|(held, _)| held < k);
+        match sum.get_mut(at) {
+            Some((held, n)) if held == k => *n += c,
+            _ => sum.insert(at, (k.clone(), c.clone())),
         }
     }
-    sum.sort_by(|x, y| x.0.cmp(&y.0));
     sum
 }
 
