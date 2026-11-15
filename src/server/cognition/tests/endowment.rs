@@ -286,7 +286,7 @@ fn ledger_entry_applies_a_grant_and_admits_the_growth_manifest() {
     assert!(matches!(k.manifest(&signed(manifest(2), RESERVE)), Granted::Refused(GrantRefusal::InFlight)), "the founding is not applied yet");
     let entry = |k: &Court, u: u64, applied: Vec<([u8; 32], u64)>| {
         let parent = k.atlas.head(&domain).map_or([0; 32], |e| e.hash);
-        LedgerEntry { domain, u, commitment: [1; 32], events: [2; 32], point: fp(u + 1), parent, applied, nonce: [u as u8; 32] }.signed(&key(RESERVE))
+        LedgerEntry { domain, u, commitment: [1; 32], events: [2; 32], point: fp(u + 1), parent, applied, nonce: [u8::try_from(u).expect("a small cycle"); 32] }.signed(&key(RESERVE))
     };
     let first = entry(&k, 1, vec![(grant, 1)]);
     assert!(matches!(k.ledger(&first, Some(fp(2))), Ledgered::Sealed { .. }), "the grant applied as a crossing is");
