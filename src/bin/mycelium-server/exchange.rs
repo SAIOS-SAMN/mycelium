@@ -388,6 +388,8 @@ impl Exchange {
         // 78.125 (law version 5) — the change of the keepers' reach this
         // court was last handed.
         let mut reach_seen = 0u64;
+        // 78.184 §5 — the final point the last delivery was made at.
+        let mut delivered_at: Option<u64> = None;
         loop {
             std::thread::yield_now();
             crate::court_lock::yield_to_waiters();
@@ -401,6 +403,14 @@ impl Exchange {
                     k.court_cycle_on(reads);
                     // 78.183 §7.5 — the metabolic rate per lane, read once
                     // per bell span: E, Y, the holding and the open draw.
+                    // 78.184 §5 — each final-point advance delivers every
+                    // grant's beat along TUniversal's temporal plane.
+                    if let Some(p) = crate::tuniversal::shelf().final_point().filter(|p| delivered_at.is_none_or(|h| p.h > h)) {
+                        delivered_at = Some(p.h);
+                        for (domain, mu) in k.deliver_at(&p) {
+                            eprintln!("  court delivered h {} to {:02x}{:02x}… μ {mu}", p.h, domain[0], domain[1]);
+                        }
+                    }
                     if let Some(span) = k.close_rate() {
                         eprintln!(
                             "  court rate h {} | E {:?} Y {:?} M {:?} drawn {:?}",
