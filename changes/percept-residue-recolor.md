@@ -1,0 +1,3 @@
+### Residue recolouring composed with conformal motions in `ground_from_percept`
+
+- Extended `Mind::ground_from_percept` to lower consistent residue symbol maps (`Act::Recolour`) composed with conformal turns (`RuleElement::Tile`) and uniform dilations (`RuleElement::Dilate`) from `TaskPercept`.

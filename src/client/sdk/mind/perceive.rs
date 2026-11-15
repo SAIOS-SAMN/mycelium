@@ -847,14 +847,15 @@ impl Mind {
 
     /// Autonomous conformal grounding from `TaskPercept`: when `extract_on` /
     /// `ascertain_on` stops at `Stop::Unknown` or `Stop::NoRule`, checks whether
-    /// all training pairs share a zero-residue conformal `SignedPermutation`
-    /// and uniform scale `(up, down)` that lowers to `RuleElement::Tile` /
-    /// `RuleElement::Dilate` closing every training pair and `scene.tests`.
+    /// all training pairs share a conformal `SignedPermutation`, uniform scale
+    /// `(up, down)`, and optional consistent residue symbol map that lowers to
+    /// `Act::Recolour` / `RuleElement::Tile` / `RuleElement::Dilate` closing
+    /// every training pair and `scene.tests`.
     pub(crate) fn ground_from_percept(&self, scene: &Scene) -> Option<(SentenceRule, Vec<crate::transducer::family::SectionSample>)> {
         use super::family::{disagreement_on, tests_spoken};
         use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
-        use crate::transducer::sentence::clause::Pred;
-        use crate::transducer::sentence::rule_element::{Lowered, RuleElement};
+        use crate::transducer::sentence::clause::{Act, Clause, Pred};
+        use crate::transducer::sentence::rule_element::{lower, Lowered, RuleElement};
         use crate::transducer::sentence::{rule_of_form, Form};
 
         if scene.tests.is_empty() || scene.train.is_empty() {
@@ -869,27 +870,43 @@ impl Mind {
         };
         let (up, down) = uniform_scale(first_x.extents(), first_y.extents())?;
         for cand in first.factored.held() {
-            if !cand.residue.is_empty() {
-                continue;
-            }
             let Some(turn) = perm_to_tile_turn(&cand.motion.permutation) else {
                 continue;
             };
-            if turn == 0 && up == 1 && down == 1 {
-                continue;
-            }
+            let mut recolour: Vec<(u8, u8)> = Vec::new();
             let all_match = percept.train.iter().zip(&scene.train).all(|(pf, (x, y))| {
                 let ex = x.extents();
                 let same_scale = uniform_scale(ex, y.extents()) == Some((up, down));
                 let square_if_needed = turn < 4 || ex[0] == ex[1];
-                same_scale
-                    && square_if_needed
-                    && pf.factored.held().iter().any(|f| f.residue.is_empty() && f.motion.permutation == cand.motion.permutation)
+                if !(same_scale && square_if_needed) {
+                    return false;
+                }
+                let Some(f) = pf.factored.held().iter().find(|f| f.motion.permutation == cand.motion.permutation) else {
+                    return false;
+                };
+                f.residue.iter().all(|link| {
+                    let ([before], [after]) = (link.before.as_slice(), link.after.as_slice()) else {
+                        return false;
+                    };
+                    match recolour.iter().find(|(b, _)| b == before) {
+                        Some(&(_, prev)) => prev == *after,
+                        None => {
+                            recolour.push((*before, *after));
+                            true
+                        }
+                    }
+                })
             });
-            if !all_match {
+            if !all_match || (turn == 0 && up == 1 && down == 1 && recolour.is_empty()) {
                 continue;
             }
             let mut elements = Vec::new();
+            if !recolour.is_empty() {
+                let Some(lowered) = lower(&Clause { select: Pred::All, act: Act::Recolour(recolour) }) else {
+                    continue;
+                };
+                elements.push(lowered);
+            }
             if turn != 0 {
                 elements.push(Lowered {
                     select: Pred::All,
