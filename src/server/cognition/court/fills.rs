@@ -38,7 +38,7 @@ impl Court {
             // a head that refills faster than one budget no longer starves
             // the tail, and the circuit reaches every simplex.
             let from = self.fill_cursor.clone();
-            let mut cur = self.unfilled.cursor(from.as_deref(), budget);
+            let mut cur = self.unfilled.cursor_on(from.as_deref(), forms::coordinate::Lane::G, budget);
             for (_, v) in &mut cur {
                 pending.push(v.clone());
             }
@@ -162,7 +162,7 @@ impl Court {
         )> = Vec::new();
         {
             let from = self.refine_cursor.clone();
-            let mut cur = self.pending_refine.cursor(from.as_deref(), budget);
+            let mut cur = self.pending_refine.cursor_on(from.as_deref(), forms::coordinate::Lane::G, budget);
             for (_, v) in &mut cur {
                 refine.push(v.clone());
             }
