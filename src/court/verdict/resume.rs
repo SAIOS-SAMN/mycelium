@@ -217,4 +217,12 @@ impl Meter<'_> {
             Meter::Stroke(b) => b.spend(),
         }
     }
+
+    /// One read on its lane (78.183 §8 (a)); false once the stroke is spent.
+    pub(crate) fn spend_on(&mut self, lane: &forms::coordinate::Lane) -> bool {
+        match self {
+            Meter::Free => true,
+            Meter::Stroke(b) => b.spend_on(lane),
+        }
+    }
 }
