@@ -370,6 +370,14 @@ impl Mind {
             self.board.returned_while_occluded = false;
             let scenes = std::mem::take(&mut self.board.returned_scenes);
             self.act_at_return(&scenes);
+        } else if open && !crate::physics::halted() {
+            // Even when no thought returned this winding (e.g. while perception
+            // is in flight), keep presenting what the mind owes and unheard words
+            // so court presentation never starves.
+            self.court_owed();
+            let mut stroke = self.physics.stroke();
+            self.speak_unheard(&mut stroke);
+            self.resubmit_unread_solves();
         }
         returns
     }

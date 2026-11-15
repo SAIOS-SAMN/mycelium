@@ -148,40 +148,62 @@ impl Contemplation {
     /// the families of the thoughts standing on its cover's charts now
     /// (`by_chart`) — so what binds it is spoken under the scene its evidence
     /// is in, and its binding is a return of a thought of that scene.
+    /// Take the next untaken demand from `docket_open` or `docket` (by its
+    /// coordinates), marking only that entry in `demands_taken`. Leaving
+    /// remaining entries unmarked prevents orphaning them when a caller's
+    /// `Budget` runs out.
+    pub(crate) fn take_next_demand(&mut self) -> Option<TakenDemand> {
+        let next = self
+            .docket_open
+            .scoped()
+            .chain(self.docket.scoped())
+            .find_map(|(k, c)| match &c {
+                Cite::Demand { residue, cover, .. } if !self.demands_taken.contains(&k) => {
+                    Some((k, residue.clone(), cover.clone()))
+                }
+                _ => None,
+            })?;
+        let (k, residue, cover) = next;
+        self.demands_taken.insert(&k, ());
+        let charts: Vec<crate::transducer::stalk::Invariant> = cover
+            .iter()
+            .flatten()
+            .filter_map(|key| crate::transducer::stalk::Invariant::from_key(key))
+            .collect();
+        let mut families: Keyed<()> = Keyed::new();
+        // The scene its motion was perceived in, filed then, in either
+        // direction it was read (`demand_in_scene_of`).
+        let rays = residue.iter().flat_map(|r| [r.key(), r.reverse().key()]).flatten();
+        for ray in rays {
+            if let Some(scenes) = self.demand_scenes.get(ray.as_bytes()) {
+                for (f, ()) in scenes.scoped() {
+                    families.insert(&f, ());
+                }
+            }
+        }
+        for chart in cover.iter().flatten() {
+            for (id, _) in self.by_chart.link(chart) {
+                let family = Contemplation::ordinal_of_key(&id)
+                    .and_then(|o| self.address_at(o))
+                    .and_then(|a| self.wells.get(a))
+                    .map(|b| b.family.clone());
+                if let Some(f) = family.filter(|f| !f.is_empty()) {
+                    families.insert(&f, ());
+                }
+            }
+        }
+        let families = families.scoped().map(|(f, _)| f).collect();
+        Some(TakenDemand { residue, charts, families })
+    }
+
+    /// Drain every untaken demand on the plan; callers bounded by a `Budget`
+    /// should call [`Self::take_next_demand`] per step instead so untaken
+    /// demands stay available for later strokes.
+    #[cfg(test)]
     pub(crate) fn drain_demands(&mut self) -> Vec<TakenDemand> {
         let mut out = Vec::new();
-        for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
-            let Cite::Demand { residue, cover, .. } = &c else { continue };
-            if self.demands_taken.contains(&k) {
-                continue;
-            }
-            self.demands_taken.insert(&k, ());
-            let charts: Vec<crate::transducer::stalk::Invariant> = cover
-                .iter()
-                .flatten()
-                .filter_map(|key| crate::transducer::stalk::Invariant::from_key(key))
-                .collect();
-            let mut families: Keyed<()> = Keyed::new();
-            // The scene its motion was perceived in, filed then, in either
-            // direction it was read (`demand_in_scene_of`).
-            let rays = residue.iter().flat_map(|r| [r.key(), r.reverse().key()]).flatten();
-            for ray in rays {
-                if let Some(scenes) = self.demand_scenes.get(ray.as_bytes()) {
-                    for (f, ()) in scenes.scoped() {
-                        families.insert(&f, ());
-                    }
-                }
-            }
-            for chart in cover.iter().flatten() {
-                for (id, _) in self.by_chart.link(chart) {
-                    let family = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o)).and_then(|a| self.wells.get(a)).map(|b| b.family.clone());
-                    if let Some(f) = family.filter(|f| !f.is_empty()) {
-                        families.insert(&f, ());
-                    }
-                }
-            }
-            let families = families.scoped().map(|(f, _)| f).collect();
-            out.push(TakenDemand { residue: residue.clone(), charts, families });
+        while let Some(d) = self.take_next_demand() {
+            out.push(d);
         }
         out
     }

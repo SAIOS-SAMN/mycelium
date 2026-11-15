@@ -492,6 +492,30 @@ fn drain_demands_hands_out_escaping_slide_once() {
     );
 }
 
+#[test]
+fn take_next_demand_leaves_remaining_demands_untaken() {
+    let draw = |cells: &[(usize, usize)], shift: usize| -> Vec<String> {
+        (0..7).map(|r| (0..9).map(|col| if col >= shift && cells.contains(&(r, col - shift)) { '1' } else { '0' }).collect()).collect()
+    };
+    let hour = |c: &mut Contemplation, cells: &[(usize, usize)], shift: usize, scene: &[u8]| {
+        let (input, output) = (draw(cells, 0), draw(cells, shift));
+        let i: Vec<&str> = input.iter().map(String::as_str).collect();
+        let o: Vec<&str> = output.iter().map(String::as_str).collect();
+        perceive_in(c, &i, &o, scene)
+    };
+    let mut c = Contemplation::new();
+    hour(&mut c, &[&LA[..], &LB[..]].concat(), 1, b"scene-1");
+    hour(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat(), 1, b"scene-1");
+    hour(&mut c, &[&LA[..], &LB[..]].concat(), 2, b"scene-2");
+    hour(&mut c, &[slid(&LA, 2), slid(&LB, 2)].concat(), 2, b"scene-2");
+
+    let first = c.take_next_demand().expect("first demand taken");
+    assert!(!c.demands_taken.is_empty());
+    let second = c.take_next_demand();
+    assert!(second.is_some(), "second demand must remain available rather than being orphaned");
+    assert_ne!(first.residue, second.and_then(|d| d.residue));
+}
+
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one
 /// point — one motion carries the whole configuration, elliptic. The two
 /// bodies co-rotate about the pair's barycentre in synchronous lock, the
