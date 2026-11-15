@@ -181,7 +181,8 @@ impl Court {
         }
         let mut sections = Keyed::new();
         for (key, cx) in self.complexes.scoped() {
-            if !budget.spend() {
+            // 78.183 §8 (a): a chart's complex, read on G.
+            if !budget.spend_on(&forms::coordinate::Lane::G) {
                 return None;
             }
             sections.insert(&key, cx.sections.len());
@@ -193,7 +194,8 @@ impl Court {
     pub(crate) fn adjoined_on(&self, budget: &mut crate::physics::Budget) -> Option<u64> {
         let mut n = 0u64;
         for (addr, ()) in self.ruled_addrs.scoped() {
-            if !budget.spend() {
+            // 78.183 §8 (a): the ruled words, read on G.
+            if !budget.spend_on(&forms::coordinate::Lane::G) {
                 return None;
             }
             if let Some(h) = self.held_word(&addr) {

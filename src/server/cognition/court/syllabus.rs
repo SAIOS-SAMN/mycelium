@@ -80,7 +80,8 @@ impl Court {
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         if !inv.0.is_empty() {
             for p in inv.prefixes() {
-                if !reads.spend() {
+                // 78.183 §8 (a): the classes of a word's charts, read on G.
+                if !reads.spend_on(&forms::coordinate::Lane::G) {
                     break;
                 }
                 if let Some(cx) = self.complexes.get(&p.key()) {
@@ -100,7 +101,8 @@ impl Court {
         };
         let wrap = past.as_ref().map(|from| self.complexes.scoped().take_while(move |(k, _)| k.as_slice() <= from.as_slice()));
         for (key, cx) in first.chain(wrap.into_iter().flatten()) {
-            if !reads.spend() {
+            // 78.183 §8 (a): the nerve's charts from the cursor, read on G.
+            if !reads.spend_on(&forms::coordinate::Lane::G) {
                 spent = true;
                 break;
             }
@@ -675,7 +677,8 @@ impl Court {
             if held.as_slice() == address || !holds(&held) {
                 continue;
             }
-            if !reads.spend() {
+            // 78.183 §8 (a): the ruled words of a fibre, read on G.
+            if !reads.spend_on(&forms::coordinate::Lane::G) {
                 break;
             }
             best = best.min(4);

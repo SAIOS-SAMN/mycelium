@@ -122,14 +122,16 @@ impl Court {
             None => Some(self.folded_signings.events.scoped()),
         };
         for (key, e) in folded.into_iter().flatten() {
-            if !reads.spend() {
+            // 78.183 §8 (a): signing events in the ledger's stamp order, read on T.
+            if !reads.spend_on(&forms::coordinate::Lane::T) {
                 return Err(AlignmentRefusal::StrokeSpent);
             }
             let Some(order) = key.get(32..) else { continue };
             found.insert(order, e.clone());
         }
         for (at, n) in self.chain.signing_stamps(only) {
-            if !reads.spend() {
+            // 78.183 §8 (a): signing stamps along the line, read on T.
+            if !reads.spend_on(&forms::coordinate::Lane::T) {
                 return Err(AlignmentRefusal::StrokeSpent);
             }
             if self.unreached.contains(&Stamp::line_key(&at.vk, at.place())) {
@@ -186,7 +188,8 @@ impl Court {
         for era in run {
             let mut events = Vec::new();
             for r in self.era_receipts(era).into_iter().flatten() {
-                if !reads.spend() {
+                // 78.183 §8 (a): an era's receipts, read on T.
+                if !reads.spend_on(&forms::coordinate::Lane::T) {
                     return Err(AlignmentRefusal::StrokeSpent);
                 }
                 if r.kind != ActKind::Domain {
