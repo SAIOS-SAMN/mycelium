@@ -261,7 +261,8 @@ impl Court {
                     Some(n) => self.chain.line_between(&vk, m0, m1, n),
                     None => Vec::new(),
                 };
-                let paid = window.len() <= room && window.iter().all(|_| budget.spend());
+                // 78.183 P2 — receipts along the line are read on T, the beat.
+                let paid = window.len() <= room && window.iter().all(|_| budget.spend_on(&forms::coordinate::Lane::T));
                 let adjoined = match paid {
                     true => self.adjoined_on(budget),
                     false => None,
