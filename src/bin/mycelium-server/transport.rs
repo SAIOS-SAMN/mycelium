@@ -108,31 +108,32 @@ pub(crate) fn answer(s: &mut Channel, delimited: Delimited) {
 /// written, so `unwritten` counts the misses the wire refused, not all.
 pub(crate) fn answer_written(s: &mut Channel, delimited: Delimited) -> bool {
     let len = delimited.body.len();
-    let written = match crate::tuniversal::express(&delimited.body) {
-        None => None,
-        Some(body) => {
-            let delimited = Delimited { body };
-            match s {
-                Channel::Noise(n) => match n.write_delimited(&delimited) {
-                    Ok(()) => Some(true),
-                    Err(mycelium::network::noise::NoiseRefusal::OverBudget { .. }) => None,
-                    Err(_) => Some(false),
-                },
-                Channel::Plain(p) => delimited.encode().map(|bytes| p.write_all(&bytes).is_ok()),
-            }
-        }
-    };
-    match written {
+    match write_expressed(s, crate::tuniversal::express(&delimited.body)) {
         Some(w) => w,
         // #332 — A REPLY PAST THE BUDGET IS ANSWERED REFUSED BY NAME, as an
         // act past it is on the way in (`refuse_over_budget`), never by a
         // closed connection the asker reads as a truncated frame ("failed to
         // fill whole buffer", netstratum's READ-ENDOWMENT, 2026-11-14).
         None => {
-            eprintln!("  court reply refused: body {len} over the wire budget; answered refused");
+            let point = crate::tuniversal::final_point().map(|p| p.to_bytes().len());
+            eprintln!("  court reply refused: body {len} with the final point's {point:?} bytes past the wire budget; answered refused");
             refuse_over_budget(s);
             false
         }
+    }
+}
+
+/// The expression written, or `None` where it is past the wire budget: no
+/// expression (`express` refused it), or a Noise frame past its budget.
+fn write_expressed(s: &mut Channel, expressed: Option<Vec<u8>>) -> Option<bool> {
+    let delimited = Delimited { body: expressed? };
+    match s {
+        Channel::Noise(n) => match n.write_delimited(&delimited) {
+            Ok(()) => Some(true),
+            Err(mycelium::network::noise::NoiseRefusal::OverBudget { .. }) => None,
+            Err(_) => Some(false),
+        },
+        Channel::Plain(p) => delimited.encode().map(|bytes| p.write_all(&bytes).is_ok()),
     }
 }
 
@@ -183,10 +184,17 @@ fn refuse_version(s: &mut Channel, spoken: u16, served: u16) {
 
 /// THE ACT WHOSE HEAD NAMES A BODY PAST THE WIRE'S BUDGET, answered refused
 /// before the connection closes (78.125).
+/// THE REFUSAL TERMINATES: written beside the door's final point where it
+/// fits, else with no point at all (`write_act` with none, which always fits
+/// an outcome), and never through `answer` again. A refusal that went back
+/// through `answer_written` recursed without end where the point itself was
+/// past the budget, and overflowed the stack (hypha b, 2026-11-15).
 fn refuse_over_budget(s: &mut Channel) {
     let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
     let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
-    answer(s, Delimited { body });
+    if write_expressed(s, crate::tuniversal::express(&body)).is_none() {
+        let _ = write_expressed(s, mycelium::anastome::dialogue::write_act(&body, None));
+    }
 }
 
 fn read_plain_delimited(s: &mut Channel) -> Option<Delimited> {
