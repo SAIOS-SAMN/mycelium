@@ -393,7 +393,9 @@ impl Court {
             return refuse(R::Behind);
         }
         for (i, (c, ua)) in e.applied.iter().enumerate() {
-            let pending = self.atlas.edges.get(c).is_some_and(|x| x.to == e.domain && x.u_applied.is_none());
+            // 78.154 (3) — a crossing pending into this domain; 78.155b — or
+            // a grant this court made to it that its chain has not applied.
+            let pending = self.atlas.edges.get(c).is_some_and(|x| x.to == e.domain && x.u_applied.is_none()) || self.grant_pending(&e.domain, c);
             let twice = e.applied.iter().take(i).any(|(d, _)| d == c);
             if !pending || twice || *ua > e.u {
                 return refuse(R::Applied);
