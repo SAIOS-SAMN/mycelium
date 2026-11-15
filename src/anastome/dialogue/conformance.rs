@@ -245,7 +245,7 @@ const KERNEL: &[ActRequirement] = &[
     may(ACT_DOMAIN, None, "domain origin", "decode_domain_reply", FOUNDED),
     may(ACT_DOMAIN, None, "domain origin reading", "decode_origin_reading", &["kind", "version", "commitment", "stamp", "receipt"]),
     may(ACT_DOMAIN, None, "domain statement", "decode_domain_reply", FOUNDED),
-    may(ACT_DOMAIN, None, "domain endowment", "decode_endowment_reading", &["earned S:G:T:H", "founding S:G:T:H", "growth S:G:T:H", "grants", "nuclei"]),
+    may(ACT_DOMAIN, None, "domain endowment", "read_endowment", &["earned S:G:T:H", "founding S:G:T:H", "growth S:G:T:H", "grants", "nuclei"]),
     may(ACT_SEAT, None, "seat post", "decode_post_reply", &["sequence, or the refusal by name"]),
     may(ACT_SEAT, None, "seat listing", "decode_listing_reply", &["the latest seats post, or none"]),
     may(ACT_SEAT, None, "seat mail", "decode_mail_reply_standing", MAIL),

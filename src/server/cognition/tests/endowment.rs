@@ -62,7 +62,7 @@ fn manifest_round_trips_with_reading() {
     let s = signed(manifest(1), RESERVE);
     let bytes = encode_manifest(&s).expect("it writes");
     assert_eq!(decode_domain_request(&bytes), Some(DomainRequest::Manifest(Box::new(s.clone()))));
-    assert_eq!(decode_domain_request(&encode_endowment_read(verifying(&key(DOMAIN)))), Some(DomainRequest::ReadEndowment(verifying(&key(DOMAIN)))));
+    assert_eq!(decode_domain_request(&encode_endowment_read(verifying(&key(DOMAIN)))), Some(DomainRequest::ReadEndowment(verifying(&key(DOMAIN)), 0)));
     let refused = Granted::Refused(GrantRefusal::InFlight);
     assert_eq!(decode_grant_reply(&encode_grant_reply(&refused)), Some(refused));
     let mut k = universe(true);
@@ -202,4 +202,43 @@ fn grow_grants_by_paid_grows_universe_grant() {
     let _ = k.treasury.settle_convergence([0xee; 32], [9, 9, 9, 9], anchor);
     k.grow_grants_by_paid();
     assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 0, 1]), "a key no domain names grows nothing here");
+}
+
+/// #332 — A READING PAST ONE PAGE reads whole across its pages: each page
+/// carries the reading's hash and its offset, and the pages assemble into
+/// the reading the court holds. A reading that changes between pages is
+/// caught by the hash and read again from the first page.
+#[test]
+fn endowment_reading_pages_past_the_wire_budget_and_assembles() {
+    use crate::anastome::dialogue::endowment::{decode_domain_offset, encode_endowment_page, encode_endowment_reading, read_endowment, EndowmentReading, Nucleus, ENDOWMENT_PAGE};
+    let many: Vec<(Nucleus, BigUint)> = (1..=60000u32).map(|i| (Nucleus { z: u16::try_from(1 + i / 200).expect("fits"), q: i % 200 }, BigUint::from(10u8).pow(40))).collect();
+    let r = EndowmentReading { nuclei: many, ..Default::default() };
+    let whole = encode_endowment_reading(&r).expect("encodes");
+    assert!(whole.len() > ENDOWMENT_PAGE, "past one page: {} bytes", whole.len());
+    let domain = verifying(&key(DOMAIN));
+    let mut asks = 0usize;
+    let read = read_endowment(domain, |ask| {
+        asks += 1;
+        encode_endowment_page(&whole, decode_domain_offset(&ask)?)
+    });
+    assert_eq!(read, Some(r.clone()), "assembled whole");
+    assert!(asks >= 2, "more than one page asked");
+    // A reading that moves after its first page: the hash catches it, and
+    // the second pass reads the reading that stands.
+    let mut moved = r.clone();
+    moved.nuclei.pop();
+    let later = encode_endowment_reading(&moved).expect("encodes");
+    let mut first = true;
+    let read = read_endowment(domain, |ask| {
+        let offset = decode_domain_offset(&ask)?;
+        let src = match (first, offset) {
+            (true, 0) => &whole,
+            _ => {
+                first = false;
+                &later
+            }
+        };
+        encode_endowment_page(src, offset)
+    });
+    assert_eq!(read, Some(moved), "the changed reading is read again from its first page");
 }

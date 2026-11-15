@@ -107,28 +107,32 @@ pub(crate) fn answer(s: &mut Channel, delimited: Delimited) {
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
 pub(crate) fn answer_written(s: &mut Channel, delimited: Delimited) -> bool {
-    let refused = || eprintln!("  court reply refused: body {} over the wire budget", delimited.body.len());
-    let Some(body) = crate::tuniversal::express(&delimited.body) else {
-        refused();
-        return false;
+    let len = delimited.body.len();
+    let written = match crate::tuniversal::express(&delimited.body) {
+        None => None,
+        Some(body) => {
+            let delimited = Delimited { body };
+            match s {
+                Channel::Noise(n) => match n.write_delimited(&delimited) {
+                    Ok(()) => Some(true),
+                    Err(mycelium::network::noise::NoiseRefusal::OverBudget { .. }) => None,
+                    Err(_) => Some(false),
+                },
+                Channel::Plain(p) => delimited.encode().map(|bytes| p.write_all(&bytes).is_ok()),
+            }
+        }
     };
-    let delimited = Delimited { body };
-    match s {
-        Channel::Noise(n) => match n.write_delimited(&delimited) {
-            Ok(()) => true,
-            Err(mycelium::network::noise::NoiseRefusal::OverBudget { .. }) => {
-                refused();
-                false
-            }
-            Err(_) => false,
-        },
-        Channel::Plain(p) => match delimited.encode() {
-            Some(bytes) => p.write_all(&bytes).is_ok(),
-            None => {
-                refused();
-                false
-            }
-        },
+    match written {
+        Some(w) => w,
+        // #332 — A REPLY PAST THE BUDGET IS ANSWERED REFUSED BY NAME, as an
+        // act past it is on the way in (`refuse_over_budget`), never by a
+        // closed connection the asker reads as a truncated frame ("failed to
+        // fill whole buffer", netstratum's READ-ENDOWMENT, 2026-11-14).
+        None => {
+            eprintln!("  court reply refused: body {len} over the wire budget; answered refused");
+            refuse_over_budget(s);
+            false
+        }
     }
 }
 

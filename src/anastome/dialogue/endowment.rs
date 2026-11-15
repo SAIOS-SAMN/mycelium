@@ -17,7 +17,8 @@
 //! ```text
 //! MANIFEST       [ACT_DOMAIN][domain 32][0x80 0x00][17][count u16 LE]
 //!                (Z u16 LE, Q u32 LE, count: Mv scalar, an integer ≥ 1)… [nonce 32][sig 64]
-//! READ-ENDOWMENT [ACT_DOMAIN][domain 32][0x80 0x00][18]
+//! READ-ENDOWMENT [ACT_DOMAIN][domain 32][0x80 0x00][18][offset u32 LE]
+//!                answered by the page [hash 32][total u32 LE][offset u32 LE][chunk] (#332)
 //! ```
 //!
 //! Signed bytes: `"mycelium manifest v2" ‖ domain ‖ the entries as written ‖
@@ -167,9 +168,101 @@ pub(crate) fn take_manifest(domain: [u8; 32], b: &[u8], p: &mut usize) -> Option
     Some(SignedManifest { manifest: Manifest { domain, nuclei, nonce }, crossing, sig })
 }
 
-/// The READ-ENDOWMENT act on the wire.
+/// The READ-ENDOWMENT act on the wire, asking its first page.
 pub fn encode_endowment_read(domain: [u8; 32]) -> Vec<u8> {
-    head(&domain, KIND_READ_ENDOWMENT)
+    encode_endowment_read_at(domain, 0)
+}
+
+/// #332 — THE READ-ENDOWMENT act asking the page at byte `offset` of the
+/// encoded reading: `[head][offset u32 LE]`.
+pub fn encode_endowment_read_at(domain: [u8; 32], offset: u32) -> Vec<u8> {
+    let mut out = head(&domain, KIND_READ_ENDOWMENT);
+    out.extend_from_slice(&offset.to_le_bytes());
+    out
+}
+
+/// #332 — ONE PAGE OF AN ENDOWMENT READING. The reading is encoded whole
+/// ([`encode_endowment_reading`]) and served in pages that fit the wire's
+/// one budget. Each page carries the whole reading's hash, so a reader
+/// assembles only pages of one reading, and a reading that changed between
+/// pages is read again from the first. A founding of many kinds makes a
+/// reading past the budget: each distinct `Z/Q` is its own boost mode
+/// (MU-EQUATIONS §6.13), and netstratum's reading of about 1,500 kinds was
+/// 789,851 bytes against 786,432 (2026-11-14).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EndowmentPage {
+    pub hash: [u8; 32],
+    pub total: u32,
+    pub offset: u32,
+    pub chunk: Vec<u8>,
+}
+
+/// The bytes one page carries: the wire's body budget less the delimiter's
+/// own headroom (`DELIMITED_MAX` over `BODY_BUDGET`), which holds the
+/// page's head and the door's expression.
+pub const ENDOWMENT_PAGE: usize = crate::network::wire::BODY_BUDGET - u16::MAX as usize;
+
+/// The page of `whole` at `offset`: `[hash 32][total u32 LE][offset u32 LE]
+/// [chunk]`. `None` where `offset` stands past the reading or a length
+/// passes its carrier.
+pub fn encode_endowment_page(whole: &[u8], offset: u32) -> Option<Vec<u8>> {
+    let total = u32::try_from(whole.len()).ok()?;
+    let start = usize::try_from(offset).ok()?;
+    if start > whole.len() {
+        return None;
+    }
+    let end = whole.len().min(start + ENDOWMENT_PAGE);
+    let mut out = crate::chronometry::payload_hash(whole).to_vec();
+    out.extend_from_slice(&total.to_le_bytes());
+    out.extend_from_slice(&offset.to_le_bytes());
+    out.extend_from_slice(whole.get(start..end)?);
+    Some(out)
+}
+
+/// The page offset a READ-ENDOWMENT act asks: its last four bytes. `None`
+/// for a body shorter than an offset.
+pub fn decode_domain_offset(ask: &[u8]) -> Option<u32> {
+    let at = ask.len().checked_sub(4)?;
+    Some(u32::from_le_bytes(ask.get(at..)?.try_into().ok()?))
+}
+
+/// A page read whole.
+pub fn decode_endowment_page(b: &[u8]) -> Option<EndowmentPage> {
+    let hash: [u8; 32] = b.get(0..32)?.try_into().ok()?;
+    let total = u32::from_le_bytes(b.get(32..36)?.try_into().ok()?);
+    let offset = u32::from_le_bytes(b.get(36..40)?.try_into().ok()?);
+    Some(EndowmentPage { hash, total, offset, chunk: b.get(40..)?.to_vec() })
+}
+
+/// #332 — THE READING ASSEMBLED FROM ITS PAGES: `speak` answers the reply to
+/// one page's ask. Pages are asked from offset 0 until the reading is whole;
+/// every page must carry the first page's hash and continue at its offset,
+/// and the whole must re-derive that hash, or the reading is read again from
+/// the first page, once. `None` where it does not assemble or decode.
+pub fn read_endowment(domain: [u8; 32], mut speak: impl FnMut(Vec<u8>) -> Option<Vec<u8>>) -> Option<EndowmentReading> {
+    for _ in 0..2 {
+        let mut whole: Vec<u8> = Vec::new();
+        let mut hash: Option<[u8; 32]> = None;
+        let assembled = loop {
+            let offset = u32::try_from(whole.len()).ok()?;
+            let page = decode_endowment_page(&speak(encode_endowment_read_at(domain, offset))?)?;
+            if hash.is_some_and(|h| h != page.hash) || page.offset != offset {
+                break false;
+            }
+            hash = Some(page.hash);
+            if page.chunk.is_empty() && whole.len() < usize::try_from(page.total).ok()? {
+                break false;
+            }
+            whole.extend_from_slice(&page.chunk);
+            if whole.len() >= usize::try_from(page.total).ok()? {
+                break crate::chronometry::payload_hash(&whole) == page.hash;
+            }
+        };
+        if assembled {
+            return decode_endowment_reading(&whole);
+        }
+    }
+    None
 }
 
 /// WHY A MANIFEST WAS NOT GRANTED, by name — nothing moved.

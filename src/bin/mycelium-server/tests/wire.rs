@@ -12,8 +12,10 @@ use std::net::TcpStream;
 /// `.encode().unwrap_or_default()`, which sends an EMPTY buffer when a
 /// body is over the wire budget. That is not an envelope, and the caller
 /// waited on five bytes that were never coming: one oversized reply
-/// stopped an exchange thread and every act it had left. Nothing is
-/// written, and nothing is invented in its place.
+/// stopped an exchange thread and every act it had left. The oversized
+/// body is never written, and nothing is invented in its place: #332 — the
+/// asker is answered the over-budget refusal by name instead, one small
+/// envelope, as an act past the budget is on the way in.
 #[test]
 fn answer_refuses_delimited_over_budget_writing_nothing() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
@@ -29,7 +31,9 @@ fn answer_refuses_delimited_over_budget_writing_nothing() {
     let over = mycelium::network::wire::BODY_BUDGET + 1;
     answer(&mut s, Delimited { body: vec![0u8; over] });
     drop(s);
-    assert!(reader.join().expect("join").is_empty(), "an unframeable act writes nothing");
+    let written = reader.join().expect("join");
+    assert!(!written.is_empty(), "the asker is answered, never left reading a closed connection");
+    assert!(written.len() < 1024, "only the refusal is written, never the oversized body: {} bytes", written.len());
 }
 
 /// And an envelope within the budget is written whole, so the refusal above

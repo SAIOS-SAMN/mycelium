@@ -58,9 +58,14 @@ pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Conte
             DomainRequest::Manifest(s) => mycelium::anastome::dialogue::endowment::encode_grant_reply(&k.manifest(&s)),
             // A reading that passes its carrier is answered with nothing that
             // decodes, never a capped total.
-            DomainRequest::ReadEndowment(domain) => {
-                k.endowment_reading(&domain).and_then(|r| mycelium::anastome::dialogue::endowment::encode_endowment_reading(&r)).into_iter().flatten().collect()
-            }
+            // #332: served in pages that fit the wire's budget.
+            DomainRequest::ReadEndowment(domain, offset) => k
+                .endowment_reading(&domain)
+                .and_then(|r| mycelium::anastome::dialogue::endowment::encode_endowment_reading(&r))
+                .and_then(|whole| mycelium::anastome::dialogue::endowment::encode_endowment_page(&whole, offset))
+                .into_iter()
+                .flatten()
+                .collect(),
             // Answered above, beside the court's signed position.
             DomainRequest::Retrieve(_) => Vec::new(),
         }),
