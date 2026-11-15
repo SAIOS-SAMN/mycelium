@@ -23,7 +23,7 @@ use crate::core::q::Q;
 use crate::economy::Mu;
 use num_traits::{One, Zero};
 
-/// The T lane's index in a point's lanes (S, G, T, H).
+/// FORMAT: the T lane's index in a point's lanes, written S, G, T, H.
 const T_LANE: usize = 2;
 
 impl Court {
