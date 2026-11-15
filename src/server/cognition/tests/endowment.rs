@@ -267,3 +267,31 @@ fn manifest_v3_carries_the_electron_phase_and_reads_its_rest_point() {
     over.nuclei = vec![(Nucleus { z: 1, q: 0, r: q(3, 2) }, BigUint::from(1u8))];
     assert!(!nuclei_hold(&over.nuclei), "a phase past one turn is no entry");
 }
+
+/// 78.155b — A GRANT IS APPLIED BY THE UNIVERSE'S OWN LEDGER: an entry signed
+/// by the sitting reserve lists the grant's hash in its `applied`, as a
+/// pending crossing is listed; the reading then says applied, the same grant
+/// listed again is refused, and the growth manifest the founding held back
+/// is admitted.
+#[test]
+fn ledger_entry_applies_a_grant_and_admits_the_growth_manifest() {
+    use crate::anastome::dialogue::atlas::{LedgerEntry, LedgerRefusal, Ledgered};
+    use crate::anastome::dialogue::crossing_record::SignedStill;
+    use crate::chronometry::tuniversal::{Origin, TPoint};
+    let fp = |h: u64| TPoint { origin: Origin { genesis: [9; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0].into(), k: h };
+    let mut k = universe(true);
+    let domain = reserve_domain();
+    assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { founding: true, .. }));
+    let grant = k.endowment_reading(&domain).expect("a reading").grants[0].manifest;
+    assert!(matches!(k.manifest(&signed(manifest(2), RESERVE)), Granted::Refused(GrantRefusal::InFlight)), "the founding is not applied yet");
+    let entry = |k: &Court, u: u64, applied: Vec<([u8; 32], u64)>| {
+        let parent = k.atlas.head(&domain).map_or([0; 32], |e| e.hash);
+        LedgerEntry { domain, u, commitment: [1; 32], events: [2; 32], point: fp(u + 1), parent, applied, nonce: [u8::try_from(u).expect("a small cycle"); 32] }.signed(&key(RESERVE))
+    };
+    let first = entry(&k, 1, vec![(grant, 1)]);
+    assert!(matches!(k.ledger(&first, Some(fp(2))), Ledgered::Sealed { .. }), "the grant applied as a crossing is");
+    assert!(k.endowment_reading(&domain).expect("a reading").grants[0].applied);
+    let again = entry(&k, 2, vec![(grant, 2)]);
+    assert_eq!(k.ledger(&again, Some(fp(3))), Ledgered::Refused(LedgerRefusal::Applied), "applied once");
+    assert!(matches!(k.manifest(&signed(manifest(2), RESERVE)), Granted::Sealed { founding: false, .. }), "the growth manifest is admitted");
+}

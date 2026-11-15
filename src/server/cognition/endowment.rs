@@ -151,6 +151,14 @@ impl Court {
             .is_some_and(|chain| chain.iter().any(|e| e.entry.applied.iter().any(|(h, _)| Locator::of_bytes(*h).locates(&grant))))
     }
 
+    /// Whether `hash` is a grant this court made to `domain` that the
+    /// domain's chain has not applied yet: what a ledger entry may list in
+    /// its `applied` beside a pending crossing (78.155b).
+    pub(crate) fn grant_pending(&self, domain: &[u8; 32], hash: &[u8; 32]) -> bool {
+        let grant = Locator::of_bytes(*hash);
+        self.grants.get(domain).is_some_and(|held| held.iter().any(|g| Locator::of_bytes(g.hash).locates(&grant))) && !self.grant_applied(domain, hash)
+    }
+
     /// 78.155b — A MANIFEST GRANTED, or refused by name: the domain founded
     /// and originated; signed by its sitting reserve; its nuclei well formed;
     /// not granted before; a growth grant only once the last is applied in
