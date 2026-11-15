@@ -305,4 +305,7 @@ fn founding_allotment_is_delivered_per_final_point_along_the_temporal_plane() {
     assert_eq!(Some(more[0].1.clone()), allotment.scaled(&q(1, 4)), "T = 4T₀: three quarters in all, a quarter this beat");
     assert!(k.deliver_at(&at(14, q(12, 1))).is_empty(), "a point with T unmoved delivers nothing more");
     assert_eq!(k.treasury.balance_mu(&reserve), before.add(&allotment.scaled(&q(3, 4)).expect("scales")), "three quarters held by the reserve");
+    // The endowment read carries what was delivered on the grant itself.
+    let read = k.endowment_reading(&reserve_domain()).expect("a reading");
+    assert_eq!(Some(read.grants[0].mu.clone()), allotment.scaled(&q(3, 4)), "the grant reads the three quarters delivered");
 }
