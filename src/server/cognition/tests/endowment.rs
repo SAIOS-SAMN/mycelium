@@ -40,7 +40,7 @@ fn universe(origin: bool) -> Court {
 
 /// One nucleus of `z` protons and `q` neutrons.
 fn nucleus(z: u16, q: u32) -> crate::anastome::dialogue::endowment::Nucleus {
-    crate::anastome::dialogue::endowment::Nucleus { z, q }
+    crate::anastome::dialogue::endowment::Nucleus::of(z, q)
 }
 
 /// A package of hydrogen, carbon and iron nuclei, counted astronomically.
@@ -211,7 +211,7 @@ fn grow_grants_by_paid_grows_universe_grant() {
 #[test]
 fn endowment_reading_pages_past_the_wire_budget_and_assembles() {
     use crate::anastome::dialogue::endowment::{decode_domain_offset, encode_endowment_page, encode_endowment_reading, read_endowment, EndowmentReading, Nucleus, ENDOWMENT_PAGE};
-    let many: Vec<(Nucleus, BigUint)> = (1..=60000u32).map(|i| (Nucleus { z: u16::try_from(1 + i / 200).expect("fits"), q: i % 200 }, BigUint::from(10u8).pow(40))).collect();
+    let many: Vec<(Nucleus, BigUint)> = (1..=60000u32).map(|i| (Nucleus::of(u16::try_from(1 + i / 200).expect("fits"), i % 200), BigUint::from(10u8).pow(40))).collect();
     let r = EndowmentReading { nuclei: many, ..Default::default() };
     let whole = encode_endowment_reading(&r).expect("encodes");
     assert!(whole.len() > ENDOWMENT_PAGE, "past one page: {} bytes", whole.len());
@@ -241,4 +241,29 @@ fn endowment_reading_pages_past_the_wire_budget_and_assembles() {
         encode_endowment_page(src, offset)
     });
     assert_eq!(read, Some(moved), "the changed reading is read again from its first page");
+}
+
+/// 78.184 §5 — MANIFEST v3: each entry carries the electron phase `R` beside
+/// `(Z, Q)`, exact and signed, so one isotope at two phases is two entries,
+/// ordered and summed apart. A phase past one turn is no entry. The rest
+/// point reads `R = −(Z − Q)/(Z + Q)` at zero spin, and `R = 0` leaves the
+/// capture to the kernel's physics.
+#[test]
+fn manifest_v3_carries_the_electron_phase_and_reads_its_rest_point() {
+    use crate::anastome::dialogue::endowment::{nuclei_hold, Nucleus};
+    let q = |n: i64, d: i64| crate::core::q::Q::new(n.into(), d.into());
+    // Iron-56, at its rest phase −(26 − 30)/56 = 1/14, and left to its physics.
+    let rest = Nucleus { z: 26, q: 30, r: q(1, 14) };
+    let left = Nucleus::of(26, 30);
+    assert!(rest.at_rest(), "R = −p is the rest point");
+    assert!(left.at_rest(), "R = 0 leaves the capture to the kernel");
+    assert!(!Nucleus { z: 26, q: 30, r: q(1, 7) }.at_rest(), "a phase off the rest point reads off it");
+    let mut m = manifest(9);
+    m.nuclei = vec![(left.clone(), BigUint::from(2u8)), (rest.clone(), BigUint::from(3u8))];
+    assert!(nuclei_hold(&m.nuclei), "two phases of one isotope, ascending by R");
+    let back = crate::anastome::dialogue::domain::decode_domain_request(&crate::anastome::dialogue::endowment::encode_manifest(&signed(m.clone(), RESERVE)).expect("encodes"));
+    assert!(matches!(back, Some(crate::anastome::dialogue::domain::DomainRequest::Manifest(s)) if s.manifest == m), "the phase reads back exactly");
+    let mut over = m.clone();
+    over.nuclei = vec![(Nucleus { z: 1, q: 0, r: q(3, 2) }, BigUint::from(1u8))];
+    assert!(!nuclei_hold(&over.nuclei), "a phase past one turn is no entry");
 }

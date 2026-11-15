@@ -242,10 +242,13 @@ sub-kind 17), signed by the domain's sitting reserve:
 - its **nuclei per nucleus** `(Z protons, Q neutrons)`: the kinds the
   universe is founded from, in ascending `(Z, Q)`, each with a count that is
   a positive integer of any size (a founding is astronomical). Isotopes stay
-  apart. Wire: `(Z u16 LE, Q u32 LE, count)` per entry, signed under
-  `"mycelium manifest v2"`. *(Until 2026-11-13 each entry was keyed by Z
-  alone, `"mycelium manifest v1"`, which summed the neutrons away. Changed
-  under 78.184: Z is coupled to Q, never keyed by Z alone.)*
+  apart. Wire: `(Z u16 LE, Q u32 LE, R, count)` per entry, signed under
+  `"mycelium manifest v3"`, R the electron phase share at capture, an exact
+  rational in `[−1, 1]` turns signed by face, `0` to leave the capture to the
+  kernel's physics (78.184 §5, ruled 2026-11-14). *(Until 2026-11-13 each
+  entry was keyed by Z alone, `"mycelium manifest v1"`, which summed the
+  neutrons away; v2 (2026-11-13 to 2026-11-14) carried `(Z, Q)` without R.
+  Changed under 78.184: Z is coupled to Q, never keyed by Z alone.)*
 - a nonce, so two equal requests are two manifests.
 
 The hypha names elements by Z alone. A universe's own properties for each
