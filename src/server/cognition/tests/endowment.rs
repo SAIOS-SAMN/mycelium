@@ -308,6 +308,8 @@ fn founding_allotment_is_delivered_per_final_point_along_the_temporal_plane() {
     // The endowment read carries what was delivered on the grant itself.
     let read = k.endowment_reading(&reserve_domain()).expect("a reading");
     assert_eq!(Some(read.grants[0].mu.clone()), allotment.scaled(&q(3, 4)), "the grant reads the three quarters delivered");
+}
+
 /// 78.155b — A GRANT IS APPLIED BY THE UNIVERSE'S OWN LEDGER: an entry signed
 /// by the sitting reserve lists the grant's hash in its `applied`, as a
 /// pending crossing is listed; the reading then says applied, the same grant
