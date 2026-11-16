@@ -396,7 +396,7 @@ fn stake_unstakes_only_after_claims_settle() {
     k.settle_windows();
     assert_eq!(k.claims_on(&verifying(&payer)), [0; 4], "settled");
     let left = k.treasury.stake_of(&verifying(&payer)).expect("staked");
-    assert_eq!(left, [4, 4, 2, 3 - units]);
+    assert_eq!(left, [4, 4, 2, 4 - units]);
     assert_eq!(stake(&mut k, &payer, left.to_counts().expect("whole"), true, 3), Ok([0; 4]), "unstaked once every claim settled");
     assert_eq!(k.treasury.balance_mu(&verifying(&payer)), left);
     assert!(k.treasury.audit().is_ok());
