@@ -139,36 +139,55 @@ install or citation live).
 ### 2. The server stream, in order (milestone `next`)
 
 Each item passes only on its live reading on the standing mesh
-(8500–8502, minds working).
+(8500–8502, minds working). **The mesh now** (since the 2026-11-16 v4
+recut): branch `integ-v4`, which is main + #346 + #360 + #362 with #361
+reverted (wire-identical to main at 751aa40e, plus P2), on genesis `ecfe…` epoch 0. Its homes are under
+`/opt/mycelium-work/live`, and the v3 state is backed up in
+`live-v3-backup`. Netstratum and xylarium (seed 7) are both refounded on
+it with v4 grants, which survived the 2026-11-16 14:27 reboot with homes
+kept.
 
 | Item | Issue | State |
 |---|---|---|
-| μ created at the manifest against elemental rows, granted by ledger alignment, delivered per final point along TUniversal's temporal plane ([78.184](docs/proposals/78.184-elemental-mu.md), MU-EQUATIONS §6.13) | [#327](https://github.com/SAIOS-SAMN/mycelium/issues/327) | Steps 1–5 merged (#331, #338, #339) and read live: both kernels hold their first beat. A grant is applied by the universe's own ledger (#343, read live by netstratum). Open: step 6, μ following its nuclei across tubes; the second beat, when T next moves |
-| A manifest entry off its rest point refused, `NotAtRest` | [#348](https://github.com/SAIOS-SAMN/mycelium/issues/348) | Waiting on the operator's yes |
-| The live stroke ([78.183](docs/proposals/78.183-the-live-stroke.md)): P2, the court's reads name their lanes (§8, ruled 2026-11-15) | [#308](https://github.com/SAIOS-SAMN/mycelium/issues/308), PR #346 | Built and read live: every court hold but the docket reconstruction spends on named lanes. Draft until a solve on the hold's stroke is read live; the transducer's sites are P3, the client stream's |
-| P1b, the impulse: a turn's draw sized by its need against the lane's holding | [#347](https://github.com/SAIOS-SAMN/mycelium/issues/347) | Ruled; built on branch `impulse-p1b`; after P2 and a moving T lane |
+| μ follows its nuclei across a tube: one signed motion per universe, nucleons conserved, dissipation to the pool, μ held on the nuclei ([78.184 §6](docs/proposals/78.184-elemental-mu.md)) | [#327](https://github.com/SAIOS-SAMN/mycelium/issues/327) step 6 | **On main** (#360, 751aa40e). Its live claim, a crossing between two universes, stays open on #327 until the peers' crossing builds land (xylarium-uplink #18, netstratum #109) |
+| Manifest v4: nucleons in thirds, a kernel's pattern, the phase state per plane, paged ([78.184 §8](docs/proposals/78.184-elemental-mu.md)) | #359, closed | **On main** (#362 within #360). Read live: netstratum's 1,495-entry grant applied, and seed 7's 18 entries granted (read with `sdk/examples/endowment.rs`). Paging's live reading follows netstratum's #213 table |
+| R as an orbital phase state on a Hopf bundle; the rest point per fibre ([78.184 §7](docs/proposals/78.184-elemental-mu.md)) | #359 | Written. Netstratum's F1–F3 are derived (its docs/97 §15.9); xylarium's T24 per plane is in. The composite rest check for nodes whose planes share axes waits on netstratum's planes per capture |
+| The live stroke ([78.183](docs/proposals/78.183-the-live-stroke.md)): P2, the court's reads name their lanes (§8, ruled 2026-11-15) | [#308](https://github.com/SAIOS-SAMN/mycelium/issues/308), PR #346 | Built and read live: every court hold but the docket reconstruction spends on named lanes. Draft until a solve on the hold's stroke is read live. The transducer's sites are P3, the client stream's |
+| P1b, the impulse: a turn's draw sized by its need against the lane's holding | [#347](https://github.com/SAIOS-SAMN/mycelium/issues/347) | Ruled; built on branch `impulse-p1b`. After P2 and a moving T lane (T has held at 4/1: no mind closes, #349) |
+| A hypha's attachment as an adjunction of the cover, its detachment as a retraction ([78.185](docs/proposals/78.185-attachment-and-detachment.md), draft PR #367) | [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) | Specified. An adjunction is admitted when the cocycle closes on its link, the classes are kept, and its Hopf fibre is tethered at rest; a retraction when the nerve stays connected, the classes are kept, and claims are settled. The optimal node is read along the geodesic on the base. Both are carried as crossings (X1); the two crossing kinds await the operator's approval. Xylarium's node at 7520 is the first user |
 | Rejoin before signing; the mesh held in memory and distributed by reconstruction | [#273](https://github.com/SAIOS-SAMN/mycelium/issues/273) | Rejoin built (#315). The 2026-11-16 host reboot came back with homes kept and the kernels' state intact. Open: holding in memory (MU-ENGINEERING §8) |
-| Enrol a hypha into a running mesh after its mint, and let it leave | [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) | After #308; xylarium waits on it |
 | The universal core is the antipolar face (78.176 fixtures 1–4) | [#306](https://github.com/SAIOS-SAMN/mycelium/issues/306) | Fixtures reproduced by xylarium |
+| Reading the cross-kernel proposals: LAW-WAVEFRONT; the TUniversal point in the signed expression | [#355](https://github.com/SAIOS-SAMN/mycelium/issues/355), [#354](https://github.com/SAIOS-SAMN/mycelium/issues/354) | Open, mirrored from netstratum #9 and #92 |
 
 ### 3. The client stream
 
 | Item | Issue | State |
 |---|---|---|
-| Language stalls at grounding: perceptions ground on no pair, demands taken never close | [#349](https://github.com/SAIOS-SAMN/mycelium/issues/349) | Read live 2026-11-16 (mind a094: 19 perceptions, 0 grounded; 1,220 demands taken, 0 answered). Every later stage of language formation waits on it |
+| Language stalls at grounding: perceptions ground on no pair, demands taken never close | [#349](https://github.com/SAIOS-SAMN/mycelium/issues/349) | Read live 2026-11-16 (mind a094: 19 perceptions, 0 grounded; 1,220 demands taken, 0 answered). #361's fallback (the relative motion of two open arcs taken as a return) was removed from the mind by #363 and from the field by #366, so only a loop holding a holonomy closes |
 | Removing enums and blanket cartesian iteration; naming the transducer's read lanes (78.183 P3) | [#314](https://github.com/SAIOS-SAMN/mycelium/pull/314) | In progress; #337, #340 and #342 merged |
 
-### Waiting on a ruling
+### Waiting on the operator (governance only, 2026-11-16)
+
+Physics is derived and fixture-checked, never ruled. Only governance waits
+here: the network contract, releases, policy, and constants the physics
+does not give.
 
 | Item | Issue |
 |---|---|
-| One Noise session per peer, reused, in place of a handshake per ask; Noise made required | [#309](https://github.com/SAIOS-SAMN/mycelium/issues/309) |
+| Approve 78.185's two crossing kinds, adjunction and retraction | [#367](https://github.com/SAIOS-SAMN/mycelium/pull/367), [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) |
+| One Noise session per peer, reused; Noise made required (policy) | [#309](https://github.com/SAIOS-SAMN/mycelium/issues/309) |
 | X1's parts and the versor plane naming (X2) | [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) |
-| `NotAtRest` | [#348](https://github.com/SAIOS-SAMN/mycelium/issues/348) |
 
 ### Rulings
 
 **Ruled 2026-11-14 to 2026-11-16:**
+- `NotAtRest` (#357, merged): an entry off its rest point is refused.
+- μ follows its nuclei: the transport is multi-axial, the tube's image
+  `(Z, Q, R) ↦ (Q, Z, R̃)` is applied at the vertex, conservation is in
+  nucleons, and dissipation is admitted (78.184 §6).
+- Manifest v4's wire, approved (78.184 §8).
+- The node and its tethers as a Hopf bundle, with the composition order
+  its holonomy (78.184 §7).
 - Delivery per final point: `d_T(h) = 1 − T₀/T(h)` on TUniversal's T lane,
   each beat minted to the sitting reserve (78.184 §5).
 - The impulse `⌊need·M/(need+M)⌋` sizes a turn's draw (#347).
