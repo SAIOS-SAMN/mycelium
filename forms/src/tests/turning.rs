@@ -187,3 +187,24 @@ fn degrees_read_as_certified_sectors() {
     assert_eq!(read(q(2, 1), 2), "253;44,23");
     assert_eq!(read(q(-1, 2), 2), "-107;44,23");
 }
+
+/// 78.184 §7 (2026-11-16) — THE HOLONOMY OF A LOOP OF TURNINGS, the Hopf
+/// fibre's phase. Turning on `e₊₁e₊₂`, then on `e₊₂e₊₃`, then undoing each
+/// in the same order does not return home: the composite `R₁R₂R̃₁R̃₂` is a
+/// unit motion other than the identity, exact over ℚ. Taken in the other
+/// order the loop's holonomy is exactly its reverse, `(R₁R₂R̃₁R̃₂)~ =
+/// R₂R₁R̃₂R̃₁`, so the order of capture is physics: it fixes the holonomy's
+/// orientation, never a choice of convention.
+#[test]
+fn a_loop_of_turnings_on_planes_sharing_a_unit_holds_its_holonomy() {
+    let r1 = motion(&word(q(1, 2), &[P1, P2])).expect("a motion");
+    let r2 = motion(&word(q(1, 3), &[P2, P3])).expect("a motion");
+    let (i1, i2) = (reversed(&r1).expect("reverse"), reversed(&r2).expect("reverse"));
+    let around = |a: &Clifford, b: &Clifford, ai: &Clifford, bi: &Clifford| compose(&compose(&compose(a, b).expect("c"), ai).expect("c"), bi).expect("c");
+    let forward = around(&r1, &r2, &i1, &i2);
+    let backward = around(&r2, &r1, &i2, &i1);
+    claim_motion(&forward);
+    assert!(!same(&forward, &word(q(1, 1), &[])), "the loop does not close: its holonomy is a turning");
+    assert!(same(&reversed(&forward).expect("reverse"), &backward), "the other order holds the reverse holonomy");
+    assert!(!same(&forward, &backward), "the order is physics");
+}
