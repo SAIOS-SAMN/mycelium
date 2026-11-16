@@ -1645,11 +1645,13 @@ each, and on dissipation it recycles as the connection tax (Concordance
 5.8). Each universe's table is its own: `Q_Z` is the universe's, read from
 its stated basket, so no table of any universe is held by the hypha.
 
-**Open.** The hypha reads the dipole from the stated `(Z, Q)`; the rest
-point `R = −p` then holds by construction. A check that a stated `Q` is the
-rest point of its `Z` needs the universe's phase `R` stated beside it (its
-electron phase; xylarium E018). Until then the basket's invariants
-(`BasketEntry::holds`) are the check.
+**The rest check** (ruled 2026-11-16, #348). Each manifest entry states its
+phase `R` beside `(Z, Q)` (78.184 §5). An entry with `R ≠ 0` must stand at
+its rest point `R = −p`, `p = (Z − Q)/(Z + Q)`, and one off it is refused
+`NotAtRest`. This holds at any spin: with `R` read as the axis plane's
+induced phase `R₀`, the throat's torsion is already inside it (xylarium
+T24, xylarium#248). `R = 0` leaves the capture to the kernel's physics and
+is not checked.
 
 Sources: proposal 78.184; LAW-COUPLING v2 (78.181); xylarium docs/model.md
 (E018, the rest point). Code: `economy::elemental::row`; the creation and the share `Court::elemental_creation`, `Court::alignment_share` (`server/cognition/elemental_grant.rs`), applied in `Court::manifest` (#327).
