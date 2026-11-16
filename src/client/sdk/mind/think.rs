@@ -360,9 +360,7 @@ impl Mind {
                         let commutator = prev.geo(&r).geo(&prev.reverse()).geo(&r.reverse());
                         (!crate::transducer::sentence::presentation::is_still(&commutator)).then_some((commutator, first_chart.clone()))
                     });
-                    if by_chart.get(key.as_bytes()).is_none() {
-                        by_chart.insert(key.as_bytes(), r.clone());
-                    }
+                    by_chart.insert(key.as_bytes(), r.clone());
                     sep
                 }
                 [] => None,
@@ -526,7 +524,17 @@ impl Mind {
     /// deployment docketed 471 demands and took 1 (epoch 146): its reserve never fell
     /// short, so the syntropic phase that alone took them never ran.
     pub(crate) fn take_docketed_demands(&mut self) -> Vec<Vec<u8>> {
-        let mut budget = self.physics.stroke();
+        let items = [
+            self.contemplation.docket_open.len(),
+            self.contemplation.docket.len(),
+            self.contemplation.vortex_symmetries.len(),
+        ]
+        .into_iter()
+        .fold(0usize, |acc, n| match acc.checked_add(n) {
+            Some(sum) => sum,
+            None => usize::MAX,
+        });
+        let mut budget = self.physics.impulse_items(items);
         self.drain_demands(&mut budget)
     }
 

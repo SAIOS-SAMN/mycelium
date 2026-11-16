@@ -254,7 +254,19 @@ pub(crate) fn speech_of(epi: &MindLanguage, rule: &SentenceRule, train: &Family,
 /// re-derives it. Answers the reading and the pairs a held-out perspective
 /// left uncovered — what the siblings' rule said against the truth — which
 /// the mind LIFTS into its sensorium where the reading lands, never drops.
+#[cfg(test)]
 pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRule) -> (Ascertained, Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)>) {
+    ascertain_with_frames(epi, train, rule, None)
+}
+
+/// [`ascertain_on`] reusing already-perceived `full_frames` when available,
+/// avoiding redundant `perceive_family` work across leave-one-out folds.
+pub(crate) fn ascertain_with_frames(
+    epi: &MindLanguage,
+    train: &Family,
+    rule: &SentenceRule,
+    full_frames: Option<&Frames>,
+) -> (Ascertained, Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)>) {
     use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
     crate::observe::note_mind(|m| m.perspective[0] += 1);
     let mut lifts = Vec::new();
@@ -262,10 +274,22 @@ pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRu
         crate::observe::note_mind(|m| m.perspective[3] += 1);
         return (Ascertained::OnePerspective, lifts);
     }
+    let owned_frames;
+    let all_frames: &Frames = match full_frames {
+        Some(f) if f.len() == train.len() => f,
+        _ => {
+            owned_frames = perceive_family(train);
+            &owned_frames
+        }
+    };
     let (mut failed, mut unread) = (Vec::new(), false);
     for k in 0..train.len() {
-        let siblings: Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> = train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
-        let frames = perceive_family(&siblings);
+        if crate::physics::halted() {
+            return (Ascertained::Unread, lifts);
+        }
+        let siblings: Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> =
+            train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
+        let frames: Frames = all_frames.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, f)| f.clone()).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&siblings, &frames));
         let (x, y) = &train[k];
         let Some(rule) = extract_rule_on(&siblings, &frames, epi, &mut budget) else {

@@ -144,7 +144,7 @@ impl Mind {
     /// network round trips and nothing else. The queue is durable across
     /// strokes, so what is not taught this pass is taught next (rule 10).
     pub(crate) fn speak_owed(&mut self) {
-        let mut budget = self.physics.stroke();
+        let mut budget = self.physics.impulse_items(self.owed.len());
         let mut owed = std::mem::take(&mut self.owed);
         let keep = owed.split_off(owed.len().min(budget.remaining()));
         self.owed = keep;

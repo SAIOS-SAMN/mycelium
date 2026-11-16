@@ -404,7 +404,7 @@ fn perceive_family(memo: &mut crate::transducer::family::ExtractMemo, epi: &Mind
 }
 
 fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &MindLanguage, scene: Scene) -> Perceived {
-    use super::family::{ascertain_on, chain_percept, extract_on, pair_percept, scene_percept, speech_of, tests_spoken};
+    use super::family::{ascertain_with_frames, chain_percept, extract_on, pair_percept, scene_percept, speech_of, tests_spoken};
     let mut read = Perceived {
         ground: crate::transducer::raster::ground(),
         admission: None,
@@ -446,7 +446,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &M
     // the same way and its test inputs spoken, so a rule known on it emits
     // its solve; its uncovered perspectives are not lifted onto the mind
     // (its rule's speech is what it gives).
-    let (ascertained, lifts) = ascertain_on(epi, train, &rule);
+    let (ascertained, lifts) = ascertain_with_frames(epi, train, &rule, (!t.frames.is_empty()).then_some(&t.frames));
     read.perspectives = Some(Perspectives::of(&ascertained));
     let known = match ascertained {
         Ascertained::Known => Some(rule),
