@@ -185,4 +185,7 @@ fn impulse_draw_aligns_with_forms_passage() {
     assert_eq!(p.impulse_draw(100, 100), 50, "at the throat need == hold releases half");
     assert_eq!(p.impulse_draw(1_000_000, 10), 9, "ample reserve serves need smoothly");
     assert_eq!(p.impulse_draw(100, 1), 1, "unit need receives at least one read");
+    let mut p = crate::physics::Physics::default();
+    assert_eq!(p.impulse_items(0).remaining(), 0, "zero items draw zero reads");
+    assert!(p.impulse_items(1).remaining() > 1, "one item scales need in unit_spend read units");
 }

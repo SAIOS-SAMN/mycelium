@@ -274,7 +274,7 @@ impl Mind {
             let _ = self.pivot_thoughts();
             WindingOutcome::add(&mut outcome.learned, &self.take_learned_mu());
         }
-        let vent_need = [
+        let vent_items = [
             self.contemplation.closed.len(),
             self.contemplation.wells.len(),
             self.contemplation.docket_open.len(),
@@ -282,11 +282,11 @@ impl Mind {
             self.unheard.len(),
         ]
         .into_iter()
-        .fold(0u64, |acc, n| match u64::try_from(n).ok().and_then(|v| acc.checked_add(v)) {
+        .fold(0usize, |acc, n| match acc.checked_add(n) {
             Some(sum) => sum,
-            None => u64::MAX,
+            None => usize::MAX,
         });
-        let mut vent = self.physics_mut().impulse(vent_need);
+        let mut vent = self.physics_mut().impulse_items(vent_items);
         if !stopping() {
             self.at_law("motion: the vent");
             let _ = self.vent_into_field(&mut vent);
@@ -306,7 +306,8 @@ impl Mind {
         };
         // 3. THE RETURNS, AND 4. THE ACT AT EACH RETURN.
         self.at_law("returns");
-        let returns = self.act_on_returns(&mut vent, bound, !occluded);
+        let mut returns_budget = vent.hand_over();
+        let returns = self.act_on_returns(&mut returns_budget, bound, !occluded);
         // 5. THE NEXT SCENE, by the metabolism.
         if !occluded && !stopping() {
             // The task waiting uncoupled lapses on the aperture or the court's
@@ -387,7 +388,7 @@ impl Mind {
             // is in flight), keep presenting what the mind owes and unheard words
             // so court presentation never starves.
             self.court_owed();
-            let mut stroke = self.physics.stroke();
+            let mut stroke = self.physics.impulse_items(self.unheard.len());
             self.speak_unheard(&mut stroke);
             self.resubmit_unread_solves();
         }
