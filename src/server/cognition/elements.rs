@@ -9,7 +9,7 @@
 //! burn. Dissipation is admitted.
 //!
 //! ```text
-//! account(d)  = Σ_grants A  + Σ A taken in  − Σ A released          A = Z + Q, in nucleons
+//! account(d)  = Σ_grants 3A + Σ 3A taken in − Σ 3A released       3A = 3Z + 3Q, nucleons in thirds (78.184 §8)
 //! f           = A_released(d) / account(d)                           the share of d's nuclei that leaves
 //! carried     = f · (μ on d's nuclei: delivered and owed)            whatever its origin, never re-derived
 //! to taker t  = carried · A_taken(t) / A_released                   delivered share now, owed share as carried allotments
@@ -70,9 +70,9 @@ fn less(a: &Mu, b: &Mu) -> Mu {
     }
 }
 
-/// The nucleons `Σ n · A` of `nuclei`, exact.
+/// The nucleons of `nuclei` in thirds, `Σ n · 3A` (78.184 §8), exact.
 pub(crate) fn nucleons_of(nuclei: &Nuclei) -> BigUint {
-    nuclei.iter().fold(BigUint::zero(), |s, (k, n)| s + n * BigUint::from(k.nucleons()))
+    nuclei.iter().fold(BigUint::zero(), |s, (k, n)| s + n * BigUint::from(k.nucleons3()))
 }
 
 impl Court {
