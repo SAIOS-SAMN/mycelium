@@ -126,7 +126,7 @@ impl Court {
                 b,
                 pos,
                 COURT_TRIE,
-                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED, LEAF_WINDOWS, LEAF_POINTS],
+                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED, LEAF_WINDOWS, LEAF_POINTS, LEAF_ELEMENTS],
             )?;
             let nodes: Vec<(Vec<u8>, crate::trie_tape::Leaves)> =
                 court_trie.scoped().map(|(k, l)| (k, l.clone())).collect();
@@ -203,6 +203,16 @@ impl Court {
             if let Some(v) = leaf(leaves, LEAF_ENDOWMENT) {
                 for (domain, held) in whole(v, super::super::endowment::take_grants)? {
                     court.grants.insert(domain, held);
+                }
+            }
+            // 78.184 §6 — the carried shares and nucleon flows; absent before it.
+            if let Some(v) = leaf(leaves, LEAF_ELEMENTS) {
+                let (carried, flow) = whole(v, super::super::elements::take_elements)?;
+                for (party, held) in carried {
+                    court.carried.insert(party, held);
+                }
+                for (domain, f) in flow {
+                    court.nucleon_flow.insert(domain, f);
                 }
             }
             // 78.155c — the closures awaiting a growth grant; absent before it.

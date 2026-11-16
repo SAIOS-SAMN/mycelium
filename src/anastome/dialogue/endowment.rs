@@ -15,32 +15,31 @@
 //! (sub-kind 18) reads what the court can grant and what it has granted.
 //!
 //! ```text
-//! MANIFEST       [ACT_DOMAIN][domain 32][0x80 0x00][17][count u16 LE]
-//!                (Z u16 LE, Q u32 LE, R: Mv scalar in [−1, 1], count: Mv scalar, an integer ≥ 1)…
-//!                [nonce 32][sig 64]
+//! MANIFEST       [ACT_DOMAIN][domain 32][0x80 0x00][17][count u32 LE]
+//!                (3Z u32, 3Q u32, pattern: n u8 u32…, planes: n u8 (plane u16, K u64, phase ℚ, pole ℚ)…, count ℕ)…
+//!                [nonce 32][crossing][sig 64]
+//! MANIFEST-PAGE  [ACT_DOMAIN][domain 32][0x80 0x00][20][hash 32][total u32][offset u32][chunk]
 //! READ-ENDOWMENT [ACT_DOMAIN][domain 32][0x80 0x00][18][offset u32 LE]
 //!                answered by the page [hash 32][total u32 LE][offset u32 LE][chunk] (#332)
 //! ```
 //!
-//! Signed bytes: `"mycelium manifest v3" ‖ domain ‖ the entries as written ‖
-//! nonce`. (v1 keyed each entry by Z alone and summed the neutrons away,
-//! retired 2026-11-13; v2 carried no electron phase, retired 2026-11-14.)
+//! Signed bytes: `"mycelium manifest v4" ‖ domain ‖ the entries as written ‖
+//! nonce`. (v1 keyed each entry by Z alone, retired 2026-11-13; v2 carried no
+//! electron phase, retired 2026-11-14; v3 carried one phase share as a
+//! multivector scalar and a u16 count, retired 2026-11-16.)
 //!
-//! R (78.184 §5, ruled 2026-11-14) is the electron phase share at capture,
-//! an exact rational in `[−1, 1]` turns, signed by the dipole's face: `+` on
-//! the Z face, `−` on the Q face, `0` at the throat. A stated `R ≠ 0` stands
-//! at the rest point `p ⊕ R = 0`, `R = −(Z − Q)/(Z + Q)`, at zero spin
-//! (`Nucleus::at_rest`), and at any spin: `R` read as the axis plane's
-//! induced phase `R₀` already carries the throat's torsion (xylarium T24,
-//! ruled 2026-11-16), so a stated phase off it is refused `NotAtRest`. `R = 0` leaves the capture to the kernel's
-//! physics. `Q` is whole nucleons, so a phase is stated from the whole `(Z, Q)`
-//! the entry lists.
+//! 78.184 §8 (approved 2026-11-16): nucleons in whole thirds, so an opened
+//! plane's `Z = F + Σℓ_k/3` is exact. The kernel's `pattern` separates
+//! nuclides of equal thirds, and the court orders by it and never reads its
+//! meaning. The phase state is the planes in their composition order, each
+//! at rest when `R_p = −σ_p` (xylarium T24 per plane). The axis plane `0` is
+//! optional, and where stated its pole is the nucleon split. A manifest
+//! past one wire body is sent in pages, assembled before it is judged.
 
 use super::atlas::{byte, head, key32};
 use super::crossing_record::{crossed, Crossing};
 use crate::chronometry::Stamp;
 use crate::economy::Mu;
-use crate::transducer::cga::Mv;
 use num_bigint::BigUint;
 use num_rational::BigRational as Q;
 
@@ -48,36 +47,79 @@ use num_rational::BigRational as Q;
 pub const KIND_MANIFEST: u8 = 17;
 /// FORMAT: sub-kind byte of ACT_DOMAIN for an endowment read.
 pub const KIND_READ_ENDOWMENT: u8 = 18;
-const MANIFEST: &[u8] = b"mycelium manifest v3";
+/// FORMAT: sub-kind byte of ACT_DOMAIN for one page of a manifest.
+pub const KIND_MANIFEST_PAGE: u8 = 20;
+const MANIFEST: &[u8] = b"mycelium manifest v4";
 
-/// ONE NUCLEUS, the coupled nucleon dipole (78.184 §3, §5): `z` protons,
-/// `q` neutrons and `r` the electron phase share at capture (exact, in
-/// `[−1, 1]` turns), ordered protons first.
+/// 78.184 §8 — ONE TURNING PLANE of a nucleus's phase state: the kernel's
+/// plane id (`0` the axis plane), its winding `K`, its fibre phase `R_p` and
+/// its state pole `σ_p`, each exact.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Plane {
+    pub plane: u16,
+    pub k: u64,
+    pub phase: Q,
+    pub pole: Q,
+}
+
+/// ONE NUCLEUS (78.184 §3, §5, §8): its protons and neutrons in whole thirds
+/// (`3Z`, `3Q`), the kernel's `pattern` counts that separate nuclides of
+/// equal thirds, and its phase state, the planes in their composition order
+/// (none: the identity, left to the kernel's physics). Ordered by that key.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Nucleus {
-    pub z: u16,
-    pub q: u32,
-    pub r: Q,
+    pub z3: u32,
+    pub q3: u32,
+    pub pattern: Vec<u32>,
+    pub planes: Vec<Plane>,
 }
 
 impl Nucleus {
-    /// A nucleus whose capture is left to its kernel's physics (`R = 0`).
-    pub fn of(z: u16, q: u32) -> Nucleus {
-        Nucleus { z, q, r: Q::from_integer(0.into()) }
+    /// A nucleus of whole `z` protons and `q` neutrons whose capture is left
+    /// to its kernel's physics.
+    pub fn of(z: u16, q: u16) -> Nucleus {
+        Nucleus { z3: 3 * u32::from(z), q3: 3 * u32::from(q), pattern: Vec::new(), planes: Vec::new() }
     }
 
-    /// Whether a stated phase stands at the rest point: `R = 0` (left to the
-    /// kernel), or `R = −p` exactly with `p = (Z − Q)/(Z + Q)` (78.184 §5).
+    /// The protons, exact: `3Z / 3`.
+    pub fn z(&self) -> Q {
+        Q::new(self.z3.into(), 3.into())
+    }
+
+    /// The neutrons, exact: `3Q / 3`.
+    pub fn q(&self) -> Q {
+        Q::new(self.q3.into(), 3.into())
+    }
+
+    /// 78.184 §6, §8 — THE NUCLEONS a nucleus holds, in thirds, `3A = 3Z +
+    /// 3Q`: what a crossing conserves and an element account counts,
+    /// whatever the kind.
+    pub fn nucleons3(&self) -> u64 {
+        u64::from(self.z3) + u64::from(self.q3)
+    }
+
+    /// 78.184 §7–§8 — THE TUBE'S IMAGE: the pole swap `(3Z, 3Q) ↦ (3Q, 3Z)`,
+    /// and the phase state reversed (the versor's reverse): the planes in the
+    /// opposite order, each phase and pole negated, each winding kept. `3A`
+    /// is kept, and the image of an entry at rest is at rest.
+    pub fn image(&self) -> Nucleus {
+        let planes = self.planes.iter().rev().map(|p| Plane { plane: p.plane, k: p.k, phase: -p.phase.clone(), pole: -p.pole.clone() }).collect();
+        Nucleus { z3: self.q3, q3: self.z3, pattern: self.pattern.clone(), planes }
+    }
+
+    /// Whether the phase state stands at rest (78.184 §8; xylarium T24 per
+    /// plane): every plane's phase at its pole's antipole, `R_p = −σ_p`, and
+    /// the axis plane's pole the nucleon split `(Z − Q)/(Z + Q)`. No planes
+    /// is the identity, at rest.
     pub fn at_rest(&self) -> bool {
-        use num_traits::Zero;
-        if self.r.is_zero() {
-            return true;
-        }
-        let (z, q) = (Q::from_integer(self.z.into()), Q::from_integer(self.q.into()));
-        match crate::economy::elemental::push(&z, &q) {
-            Some(p) => self.r == -p,
-            None => false,
-        }
+        self.planes.iter().all(|p| {
+            p.phase == -p.pole.clone()
+                && (p.plane != 0
+                    || match crate::economy::elemental::push(&self.z(), &self.q()) {
+                        Some(split) => p.pole == split,
+                        None => false,
+                    })
+        })
     }
 }
 
@@ -85,44 +127,125 @@ impl Nucleus {
 /// integer of any size (a package is astronomical).
 pub type Nuclei = Vec<(Nucleus, BigUint)>;
 
-/// The nuclei well formed: not empty, `(Z, Q, R)` strictly ascending, every
-/// nucleus with a proton and a phase in `[−1, 1]`, every count at least one.
+/// The nuclei well formed: not empty, strictly ascending by key, every
+/// nucleus with a proton, every phase and pole in `[−1, 1]`, every count at
+/// least one.
 pub fn nuclei_hold(n: &Nuclei) -> bool {
     let zero = BigUint::from(0u8);
     let one = Q::from_integer(1.into());
+    let within = |x: &Q| *x <= one && *x >= -one.clone();
     !n.is_empty()
         && n.windows(2).all(|w| matches!(w, [x, y] if x.0 < y.0))
-        && n.iter().all(|(k, c)| k.z > 0 && k.r <= one && k.r >= -one.clone() && *c > zero)
+        && n.iter().all(|(k, c)| k.z3 > 0 && k.planes.iter().all(|p| within(&p.phase) && within(&p.pole)) && *c > zero)
 }
 
+/// 78.184 §8 — an exact rational, compact: `[sign u8][numer: len u16, LE]
+/// [denom: len u16, LE]`.
+fn put_q(out: &mut Vec<u8>, x: &Q) -> Option<()> {
+    use num_traits::Signed;
+    out.push(u8::from(x.is_negative()));
+    put_natural(out, &x.numer().abs().to_biguint()?)?;
+    put_natural(out, &x.denom().to_biguint()?)
+}
+
+fn take_q(b: &[u8], p: &mut usize) -> Option<Q> {
+    let negative = match *b.get(*p)? {
+        0 => false,
+        1 => true,
+        _ => return None,
+    };
+    *p += 1;
+    let (n, d) = (take_natural(b, p)?, take_natural(b, p)?);
+    if d == BigUint::from(0u8) {
+        return None;
+    }
+    let x = Q::new(n.into(), d.into());
+    // Lowest terms and a zero never signed: one writing per value.
+    let written = Q::new(x.numer().clone(), x.denom().clone());
+    use num_traits::Zero;
+    match (negative, written.is_zero()) {
+        (true, true) => None,
+        (true, false) => Some(-written),
+        (false, _) => Some(written),
+    }
+}
+
+/// A whole number of any size: `[len u16][bytes LE]`.
+fn put_natural(out: &mut Vec<u8>, n: &BigUint) -> Option<()> {
+    use num_traits::Zero;
+    // Zero is no bytes, so every value has one writing.
+    let bytes = match n.is_zero() {
+        true => Vec::new(),
+        false => n.to_bytes_le(),
+    };
+    out.extend_from_slice(&u16::try_from(bytes.len()).ok()?.to_le_bytes());
+    out.extend_from_slice(&bytes);
+    Some(())
+}
+
+fn take_natural(b: &[u8], p: &mut usize) -> Option<BigUint> {
+    let n = usize::from(u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?));
+    *p += 2;
+    let bytes = b.get(*p..*p + n)?;
+    *p += n;
+    // One writing per value: no trailing zero byte.
+    if bytes.iter().next_back() == Some(&0) {
+        return None;
+    }
+    Some(BigUint::from_bytes_le(bytes))
+}
+
+/// 78.184 §8 — the nuclei written: `[n u32]` then each entry `[3Z u32][3Q
+/// u32][pattern: n u8, u32…][planes: n u8, (plane u16, K u64, phase ℚ, pole
+/// ℚ)…][count ℕ]`.
 pub(crate) fn put_nuclei(out: &mut Vec<u8>, n: &Nuclei) -> Option<()> {
-    out.extend_from_slice(&u16::try_from(n.len()).ok()?.to_le_bytes());
+    out.extend_from_slice(&u32::try_from(n.len()).ok()?.to_le_bytes());
     for (k, c) in n {
-        out.extend_from_slice(&k.z.to_le_bytes());
-        out.extend_from_slice(&k.q.to_le_bytes());
-        Mv::scalar(k.r.clone()).to_bytes(out);
-        Mv::scalar(Q::from_integer(num_bigint::BigInt::from(c.clone()))).to_bytes(out);
+        out.extend_from_slice(&k.z3.to_le_bytes());
+        out.extend_from_slice(&k.q3.to_le_bytes());
+        out.push(u8::try_from(k.pattern.len()).ok()?);
+        for x in &k.pattern {
+            out.extend_from_slice(&x.to_le_bytes());
+        }
+        out.push(u8::try_from(k.planes.len()).ok()?);
+        for pl in &k.planes {
+            out.extend_from_slice(&pl.plane.to_le_bytes());
+            out.extend_from_slice(&pl.k.to_le_bytes());
+            put_q(out, &pl.phase)?;
+            put_q(out, &pl.pole)?;
+        }
+        put_natural(out, c)?;
     }
     Some(())
 }
 
-/// The nuclei read whole: a count that is no positive integer is no count.
+/// The nuclei read whole.
 pub(crate) fn take_nuclei(b: &[u8], p: &mut usize) -> Option<Nuclei> {
-    let n = usize::from(u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?));
-    *p += 2;
+    let u32_at = |b: &[u8], p: &mut usize| -> Option<u32> {
+        let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+        *p += 4;
+        Some(v)
+    };
+    let n = u32_at(b, p)?;
     (0..n)
         .map(|_| {
-            let z = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
-            *p += 2;
-            let neutrons = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
-            *p += 4;
-            let r = Mv::from_bytes(b, p)?.scalar_part();
-            let count = Mv::from_bytes(b, p)?.scalar_part();
-            if !count.is_integer() {
-                return None;
-            }
-            let c = count.to_integer().to_biguint()?;
-            Some((Nucleus { z, q: neutrons, r }, c))
+            let (z3, q3) = (u32_at(b, p)?, u32_at(b, p)?);
+            let np = *b.get(*p)?;
+            *p += 1;
+            let pattern = (0..np).map(|_| u32_at(b, p)).collect::<Option<Vec<_>>>()?;
+            let nl = *b.get(*p)?;
+            *p += 1;
+            let planes = (0..nl)
+                .map(|_| {
+                    let plane = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
+                    *p += 2;
+                    let k = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                    *p += 8;
+                    Some(Plane { plane, k, phase: take_q(b, p)?, pole: take_q(b, p)? })
+                })
+                .collect::<Option<Vec<_>>>()?;
+            let c = take_natural(b, p)?;
+            Some((Nucleus { z3, q3, pattern, planes }, c))
         })
         .collect()
 }
@@ -185,6 +308,27 @@ pub fn encode_manifest(s: &SignedManifest) -> Option<Vec<u8>> {
     let mut out = head(&m.domain, KIND_MANIFEST);
     put_manifest_body(&mut out, s)?;
     Some(out)
+}
+
+/// 78.184 §8 — A MANIFEST IN PAGES: its body (as [`encode_manifest`] writes it
+/// after the sub-kind) cut into pages `[hash 32][total u32][offset u32]
+/// [chunk]` that each fit the wire's body budget, every page a
+/// MANIFEST-PAGE act. The court assembles one hash's pages in order and
+/// judges the manifest once the last lands. `None` where it does not write.
+pub fn encode_manifest_pages(s: &SignedManifest) -> Option<Vec<Vec<u8>>> {
+    let mut body = Vec::new();
+    put_manifest_body(&mut body, s)?;
+    let mut pages = Vec::new();
+    let mut offset = 0usize;
+    loop {
+        let mut act = head(&s.manifest.domain, KIND_MANIFEST_PAGE);
+        act.extend_from_slice(&encode_endowment_page(&body, u32::try_from(offset).ok()?)?);
+        pages.push(act);
+        offset += ENDOWMENT_PAGE;
+        if offset >= body.len() {
+            return Some(pages);
+        }
+    }
 }
 
 /// The manifest's body after its sub-kind, as the wire and the held grant
@@ -387,6 +531,9 @@ pub enum Granted {
     Refused(GrantRefusal),
     /// Track 24 B4 — refused at the universal core tube, by name.
     Boundary(crate::court::admission::Boundary),
+    /// 78.184 §8 — a page of a manifest held, `received` of its bytes landed;
+    /// the manifest is judged once all have.
+    Paged { received: u32 },
 }
 
 /// `[0][μ⃗][founding u8][stamp][receipt 32]`, `[1][refusal u8]` or
@@ -405,6 +552,11 @@ pub fn encode_grant_reply(g: &Granted) -> Vec<u8> {
         Granted::Boundary(why) => {
             let mut out = vec![2];
             why.put(&mut out);
+            out
+        }
+        Granted::Paged { received } => {
+            let mut out = vec![3];
+            out.extend_from_slice(&received.to_le_bytes());
             out
         }
     }
@@ -431,6 +583,10 @@ pub fn decode_grant_reply(b: &[u8]) -> Option<Granted> {
         2 => {
             let why = crate::court::admission::Boundary::take(b, &mut p)?;
             (p == b.len()).then_some(Granted::Boundary(why))
+        }
+        3 => {
+            let received = u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?);
+            (p + 4 == b.len()).then_some(Granted::Paged { received })
         }
         _ => None,
     }

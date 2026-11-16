@@ -39,7 +39,7 @@ fn universe(origin: bool) -> Court {
 }
 
 /// One nucleus of `z` protons and `q` neutrons.
-fn nucleus(z: u16, q: u32) -> crate::anastome::dialogue::endowment::Nucleus {
+fn nucleus(z: u16, q: u16) -> crate::anastome::dialogue::endowment::Nucleus {
     crate::anastome::dialogue::endowment::Nucleus::of(z, q)
 }
 
@@ -213,7 +213,7 @@ fn grow_grants_by_paid_grows_universe_grant() {
 #[test]
 fn endowment_reading_pages_past_the_wire_budget_and_assembles() {
     use crate::anastome::dialogue::endowment::{decode_domain_offset, encode_endowment_page, encode_endowment_reading, read_endowment, EndowmentReading, Nucleus, ENDOWMENT_PAGE};
-    let many: Vec<(Nucleus, BigUint)> = (1..=60000u32).map(|i| (Nucleus::of(u16::try_from(1 + i / 200).expect("fits"), i % 200), BigUint::from(10u8).pow(40))).collect();
+    let many: Vec<(Nucleus, BigUint)> = (1..=60000u32).map(|i| (Nucleus::of(u16::try_from(1 + i / 200).expect("fits"), u16::try_from(i % 200).expect("fits")), BigUint::from(10u8).pow(40))).collect();
     let r = EndowmentReading { nuclei: many, ..Default::default() };
     let whole = encode_endowment_reading(&r).expect("encodes");
     assert!(whole.len() > ENDOWMENT_PAGE, "past one page: {} bytes", whole.len());
@@ -245,29 +245,87 @@ fn endowment_reading_pages_past_the_wire_budget_and_assembles() {
     assert_eq!(read, Some(moved), "the changed reading is read again from its first page");
 }
 
-/// 78.184 §5 — MANIFEST v3: each entry carries the electron phase `R` beside
-/// `(Z, Q)`, exact and signed, so one isotope at two phases is two entries,
-/// ordered and summed apart. A phase past one turn is no entry. The rest
-/// point reads `R = −(Z − Q)/(Z + Q)` at zero spin, and `R = 0` leaves the
-/// capture to the kernel's physics.
+/// 78.184 §8 — MANIFEST v4: nucleons in whole thirds, a kernel's pattern
+/// counts beside them, and the phase state as planes in their composition
+/// order, each `(plane, K, R_p, σ_p)`. An entry reads back exactly; one
+/// isotope at two phase states is two entries, ordered apart. A plane is at
+/// rest when `R_p = −σ_p`, and the axis plane `0`, where stated, has the
+/// nucleon split as its pole. A phase past one turn is no entry.
 #[test]
-fn manifest_v3_carries_the_electron_phase_and_reads_its_rest_point() {
-    use crate::anastome::dialogue::endowment::{nuclei_hold, Nucleus};
+fn manifest_v4_carries_thirds_patterns_and_the_phase_state_per_plane() {
+    use crate::anastome::dialogue::endowment::{nuclei_hold, Nucleus, Plane};
     let q = |n: i64, d: i64| crate::core::q::Q::new(n.into(), d.into());
-    // Iron-56, at its rest phase −(26 − 30)/56 = 1/14, and left to its physics.
-    let rest = Nucleus { z: 26, q: 30, r: q(1, 14) };
+    let plane = |id: u16, k: u64, phase, pole| Plane { plane: id, k, phase, pole };
+    // Iron-56 on the axis plane: pole (26 − 30)/56 = −1/14, rest phase 1/14.
+    let rest = Nucleus { planes: vec![plane(0, 0, q(1, 14), q(-1, 14))], ..Nucleus::of(26, 30) };
     let left = Nucleus::of(26, 30);
-    assert!(rest.at_rest(), "R = −p is the rest point");
-    assert!(left.at_rest(), "R = 0 leaves the capture to the kernel");
-    assert!(!Nucleus { z: 26, q: 30, r: q(1, 7) }.at_rest(), "a phase off the rest point reads off it");
+    assert!(rest.at_rest(), "R_p = −σ_p on the axis plane, its pole the nucleon split");
+    assert!(left.at_rest(), "no planes: the identity, left to the kernel");
+    assert!(!Nucleus { planes: vec![plane(0, 0, q(1, 7), q(-1, 7))], ..Nucleus::of(26, 30) }.at_rest(), "the axis plane's pole is the nucleon split, never stated past it");
+    assert!(!Nucleus { planes: vec![plane(0, 0, q(1, 7), q(-1, 14))], ..Nucleus::of(26, 30) }.at_rest(), "a phase off its pole's antipole");
+    // A kernel's three planes sharing an axis, in its own order, nucleons in
+    // thirds and a pattern beside them; the order is part of the key.
+    let thirds = Nucleus { z3: 79, q3: 90, pattern: vec![1, 0, 2, 0, 0, 1, 0, 0], planes: vec![plane(1, 2, q(1, 3), q(-1, 3)), plane(2, 0, q(-1, 5), q(1, 5)), plane(3, 1, q(0, 1), q(0, 1))] };
+    assert!(thirds.at_rest(), "every plane at its pole's antipole; no axis plane stated");
+    assert_eq!(thirds.z(), q(79, 3), "Z = F + Σℓ/3, exact");
+    let reordered = Nucleus { planes: thirds.planes.iter().rev().cloned().collect(), ..thirds.clone() };
+    assert_ne!(thirds, reordered, "the composition order is part of the key");
+    let image = thirds.image();
+    assert_eq!((image.z3, image.q3, image.nucleons3()), (90, 79, thirds.nucleons3()), "the pole swap keeps 3A");
+    assert!(image.at_rest(), "the image of an entry at rest is at rest");
+    assert_eq!(image.image(), thirds, "the image is the reverse, its own inverse on one tube");
     let mut m = manifest(9);
-    m.nuclei = vec![(left.clone(), BigUint::from(2u8)), (rest.clone(), BigUint::from(3u8))];
-    assert!(nuclei_hold(&m.nuclei), "two phases of one isotope, ascending by R");
+    // Each entry entered at its place in the key's order (rule 4: no sort).
+    let mut nuclei: Vec<(Nucleus, BigUint)> = Vec::new();
+    for e in [(left.clone(), BigUint::from(2u8)), (rest.clone(), BigUint::from(3u8)), (thirds.clone(), BigUint::from(10u8).pow(60)), (reordered.clone(), BigUint::from(1u8))] {
+        let at = nuclei.partition_point(|(k, _)| *k < e.0);
+        nuclei.insert(at, e);
+    }
+    m.nuclei = nuclei;
+    assert!(nuclei_hold(&m.nuclei), "ascending by the whole key");
     let back = crate::anastome::dialogue::domain::decode_domain_request(&crate::anastome::dialogue::endowment::encode_manifest(&signed(m.clone(), RESERVE)).expect("encodes"));
-    assert!(matches!(back, Some(crate::anastome::dialogue::domain::DomainRequest::Manifest(s)) if s.manifest == m), "the phase reads back exactly");
+    assert!(matches!(back, Some(crate::anastome::dialogue::domain::DomainRequest::Manifest(s)) if s.manifest == m), "every entry reads back exactly");
     let mut over = m.clone();
-    over.nuclei = vec![(Nucleus { z: 1, q: 0, r: q(3, 2) }, BigUint::from(1u8))];
+    over.nuclei = vec![(Nucleus { planes: vec![plane(1, 0, q(3, 2), q(-3, 2))], ..Nucleus::of(1, 0) }, BigUint::from(1u8))];
     assert!(!nuclei_hold(&over.nuclei), "a phase past one turn is no entry");
+}
+
+/// 78.184 §8 — A MANIFEST PAST ONE WIRE BODY ARRIVES IN PAGES: 15,000 entries
+/// cut into pages that each fit the budget, the court holding them in order
+/// (`Paged`) and judging the manifest once the last lands. A page out of
+/// order is refused, and nothing is granted.
+#[test]
+fn manifest_past_one_body_is_granted_from_its_pages() {
+    use crate::anastome::dialogue::domain::{decode_domain_request, DomainRequest};
+    use crate::anastome::dialogue::endowment::{encode_manifest_pages, Nucleus, Plane};
+    let q = |n: i64, d: i64| crate::core::q::Q::new(n.into(), d.into());
+    let mut m = manifest(5);
+    m.nuclei = (1u16..=3000)
+        .flat_map(|z| (0u16..5).map(move |n| (z, z + n)))
+        .map(|(z, n)| (Nucleus { pattern: vec![u32::from(z); 8], planes: vec![Plane { plane: 1, k: 1, phase: q(1, 3), pole: q(-1, 3) }], ..Nucleus::of(z, n) }, BigUint::from(10u8).pow(40)))
+        .collect();
+    let s = signed(m, RESERVE);
+    let pages = encode_manifest_pages(&s).expect("pages");
+    assert!(pages.len() > 1, "past one body: {} pages", pages.len());
+    assert!(pages.iter().all(|p| p.len() <= crate::network::wire::BODY_BUDGET), "each page within the budget");
+    let page = |b: &[u8]| match decode_domain_request(b) {
+        Some(DomainRequest::ManifestPage(d, p)) => (d, p),
+        other => panic!("a page: {other:?}"),
+    };
+    let mut k = universe(true);
+    let (d1, p1) = page(&pages[1]);
+    assert_eq!(k.manifest_page(&d1, &p1), Granted::Refused(GrantRefusal::Malformed), "a page out of order");
+    let mut last = None;
+    for (i, b) in pages.iter().enumerate() {
+        let (d, p) = page(b);
+        let g = k.manifest_page(&d, &p);
+        match i + 1 == pages.len() {
+            false => assert!(matches!(g, Granted::Paged { .. }), "held: {g:?}"),
+            true => last = Some(g),
+        }
+    }
+    assert!(matches!(last, Some(Granted::Sealed { founding: true, .. })), "judged once whole: {last:?}");
+    assert_eq!(k.grants.get(&reserve_domain()).map(|g| g[0].manifest.manifest.nuclei.len()), Some(15000), "every entry held");
 }
 
 /// 78.184 §5 — DELIVERY PER FINAL POINT. A founding grant mints nothing at
@@ -346,7 +404,14 @@ fn ledger_entry_applies_a_grant_and_admits_the_growth_manifest() {
 fn manifest_refuses_a_phase_off_its_rest_point() {
     use crate::anastome::dialogue::endowment::Nucleus;
     let q = |n: i64, d: i64| crate::core::q::Q::new(n.into(), d.into());
-    let entry = |r| vec![(Nucleus { z: 26, q: 30, r }, BigUint::from(10u8))];
+    let entry = |r: crate::core::q::Q| {
+        use num_traits::Zero;
+        let planes = match r.is_zero() {
+            true => Vec::new(),
+            false => vec![crate::anastome::dialogue::endowment::Plane { plane: 0, k: 0, phase: r, pole: q(-1, 14) }],
+        };
+        vec![(Nucleus { planes, ..Nucleus::of(26, 30) }, BigUint::from(10u8))]
+    };
     let mut k = universe(true);
     let mut off = manifest(1);
     off.nuclei = entry(q(1, 7));

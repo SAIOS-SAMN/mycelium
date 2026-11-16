@@ -78,6 +78,11 @@ pub const LEAF_WINDOWS: u8 = 12;
 /// with the stamp that sealed it first here; absent where none is held.
 /// FORMAT: court-tree leaf position for closure points.
 pub const LEAF_POINTS: u8 = 13;
+/// 78.184 §6 — the owed shares carried across tubes and each universe's
+/// nucleon flows; absent where nothing crossed (and on every home written
+/// before it).
+/// FORMAT: court-tree leaf position for the element account.
+pub const LEAF_ELEMENTS: u8 = 14;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

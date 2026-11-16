@@ -10,32 +10,37 @@
 //
 //! The payer is any key (it pays from its STAKE, 78.154 (4)). The frame's
 //! domain is the SENDING universe A, at its side of the mouth; the receiving
-//! universe B is the mouth's other side. Where matter crosses, BOTH reserves
-//! sign what crosses, per lane — A's DEBIT and B's CREDIT, exactly equal —
-//! so no universe mints matter at a throat; the court checks the two
-//! signatures and the equality, never either universe's books.
+//! universe B is the mouth's other side. Where matter crosses, each
+//! universe at the tube signs its MOTION (78.184 §6, ruled 2026-11-16): the
+//! nuclei its side releases and the nuclei its side takes in, in the
+//! manifest's own writing. The transport is multi-axial, so the crossing has
+//! no direction and one tube carries both ways. The court conserves
+//! nucleons across the motions (dissipation admitted) and moves the μ held
+//! on the nuclei with them.
 
 use super::atlas::{byte, head, key32, u64_at, KIND_TRAVERSE};
 use crate::chronometry::tuniversal::TPoint;
 
 const CROSSING: &[u8] = b"mycelium crossing v1";
-const DEBIT: &[u8] = b"mycelium crossing debit v1";
-const CREDIT: &[u8] = b"mycelium crossing credit v1";
+const MOTION: &[u8] = b"mycelium crossing motion v1";
 const TRAVERSE: &[u8] = b"mycelium traverse v1";
 
-/// ONE RESERVE'S DECLARATION of what crosses, per lane `S:G:T:H` (its
-/// inverse-μ counted on the lanes as the kernel declares it), and its
-/// reserve's signature.
+/// 78.184 §6 — ONE UNIVERSE'S MOTION at the tube: the nuclei its side
+/// releases and the nuclei its side takes in, each `(Z, Q, R, n)` as the
+/// manifest v3 writes it, signed by the domain's sitting reserve over
+/// [`Traverse::motion_bytes`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Declaration {
-    pub lanes: [u64; 4],
+pub struct Motion {
+    pub domain: [u8; 32],
+    pub released: super::endowment::Nuclei,
+    pub taken: super::endowment::Nuclei,
     pub sig: [u8; 64],
 }
 
 /// THE TRAVERSE: who pays; the mouth and A's side of it; the final point
 /// the crossing reads the map at; both mouths' mapped final points; both
 /// universes' latest entries and each entry's `u`; the route (map segment ids,
-/// either universe's); the two declarations where matter crosses; a nonce.
+/// either universe's); each universe's motion where matter crosses; a nonce.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Traverse {
     pub from: [u8; 32],
@@ -50,47 +55,42 @@ pub struct Traverse {
     pub entry_b: [u8; 32],
     pub u_b: u64,
     pub route: Vec<[u8; 32]>,
-    pub debit: Option<Declaration>,
-    pub credit: Option<Declaration>,
+    pub motions: Vec<Motion>,
     pub nonce: [u8; 32],
 }
 
-fn put_lanes(out: &mut Vec<u8>, l: &[u64; 4]) {
-    for x in l {
-        out.extend_from_slice(&x.to_le_bytes());
-    }
+fn put_motion(out: &mut Vec<u8>, m: &Motion) -> Option<()> {
+    out.extend_from_slice(&m.domain);
+    super::endowment::put_nuclei(out, &m.released)?;
+    super::endowment::put_nuclei(out, &m.taken)?;
+    out.extend_from_slice(&m.sig);
+    Some(())
 }
 
-fn take_lanes(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
-    Some([u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?])
+fn take_motion(b: &[u8], p: &mut usize) -> Option<Motion> {
+    let domain = key32(b, p)?;
+    let released = super::endowment::take_nuclei(b, p)?;
+    let taken = super::endowment::take_nuclei(b, p)?;
+    let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
+    *p += 64;
+    Some(Motion { domain, released, taken, sig })
 }
 
-fn put_declaration(out: &mut Vec<u8>, d: &Option<Declaration>) {
-    match d {
-        None => out.push(0),
-        Some(d) => {
-            out.push(1);
-            put_lanes(out, &d.lanes);
-            out.extend_from_slice(&d.sig);
-        }
+/// `[n u8][motion …]`; `None` past 255 motions or a count past its carrier.
+fn put_motions(out: &mut Vec<u8>, ms: &[Motion]) -> Option<()> {
+    out.push(u8::try_from(ms.len()).ok()?);
+    for m in ms {
+        put_motion(out, m)?;
     }
+    Some(())
 }
 
-fn take_declaration(b: &[u8], p: &mut usize) -> Option<Option<Declaration>> {
-    match byte(b, p)? {
-        0 => Some(None),
-        1 => {
-            let lanes = take_lanes(b, p)?;
-            let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
-            *p += 64;
-            Some(Some(Declaration { lanes, sig }))
-        }
-        _ => None,
-    }
+fn take_motions(b: &[u8], p: &mut usize) -> Option<Vec<Motion>> {
+    (0..byte(b, p)?).map(|_| take_motion(b, p)).collect()
 }
 
 impl Traverse {
-    /// The crossing's coordinates: everything but the declarations.
+    /// The crossing's coordinates: everything but the motions.
     fn core(&self) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&self.from);
@@ -113,44 +113,39 @@ impl Traverse {
     }
 
     /// THE CROSSING'S HASH — the reconciliation edge's id on the map, and
-    /// what both declarations and a receiver's applied list name.
+    /// what every motion and a receiver's applied list name.
     pub fn crossing(&self) -> [u8; 32] {
         let mut b = CROSSING.to_vec();
         b.extend_from_slice(&self.core());
         crate::chronometry::payload_hash(&b)
     }
 
-    /// What A's reserve signs for its DEBIT: `"mycelium crossing debit v1"
-    /// ‖ crossing ‖ lanes`.
-    pub fn debit_bytes(&self, lanes: &[u64; 4]) -> Vec<u8> {
-        let mut out = DEBIT.to_vec();
+    /// What a universe's sitting reserve signs for its MOTION: `"mycelium
+    /// crossing motion v1" ‖ crossing ‖ domain ‖ released ‖ taken`.
+    pub fn motion_bytes(&self, domain: &[u8; 32], released: &super::endowment::Nuclei, taken: &super::endowment::Nuclei) -> Option<Vec<u8>> {
+        let mut out = MOTION.to_vec();
         out.extend_from_slice(&self.crossing());
-        put_lanes(&mut out, lanes);
-        out
+        out.extend_from_slice(domain);
+        super::endowment::put_nuclei(&mut out, released)?;
+        super::endowment::put_nuclei(&mut out, taken)?;
+        Some(out)
     }
 
-    /// What B's reserve signs for its CREDIT.
-    pub fn credit_bytes(&self, lanes: &[u64; 4]) -> Vec<u8> {
-        let mut out = CREDIT.to_vec();
-        out.extend_from_slice(&self.crossing());
-        put_lanes(&mut out, lanes);
-        out
-    }
-
-    /// What the payer signs: `"mycelium traverse v1" ‖ core ‖ debit ‖
-    /// credit`.
-    pub fn signed_bytes(&self) -> Vec<u8> {
+    /// What the payer signs: `"mycelium traverse v1" ‖ core ‖ motions`;
+    /// `None` where the motions do not write.
+    pub fn signed_bytes(&self) -> Option<Vec<u8>> {
         let mut out = TRAVERSE.to_vec();
         out.extend_from_slice(&self.core());
-        put_declaration(&mut out, &self.debit);
-        put_declaration(&mut out, &self.credit);
-        out
+        put_motions(&mut out, &self.motions)?;
+        Some(out)
     }
 
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedTraverse {
+    /// The traverse signed by the payer; `None` where its motions do not
+    /// write.
+    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> Option<SignedTraverse> {
         use ed25519_dalek::Signer;
-        let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedTraverse { traverse: self, sig }
+        let sig = key.sign(&self.signed_bytes()?).to_bytes();
+        Some(SignedTraverse { traverse: self, sig })
     }
 }
 
@@ -162,9 +157,10 @@ pub struct SignedTraverse {
 
 /// `[ACT_DOMAIN][from 32][0x80 0x00][16][payer 32][mouth 32][side u8][at
 /// 84][point_a 84][point_b 84][entry_a 32][u_a u64][entry_b 32][u_b u64]
-/// [route count][segment 32 …][0 | 1 debit lanes 4×u64 sig 64][0 | 1 credit
-/// …][nonce 32][sig 64]`.
-pub fn encode_traverse(s: &SignedTraverse) -> Vec<u8> {
+/// [route count][segment 32 …][n u8][motion: domain 32, released nuclei,
+/// taken nuclei, sig 64 …][nonce 32][sig 64]`; `None` where the motions do
+/// not write.
+pub fn encode_traverse(s: &SignedTraverse) -> Option<Vec<u8>> {
     let t = &s.traverse;
     let mut out = head(&t.from, KIND_TRAVERSE);
     out.extend_from_slice(&t.payer);
@@ -181,11 +177,10 @@ pub fn encode_traverse(s: &SignedTraverse) -> Vec<u8> {
     for r in &t.route {
         out.extend_from_slice(r);
     }
-    put_declaration(&mut out, &t.debit);
-    put_declaration(&mut out, &t.credit);
+    put_motions(&mut out, &t.motions)?;
     out.extend_from_slice(&t.nonce);
     out.extend_from_slice(&s.sig);
-    out
+    Some(out)
 }
 
 pub(crate) fn take_traverse(from: [u8; 32], b: &[u8], p: &mut usize) -> Option<SignedTraverse> {
@@ -195,11 +190,11 @@ pub(crate) fn take_traverse(from: [u8; 32], b: &[u8], p: &mut usize) -> Option<S
     let (entry_a, u_a) = (key32(b, p)?, u64_at(b, p)?);
     let (entry_b, u_b) = (key32(b, p)?, u64_at(b, p)?);
     let route = (0..crate::transducer::address::take_key_count(b, p)?).map(|_| key32(b, p)).collect::<Option<Vec<_>>>()?;
-    let (debit, credit) = (take_declaration(b, p)?, take_declaration(b, p)?);
+    let motions = take_motions(b, p)?;
     let nonce = key32(b, p)?;
     let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
     *p += 64;
-    let traverse = Traverse { from, payer, mouth, side, at, point_a, point_b, entry_a, u_a, entry_b, u_b, route, debit, credit, nonce };
+    let traverse = Traverse { from, payer, mouth, side, at, point_a, point_b, entry_a, u_a, entry_b, u_b, route, motions, nonce };
     Some(SignedTraverse { traverse, sig })
 }
 
@@ -252,12 +247,13 @@ pub enum CrossRefusal {
     NotYetAtH(Side),
     /// 9 — a route segment is on neither universe's map.
     Route,
-    /// 10 — matter declared by one reserve only.
-    OneSided,
-    /// 11 — the debit and the credit differ on a lane.
-    Mismatched,
-    /// 12 — a declaration's signature is not its reserve's.
-    DeclarationUnsigned(Side),
+    /// 10 — 78.184 §6: a motion of a universe that is neither side of the
+    /// tube, or two motions of one universe.
+    NotAtTube,
+    /// 11 — 78.184 §6: the motions take in more nucleons than they release.
+    NotConserved,
+    /// 12 — a motion's signature is not its universe's sitting reserve's.
+    MotionUnsigned(Side),
     /// 13 — the payer's stake does not cover the map fee, on a lane.
     Short,
     /// 14 — two of the cited points stand at different origins.
@@ -268,6 +264,14 @@ pub enum CrossRefusal {
     LineRefused,
     /// 17 — the same crossing sealed already.
     Crossed,
+    /// 18 — 78.184 §6: a universe releases more nucleons than its element
+    /// account holds.
+    PastAccount(Side),
+    /// 19 — 78.184 §5: a motion's entry states a phase off its rest point.
+    NotAtRest(Side),
+    /// 20 — 78.184 §6: a universe's sitting reserve cannot cover the
+    /// delivered μ its release carries.
+    Uncovered(Side),
 }
 
 impl CrossRefusal {
@@ -282,14 +286,17 @@ impl CrossRefusal {
             CrossRefusal::NotLatest(s) => [7, s.byte()],
             CrossRefusal::NotYetAtH(s) => [8, s.byte()],
             CrossRefusal::Route => [9, 0],
-            CrossRefusal::OneSided => [10, 0],
-            CrossRefusal::Mismatched => [11, 0],
-            CrossRefusal::DeclarationUnsigned(s) => [12, s.byte()],
+            CrossRefusal::NotAtTube => [10, 0],
+            CrossRefusal::NotConserved => [11, 0],
+            CrossRefusal::MotionUnsigned(s) => [12, s.byte()],
             CrossRefusal::Short => [13, 0],
             CrossRefusal::Origins => [14, 0],
             CrossRefusal::Overflow => [15, 0],
             CrossRefusal::LineRefused => [16, 0],
             CrossRefusal::Crossed => [17, 0],
+            CrossRefusal::PastAccount(s) => [18, s.byte()],
+            CrossRefusal::NotAtRest(s) => [19, s.byte()],
+            CrossRefusal::Uncovered(s) => [20, s.byte()],
         }
     }
 
@@ -305,23 +312,27 @@ impl CrossRefusal {
             (7, _) => CrossRefusal::NotLatest(s()?),
             (8, _) => CrossRefusal::NotYetAtH(s()?),
             (9, 0) => CrossRefusal::Route,
-            (10, 0) => CrossRefusal::OneSided,
-            (11, 0) => CrossRefusal::Mismatched,
-            (12, _) => CrossRefusal::DeclarationUnsigned(s()?),
+            (10, 0) => CrossRefusal::NotAtTube,
+            (11, 0) => CrossRefusal::NotConserved,
+            (12, _) => CrossRefusal::MotionUnsigned(s()?),
             (13, 0) => CrossRefusal::Short,
             (14, 0) => CrossRefusal::Origins,
             (15, 0) => CrossRefusal::Overflow,
             (16, 0) => CrossRefusal::LineRefused,
             (17, 0) => CrossRefusal::Crossed,
+            (18, _) => CrossRefusal::PastAccount(s()?),
+            (19, _) => CrossRefusal::NotAtRest(s()?),
+            (20, _) => CrossRefusal::Uncovered(s()?),
             _ => return None,
         })
     }
 }
 
 /// THE ROUTE'S GAS, per lane, exact and never collapsed: S the route's
-/// spatial span in geometrized megaparsecs (an exact rational), G the value
-/// carried as both reserves declared it, T the TUniversal distance between
-/// the two mouths' cited final points (ticks), H the information carried.
+/// spatial span in geometrized megaparsecs (an exact rational), G the
+/// nucleons released (78.184 §6: matter changing hands), T the TUniversal
+/// distance between the two mouths' cited final points (ticks), H the
+/// nucleons taken in.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Gas {
     pub s: (u64, u64),
