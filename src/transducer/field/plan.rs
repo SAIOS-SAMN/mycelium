@@ -135,11 +135,12 @@ impl Contemplation {
         })
     }
 
-    /// Two-tube Hopf holonomy candidates on `chart`: when an open arc `forward`
-    /// ($R_2$) meets a prior open demand $R_1$ on the same `chart`, going out
-    /// along $R_1$ and returning through $\tilde{R}_2$ sweeps the two-tube
-    /// closure $\tilde{R}_2 R_1$, and the four-leg boundary sweeps the
-    /// commutator $R_1 R_2 \tilde{R}_1 \tilde{R}_2$.
+    /// 78.184 §7 — THE HOLONOMY CANDIDATES on `chart`: when an open arc
+    /// `forward` ($R_2$) meets a prior open demand $R_1$ on the same `chart`,
+    /// the four-leg loop $R_1 R_2 \tilde{R}_1 \tilde{R}_2$ holds the holonomy
+    /// the two enclose. Only a loop holds one: the relative motion
+    /// $\tilde{R}_2 R_1$ of two open arcs is no return, and taking it as one
+    /// closes every pair. Commuting legs give the identity, and no candidate.
     pub(crate) fn hopf_return_holonomy(&self, chart: &[u8], forward: &crate::transducer::cga::Mv) -> Vec<crate::transducer::cga::Mv> {
         let back = forward.reverse();
         let mut out = Vec::new();
@@ -150,10 +151,6 @@ impl Contemplation {
             }
             if prev.projective_eq(forward) || prev.projective_eq(&back) {
                 continue;
-            }
-            let two_tube = back.geo(prev);
-            if !crate::transducer::sentence::presentation::is_still(&two_tube) {
-                out.push(two_tube);
             }
             let comm = prev.geo(forward).geo(&prev.reverse()).geo(&back);
             if !crate::transducer::sentence::presentation::is_still(&comm) {

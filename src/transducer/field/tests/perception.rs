@@ -516,8 +516,11 @@ fn take_next_demand_leaves_remaining_demands_untaken() {
     let r2 = second.residue.expect("second residue");
     assert!(!r1.projective_eq(&r2));
     let [chart, ..] = first.charts.as_slice() else { panic!("chart") };
+    // Two slides commute: their four-leg loop is the identity, so it holds
+    // no holonomy and closes nothing (78.184 §7). Their relative motion is
+    // no return and is never offered as one.
     let holonomies = c.hopf_return_holonomy(chart.key().as_bytes(), &r2);
-    assert!(!holonomies.is_empty(), "two distinct open tubes on one chart yield a non-still two-tube return holonomy");
+    assert!(holonomies.is_empty(), "commuting open arcs enclose no holonomy: nothing to close against");
 }
 
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one
