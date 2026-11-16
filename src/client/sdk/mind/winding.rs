@@ -274,7 +274,19 @@ impl Mind {
             let _ = self.pivot_thoughts();
             WindingOutcome::add(&mut outcome.learned, &self.take_learned_mu());
         }
-        let mut vent = self.stroke();
+        let vent_need = [
+            self.contemplation.closed.len(),
+            self.contemplation.wells.len(),
+            self.contemplation.docket_open.len(),
+            self.contemplation.docket.len(),
+            self.unheard.len(),
+        ]
+        .into_iter()
+        .fold(0u64, |acc, n| match u64::try_from(n).ok().and_then(|v| acc.checked_add(v)) {
+            Some(sum) => sum,
+            None => u64::MAX,
+        });
+        let mut vent = self.physics_mut().impulse(vent_need);
         if !stopping() {
             self.at_law("motion: the vent");
             let _ = self.vent_into_field(&mut vent);
