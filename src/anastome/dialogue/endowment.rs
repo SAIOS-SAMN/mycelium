@@ -30,8 +30,9 @@
 //! an exact rational in `[−1, 1]` turns, signed by the dipole's face: `+` on
 //! the Z face, `−` on the Q face, `0` at the throat. A stated `R ≠ 0` stands
 //! at the rest point `p ⊕ R = 0`, `R = −(Z − Q)/(Z + Q)`, at zero spin
-//! (`Nucleus::at_rest`); the check is not applied until the torsion offset of
-//! a spinning core is ruled. `R = 0` leaves the capture to the kernel's
+//! (`Nucleus::at_rest`), and at any spin: `R` read as the axis plane's
+//! induced phase `R₀` already carries the throat's torsion (xylarium T24,
+//! ruled 2026-11-16), so a stated phase off it is refused `NotAtRest`. `R = 0` leaves the capture to the kernel's
 //! physics. `Q` is whole nucleons, so a phase is stated from the whole `(Z, Q)`
 //! the entry lists.
 
@@ -329,6 +330,9 @@ pub enum GrantRefusal {
     Short,
     /// A price or a sum passes its carrier.
     Overflow,
+    /// 78.184 §5 — an entry states a phase `R ≠ 0` off its rest point
+    /// `R = −(Z − Q)/(Z + Q)` (`Nucleus::at_rest`).
+    NotAtRest,
     /// The court's line could not take the act.
     LineRefused,
     /// 78.155c — a growth grant with no closure judged in the universe since
@@ -350,6 +354,7 @@ impl GrantRefusal {
             GrantRefusal::LineRefused => 10,
             GrantRefusal::NoNewClosures => 11,
             GrantRefusal::Unaligned => 12,
+            GrantRefusal::NotAtRest => 13,
         }
     }
 
@@ -366,6 +371,7 @@ impl GrantRefusal {
             GrantRefusal::LineRefused,
             GrantRefusal::NoNewClosures,
             GrantRefusal::Unaligned,
+            GrantRefusal::NotAtRest,
         ]
         .into_iter()
         .find(|r| r.byte() == b)

@@ -337,3 +337,27 @@ fn ledger_entry_applies_a_grant_and_admits_the_growth_manifest() {
     assert_eq!(k.ledger(&again, Some(fp(3))), Ledgered::Refused(LedgerRefusal::Applied), "applied once");
     assert!(matches!(k.manifest(&signed(manifest(2), RESERVE)), Granted::Sealed { founding: false, .. }), "the growth manifest is admitted");
 }
+
+/// 78.184 §5 (ruled 2026-11-16, #348) — A STATED PHASE OFF ITS REST POINT IS
+/// REFUSED BY NAME, nothing granted: iron (26, 30) rests at `R = 1/14`, so
+/// `R = 1/7` is refused `NotAtRest`, while the rest point itself and `R = 0`
+/// are granted.
+#[test]
+fn manifest_refuses_a_phase_off_its_rest_point() {
+    use crate::anastome::dialogue::endowment::Nucleus;
+    let q = |n: i64, d: i64| crate::core::q::Q::new(n.into(), d.into());
+    let entry = |r| vec![(Nucleus { z: 26, q: 30, r }, BigUint::from(10u8))];
+    let mut k = universe(true);
+    let mut off = manifest(1);
+    off.nuclei = entry(q(1, 7));
+    assert!(matches!(k.manifest(&signed(off, RESERVE)), Granted::Refused(GrantRefusal::NotAtRest)));
+    assert!(k.grants.get(&reserve_domain()).is_none(), "nothing granted");
+    let mut rest = manifest(2);
+    rest.nuclei = entry(q(1, 14));
+    assert!(matches!(k.manifest(&signed(rest, RESERVE)), Granted::Sealed { .. }), "the rest point is granted");
+    let mut unstated = manifest(3);
+    unstated.nuclei = entry(q(0, 1));
+    let mut k2 = universe(true);
+    assert!(matches!(k2.manifest(&signed(unstated, RESERVE)), Granted::Sealed { .. }), "R = 0 is left to the kernel");
+    assert_eq!(GrantRefusal::of(13), Some(GrantRefusal::NotAtRest));
+}

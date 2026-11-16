@@ -226,11 +226,13 @@ impl Court {
         if !nuclei_hold(&m.nuclei) {
             return refuse(GrantRefusal::Malformed);
         }
-        // 78.184 §5 — the rest-point check of a stated phase (`Nucleus::at_rest`)
-        // is not applied yet: a spinning core offsets the rest point by its
-        // torsion (operator to xylarium, 2026-11-15: "R needs offset on
-        // pressure from torsion"), and the bare `p ⊕ R = 0` would refuse every
-        // phase a spinning universe states. Applied once the offset is ruled.
+        // 78.184 §5 — A STATED PHASE STANDS AT ITS REST POINT (ruled
+        // 2026-11-16, #348): with `R` read as the axis plane's induced phase
+        // `R₀`, `p = −R₀` holds at any spin (xylarium T24), so the bare test
+        // is the rule. `R = 0` is left to the kernel's physics.
+        if !m.nuclei.iter().all(|(n, _)| n.at_rest()) {
+            return refuse(GrantRefusal::NotAtRest);
+        }
         let Some(hash) = m.hash() else { return refuse(GrantRefusal::Malformed) };
         let held: Vec<HeldGrant> = match self.grants.get(&m.domain) {
             Some(g) => g.clone(),
