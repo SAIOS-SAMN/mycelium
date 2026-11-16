@@ -95,3 +95,45 @@ fn mu_follows_its_nuclei_across_a_tube_with_dissipation_to_the_pool() {
     assert_eq!(to_b, founding_b.add(&owed_b.scaled(&q(1, 2)).expect("half")), "5's own founding beat and half its carried allotment");
 }
 
+
+/// NO TRAVERSAL IS A FREE LOOP. μ is held on the nuclei, never re-derived
+/// from the holder: universe 4 releases 100 of its 1,000 hydrogen and 5
+/// (granted nothing) takes 90; 5 then releases those 90 and 4 takes 81
+/// back. Each pass dissipates a tenth to the pool, so 4's reserve ends
+/// short by exactly the two passes' losses, 19% of the delivered μ that
+/// left, and never gains.
+#[test]
+fn out_and_back_returns_the_same_mu_less_each_dissipation() {
+    let (mut k, m, _) = founded();
+    granted(&mut k, 4, 1000);
+    let _ = k.deliver_at(&on_t(3, 2));
+    let _ = k.deliver_at(&on_t(4, 4));
+    let ra = verifying(&reserve(4));
+    let a_before = k.treasury.balance_mu(&ra);
+    let half = Mu::of_modes(k.elemental_creation(&hydrogen(100)).expect("rows").scaled(&k.alignment_share(&domain(4)).expect("aligned")).expect("scales")).scaled(&q(1, 2)).expect("half");
+    assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
+    assert!(matches!(map(&mut k, 5, 10, mouth(m, 1, 3)), Mapped::Sealed { .. }));
+    let payer = key(60);
+    fund(&mut k, verifying(&payer), [20, 400, 20, 400]);
+    assert_eq!(stake(&mut k, &payer, [20, 400, 20, 400], false, 1), Ok([20, 400, 20, 400]));
+    let point = |k: &Court, d: u8, side: u8| {
+        let id = crate::server::cognition::atlas::mouth_citation(&domain(d), &m, side);
+        k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point.clone())
+    };
+    let cross = |k: &mut Court, u: u64, out: (u8, u32), into: (u8, u32), nonce: u8| {
+        assert!(matches!(commit(k, 4, u, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
+        assert!(matches!(commit(k, 5, u, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
+        let head = |k: &Court, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
+        let ((entry_a, u_a), (entry_b, u_b)) = (head(k, 4), head(k, 5));
+        let mut t = Traverse { from: domain(4), payer: verifying(&payer), mouth: m, side: 0, at: fp(10), point_a: point(k, 4, 0), point_b: point(k, 5, 1), entry_a, u_a, entry_b, u_b, route: Vec::new(), motions: Vec::new(), nonce: [nonce; 32] };
+        t.motions = vec![motion(&t, out.0, out.1, 0), motion(&t, into.0, 0, into.1)];
+        let crossed = k.traverse(&t.sign(&payer).expect("signs"), Some(fp(10)));
+        assert!(matches!(crossed, Crossed::Sealed { .. }), "crossed: {crossed:?}");
+    };
+    cross(&mut k, 1, (4, 100), (5, 90), 1);
+    cross(&mut k, 2, (5, 90), (4, 81), 2);
+    assert_eq!(k.element_account(&domain(4)), Some(BigUint::from(981u32)), "1,000 less 100 out plus 81 back");
+    assert_eq!(k.element_account(&domain(5)), Some(BigUint::from(0u32)), "all it took, released");
+    let lost = half.scaled(&q(19, 100)).expect("the two losses");
+    assert_eq!(a_before.draw(&lost).ok(), Some(k.treasury.balance_mu(&ra)), "4 holds what it began with less exactly the two dissipations");
+}

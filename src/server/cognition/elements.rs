@@ -10,15 +10,19 @@
 //!
 //! ```text
 //! account(d)  = Σ_grants A  + Σ A taken in  − Σ A released          A = Z + Q, in nucleons
-//! carried_l   = Σ_released n · row(Z, Q)_l · share(d)               the μ held on what d releases
-//! to taker t  = carried · A_taken(t) / A_released                   delivered share now, owed share as a carried allotment
+//! f           = A_released(d) / account(d)                           the share of d's nuclei that leaves
+//! carried     = f · (μ on d's nuclei: delivered and owed)            whatever its origin, never re-derived
+//! to taker t  = carried · A_taken(t) / A_released                   delivered share now, owed share as carried allotments
 //! to the pool = carried · (A_released − A_taken) / A_released       the connection tax (Concordance 5.8)
 //! ```
 //!
-//! The delivered share `d` of the releaser's founding moves at once, reserve
-//! to reserve; the owed share `1 − d` moves as a carried allotment, delivered
-//! along the same T lane from the same `T₀` (`deliver_at`), so nothing is
-//! delivered twice and nothing is lost to the crossing.
+//! μ IS HELD ON THE NUCLEI, never re-derived from the holder (2026-11-16):
+//! a universe's μ on nuclei is what its founding delivered plus what it
+//! carried in, and what both still owe. A release carries its nucleon share
+//! of all of it, so out and back returns the same μ less what each pass
+//! dissipated: no traversal is a free loop. Each owed share keeps its own
+//! source's `T₀` and delivered share, delivered along the same T lane
+//! (`deliver_carried`), so nothing is delivered twice.
 
 use super::Court;
 use crate::anastome::dialogue::crossing::{CrossRefusal, Motion, Side};
@@ -28,10 +32,11 @@ use crate::economy::Mu;
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 
-/// ONE CARRIED ALLOTMENT: the owed share of μ that crossed with its nuclei,
-/// delivered to `to` (a sitting reserve, or the court itself for the pool)
-/// along the T lane from the releaser's `T₀`, `delivered` the share already
-/// delivered when it crossed.
+/// ONE CARRIED ALLOTMENT: μ that crossed with its nuclei, held for the party
+/// it delivers to (a domain's sitting reserve, or this court for the pool):
+/// `allotment` what is still owed, delivered along the T lane from its
+/// source's `T₀`; `delivered` the share of the source already delivered;
+/// `mu` what this record has delivered so far, held on the nuclei.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Carried {
     pub(crate) to_pool: bool,
@@ -39,6 +44,21 @@ pub(crate) struct Carried {
     pub(crate) allotment: Mu,
     pub(crate) t0: Option<Q>,
     pub(crate) delivered: Q,
+    pub(crate) mu: Mu,
+}
+
+/// An exact scaling that passed its carrier reads as nothing moved.
+trait OrZero {
+    fn unwrap_or_else_zero(self) -> Mu;
+}
+
+impl OrZero for Option<Mu> {
+    fn unwrap_or_else_zero(self) -> Mu {
+        match self {
+            Some(m) => m,
+            None => Mu::zero(),
+        }
+    }
 }
 
 /// `a − b` per lane, a lane past empty standing at zero: what a founding
@@ -73,18 +93,38 @@ impl Court {
         (held >= released).then(|| held - released)
     }
 
-    /// The μ held on `nuclei` released by `domain`: `Σ n · row · share`.
-    fn carried_of(&mut self, domain: &[u8; 32], nuclei: &Nuclei) -> Option<Mu> {
-        let share = self.alignment_share(domain)?;
-        let created = self.elemental_creation(nuclei).ok()?;
-        Some(Mu::of_modes(created.scaled(&share)?))
+    /// THE μ ON `domain`'s NUCLEI, by source: each founding and each carried
+    /// record, with what it delivered (held by the reserve), what it still
+    /// owes, its `T₀` and its delivered share.
+    fn sources_of(&self, domain: &[u8; 32]) -> Vec<(Mu, Mu, Option<Q>, Q)> {
+        let mut out = Vec::new();
+        for g in self.grants.get(domain).into_iter().flatten().filter(|g| g.founding) {
+            let owed = g.allotment.scaled(&(Q::one() - &g.delivered)).unwrap_or_else_zero();
+            out.push((g.mu.clone(), owed, g.t0.clone(), g.delivered.clone()));
+        }
+        for c in self.carried.get(domain).into_iter().flatten() {
+            out.push((c.mu.clone(), c.allotment.clone(), c.t0.clone(), c.delivered.clone()));
+        }
+        out
     }
 
-    /// THE RELEASER'S DELIVERY: its founding's `T₀` and the share delivered.
-    fn delivery_of(&self, domain: &[u8; 32]) -> (Option<Q>, Q) {
-        match self.grants.get(domain).and_then(|g| g.iter().find(|g| g.founding)) {
-            Some(g) => (g.t0.clone(), g.delivered.clone()),
-            None => (None, Q::zero()),
+    /// Every source on `domain`'s nuclei kept at `1 − f`: the share that
+    /// stays when `f` of its nucleons leave.
+    fn keep_sources(&mut self, domain: &[u8; 32], f: &Q) {
+        let stay = Q::one() - f;
+        if let Some(mut held) = self.grants.get(domain).cloned() {
+            for g in held.iter_mut().filter(|g| g.founding) {
+                g.allotment = g.allotment.scaled(&stay).unwrap_or_else_zero();
+                g.mu = g.mu.scaled(&stay).unwrap_or_else_zero();
+            }
+            self.grants.insert(*domain, held);
+        }
+        if let Some(mut held) = self.carried.get(domain).cloned() {
+            for c in held.iter_mut() {
+                c.allotment = c.allotment.scaled(&stay).unwrap_or_else_zero();
+                c.mu = c.mu.scaled(&stay).unwrap_or_else_zero();
+            }
+            self.carried.insert(*domain, held);
         }
     }
 
@@ -142,42 +182,34 @@ impl Court {
         let mut parts = Vec::new();
         for m in motions.iter().filter(|m| !m.released.is_empty()) {
             let who = if m.domain == a { Side::A } else { Side::B };
-            let Some(carried) = self.carried_of(&m.domain, &m.released) else { return Err(CrossRefusal::Overflow) };
-            let (t0, d) = self.delivery_of(&m.domain);
-            let Some(now) = carried.scaled(&d) else { return Err(CrossRefusal::Overflow) };
+            let out = nucleons_of(&m.released);
+            let Some(account) = self.element_account(&m.domain).filter(|n| !n.is_zero()) else { return Err(CrossRefusal::PastAccount(who)) };
+            let f = Q::from_integer(out.into()) / Q::from_integer(account.into());
+            let sources = self.sources_of(&m.domain);
+            let now = sources.iter().fold(Mu::zero(), |s, (held, ..)| s.add(&held.scaled(&f).unwrap_or_else_zero()));
             let Some(reserve) = self.reserve_of(&m.domain) else { return Err(CrossRefusal::Uncovered(who)) };
             if !now.shortfall(&self.treasury.balance_mu(&reserve)).is_zero() {
                 return Err(CrossRefusal::Uncovered(who));
             }
-            parts.push((m.domain, reserve, carried, now, t0, d));
+            parts.push((m.domain, reserve, f, now, sources));
         }
-        for (domain, reserve, carried, now, t0, d) in parts {
-            // The releaser's founding gives up what crossed: its allotment
-            // by the whole carried μ, its delivered μ by the share moved.
-            if let Some(mut held) = self.grants.get(&domain).cloned() {
-                if let Some(g) = held.iter_mut().find(|g| g.founding) {
-                    g.allotment = less(&g.allotment, &carried);
-                    g.mu = less(&g.mu, &now);
-                }
-                self.grants.insert(domain, held);
-            }
-            let owed = less(&carried, &now);
-            for (to, f) in takers.iter().filter(|(_, f)| !f.is_zero()) {
+        for (domain, reserve, f, now, sources) in parts {
+            self.keep_sources(&domain, &f);
+            for (to, share) in takers.iter().filter(|(_, x)| !x.is_zero()) {
                 let Some(to_reserve) = self.reserve_of(to) else { continue };
-                if let Some(paid) = now.scaled(f) {
-                    let _ = self.treasury.pay(reserve, to_reserve, paid, anchor);
-                }
-                if let Some(allot) = owed.scaled(f) {
-                    self.push_carried(*to, Carried { to_pool: false, crossing, allotment: allot, t0: t0.clone(), delivered: d.clone() });
+                let paid = now.scaled(share).unwrap_or_else_zero();
+                let _ = self.treasury.pay(reserve, to_reserve, paid, anchor);
+                for (held, owed, t0, d) in &sources {
+                    let part = |x: &Mu| x.scaled(&(&f * share)).unwrap_or_else_zero();
+                    self.push_carried(*to, Carried { to_pool: false, crossing, allotment: part(owed), t0: t0.clone(), delivered: d.clone(), mu: part(held) });
                 }
             }
             if !lost.is_zero() {
-                if let Some(taxed) = now.scaled(&lost) {
-                    self.pay_connection_tax(reserve, taxed, anchor);
-                }
-                if let Some(allot) = owed.scaled(&lost) {
-                    let court = self.identity;
-                    self.push_carried(court, Carried { to_pool: true, crossing, allotment: allot, t0: t0.clone(), delivered: d.clone() });
+                self.pay_connection_tax(reserve, now.scaled(&lost).unwrap_or_else_zero(), anchor);
+                let court = self.identity;
+                for (_, owed, t0, d) in &sources {
+                    let allot = owed.scaled(&(&f * &lost)).unwrap_or_else_zero();
+                    self.push_carried(court, Carried { to_pool: true, crossing, allotment: allot, t0: t0.clone(), delivered: d.clone(), mu: Mu::zero() });
                 }
             }
         }
@@ -245,6 +277,7 @@ pub(crate) fn put_elements(carried: &crate::network::nerve::Keyed<Vec<Carried>>,
                 }
             }
             put_q(&mut v, &c.delivered);
+            c.mu.put(&mut v);
         }
     }
     put_key_count(&mut v, flow.len());
@@ -290,7 +323,8 @@ pub(crate) fn take_elements(b: &[u8], p: &mut usize) -> Option<(Vec<([u8; 32], V
                         _ => return None,
                     };
                     let delivered = take_q(b, p)?;
-                    Some(Carried { to_pool, crossing, allotment, t0, delivered })
+                    let mu = Mu::take_from(b, p)?;
+                    Some(Carried { to_pool, crossing, allotment, t0, delivered, mu })
                 })
                 .collect::<Option<Vec<_>>>()?;
             Some((party, held))
@@ -333,6 +367,9 @@ impl Court {
                     },
                 };
                 let minted = self.treasury.mint_to(to, due, anchor, None);
+                if !c.to_pool {
+                    c.mu = c.mu.add(&minted);
+                }
                 if c.to_pool {
                     self.pay_connection_tax(to, minted.clone(), anchor);
                 }
