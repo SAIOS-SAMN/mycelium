@@ -121,8 +121,8 @@ impl Physics {
         }
     }
 
-    /// 78.183 P1b, #353 — Draw an impulse [`Budget`] sized from `need`
-    /// against the limiting lane's reserve holding via [`forms::passage`].
+    /// 78.183 P1b, #353 — Draw an impulse [`Budget`] sized from `need` (in
+    /// reads) against the limiting lane's reserve holding via [`forms::passage`].
     pub fn impulse(&mut self, need: u64) -> Budget {
         let [a, b, c, d] = self.reserve.lanes();
         let hold = a.min(b).min(c).min(d);
@@ -131,6 +131,18 @@ impl Physics {
             Ok(remaining) => Budget { remaining },
             Err(_) => Budget { remaining: usize::MAX },
         }
+    }
+
+    /// 78.183 P1b, #353 — Draw an impulse [`Budget`] for `items` pending work
+    /// items, scaling `items` into read units (`items * unit_spend()`) so
+    /// `hold` and `reach` stand in the same read units on [`forms::passage`].
+    pub fn impulse_items(&mut self, items: usize) -> Budget {
+        let unit = self.unit_spend();
+        let need = match u64::try_from(items).ok().and_then(|n| n.checked_mul(unit)) {
+            Some(v) => v,
+            None => u64::MAX,
+        };
+        self.impulse(need)
     }
 
     /// A stroke whose remaining reads are `n`. Test callers use it so the
