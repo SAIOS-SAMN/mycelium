@@ -123,6 +123,7 @@ fn domain_manifest(session: &Speaker, key: &SigningKey) -> Result<String, String
         }
         Granted::Refused(r) => Err(format!("a manifest of the sitting reserve refused: {r:?}")),
         Granted::Boundary(why) => Err(format!("a manifest of the sitting reserve refused at the tube: {why:?}")),
+        Granted::Paged { received } => Err(format!("a manifest sent whole answered as a page: {received} bytes held")),
     }
 }
 

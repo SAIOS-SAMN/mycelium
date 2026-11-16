@@ -18,7 +18,7 @@
 //! MANIFEST       [ACT_DOMAIN][domain 32][0x80 0x00][17][count u32 LE]
 //!                (3Z u32, 3Q u32, pattern: n u8 u32…, planes: n u8 (plane u16, K u64, phase ℚ, pole ℚ)…, count ℕ)…
 //!                [nonce 32][crossing][sig 64]
-//! MANIFEST-PAGE  [ACT_DOMAIN][domain 32][0x80 0x00][19][hash 32][total u32][offset u32][chunk]
+//! MANIFEST-PAGE  [ACT_DOMAIN][domain 32][0x80 0x00][20][hash 32][total u32][offset u32][chunk]
 //! READ-ENDOWMENT [ACT_DOMAIN][domain 32][0x80 0x00][18][offset u32 LE]
 //!                answered by the page [hash 32][total u32 LE][offset u32 LE][chunk] (#332)
 //! ```
@@ -47,6 +47,8 @@ use num_rational::BigRational as Q;
 pub const KIND_MANIFEST: u8 = 17;
 /// FORMAT: sub-kind byte of ACT_DOMAIN for an endowment read.
 pub const KIND_READ_ENDOWMENT: u8 = 18;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for one page of a manifest.
+pub const KIND_MANIFEST_PAGE: u8 = 20;
 const MANIFEST: &[u8] = b"mycelium manifest v4";
 
 /// 78.184 §8 — ONE TURNING PLANE of a nucleus's phase state: the kernel's
@@ -75,8 +77,8 @@ pub struct Nucleus {
 impl Nucleus {
     /// A nucleus of whole `z` protons and `q` neutrons whose capture is left
     /// to its kernel's physics.
-    pub fn of(z: u16, q: u32) -> Nucleus {
-        Nucleus { z3: 3 * u32::from(z), q3: q.saturating_mul(3), pattern: Vec::new(), planes: Vec::new() }
+    pub fn of(z: u16, q: u16) -> Nucleus {
+        Nucleus { z3: 3 * u32::from(z), q3: 3 * u32::from(q), pattern: Vec::new(), planes: Vec::new() }
     }
 
     /// The protons, exact: `3Z / 3`.
@@ -170,7 +172,12 @@ fn take_q(b: &[u8], p: &mut usize) -> Option<Q> {
 
 /// A whole number of any size: `[len u16][bytes LE]`.
 fn put_natural(out: &mut Vec<u8>, n: &BigUint) -> Option<()> {
-    let bytes = n.to_bytes_le();
+    use num_traits::Zero;
+    // Zero is no bytes, so every value has one writing.
+    let bytes = match n.is_zero() {
+        true => Vec::new(),
+        false => n.to_bytes_le(),
+    };
     out.extend_from_slice(&u16::try_from(bytes.len()).ok()?.to_le_bytes());
     out.extend_from_slice(&bytes);
     Some(())
@@ -182,7 +189,7 @@ fn take_natural(b: &[u8], p: &mut usize) -> Option<BigUint> {
     let bytes = b.get(*p..*p + n)?;
     *p += n;
     // One writing per value: no trailing zero byte.
-    if bytes.last() == Some(&0) {
+    if bytes.iter().next_back() == Some(&0) {
         return None;
     }
     Some(BigUint::from_bytes_le(bytes))
@@ -301,6 +308,27 @@ pub fn encode_manifest(s: &SignedManifest) -> Option<Vec<u8>> {
     let mut out = head(&m.domain, KIND_MANIFEST);
     put_manifest_body(&mut out, s)?;
     Some(out)
+}
+
+/// 78.184 §8 — A MANIFEST IN PAGES: its body (as [`encode_manifest`] writes it
+/// after the sub-kind) cut into pages `[hash 32][total u32][offset u32]
+/// [chunk]` that each fit the wire's body budget, every page a
+/// MANIFEST-PAGE act. The court assembles one hash's pages in order and
+/// judges the manifest once the last lands. `None` where it does not write.
+pub fn encode_manifest_pages(s: &SignedManifest) -> Option<Vec<Vec<u8>>> {
+    let mut body = Vec::new();
+    put_manifest_body(&mut body, s)?;
+    let mut pages = Vec::new();
+    let mut offset = 0usize;
+    loop {
+        let mut act = head(&s.manifest.domain, KIND_MANIFEST_PAGE);
+        act.extend_from_slice(&encode_endowment_page(&body, u32::try_from(offset).ok()?)?);
+        pages.push(act);
+        offset += ENDOWMENT_PAGE;
+        if offset >= body.len() {
+            return Some(pages);
+        }
+    }
 }
 
 /// The manifest's body after its sub-kind, as the wire and the held grant
@@ -503,6 +531,9 @@ pub enum Granted {
     Refused(GrantRefusal),
     /// Track 24 B4 — refused at the universal core tube, by name.
     Boundary(crate::court::admission::Boundary),
+    /// 78.184 §8 — a page of a manifest held, `received` of its bytes landed;
+    /// the manifest is judged once all have.
+    Paged { received: u32 },
 }
 
 /// `[0][μ⃗][founding u8][stamp][receipt 32]`, `[1][refusal u8]` or
@@ -521,6 +552,11 @@ pub fn encode_grant_reply(g: &Granted) -> Vec<u8> {
         Granted::Boundary(why) => {
             let mut out = vec![2];
             why.put(&mut out);
+            out
+        }
+        Granted::Paged { received } => {
+            let mut out = vec![3];
+            out.extend_from_slice(&received.to_le_bytes());
             out
         }
     }
@@ -547,6 +583,10 @@ pub fn decode_grant_reply(b: &[u8]) -> Option<Granted> {
         2 => {
             let why = crate::court::admission::Boundary::take(b, &mut p)?;
             (p == b.len()).then_some(Granted::Boundary(why))
+        }
+        3 => {
+            let received = u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?);
+            (p + 4 == b.len()).then_some(Granted::Paged { received })
         }
         _ => None,
     }
