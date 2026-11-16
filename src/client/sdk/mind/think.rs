@@ -358,11 +358,14 @@ impl Mind {
                     let key = first_chart.key();
                     let sep = by_chart.get(key.as_bytes()).and_then(|prev| {
                         let commutator = prev.geo(&r).geo(&prev.reverse()).geo(&r.reverse());
-                        (!crate::transducer::sentence::presentation::is_still(&commutator)).then_some((commutator, first_chart.clone()))
+                        if !crate::transducer::sentence::presentation::is_still(&commutator) {
+                            return Some((commutator, first_chart.clone()));
+                        }
+                        let two_tube = r.reverse().geo(prev);
+                        (!prev.projective_eq(&r) && !crate::transducer::sentence::presentation::is_still(&two_tube))
+                            .then_some((two_tube, first_chart.clone()))
                     });
-                    if by_chart.get(key.as_bytes()).is_none() {
-                        by_chart.insert(key.as_bytes(), r.clone());
-                    }
+                    by_chart.insert(key.as_bytes(), r.clone());
                     sep
                 }
                 [] => None,

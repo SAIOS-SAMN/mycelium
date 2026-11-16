@@ -511,9 +511,13 @@ fn take_next_demand_leaves_remaining_demands_untaken() {
 
     let first = c.take_next_demand().expect("first demand taken");
     assert!(!c.demands_taken.is_empty());
-    let second = c.take_next_demand();
-    assert!(second.is_some(), "second demand must remain available rather than being orphaned");
-    assert_ne!(first.residue, second.and_then(|d| d.residue));
+    let second = c.take_next_demand().expect("second demand must remain available rather than being orphaned");
+    let r1 = first.residue.expect("first residue");
+    let r2 = second.residue.expect("second residue");
+    assert!(!r1.projective_eq(&r2));
+    let [chart, ..] = first.charts.as_slice() else { panic!("chart") };
+    let holonomies = c.hopf_return_holonomy(chart.key().as_bytes(), &r2);
+    assert!(!holonomies.is_empty(), "two distinct open tubes on one chart yield a non-still two-tube return holonomy");
 }
 
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one
