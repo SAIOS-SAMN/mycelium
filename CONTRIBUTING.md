@@ -38,7 +38,7 @@ Part I.
 1. **Find or open an issue.** Start from
    [ROADMAP › Now](ROADMAP.md#now): the release in progress, the work ready
    to start, and what waits on a ruling. Each item there is an issue with a
-   milestone (`v0.3.0`, `next`) and a track label (`track-N`). `good first
+   milestone (`v0.4.0`, `v0.5.0`, `next`) and a track label (`track-N`). `good first
    issue` marks a contained starting point, `in progress` marks work
    already claimed, and `maintainers` marks release and operator work. A
    change of behaviour opens a *proposal* issue naming the section of the
