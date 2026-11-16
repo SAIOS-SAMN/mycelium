@@ -26,8 +26,10 @@ its claims and its files, and a milestone: `v0.4.0` (what the final
 release still needs), `v0.5.0` (the economy as motions) or `next` (the
 server stream's order of work). Claim one by commenting on it before
 starting ([CONTRIBUTING › How to contribute](CONTRIBUTING.md#how-to-contribute)).
-List them with `gh issue list --milestone v0.4.0`, `--milestone next` and
-`--milestone v0.5.0`.
+List them with `gh issue list --milestone N`: 3 for v0.4.0, 4 for v0.5.0
+and 2 for next. The project [Mycelium](https://github.com/orgs/SAIOS-SAMN/projects/2)
+holds every open item with its status, area, governing section and seam;
+[BUILD_OUT.md](BUILD_OUT.md) says how an item is built.
 
 **Released: v0.3.0** (tag `v0.3.0` on 53429794, 2026-11-04, signed with
 the prototype key; [docs/release-keys/](docs/release-keys/)). Netstratum and
