@@ -1376,7 +1376,7 @@ impl Contemplation {
         let Some(bodies) = bodies else { return self.ungrounded(Ungrounded::Unplaced) };
         let hours = if orbit { first.other_nuclei.len() as u64 + 1 } else { 2 };
         let forward = if orbit { generator.clone() } else { generator.reverse() };
-        match ground_of(bodies.clone(), &forward) {
+        match ground_of(bodies, &forward) {
             Ok(ground) => {
                 let grounded = super::well::Grounded { chart: first.chart.clone(), hours, ground, twist: None };
                 self.wind_ground(&grounded, hours, budget);
@@ -1394,28 +1394,16 @@ impl Contemplation {
             // A motion the cell already docketed (an open cell's escape) is
             // that one demand. Either way it stands in the scene of the
             // perception that filed it (`Contemplation::demands_in_scene`).
+            Err(Ungrounded::NoReturn) if self.docketed_residue(&forward) => self.ungrounded(Ungrounded::NoReturn),
             Err(Ungrounded::NoReturn) => {
-                let closed_holonomy = self
-                    .hopf_return_holonomy(&first.chart, &forward)
-                    .into_iter()
-                    .find_map(|loop_m| ground_of(bodies.clone(), &loop_m).ok());
-                if let Some(ground) = closed_holonomy {
-                    let grounded = super::well::Grounded { chart: first.chart.clone(), hours, ground, twist: None };
-                    self.wind_ground(&grounded, hours, budget);
-                    self.grounds.insert(pair_key(key, other), grounded);
-                    self.cross_scene.grounds[0] += 1;
-                } else {
-                    self.ungrounded(Ungrounded::NoReturn);
-                }
-                if !self.docketed_residue(&forward) {
-                    let class = halves(&forward).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
-                    match (class, stalk::Invariant::from_key(&first.chart)) {
-                        (Some(k), Some(chart)) => {
-                            self.docket_demand(&k, &[chart], Some(&forward));
-                            self.cross_scene.demanded += 1;
-                        }
-                        _ => self.cross_scene.undemanded += 1,
+                self.ungrounded(Ungrounded::NoReturn);
+                let class = halves(&forward).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
+                match (class, stalk::Invariant::from_key(&first.chart)) {
+                    (Some(k), Some(chart)) => {
+                        self.docket_demand(&k, &[chart], Some(&forward));
+                        self.cross_scene.demanded += 1;
                     }
+                    _ => self.cross_scene.undemanded += 1,
                 }
             }
             Err(why) => self.ungrounded(why),

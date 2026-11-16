@@ -135,34 +135,6 @@ impl Contemplation {
         })
     }
 
-    /// Two-tube Hopf holonomy candidates on `chart`: when an open arc `forward`
-    /// ($R_2$) meets a prior open demand $R_1$ on the same `chart`, going out
-    /// along $R_1$ and returning through $\tilde{R}_2$ sweeps the two-tube
-    /// closure $\tilde{R}_2 R_1$, and the four-leg boundary sweeps the
-    /// commutator $R_1 R_2 \tilde{R}_1 \tilde{R}_2$.
-    pub(crate) fn hopf_return_holonomy(&self, chart: &[u8], forward: &crate::transducer::cga::Mv) -> Vec<crate::transducer::cga::Mv> {
-        let back = forward.reverse();
-        let mut out = Vec::new();
-        for (_, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
-            let Cite::Demand { residue: Some(prev), cover: Some(charts), .. } = &c else { continue };
-            if !charts.iter().any(|k| k.as_slice() == chart) {
-                continue;
-            }
-            if prev.projective_eq(forward) || prev.projective_eq(&back) {
-                continue;
-            }
-            let two_tube = back.geo(prev);
-            if !crate::transducer::sentence::presentation::is_still(&two_tube) {
-                out.push(two_tube);
-            }
-            let comm = prev.geo(forward).geo(&prev.reverse()).geo(&back);
-            if !crate::transducer::sentence::presentation::is_still(&comm) {
-                out.push(comm);
-            }
-        }
-        out
-    }
-
     /// 78.109 C1 — THE DEMAND TAKER (CV4/SP2, VN1: "only a discharge answered
     /// a docketed Demand"). Each demand on the plan — this orbit's and the
     /// open questions — handed out ONCE, by its entry's coordinates: its
