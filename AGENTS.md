@@ -16,12 +16,12 @@ and those documents differ, the documents govern.
    run it), this file, then [ROADMAP › Now](ROADMAP.md#now): the release
    in progress, the work ready to start, and what waits on a ruling.
 2. **Pick one issue from the Now section.** Take an item under *Ready to
-   start*, or a v0.3.0 item marked *Ready*. Prefer `good first issue` for a
+   start*, or a `v0.4.0` item marked *Ready*. Prefer `good first issue` for a
    first contribution. Never start an item marked `in progress` or
    `maintainers`, or one waiting on a ruling. With no item named, the
    default is the first open item in *Ready to start*.
-   - List them: `gh issue list --milestone next` and
-     `gh issue list --milestone v0.3.0`.
+   - List them: `gh issue list --milestone v0.4.0`,
+     `gh issue list --milestone next` and `gh issue list --label "good first issue"`.
 3. **Claim it** with a comment on the issue, before writing code.
 4. **Read the issue's specification whole**: the sections it names, the
    ROADMAP track it belongs to, and [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md)'s
