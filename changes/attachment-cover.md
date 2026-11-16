@@ -1,0 +1,3 @@
+### Attachment and detachment of a hypha, as a change of cover
+
+Proposal 78.185 (#276) defines attaching and detaching a hypha as a change of cover, with the acts only their carriers. An attachment adjoins the hypha's open set and is admitted when the cocycle closes on its link, every class is kept, and its Hopf fibre links an existing node's at rest. A detachment retracts the set, admitted when the nerve stays connected, every class keeps a representative, and the hypha's claims are settled. The entrant finds the optimal node by reading the map along the geodesic on its base, not by trying candidates.
