@@ -192,7 +192,7 @@ pub use mycelium::anastome::dialogue::tube::{decode_tube_reading, Tube, TubeRead
 /// TRAVERSE (`ACT_DOMAIN` kind 16, 78.154): a coordinate retrieval through
 /// a mapped wormhole, signed by the payer; the court's answer (`Crossed`):
 /// the crossing's hash, the gas and the map fee, or the refusal by name.
-pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, CrossRefusal, Crossed, Declaration, Gas, SignedTraverse, Traverse};
+pub use mycelium::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, CrossRefusal, Crossed, Gas, Motion, SignedTraverse, Traverse};
 
 /// RETRIEVE (`ACT_DOMAIN` kind 19, 78.154 (4), #159): a coordinate
 /// retrieval of the receipts at a final point's tick, signed by the staker

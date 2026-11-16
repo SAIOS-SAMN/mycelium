@@ -69,6 +69,10 @@ impl Court {
                 self.mark_persist();
             }
         }
+        // 78.184 §6 — the owed shares that crossed with their nuclei, on the
+        // same T lane.
+        let anchor = self.anchor();
+        out.extend(self.deliver_carried(&t, anchor));
         out
     }
 }

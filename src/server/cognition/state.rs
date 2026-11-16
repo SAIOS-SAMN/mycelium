@@ -528,6 +528,12 @@ pub struct Court {
     /// universe's nuclei are read off these, never held beside them (law 12)
     /// — persisted on the court's own node (`LEAF_ENDOWMENT`).
     pub(crate) grants: crate::network::nerve::Keyed<Vec<super::endowment::HeldGrant>>,
+    /// 78.184 §6 — THE OWED SHARES CARRIED ACROSS TUBES, by the party each
+    /// delivers to (a domain, or this court for the recycled pool), and each
+    /// universe's NUCLEONS taken in and released across tubes — persisted on
+    /// the court's own node (`LEAF_ELEMENTS`).
+    pub(crate) carried: crate::network::nerve::Keyed<Vec<super::elements::Carried>>,
+    pub(crate) nucleon_flow: crate::network::nerve::Keyed<(num_bigint::BigUint, num_bigint::BigUint)>,
     /// 78.155c — THE CLOSURES JUDGED IN EACH UNIVERSE SINCE ITS LAST GRANT:
     /// by domain, the measured discharge of every first closure a key of that
     /// domain made, summed exact per lane — what its next growth grant moves.

@@ -65,6 +65,20 @@ impl Nucleus {
         Nucleus { z, q, r: Q::from_integer(0.into()) }
     }
 
+    /// 78.184 §6 — THE NUCLEONS a nucleus holds, `A = Z + Q`: what a
+    /// crossing conserves and an element account counts, whatever the kind.
+    pub fn nucleons(&self) -> u64 {
+        u64::from(self.z) + u64::from(self.q)
+    }
+
+    /// 78.184 §6 (ruled 2026-11-16) — THE TUBE'S IMAGE of a nucleus, taken
+    /// at the other mouth: the pole swap `(Z, Q) ↦ (Q, Z)` with the phase
+    /// reflected, `R ↦ −R`. `A` is kept and the image of an entry at rest is
+    /// at rest. `None` where `Q` passes the proton carrier.
+    pub fn image(&self) -> Option<Nucleus> {
+        Some(Nucleus { z: u16::try_from(self.q).ok()?, q: u32::from(self.z), r: -self.r.clone() })
+    }
+
     /// Whether a stated phase stands at the rest point: `R = 0` (left to the
     /// kernel), or `R = −p` exactly with `p = (Z − Q)/(Z + Q)` (78.184 §5).
     pub fn at_rest(&self) -> bool {

@@ -7,7 +7,7 @@ use crate::anastome::dialogue::atlas::{
     decode_ledger_page, decode_ledger_reply, decode_map_reading, decode_map_reply, encode_ledger, encode_ledger_page, encode_ledger_read, encode_ledger_reply, encode_map, encode_map_read,
     encode_map_reading, encode_map_reply, HeldEntry, HeldRecord, LedgerEntry, LedgerPage, LedgerRefusal, Ledgered, MapAct, MapEntry, MapRecord, MapRefusal, Mapped, Segment,
 };
-use crate::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, encode_traverse_reply, CrossRefusal, Crossed, Declaration, Gas, Side, Traverse};
+use crate::anastome::dialogue::crossing::{decode_traverse_reply, encode_traverse, encode_traverse_reply, CrossRefusal, Crossed, Motion, Gas, Side, Traverse};
 use crate::anastome::dialogue::domain::{decode_domain_request, DomainRequest};
 use crate::anastome::dialogue::uplink::{decode_uplink_reply, encode_uplink_reply, TaxRefusal, Uplinked};
 use crate::anastome::dialogue::wallet::{decode_stake, decode_stake_reply, decode_wallet, encode_stake, encode_stake_reply, StakeAct, StakeRefusal};
@@ -146,28 +146,28 @@ fn traverse_round_trips() {
         entry_b: [2; 32],
         u_b: 7,
         route: vec![[8; 32], [9; 32]],
-        debit: None,
-        credit: None,
+        motions: Vec::new(),
         nonce: [5; 32],
     };
-    let lanes = [5, 2, 0, 3];
-    let debit = Declaration { lanes, sig: ed25519_dalek::Signer::sign(&key(24), &t.debit_bytes(&lanes)).to_bytes() };
-    let credit = Declaration { lanes, sig: ed25519_dalek::Signer::sign(&key(25), &t.credit_bytes(&lanes)).to_bytes() };
+    // 78.184 §6 — each universe's motion, its release and its take.
+    let iron = vec![(crate::anastome::dialogue::endowment::Nucleus::of(26, 30), num_bigint::BigUint::from(7u8))];
     let crossing = t.crossing();
-    t.debit = Some(debit);
-    t.credit = Some(credit);
-    assert_eq!(t.crossing(), crossing, "the declarations are no part of the crossing");
-    let signed = t.clone().sign(&key(40));
-    let Some(DomainRequest::Traverse(back)) = decode_domain_request(&encode_traverse(&signed)) else { panic!("a traverse") };
+    let a = Motion { domain: [6; 32], released: iron.clone(), taken: Vec::new(), sig: ed25519_dalek::Signer::sign(&key(24), &t.motion_bytes(&[6; 32], &iron, &Vec::new()).expect("writes")).to_bytes() };
+    let b = Motion { domain: [7; 32], released: Vec::new(), taken: iron.clone(), sig: ed25519_dalek::Signer::sign(&key(25), &t.motion_bytes(&[7; 32], &Vec::new(), &iron).expect("writes")).to_bytes() };
+    t.motions = vec![a, b];
+    assert_eq!(t.crossing(), crossing, "the motions are no part of the crossing");
+    let signed = t.clone().sign(&key(40)).expect("signs");
+    let Some(DomainRequest::Traverse(back)) = decode_domain_request(&encode_traverse(&signed).expect("writes")) else { panic!("a traverse") };
     assert_eq!(back.traverse, t);
-    assert!(verifies(&key(40), &back.traverse.signed_bytes(), &back.sig));
-    let d = back.traverse.debit.as_ref().expect("the debit");
-    assert!(verifies(&key(24), &back.traverse.debit_bytes(&d.lanes), &d.sig));
+    assert!(verifies(&key(40), &back.traverse.signed_bytes().expect("writes"), &back.sig));
+    let m = &back.traverse.motions[0];
+    assert!(verifies(&key(24), &back.traverse.motion_bytes(&m.domain, &m.released, &m.taken).expect("writes"), &m.sig));
     for r in [
         Crossed::Sealed { crossing, h: 30, point: at(9), gas: Gas { s: (11, 4), g: 2, t: 2, h: 3 }, price: [1; 4].into(), fee: crate::economy::Mu::counts([11, 8, 8, 12]).part(4).expect("quarters") },
         Crossed::Refused(CrossRefusal::NotYetAtH(Side::B)),
         Crossed::Refused(CrossRefusal::Unmapped(Side::A)),
-        Crossed::Refused(CrossRefusal::Mismatched),
+        Crossed::Refused(CrossRefusal::NotConserved),
+        Crossed::Refused(CrossRefusal::PastAccount(Side::B)),
     ] {
         assert_eq!(decode_traverse_reply(&encode_traverse_reply(&r)), Some(r.clone()));
     }

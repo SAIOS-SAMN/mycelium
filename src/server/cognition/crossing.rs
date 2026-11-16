@@ -97,7 +97,7 @@ impl Court {
         use CrossRefusal as R;
         let refuse = Crossed::Refused;
         let t = &s.traverse;
-        if !crate::court::identity::verify(&t.payer, &t.signed_bytes(), &s.sig) {
+        if !t.signed_bytes().is_some_and(|bytes| crate::court::identity::verify(&t.payer, &bytes, &s.sig)) {
             return refuse(R::Unsigned);
         }
         let crossing = t.crossing();
@@ -150,25 +150,16 @@ impl Court {
                 _ => return refuse(R::NotYetAtH(who)),
             }
         }
-        let carried = match (&t.debit, &t.credit) {
-            (None, None) => [0; 4],
-            (Some(_), None) | (None, Some(_)) => return refuse(R::OneSided),
-            (Some(d), Some(c)) => {
-                let signed = |domain: &[u8; 32], bytes: Vec<u8>, sig: &[u8; 64]| self.reserve_of(domain).is_some_and(|r| crate::court::identity::verify(&r, &bytes, sig));
-                if !signed(&t.from, t.debit_bytes(&d.lanes), &d.sig) {
-                    return refuse(R::DeclarationUnsigned(Side::A));
-                }
-                if !signed(&to, t.credit_bytes(&c.lanes), &c.sig) {
-                    return refuse(R::DeclarationUnsigned(Side::B));
-                }
-                if d.lanes != c.lanes {
-                    return refuse(R::Mismatched);
-                }
-                d.lanes
-            }
+        // 78.184 §6 — the motions: nucleons conserved, each release within its
+        // account, every entry at rest, each signed by its sitting reserve.
+        let (released, taken) = match self.check_motions(t, t.from, to) {
+            Ok(n) => n,
+            Err(why) => return refuse(why),
         };
-        // THE GAS, per lane, exact: S the route's span, G and H what the two
-        // reserves declared crossing, T the ticks between the mouths' points.
+        let (Ok(g), Ok(h)) = (u64::try_from(&released), u64::try_from(&taken)) else { return refuse(R::Overflow) };
+        // THE GAS, per lane, exact: S the route's span, G the nucleons
+        // released, H the nucleons taken in, T the ticks between the mouths'
+        // points.
         let mut span = Q::from_integer(0.into());
         for id in &t.route {
             let seg = [t.from, to].iter().find_map(|d| self.atlas.records.get(&record_key(d, id)).map(|h| h.record.clone()));
@@ -177,7 +168,7 @@ impl Court {
         }
         let (Ok(sn), Ok(sd)) = (u64::try_from(span.numer()), u64::try_from(span.denom())) else { return refuse(R::Overflow) };
         let ticks = t.point_a.h.abs_diff(t.point_b.h);
-        let gas = Gas { s: (sn, sd), g: carried[1], t: ticks, h: carried[3] };
+        let gas = Gas { s: (sn, sd), g, t: ticks, h };
         let Some(price) = self.read_price() else { return refuse(R::Overflow) };
         let fee = priced(&span, &gas, &price);
         if !fee.shortfall(&self.staked(&t.payer)).is_zero() {
@@ -188,6 +179,10 @@ impl Court {
         let Some(court) = fin else { return refuse(R::NotFinal) };
         if self.draw_claim(t.payer, &crossing, fee.clone(), &r).is_none() {
             return refuse(R::Short);
+        }
+        // 78.184 §6 — the μ held on the nuclei moves with them.
+        if let Err(why) = self.carry_motions(&t.motions, t.from, crossing, &released, (r.stamp, r.chain_hash.bytes())) {
+            return refuse(why);
         }
         let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at.clone(), u_a: t.u_a, u_entry: t.u_b, u_applied: None };
         self.atlas.edges.insert(crossing, edge);
