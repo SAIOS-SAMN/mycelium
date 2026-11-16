@@ -475,6 +475,8 @@ use mycelium_sdk::house::encode_traverse as _;
 use mycelium_sdk::house::CrossRefusal as _;
 use mycelium_sdk::house::Crossed as _;
 use mycelium_sdk::house::Motion as _;
+use mycelium_sdk::house::Plane as _;
+use mycelium_sdk::house::encode_manifest_pages as _;
 use mycelium_sdk::house::Gas as _;
 use mycelium_sdk::house::SignedTraverse as _;
 use mycelium_sdk::house::Traverse as _;
