@@ -98,6 +98,41 @@ impl Physics {
         Budget { remaining: self.unit_spend() as usize }
     }
 
+    /// 78.183 P1b — THE IMPULSE DRAW `⌊need · hold / (need + hold)⌋` read
+    /// through [`forms::passage::PassageState`]: `0` when `need == 0` or
+    /// `hold == 0`, `hold / 2` at the throat (`need == hold`), and approaching
+    /// `need` when `hold` is ample.
+    pub fn impulse_draw(&self, hold: u64, need: u64) -> u64 {
+        if hold == 0 || need == 0 {
+            return 0;
+        }
+        let state = forms::passage::PassageState {
+            hold: forms::Q::from_integer(hold.into()),
+            reach: forms::Q::from_integer(need.into()),
+        };
+        let Ok(held_share) = state.share() else {
+            return 0;
+        };
+        let open_share = forms::Q::from_integer(1.into()) - held_share;
+        let draw = (open_share * &state.hold).to_integer();
+        match u64::try_from(draw) {
+            Ok(v) => v.max(1),
+            Err(_) => hold.min(need),
+        }
+    }
+
+    /// 78.183 P1b, #353 — Draw an impulse [`Budget`] sized from `need`
+    /// against the limiting lane's reserve holding via [`forms::passage`].
+    pub fn impulse(&mut self, need: u64) -> Budget {
+        let [a, b, c, d] = self.reserve.lanes();
+        let hold = a.min(b).min(c).min(d);
+        let draw = self.impulse_draw(hold, need);
+        match usize::try_from(draw) {
+            Ok(remaining) => Budget { remaining },
+            Err(_) => Budget { remaining: usize::MAX },
+        }
+    }
+
     /// A stroke whose remaining reads are `n`. Test callers use it so the
     /// N vs 4N counters stay independent of a machine whose spend exceeds
     /// N; the transport uses it to wait on a peer for a MEASURED number of

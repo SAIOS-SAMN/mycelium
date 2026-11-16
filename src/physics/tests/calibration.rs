@@ -176,3 +176,13 @@ fn park_floor_reads_slack_where_hz_unpublished() {
     assert_eq!(park_floor_of(None, None), Err(Uncalibrated::ParkFloor));
     assert_eq!(park_floor_of(None, Some(0)), Err(Uncalibrated::ParkFloor), "a zero slack is no floor");
 }
+
+#[test]
+fn impulse_draw_aligns_with_forms_passage() {
+    let p = crate::physics::Physics::default();
+    assert_eq!(p.impulse_draw(1_000, 0), 0, "no need draws zero");
+    assert_eq!(p.impulse_draw(0, 100), 0, "empty holding draws zero");
+    assert_eq!(p.impulse_draw(100, 100), 50, "at the throat need == hold releases half");
+    assert_eq!(p.impulse_draw(1_000_000, 10), 9, "ample reserve serves need smoothly");
+    assert_eq!(p.impulse_draw(100, 1), 1, "unit need receives at least one read");
+}
