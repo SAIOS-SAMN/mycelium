@@ -63,8 +63,8 @@ fn mu_follows_its_nuclei_across_a_tube_with_dissipation_to_the_pool() {
     assert!(matches!(commit(&mut k, 4, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
     assert!(matches!(commit(&mut k, 5, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
     let payer = key(60);
-    fund(&mut k, verifying(&payer), [10, 200, 10, 200]);
-    assert_eq!(stake(&mut k, &payer, [10, 200, 10, 200], false, 1), Ok([10, 200, 10, 200]));
+    fund(&mut k, verifying(&payer), [10, 600, 10, 600]);
+    assert_eq!(stake(&mut k, &payer, [10, 600, 10, 600], false, 1), Ok([10, 600, 10, 600]));
     let head = |k: &Court, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
     let ((entry_a, u_a), (entry_b, u_b)) = (head(&k, 4), head(&k, 5));
     let mut t = Traverse { from: domain(4), payer: verifying(&payer), mouth: m, side: 0, at: fp(10), point_a: fp(10), point_b: fp(10), entry_a, u_a, entry_b, u_b, route: Vec::new(), motions: Vec::new(), nonce: [1; 32] };
@@ -78,14 +78,14 @@ fn mu_follows_its_nuclei_across_a_tube_with_dissipation_to_the_pool() {
     let minted = k.treasury.minted();
     let crossed = k.traverse(&t.sign(&payer).expect("signs"), Some(fp(10)));
     let Crossed::Sealed { gas, .. } = crossed else { panic!("crossed: {crossed:?}") };
-    assert_eq!((gas.g, gas.h), (100, 90), "G the nucleons released, H those taken");
+    assert_eq!((gas.g, gas.h), (300, 270), "G the nucleons released, H those taken, in thirds");
     assert_eq!(k.treasury.minted(), minted, "nothing minted at the crossing");
     let half = carried.scaled(&q(1, 2)).expect("half");
     assert_eq!(k.treasury.balance_mu(&rb), b_before.add(&half.scaled(&q(9, 10)).expect("nine tenths")), "the taker holds nine tenths of the delivered half");
     assert_eq!(a_before.draw(&half).ok(), Some(k.treasury.balance_mu(&ra)), "the releaser gives up the delivered half");
     assert_eq!(k.treasury.recycled(), pool_before.add(&half.scaled(&q(1, 10)).expect("a tenth")), "the lost tenth to the pool");
-    assert_eq!(k.element_account(&domain(4)), Some(BigUint::from(900u32)), "1,000 less the 100 released");
-    assert_eq!(k.element_account(&domain(5)), Some(BigUint::from(100u32)), "10 granted and 90 taken in");
+    assert_eq!(k.element_account(&domain(4)), Some(BigUint::from(2700u32)), "1,000 less the 100 released, in thirds");
+    assert_eq!(k.element_account(&domain(5)), Some(BigUint::from(300u32)), "10 granted and 90 taken in, in thirds");
     // The owed half follows on the T lane: at T = 8, d = 3/4, so half of
     // what was owed at d = 1/2 arrives.
     let beats = k.deliver_at(&on_t(5, 8));
@@ -114,8 +114,8 @@ fn out_and_back_returns_the_same_mu_less_each_dissipation() {
     assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
     assert!(matches!(map(&mut k, 5, 10, mouth(m, 1, 3)), Mapped::Sealed { .. }));
     let payer = key(60);
-    fund(&mut k, verifying(&payer), [20, 400, 20, 400]);
-    assert_eq!(stake(&mut k, &payer, [20, 400, 20, 400], false, 1), Ok([20, 400, 20, 400]));
+    fund(&mut k, verifying(&payer), [20, 1200, 20, 1200]);
+    assert_eq!(stake(&mut k, &payer, [20, 1200, 20, 1200], false, 1), Ok([20, 1200, 20, 1200]));
     let point = |k: &Court, d: u8, side: u8| {
         let id = crate::server::cognition::atlas::mouth_citation(&domain(d), &m, side);
         k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point.clone())
@@ -132,7 +132,7 @@ fn out_and_back_returns_the_same_mu_less_each_dissipation() {
     };
     cross(&mut k, 1, (4, 100), (5, 90), 1);
     cross(&mut k, 2, (5, 90), (4, 81), 2);
-    assert_eq!(k.element_account(&domain(4)), Some(BigUint::from(981u32)), "1,000 less 100 out plus 81 back");
+    assert_eq!(k.element_account(&domain(4)), Some(BigUint::from(2943u32)), "1,000 less 100 out plus 81 back, in thirds");
     assert_eq!(k.element_account(&domain(5)), Some(BigUint::from(0u32)), "all it took, released");
     let lost = half.scaled(&q(19, 100)).expect("the two losses");
     assert_eq!(a_before.draw(&lost).ok(), Some(k.treasury.balance_mu(&ra)), "4 holds what it began with less exactly the two dissipations");

@@ -56,6 +56,8 @@ pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Conte
             DomainRequest::Traverse(s) => encode_traverse_reply(&k.traverse(&s, fin)),
             // 78.155b — a manifest granted or refused, and the endowment read.
             DomainRequest::Manifest(s) => mycelium::anastome::dialogue::endowment::encode_grant_reply(&k.manifest(&s)),
+            // 78.184 §8 — a manifest past one body, in pages.
+            DomainRequest::ManifestPage(domain, page) => mycelium::anastome::dialogue::endowment::encode_grant_reply(&k.manifest_page(&domain, &page)),
             // A reading that passes its carrier is answered with nothing that
             // decodes, never a capped total.
             // #332: served in pages that fit the wire's budget.
