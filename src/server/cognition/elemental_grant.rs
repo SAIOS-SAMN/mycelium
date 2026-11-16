@@ -18,7 +18,7 @@ impl Court {
         let mut reads = self.physics.clone().stroke_n(usize::MAX);
         let mut out = Modes::new();
         for (k, n) in nuclei {
-            let r = row(&Q::from_integer(k.z.into()), &Q::from_integer(k.q.into()), &mut reads)?;
+            let r = row(&k.z(), &k.q(), &mut reads)?;
             let count = Q::from_integer(num_bigint::BigInt::from(n.clone()));
             out.add(&r.scaled(&count).ok_or(RowRefusal::Unread)?);
         }

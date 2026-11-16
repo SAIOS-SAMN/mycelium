@@ -324,6 +324,42 @@ impl Court {
         }
     }
 
+    /// 78.184 §8 — ONE PAGE OF A MANIFEST: held in order with the pages of its
+    /// hash that landed before it, and the manifest judged ([`Court::manifest`])
+    /// once the last lands and the whole re-derives its hash. A page out of
+    /// order, or of another hash than the one held, starts the domain's pages
+    /// again from it when it is a first page, and is refused `Malformed`
+    /// otherwise.
+    pub fn manifest_page(&mut self, domain: &[u8; 32], page: &crate::anastome::dialogue::endowment::EndowmentPage) -> Granted {
+        let refuse = Granted::Refused;
+        let held = match self.manifest_pages.get(domain) {
+            Some((h, t, bytes)) if *h == page.hash && *t == page.total && usize::try_from(page.offset).ok() == Some(bytes.len()) => bytes.clone(),
+            _ if page.offset == 0 => Vec::new(),
+            _ => return refuse(GrantRefusal::Malformed),
+        };
+        let mut bytes = held;
+        bytes.extend_from_slice(&page.chunk);
+        let Ok(total) = usize::try_from(page.total) else { return refuse(GrantRefusal::Malformed) };
+        if bytes.len() > total {
+            self.manifest_pages.remove(domain);
+            return refuse(GrantRefusal::Malformed);
+        }
+        if bytes.len() < total {
+            let Ok(received) = u32::try_from(bytes.len()) else { return refuse(GrantRefusal::Malformed) };
+            self.manifest_pages.insert(*domain, (page.hash, page.total, bytes));
+            return Granted::Paged { received };
+        }
+        self.manifest_pages.remove(domain);
+        if crate::chronometry::payload_hash(&bytes) != page.hash {
+            return refuse(GrantRefusal::Malformed);
+        }
+        let mut p = 0usize;
+        match crate::anastome::dialogue::endowment::take_manifest(*domain, &bytes, &mut p) {
+            Some(s) if p == bytes.len() => self.manifest(&s),
+            _ => refuse(GrantRefusal::Malformed),
+        }
+    }
+
     /// 78.155b — WHAT THIS COURT CAN GRANT AND HAS GRANTED, read: its earned
     /// balance; the founding and growth grants made to every universe, per
     /// lane; `domain`'s grants with whether its ledger applied each; and the

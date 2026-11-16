@@ -199,6 +199,9 @@ impl Court {
             universes,
             atlas,
             grants,
+            carried,
+            manifest_pages,
+            nucleon_flow,
             closed_since_grant,
             points,
             seats,
@@ -253,6 +256,10 @@ impl Court {
         c.count("atlas.spent", atlas.spent.len());
         // 78.155b — the grants made, each with its manifest.
         c.count("grants", grants.scoped().map(|(_, g)| g.len()).sum());
+        // 78.184 §6 — the owed shares carried across tubes, and the flows.
+        c.count("carried", carried.scoped().map(|(_, v)| v.len()).sum());
+        c.count("nucleon_flow", nucleon_flow.len());
+        c.count("manifest_pages", manifest_pages.len());
         // 78.155c — the universes with closures awaiting a growth grant.
         c.count("closed_since_grant", closed_since_grant.len());
         // §3.4 — the closure points in this court's cones.

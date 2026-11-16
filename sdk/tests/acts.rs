@@ -180,12 +180,11 @@ fn traverse_ledger_and_map_round_trip() {
         entry_b: [5; 32],
         u_b: 2,
         route: vec![[6; 32]],
-        debit: None,
-        credit: None,
+        motions: Vec::new(),
         nonce: [7; 32],
     };
-    let signed = t.sign(&key(2));
-    assert_eq!(decode_domain_request(&house::encode_traverse(&signed)), Some(DomainRequest::Traverse(Box::new(signed))));
+    let signed = t.sign(&key(2)).expect("signs");
+    assert_eq!(decode_domain_request(&house::encode_traverse(&signed).expect("writes")), Some(DomainRequest::Traverse(Box::new(signed))));
     let refused = house::Crossed::Refused(house::CrossRefusal::UnknownDomain);
     assert_eq!(house::decode_traverse_reply(&encode_traverse_reply(&refused)), Some(refused));
     let entry = house::LedgerEntry { domain: [6; 32], u: 1, commitment: [1; 32], events: [2; 32], point: TPoint::default(), parent: [0; 32], applied: Vec::new(), nonce: [8; 32] };
