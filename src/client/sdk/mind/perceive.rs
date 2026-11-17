@@ -868,7 +868,20 @@ impl Mind {
         let ([first, ..], [(first_x, first_y), ..]) = (percept.train.as_slice(), scene.train.as_slice()) else {
             return None;
         };
-        let (up, down) = uniform_scale(first_x.extents(), first_y.extents())?;
+        let enc_of = |s: &crate::transducer::family::SectionSample| forms::coupling::Enclosure {
+            reach: forms::Q::from_integer(s.symbols().len().into()),
+            moment: forms::Q::from_integer(s.sites().count().max(1).into()),
+            hold: forms::Q::from_integer(scene.train.len().max(1).into()),
+        };
+        if let Ok(m) = forms::coupling::meets(&enc_of(first_x), &enc_of(first_y)) {
+            let slot = match m.meets {
+                forms::coupling::Meets::Within => 0,
+                forms::coupling::Meets::Bound => 1,
+                forms::coupling::Meets::Apart => 2,
+            };
+            crate::observe::note_mind(|r| r.coupling[slot] += 1);
+        }
+        let (up, down) = uniform_enclosure_scale(&first_x.extents(), &first_y.extents())?;
         for cand in first.factored.held() {
             let Some(turn) = perm_to_tile_turn(&cand.motion.permutation) else {
                 continue;
@@ -876,7 +889,7 @@ impl Mind {
             let mut recolour: Vec<(u8, u8)> = Vec::new();
             let all_match = percept.train.iter().zip(&scene.train).all(|(pf, (x, y))| {
                 let ex = x.extents();
-                let same_scale = uniform_scale(ex, y.extents()) == Some((up, down));
+                let same_scale = uniform_enclosure_scale(&ex, &y.extents()) == Some((up, down));
                 let square_if_needed = turn < 4 || ex[0] == ex[1];
                 if !(same_scale && square_if_needed) {
                     return false;
@@ -1095,25 +1108,37 @@ fn perm_to_tile_turn(perm: &crate::transducer::family::transduce::SignedPermutat
     }
 }
 
-/// Uniform integer dilation `(up, down)` between `ex` and `ey`, one of them `1`.
-fn uniform_scale(ex: [usize; 2], ey: [usize; 2]) -> Option<(u8, u8)> {
-    if ex.contains(&0) || ey.contains(&0) {
+/// Uniform integer enclosure dilation `(up, down)` across arbitrary rank `ex`
+/// and `ey`, one of them `1`.
+fn uniform_enclosure_scale(ex: &[usize], ey: &[usize]) -> Option<(u8, u8)> {
+    if ex.is_empty() || ex.len() != ey.len() || ex.contains(&0) || ey.contains(&0) {
         return None;
     }
     if ex == ey {
         return Some((1, 1));
     }
-    if ey[0] % ex[0] == 0 && ey[1] % ex[1] == 0 {
-        let (u0, u1) = (ey[0] / ex[0], ey[1] / ex[1]);
-        if u0 == u1 && u0 > 1 {
-            return u8::try_from(u0).ok().map(|u| (u, 1));
+    let mut up: Option<usize> = None;
+    let mut down: Option<usize> = None;
+    for (&ax, &ay) in ex.iter().zip(ey) {
+        if ay % ax == 0 && ay > ax {
+            let u = ay / ax;
+            if down.is_some() || up.is_some_and(|prev| prev != u) {
+                return None;
+            }
+            up = Some(u);
+        } else if ax % ay == 0 && ax > ay {
+            let d = ax / ay;
+            if up.is_some() || down.is_some_and(|prev| prev != d) {
+                return None;
+            }
+            down = Some(d);
+        } else {
+            return None;
         }
     }
-    if ex[0] % ey[0] == 0 && ex[1] % ey[1] == 0 {
-        let (d0, d1) = (ex[0] / ey[0], ex[1] / ey[1]);
-        if d0 == d1 && d0 > 1 {
-            return u8::try_from(d0).ok().map(|d| (1, d));
-        }
+    match (up, down) {
+        (Some(u), None) => u8::try_from(u).ok().map(|u| (u, 1)),
+        (None, Some(d)) => u8::try_from(d).ok().map(|d| (1, d)),
+        _ => None,
     }
-    None
 }

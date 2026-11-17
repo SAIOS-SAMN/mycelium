@@ -17,6 +17,7 @@ fn mind_round_trips_with_agreements() {
         constructed: [1, 0, 1, 0, 1, 2, 1],
         flex: [2, 1, 0, 3, 1, 1, 7, 2, 4],
         bodies: [4, 1, 2],
+        coupling: [2, 1, 3],
         perspective: [9, 3, 4, 1, 1, 6, 3, 1, 2],
         disagree: [1, 0, 2, 0, 3, 1, 4, 2, 1],
         demanded_kinds: [0, 1, 2, 3, 4, 5],

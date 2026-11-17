@@ -90,6 +90,30 @@ fn empty(l: &Local) -> bool {
     l.sites.iter().all(Keyed::is_empty)
 }
 
+/// Sphere enclosure of a word's local section across `pairs`: reach and moment
+/// from its changed sites, held against the scene's pair count.
+fn local_enclosure(l: &Local, pairs: usize) -> forms::coupling::Enclosure {
+    let sites: usize = l.sites.iter().map(Keyed::len).sum();
+    forms::coupling::Enclosure {
+        reach: forms::Q::from_integer(sites.into()),
+        moment: forms::Q::from_integer(sites.max(1).into()),
+        hold: forms::Q::from_integer(pairs.max(1).into()),
+    }
+}
+
+/// Record real-time `forms::coupling::meets` (Within=0, Bound=1, Apart=2)
+/// into `observe::MindReading::coupling`.
+fn note_coupling_meets(a: &forms::coupling::Enclosure, b: &forms::coupling::Enclosure) {
+    if let Ok(m) = forms::coupling::meets(a, b) {
+        let slot = match m.meets {
+            forms::coupling::Meets::Within => 0,
+            forms::coupling::Meets::Bound => 1,
+            forms::coupling::Meets::Apart => 2,
+        };
+        crate::observe::note_mind(|r| r.coupling[slot] += 1);
+    }
+}
+
 /// Two sections the same, pair by pair: neither closes a site beyond the
 /// other (`Local::beyond`, a difference of sets).
 pub(crate) fn same_section(a: &Local, b: &Local, family: &crate::transducer::family::Family) -> bool {
@@ -199,15 +223,19 @@ impl Scenes {
         let heard = word_local(word, family);
         if empty(&heard) {
             self.read[1] += 1;
+            crate::observe::note_mind(|r| r.coupling[2] += 1);
             return Evident::Refuted;
         }
         self.read[0] += 1;
+        let enc_heard = local_enclosure(&heard, family.len());
         let address = word.address();
         let own: Vec<(Vec<u8>, Element, Local)> = match self.by_scene.get(scene) {
             Some(s) => s.words.scoped().map(|(a, (w, l))| (a, w.clone(), l.clone())).collect(),
             None => Vec::new(),
         };
         for (at, held, local) in own {
+            let enc_own = local_enclosure(&local, family.len());
+            note_coupling_meets(&enc_heard, &enc_own);
             if held.same_vertex(word) || !same_section(&heard, &local, family) {
                 continue;
             }
