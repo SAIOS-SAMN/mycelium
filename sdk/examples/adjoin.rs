@@ -20,9 +20,11 @@ fn hex32(s: &str) -> Option<[u8; 32]> {
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let retract = args.first().is_some_and(|a| a == "--retract");
+    // Arguments are read by place: that is their meaning on a command line.
+    let retract = args.iter().any(|a| a == "--retract");
     let rest: Vec<&String> = args.iter().filter(|a| *a != "--retract").collect();
-    let (Some(home), Some(endpoint)) = (rest.first(), rest.get(1)) else {
+    let mut place = rest.iter();
+    let (Some(home), Some(endpoint)) = (place.next(), place.next()) else {
         eprintln!("usage: adjoin [--retract] <hypha home> <hypha address> <node hex>…");
         return ExitCode::from(2);
     };
