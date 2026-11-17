@@ -273,7 +273,11 @@ fn manifest_v4_carries_thirds_patterns_and_the_phase_state_per_plane() {
     let image = thirds.image();
     assert_eq!((image.z3, image.q3, image.nucleons3()), (90, 79, thirds.nucleons3()), "the pole swap keeps 3A");
     assert!(image.at_rest(), "the image of an entry at rest is at rest");
-    assert_eq!(image.image(), thirds, "the image is the reverse, its own inverse on one tube");
+    assert_eq!(image.image(), thirds, "the image is an involution on every component");
+    assert_eq!(image.pattern, vec![0, 0, 1, 0, 0, 2, 0, 1], "the pattern goes to its complement: the count on S moves to {{1,2,3}} ∖ S, index S ↦ 7 − S");
+    let mut uneven = m_pattern_check();
+    uneven.pattern = vec![1, 2, 3];
+    assert!(!crate::anastome::dialogue::endowment::nuclei_hold(&vec![(uneven, BigUint::from(1u8))]), "a pattern not indexed by subsets has no complement: no entry");
     let mut m = manifest(9);
     // Each entry entered at its place in the key's order (rule 4: no sort).
     let mut nuclei: Vec<(Nucleus, BigUint)> = Vec::new();
@@ -288,6 +292,10 @@ fn manifest_v4_carries_thirds_patterns_and_the_phase_state_per_plane() {
     let mut over = m.clone();
     over.nuclei = vec![(Nucleus { planes: vec![plane(1, 0, q(3, 2), q(-3, 2))], ..Nucleus::of(1, 0) }, BigUint::from(1u8))];
     assert!(!nuclei_hold(&over.nuclei), "a phase past one turn is no entry");
+}
+
+fn m_pattern_check() -> crate::anastome::dialogue::endowment::Nucleus {
+    crate::anastome::dialogue::endowment::Nucleus::of(1, 0)
 }
 
 /// 78.184 §8 — A MANIFEST PAST ONE WIRE BODY ARRIVES IN PAGES: 15,000 entries
