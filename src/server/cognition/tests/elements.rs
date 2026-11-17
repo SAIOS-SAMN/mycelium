@@ -78,7 +78,7 @@ fn mu_follows_its_nuclei_across_a_tube_with_dissipation_to_the_pool() {
     let minted = k.treasury.minted();
     let crossed = k.traverse(&t.sign(&payer).expect("signs"), Some(fp(10)));
     let Crossed::Sealed { gas, .. } = crossed else { panic!("crossed: {crossed:?}") };
-    assert_eq!((gas.g, gas.h), (300, 270), "G the nucleons released, H those taken, in thirds");
+    assert_eq!((gas.g, gas.h), (0, 0), "matter is no gas: nothing on G or H (Concordance 2.7, 5.8)");
     assert_eq!(k.treasury.minted(), minted, "nothing minted at the crossing");
     let half = carried.scaled(&q(1, 2)).expect("half");
     assert_eq!(k.treasury.balance_mu(&rb), b_before.add(&half.scaled(&q(9, 10)).expect("nine tenths")), "the taker holds nine tenths of the delivered half");
@@ -136,4 +136,36 @@ fn out_and_back_returns_the_same_mu_less_each_dissipation() {
     assert_eq!(k.element_account(&domain(5)), Some(BigUint::from(0u32)), "all it took, released");
     let lost = half.scaled(&q(19, 100)).expect("the two losses");
     assert_eq!(a_before.draw(&lost).ok(), Some(k.treasury.balance_mu(&ra)), "4 holds what it began with less exactly the two dissipations");
+}
+
+/// Concordance 5.8, 5.9 — A CROSSING OF MATTER COSTS THE ROUTE'S FEE ALONE.
+/// With an empty route and both mouths mapped at one final point, the gas
+/// is zero on every lane, so a reserve holding only elemental μ (S and H)
+/// pays it: its nuclei cross with their μ and nothing is drawn from a lane
+/// it does not hold.
+#[test]
+fn a_crossing_of_matter_on_an_empty_route_at_one_point_costs_nothing() {
+    let (mut k, m, _) = founded();
+    granted(&mut k, 4, 100);
+    let _ = k.deliver_at(&on_t(3, 2));
+    let _ = k.deliver_at(&on_t(4, 4));
+    assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
+    assert!(matches!(map(&mut k, 5, 10, mouth(m, 1, 3)), Mapped::Sealed { .. }));
+    assert!(matches!(commit(&mut k, 4, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
+    assert!(matches!(commit(&mut k, 5, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
+    // The payer is universe 4's own reserve, holding no stake at all.
+    let payer = reserve(4);
+    let head = |k: &Court, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
+    let ((entry_a, u_a), (entry_b, u_b)) = (head(&k, 4), head(&k, 5));
+    let point = |k: &Court, d: u8, side: u8| {
+        let id = crate::server::cognition::atlas::mouth_citation(&domain(d), &m, side);
+        k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point.clone())
+    };
+    let mut t = Traverse { from: domain(4), payer: verifying(&payer), mouth: m, side: 0, at: fp(10), point_a: point(&k, 4, 0), point_b: point(&k, 5, 1), entry_a, u_a, entry_b, u_b, route: Vec::new(), motions: Vec::new(), nonce: [1; 32] };
+    t.motions = vec![motion(&t, 4, 10, 0), motion(&t, 5, 0, 9)];
+    let crossed = k.traverse(&t.sign(&payer).expect("signs"), Some(fp(10)));
+    let Crossed::Sealed { gas, fee, .. } = crossed else { panic!("crossed: {crossed:?}") };
+    assert_eq!((gas.s, gas.g, gas.t, gas.h), ((0, 1), 0, 0, 0), "no span, no ticks, and matter is no gas");
+    assert!(fee.is_zero(), "nothing to draw");
+    assert_eq!(k.element_account(&domain(5)), Some(BigUint::from(27u32)), "nine hydrogen taken in, in thirds");
 }

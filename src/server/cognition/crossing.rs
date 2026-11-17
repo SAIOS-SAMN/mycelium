@@ -152,14 +152,18 @@ impl Court {
         }
         // 78.184 §6 — the motions: nucleons conserved, each release within its
         // account, every entry at rest, each signed by its sitting reserve.
-        let (released, taken) = match self.check_motions(t, t.from, to) {
+        let (released, _taken) = match self.check_motions(t, t.from, to) {
             Ok(n) => n,
             Err(why) => return refuse(why),
         };
-        let (Ok(g), Ok(h)) = (u64::try_from(&released), u64::try_from(&taken)) else { return refuse(R::Overflow) };
-        // THE GAS, per lane, exact: S the route's span, G the nucleons
-        // released, H the nucleons taken in, T the ticks between the mouths'
-        // points.
+        // THE GAS, per lane, exact (Concordance 5.8, 5.9; MU-ECONOMY §7.1): S
+        // the route's span, T the ticks between the mouths' points, G the
+        // mapping's value terms and H the information carried. A traverse is
+        // a coordinate retrieval: the matter crosses in its own universe, and
+        // value crosses only by reserve conversion (2.7, 5.3), so a motion of
+        // nuclei puts nothing on G or H. Its nucleons are checked above and
+        // carried below, never priced as gas.
+        let (g, h) = (0u64, 0u64);
         let mut span = Q::from_integer(0.into());
         for id in &t.route {
             let seg = [t.from, to].iter().find_map(|d| self.atlas.records.get(&record_key(d, id)).map(|h| h.record.clone()));
