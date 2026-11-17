@@ -1,0 +1,3 @@
+### A crossing of matter costs the route's fee alone
+
+A traverse's gas is priced as Concordance 5.8 and 5.9 rule: S is the route's span, T the ticks between the mouths' points, G the mapping's value terms and H the information carried. #360 had put the nucleons released on G and those taken on H. That contradicted 2.7: matter crosses in its own universe, and value crosses only by reserve conversion. It also made every crossing of matter unpayable from elemental μ, which holds S and H only. Motions now put nothing on G or H. With an empty route and both mouths mapped at one final point, the fee is zero.

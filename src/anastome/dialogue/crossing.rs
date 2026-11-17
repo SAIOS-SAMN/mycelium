@@ -330,9 +330,10 @@ impl CrossRefusal {
 
 /// THE ROUTE'S GAS, per lane, exact and never collapsed: S the route's
 /// spatial span in geometrized megaparsecs (an exact rational), G the
-/// nucleons released (78.184 §6: matter changing hands), T the TUniversal
-/// distance between the two mouths' cited final points (ticks), H the
-/// nucleons taken in.
+/// mapping's value terms, T the TUniversal distance between the two
+/// mouths' cited final points (ticks), H the information carried
+/// (Concordance 5.8). A motion of nuclei is matter, which crosses in its
+/// own universe, so it puts nothing on G or H (2.7).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Gas {
     pub s: (u64, u64),
