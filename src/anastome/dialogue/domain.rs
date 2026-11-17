@@ -190,6 +190,9 @@ pub enum DomainRequest {
     /// 78.155b — what the court can grant and has granted, read; nothing
     /// sealed. #332: the page at the byte offset of the encoded reading.
     ReadEndowment([u8; 32], u32),
+    /// 78.185 — a hypha's adjunction to the cover, and its retraction.
+    Adjoin(Box<super::adjunction::Signed<super::adjunction::Adjunction>>),
+    Retract(Box<super::adjunction::Signed<super::adjunction::Retraction>>),
     /// 78.184 §8 — one page of a manifest past one wire body.
     ManifestPage([u8; 32], super::endowment::EndowmentPage),
     /// 78.154 (4), #159 — a COORDINATE RETRIEVAL: the receipts at a final
@@ -569,6 +572,16 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             p += 1;
             let s = super::endowment::take_manifest(domain, rest, &mut p)?;
             return (p == rest.len()).then_some(DomainRequest::Manifest(Box::new(s)));
+        }
+        super::adjunction::KIND_ADJUNCTION => {
+            p += 1;
+            let s = super::adjunction::take_adjunction(domain, rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::Adjoin(Box::new(s)));
+        }
+        super::adjunction::KIND_RETRACTION => {
+            p += 1;
+            let s = super::adjunction::take_retraction(domain, rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::Retract(Box::new(s)));
         }
         super::endowment::KIND_MANIFEST_PAGE => {
             let page = super::endowment::decode_endowment_page(rest.get(p + 1..)?)?;

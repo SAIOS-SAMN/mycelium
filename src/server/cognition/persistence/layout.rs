@@ -83,6 +83,10 @@ pub const LEAF_POINTS: u8 = 13;
 /// before it).
 /// FORMAT: court-tree leaf position for the element account.
 pub const LEAF_ELEMENTS: u8 = 14;
+/// 78.185 — the hyphas attached by admitted adjunctions, with their tethers;
+/// absent where none is attached (and on every home written before it).
+/// FORMAT: court-tree leaf position for the attached hyphas.
+pub const LEAF_ATTACHED: u8 = 15;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

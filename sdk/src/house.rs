@@ -128,6 +128,9 @@ pub use mycelium::anastome::dialogue::universe::{
 /// THE ENDOWMENT: a universe's manifest (nuclei per nucleus (Z protons, Q neutrons), signed by its sitting
 /// reserve), the grant that answers it or its refusal by name, and the
 /// endowment read.
+/// 78.185 — a hypha's adjunction to the cover and its retraction, each
+/// signed by the hypha's own key with its crossing record.
+pub use mycelium::anastome::dialogue::adjunction::{decode_cover_reply, encode_adjunction, encode_retraction, Adjunction, CoverRefused, Covered, Retraction, TetherStated};
 pub use mycelium::anastome::dialogue::endowment::{
     decode_endowment_page, decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_endowment_read_at, encode_manifest, encode_manifest_pages, read_endowment, EndowmentPage, nuclei_hold, EndowmentReading, GrantRead,
     GrantRefusal, Granted, Manifest, Nuclei, Nucleus, Plane, SignedManifest,

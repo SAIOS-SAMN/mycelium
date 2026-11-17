@@ -533,6 +533,11 @@ pub struct Court {
     /// universe's NUCLEONS taken in and released across tubes — persisted on
     /// the court's own node (`LEAF_ELEMENTS`).
     pub(crate) carried: crate::network::nerve::Keyed<Vec<super::elements::Carried>>,
+    /// 78.185 — THE HYPHAS ATTACHED by admitted adjunctions, with their
+    /// tethers (`LEAF_ATTACHED`), and the genesis hyphas, the cover's ground,
+    /// held at boot.
+    pub(crate) attached: crate::network::nerve::Keyed<super::attachment::Attached>,
+    pub(crate) genesis_hyphas: Vec<[u8; 32]>,
     /// 78.184 §8 — A MANIFEST'S PAGES landed so far, by domain: its hash, its
     /// total, and the bytes in order. Held in memory only: a restart asks the
     /// pages again.

@@ -8,6 +8,7 @@ mod endowment;
 mod agreement;
 mod measure;
 mod atlas;
+mod attachment;
 mod elements;
 mod aperture;
 mod backfill;
