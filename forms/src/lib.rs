@@ -36,6 +36,7 @@
 pub use algebra;
 
 pub mod coordinate;
+pub mod cover;
 pub mod coupling;
 pub mod passage;
 pub mod reference;
