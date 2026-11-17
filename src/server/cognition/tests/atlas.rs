@@ -69,7 +69,9 @@ pub(super) fn founded() -> (Court, [u8; 32], [u8; 32]) {
     fund(&mut k, verifying(&reserve(4)), [1, 0, 0, 0]);
     let id = m.citation();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).signed(&reserve(4))), Handed::Sealed { .. }));
+    assert_eq!(k.handoff_read(&id).map(|(s, ..)| s), Some(State::Offered { opened: k.chain.head_height() }), "a mouth's standing reads as offered");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }));
+    assert_eq!(k.handoff_read(&id), Some((State::Accepted, false, false)), "and as accepted, with no sides to consume");
     let keeper = verifying(&reserve(4));
     (k, id, keeper)
 }
