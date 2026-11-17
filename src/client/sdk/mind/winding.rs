@@ -379,18 +379,13 @@ impl Mind {
             }
             self.board.returned_while_occluded = true;
         }
-        if open && self.board.returned_while_occluded {
-            self.board.returned_while_occluded = false;
-            let scenes = std::mem::take(&mut self.board.returned_scenes);
-            self.act_at_return(&scenes);
-        } else if open && !crate::physics::halted() {
-            // Even when no thought returned this winding (e.g. while perception
-            // is in flight), keep presenting what the mind owes and unheard words
-            // so court presentation never starves.
-            self.court_owed();
-            let mut stroke = self.physics.impulse_items(self.unheard.len());
-            self.speak_unheard(&mut stroke);
-            self.resubmit_unread_solves();
+        if open {
+            self.present_pending();
+            if self.board.returned_while_occluded {
+                self.board.returned_while_occluded = false;
+                let scenes = std::mem::take(&mut self.board.returned_scenes);
+                self.act_at_return(&scenes);
+            }
         }
         returns
     }
@@ -472,25 +467,32 @@ impl Mind {
         (n, scenes)
     }
 
+    /// Present what stands on the mind's own outbound carriers (`owed` /
+    /// `contracted`, `unheard`, `unread_solves`) on an open wire, bounded by
+    /// `Physics::impulse_items`.
+    fn present_pending(&mut self) {
+        if crate::physics::halted() {
+            return;
+        }
+        self.at_law("act at a return: what the courts are owed");
+        self.court_owed();
+        let mut budget = self.physics.impulse_items(self.unheard.len());
+        self.at_law("act at a return: unheard words");
+        self.speak_unheard(&mut budget);
+        self.at_law("act at a return: unread solves");
+        self.resubmit_unread_solves();
+    }
+
     /// MU-CLIENT §4.4(4), §7.1 R2 — THE ACT AT A RETURN: a scene waiting on
-    /// its comprehension read again, what the mind owes its courts, its words
-    /// no court has taught and its unjudged solves; then what was held for
-    /// the return of each scene in `scenes` leaves, and what the mind held
-    /// for its own return (no scene) — and nothing held for a scene whose
-    /// thought did not return.
+    /// its comprehension read again, then what was held for the return of each
+    /// scene in `scenes` leaves, and what the mind held for its own return (no
+    /// scene) — and nothing held for a scene whose thought did not return.
     fn act_at_return(&mut self, scenes: &[Vec<u8>]) {
         if crate::physics::halted() {
             return;
         }
         self.at_law("act at a return: a waiting scene read again");
         self.comprehend_waiting();
-        self.at_law("act at a return: what the courts are owed");
-        self.court_owed();
-        let mut budget = self.physics.stroke();
-        self.at_law("act at a return: unheard words");
-        self.speak_unheard(&mut budget);
-        self.at_law("act at a return: unread solves");
-        self.resubmit_unread_solves();
         self.at_law("act at a return: what was held leaves");
         let mut leaving: Vec<HeldSaying> = Vec::new();
         for scene in std::iter::once(&Vec::new()).chain(scenes) {
