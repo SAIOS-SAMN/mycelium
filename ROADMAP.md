@@ -149,16 +149,16 @@ kept.
 
 | Item | Issue | State |
 |---|---|---|
-| μ follows its nuclei across a tube: one signed motion per universe, nucleons conserved, dissipation to the pool, μ held on the nuclei ([78.184 §6](docs/proposals/78.184-elemental-mu.md)) | [#327](https://github.com/SAIOS-SAMN/mycelium/issues/327) step 6 | **On main** (#360, 751aa40e), with the pattern complemented on the image (#370) and the gas restored to Concordance 5.8: matter puts nothing on G or H (#371). Its live claim is the trial crossing: seed 7 and a netstratum **test** domain, under the network clauses (netstratum's operator, 2026-11-17; netstratum #240), on an empty route at one final point, so the fee is zero. Netstratum's real domain trades only once its crossing is physics (netstratum #109, v0.6.0) |
+| μ created at the manifest, delivered per final point, following its nuclei across a tube ([78.184](docs/proposals/78.184-elemental-mu.md)) | #327, closed | **Done and read live.** The trial crossings between seed 7 and netstratum's test domain moved ±6 thirds in both accounts, read on hypha a's log, with zero gas (#371) and the pattern complemented (#370). The first crossing exposed a leaf-order defect that made a home unbootable: fixed by #376, with hypha a's ledger repaired in place |
 | Manifest v4: nucleons in thirds, a kernel's pattern, the phase state per plane, paged ([78.184 §8](docs/proposals/78.184-elemental-mu.md)) | #359, closed | **On main** (#362 within #360). Read live: netstratum's 1,495-entry grant applied, and seed 7's 18 entries granted (read with `sdk/examples/endowment.rs`). Paging's live reading follows netstratum's #213 table |
 | R as an orbital phase state on a Hopf bundle; the rest point per fibre ([78.184 §7](docs/proposals/78.184-elemental-mu.md)) | #359 | Written. Netstratum's F1–F3 are derived (its docs/97 §15.9); xylarium's T24 per plane is in. The composite rest check for nodes whose planes share axes waits on netstratum's planes per capture |
 | The live stroke ([78.183](docs/proposals/78.183-the-live-stroke.md)): P2, the court's reads name their lanes (§8, ruled 2026-11-15) | [#308](https://github.com/SAIOS-SAMN/mycelium/issues/308), PR #346 | Built and read live: every court hold but the docket reconstruction spends on named lanes. Draft until a solve on the hold's stroke is read live. The transducer's sites are P3, the client stream's |
 | P1b, the impulse: a turn's draw sized by its need against the lane's holding | [#347](https://github.com/SAIOS-SAMN/mycelium/issues/347) | Ruled; built on branch `impulse-p1b`. After P2 and a moving T lane (T has held at 4/1: no mind closes, #349) |
-| A hypha's attachment as an adjunction of the cover, its detachment as a retraction ([78.185](docs/proposals/78.185-attachment-and-detachment.md), draft PR #367) | [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) | Specified. An adjunction is admitted when the cocycle closes on its link, the classes are kept, and its Hopf fibre is tethered at rest; a retraction when the nerve stays connected, the classes are kept, and claims are settled. The optimal node is read along the geodesic on the base. Both are carried as crossings (X1); the two crossing kinds await the operator's approval. Xylarium's node at 7520 is the first user |
+| A hypha's attachment as an adjunction of the cover, its detachment as a retraction ([78.185](docs/proposals/78.185-attachment-and-detachment.md)) | [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) | **On main** (#375 claims, #377 acts) **and read live.** A test hypha booted on the running mesh's genesis, adjoined to all three courts, was kept across a restart, and retracted. Xylarium's node at 7520 is attached. Open: the attached node earning μ, staking and witnessing, which waits on #349 |
 | Rejoin before signing; the mesh held in memory and distributed by reconstruction | [#273](https://github.com/SAIOS-SAMN/mycelium/issues/273) | Rejoin built (#315). The 2026-11-16 host reboot came back with homes kept and the kernels' state intact. Open: holding in memory (MU-ENGINEERING §8) |
 | The universal core is the antipolar face (78.176 fixtures 1–4) | [#306](https://github.com/SAIOS-SAMN/mycelium/issues/306) | Fixtures reproduced by xylarium |
 | Reading the cross-kernel proposals: LAW-WAVEFRONT; the TUniversal point in the signed expression | [#355](https://github.com/SAIOS-SAMN/mycelium/issues/355), [#354](https://github.com/SAIOS-SAMN/mycelium/issues/354) | Open, mirrored from netstratum #9 and #92 |
-| The tube clause: a kernel clause governing one tube, signed by both its universes ([78.186](docs/proposals/78.186-tube-clauses.md), draft PR #372) | — | Proposed at xylarium's request, as the mechanism a trade treaty uses. It governs the road toll, tariff, whole-state terms and flow bounds, and never a network clause. Its admission needs the operator's approval |
+| The tube clause: a kernel clause governing one tube, signed by both its universes ([78.186](docs/proposals/78.186-tube-clauses.md)) | — | **Approved 2026-11-17; next to build.** It governs the road toll, tariff, whole-state terms and flow bounds, never a network clause. Its first user is the seed-7/netstratum treaty (xylarium-uplink docs) |
 | A mouth's standing readable like any handoff's, and SDK readers for handoffs and endowments | #368 | Merged; read live (seed 7's mouth `Offered` from h 4508) |
 
 ### 3. The client stream
@@ -176,12 +176,12 @@ does not give.
 
 | Item | Issue |
 |---|---|
-| Approve 78.186's two-signature tube clause | [#372](https://github.com/SAIOS-SAMN/mycelium/pull/372) |
-| Approve 78.185's two crossing kinds, adjunction and retraction | [#367](https://github.com/SAIOS-SAMN/mycelium/pull/367), [#276](https://github.com/SAIOS-SAMN/mycelium/issues/276) |
 | One Noise session per peer, reused; Noise made required (policy) | [#309](https://github.com/SAIOS-SAMN/mycelium/issues/309) |
 | X1's parts and the versor plane naming (X2) | [#160](https://github.com/SAIOS-SAMN/mycelium/issues/160) |
 
 ### Rulings
+
+**Approved 2026-11-17:** 78.185's crossing kinds, adjunction and retraction (#367, built in #377), and 78.186's tube clause (#372).
 
 **Ruled 2026-11-14 to 2026-11-16:**
 - `NotAtRest` (#357, merged): an entry off its rest point is refused.
