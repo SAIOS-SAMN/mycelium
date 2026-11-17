@@ -19,6 +19,7 @@ mod crossing;
 mod endowment;
 mod elemental_grant;
 mod delivery;
+mod attachment;
 mod elements;
 mod depth;
 mod founding;

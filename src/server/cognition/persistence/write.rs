@@ -241,6 +241,10 @@ impl Court {
         if !self.carried.is_empty() || !self.nucleon_flow.is_empty() {
             leaves.push((LEAF_ELEMENTS, super::super::elements::put_elements(&self.carried, &self.nucleon_flow)));
         }
+        // 78.185 — the attached hyphas, the highest kind, so written last.
+        if let Some(v) = (!self.attached.is_empty()).then(|| super::super::attachment::put_attached(&self.attached)).flatten() {
+            leaves.push((LEAF_ATTACHED, v));
+        }
         nodes.insert(self.chain.signer(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }
