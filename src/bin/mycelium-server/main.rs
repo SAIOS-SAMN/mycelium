@@ -605,6 +605,10 @@ fn main() {
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
         let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at genesis") };
         h.run(|k, _| {
+        // 78.185 — the genesis hyphas are the cover's ground; every hypha an
+        // admitted adjunction attached is live too, so its stake is kept.
+        k.hold_genesis_hyphas(&genesis.hypha.iter().map(|(who, _)| *who).collect::<Vec<_>>());
+        live.extend(k.attached_hyphas());
         for (who, mu) in k.bind_live(&live) {
             eprintln!(
                 "[{tag}] bond outside the live genesis burned {:02x}{:02x}… {mu:?}",
