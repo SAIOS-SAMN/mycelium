@@ -868,17 +868,17 @@ impl Mind {
         let ([first, ..], [(first_x, first_y), ..]) = (percept.train.as_slice(), scene.train.as_slice()) else {
             return None;
         };
-        let (up, down) = uniform_scale(first_x.extents(), first_y.extents())?;
         for cand in first.factored.held() {
             let Some(turn) = perm_to_tile_turn(&cand.motion.permutation) else {
                 continue;
             };
+            let Some((up, down)) = uniform_scale(turned_extents(first_x.extents(), turn), first_y.extents()) else {
+                continue;
+            };
             let mut recolour: Vec<(u8, u8)> = Vec::new();
             let all_match = percept.train.iter().zip(&scene.train).all(|(pf, (x, y))| {
-                let ex = x.extents();
-                let same_scale = uniform_scale(ex, y.extents()) == Some((up, down));
-                let square_if_needed = turn < 4 || ex[0] == ex[1];
-                if !(same_scale && square_if_needed) {
+                let same_scale = uniform_scale(turned_extents(x.extents(), turn), y.extents()) == Some((up, down));
+                if !same_scale {
                     return false;
                 }
                 let Some(f) = pf.factored.held().iter().find(|f| f.motion.permutation == cand.motion.permutation) else {
@@ -1092,6 +1092,15 @@ fn perm_to_tile_turn(perm: &crate::transducer::family::transduce::SignedPermutat
         ([0, 1], [1, 0]) => Some(6),
         ([0, -1], [-1, 0]) => Some(7),
         _ => None,
+    }
+}
+
+/// Extents after applying dihedral turn `turn` (`4..=7` swap axes).
+fn turned_extents(ex: [usize; 2], turn: u8) -> [usize; 2] {
+    if turn >= 4 {
+        [ex[1], ex[0]]
+    } else {
+        ex
     }
 }
 

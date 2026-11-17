@@ -80,24 +80,24 @@ fn origin() -> SectionSite {
     SectionSite::on_plane([0; ALPHABET_SAMPLE_RANK])
 }
 
-/// THE SQUARE'S SYMMETRY `t` ON A SECTION SAMPLE (`Act::Tile`'s codes): 0
+/// THE RECTANGULAR SYMMETRY `t` ON A SECTION SAMPLE (`Act::Tile`'s codes): 0
 /// itself, 1 reversed along the plane's second axis, 2 along its first, 3 a
 /// turn of 180°, 4 a turn of 90°, 5 of 270°, 6 the transpose, 7 the
-/// anti-transpose, each site carried by [`turned`]. `None` for a code past
-/// 7, or a 90° turn or transpose of a sample that is not square.
+/// anti-transpose, each site carried by [`turned`]. `4..=7` swap the sample's
+/// two extents; `None` for a code past 7.
 pub(crate) fn turn_of(g: &SectionSample, t: u8) -> Option<SectionSample> {
     let extents = g.extents();
     let [first, second] = extents;
-    match t {
+    let out_extents = match t {
         0 => return Some(g.clone()),
-        1..=3 => {}
-        4..=7 if first == second => {}
+        1..=3 => [first, second],
+        4..=7 => [second, first],
         _ => return None,
-    }
+    };
     // The turned sample opens as the symbol at the origin and is written at
     // every one of its sites, each the image of one site of `g`, before it is
     // read.
-    let mut out = SectionSample::filled(extents, g.at(origin())?).ok()?;
+    let mut out = SectionSample::filled(out_extents, g.at(origin())?).ok()?;
     for (site, h) in g.sites() {
         out.paint(turned(t, site, extents)?, h)?;
     }
@@ -782,7 +782,6 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 framed = Some(out);
             }
             RuleElement::Tile { blocks, turns } => {
-                let extents = x.extents();
                 let blocks = blocks.map(usize::from);
                 // One turn per block of the lattice, and no axis of the
                 // plane without a block.
@@ -793,24 +792,29 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 if turns.len() != count || blocks.contains(&0) {
                     return Err(Unstated::NoEnclosure);
                 }
-                let mut tiled = extents;
-                for (e, b) in tiled.iter_mut().zip(blocks) {
-                    *e = e.checked_mul(b).ok_or(Unstated::NoEnclosure)?;
-                }
-                // Every cell is a block's: each block holds the canvas's
+                let [first_t, ..] = turns.as_slice() else {
+                    return Err(Unstated::NoEnclosure);
+                };
+                // Every cell is a block's: each block holds the turned canvas's
                 // extents, so the blocks lay every cell of the tiling once,
                 // and a block of other extents is unframed, never a ground
                 // written in for a cell it leaves. The tiling opens as the
                 // canvas's symbol at the origin, written over at every cell.
                 let laid = canvas.clone();
+                let first_block = turn_of(&laid, *first_t).ok_or(Unstated::NoEnclosure)?;
+                let block_extents = first_block.extents();
+                let mut tiled = block_extents;
+                for (e, b) in tiled.iter_mut().zip(blocks) {
+                    *e = e.checked_mul(b).ok_or(Unstated::NoEnclosure)?;
+                }
                 let opening = laid.at(origin()).ok_or(Unstated::NoEnclosure)?;
                 let mut out = SectionSample::filled(tiled, opening).map_err(|_| Unstated::NoEnclosure)?;
                 for (i, &t) in turns.iter().enumerate() {
                     let block = turn_of(&laid, t).ok_or(Unstated::NoEnclosure)?;
-                    if block.extents() != extents {
+                    if block.extents() != block_extents {
                         return Err(Unstated::NoEnclosure);
                     }
-                    let corner = block_corner(i, blocks, extents).ok_or(Unstated::NoEnclosure)?;
+                    let corner = block_corner(i, blocks, block_extents).ok_or(Unstated::NoEnclosure)?;
                     for (site, v) in block.sites() {
                         out.paint(site.moved(corner).ok_or(Unstated::NoEnclosure)?, v).ok_or(Unstated::NoEnclosure)?;
                     }
