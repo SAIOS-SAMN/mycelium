@@ -98,13 +98,18 @@ impl Nucleus {
         u64::from(self.z3) + u64::from(self.q3)
     }
 
-    /// 78.184 §7–§8 — THE TUBE'S IMAGE: the pole swap `(3Z, 3Q) ↦ (3Q, 3Z)`,
-    /// and the phase state reversed (the versor's reverse): the planes in the
+    /// 78.184 §7–§8 — THE TUBE'S IMAGE, losing no dimension: the pole swap
+    /// `(3Z, 3Q) ↦ (3Q, 3Z)`; the pattern to its complement (netstratum
+    /// docs/123 §3b), each count on subset `S` of the kernel's axes moving
+    /// to `{axes} ∖ S`, which reverses a pattern indexed by subset; and the
+    /// phase state reversed (the versor's reverse): the planes in the
     /// opposite order, each phase and pole negated, each winding kept. `3A`
-    /// is kept, and the image of an entry at rest is at rest.
+    /// is kept, the image of an entry at rest is at rest, and the image is
+    /// an involution on every component.
     pub fn image(&self) -> Nucleus {
         let planes = self.planes.iter().rev().map(|p| Plane { plane: p.plane, k: p.k, phase: -p.phase.clone(), pole: -p.pole.clone() }).collect();
-        Nucleus { z3: self.q3, q3: self.z3, pattern: self.pattern.clone(), planes }
+        let pattern = self.pattern.iter().rev().copied().collect();
+        Nucleus { z3: self.q3, q3: self.z3, pattern, planes }
     }
 
     /// Whether the phase state stands at rest (78.184 §8; xylarium T24 per
@@ -128,15 +133,16 @@ impl Nucleus {
 pub type Nuclei = Vec<(Nucleus, BigUint)>;
 
 /// The nuclei well formed: not empty, strictly ascending by key, every
-/// nucleus with a proton, every phase and pole in `[−1, 1]`, every count at
-/// least one.
+/// nucleus with a proton, every pattern empty or indexed by the subsets of
+/// its kernel's axes (length `2ⁿ`, so its image is its complement), every
+/// phase and pole in `[−1, 1]`, every count at least one.
 pub fn nuclei_hold(n: &Nuclei) -> bool {
     let zero = BigUint::from(0u8);
     let one = Q::from_integer(1.into());
     let within = |x: &Q| *x <= one && *x >= -one.clone();
     !n.is_empty()
         && n.windows(2).all(|w| matches!(w, [x, y] if x.0 < y.0))
-        && n.iter().all(|(k, c)| k.z3 > 0 && k.planes.iter().all(|p| within(&p.phase) && within(&p.pole)) && *c > zero)
+        && n.iter().all(|(k, c)| k.z3 > 0 && (k.pattern.is_empty() || k.pattern.len().is_power_of_two()) && k.planes.iter().all(|p| within(&p.phase) && within(&p.pole)) && *c > zero)
 }
 
 /// 78.184 §8 — an exact rational, compact: `[sign u8][numer: len u16, LE]
