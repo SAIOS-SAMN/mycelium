@@ -347,12 +347,12 @@ pub(crate) fn serve_control(s: &mut Channel, delimited: &Delimited, context: &Co
             (None, Some(first), Some(rule), Some(Ok(ground))) => {
                 let (verdict, offers) = {
                     let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
-                    // OWED (78.153b): the solve's reconstruction mints its own stroke
-                    // inside `judge_solve_on_stroke` (78.153, resumable).
-                    h.run(|k, _| {
+                    // 78.183 §4.6 — the solve's reconstruction draws the hold's
+                    // stroke (78.153, resumable: an unread solve keeps its cursor).
+                    h.run(|k, reads| {
                     // The perspective was read on the train pairs above; a
                     // refusal here is the withheld pairs', by the same name.
-                    let judgement = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_task_solve_under(rule, &cite, &perspective)) {
+                    let judgement = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_task_solve_under(rule, &cite, &perspective, reads)) {
                         Ok(j) => j,
                         Err(why) => {
                             let refusal = refused(why.reason(), mycelium::transducer::sentence::ObstructionKind::Integrity);

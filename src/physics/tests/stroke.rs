@@ -190,3 +190,21 @@ fn dwell_holds_only_wanted_pressured_lane() {
     assert_eq!(outcome.moved(), g, "the stroke moved G and no other lane");
     assert_eq!(WindingOutcome::default().moved(), [false; 4], "a stroke that moved nothing");
 }
+
+/// 78.183 P2 — A READ SPENT ON ITS LANE is one read of the token, counted
+/// on that lane on this thread; the token's bound is unchanged, so a lane
+/// named never grants a read the token does not hold. A lane no ruling
+/// opened is refused and spends nothing.
+#[test]
+fn a_read_spent_on_its_lane_counts_there_within_the_one_token() {
+    use forms::coordinate::Lane;
+    let mut b = crate::physics::Physics::default().stroke_n(2);
+    let (total, lanes) = (crate::physics::spent_here(), crate::physics::spent_lanes_here());
+    assert!(b.spend_on(&Lane::T));
+    assert!(!b.spend_on(&Lane::Opened { name: "x".into(), version: 1 }), "no opened lane is ruled");
+    assert!(b.spend());
+    assert!(!b.spend_on(&Lane::T), "the token's bound holds on a named lane");
+    let after = crate::physics::spent_lanes_here();
+    assert_eq!([after[0] - lanes[0], after[1] - lanes[1], after[2] - lanes[2], after[3] - lanes[3]], [0, 0, 1, 0], "one read on T");
+    assert_eq!(crate::physics::spent_here() - total, 2, "two reads granted, one of them unnamed");
+}

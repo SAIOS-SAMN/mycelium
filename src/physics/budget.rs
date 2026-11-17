@@ -86,6 +86,27 @@ impl Budget {
         true
     }
 
+    /// 78.183 §4.2 — A READ SPENT ON ITS LANE: one read, as [`Budget::spend`],
+    /// counted on the lane of the mode it moves (S, G, T, H in the
+    /// network's meanings, `forms::coordinate::Lane`). A lane beyond the base
+    /// is refused, since none is opened by a ruling. The read is still drawn
+    /// from this one token: sizing a stroke per lane is P1b's, never this
+    /// change's.
+    pub fn spend_on(&mut self, lane: &forms::coordinate::Lane) -> bool {
+        let Some(l) = forms::coordinate::Lane::BASE.iter().position(|b| b == lane) else { return false };
+        if !self.spend() {
+            return false;
+        }
+        SPENT_LANES.with(|s| {
+            let mut v = s.get();
+            if let Some(n) = v[l].checked_add(1) {
+                v[l] = n;
+            }
+            s.set(v);
+        });
+        true
+    }
+
     /// 78.153b — THE WHOLE TOKEN HANDED ON: what this token still grants
     /// moves to the one returned, and this one is left spent. Never a share
     /// (the two attempts above): the reads are the same reads, carried by
@@ -100,6 +121,19 @@ thread_local! {
     /// 78.153b — every read granted on this thread, by any token: what a
     /// court hold reads across itself to say it was metered.
     static SPENT: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+thread_local! {
+    /// 78.183 P2 — the reads granted on this thread that named their lane,
+    /// per lane S, G, T, H ([`Budget::spend_on`]).
+    static SPENT_LANES: std::cell::Cell<[u64; 4]> = const { std::cell::Cell::new([0; 4]) };
+}
+
+/// 78.183 P2 — THE READS THIS THREAD WAS GRANTED ON EACH LANE, by the sites
+/// that name it. What `spent_here` counts beyond their sum is spent at a
+/// site whose lane is not named yet: a defect to fix at that site (§4.2).
+pub fn spent_lanes_here() -> [u64; 4] {
+    SPENT_LANES.with(std::cell::Cell::get)
 }
 
 /// 78.153b — THE READS THIS THREAD WAS GRANTED, by every token it spent:

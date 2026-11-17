@@ -356,8 +356,9 @@ impl Court {
         let mut came: crate::network::nerve::Keyed<Stamp> = crate::network::nerve::Keyed::new();
         came.insert(head.key(), *head);
         let mut frontier = vec![*head];
+        // 78.183 P2 — a walk back along the receipts' stamps is read on T.
         while let Some(at) = frontier.pop() {
-            if !reads.spend() {
+            if !reads.spend_on(&forms::coordinate::Lane::T) {
                 return None;
             }
             let Some(r) = self.chain.node(&at) else { continue };

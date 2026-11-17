@@ -86,6 +86,9 @@ pub struct Cursor<'a, V, C: Coordinate = coord::Any> {
     pub(crate) keyed: &'a Keyed<V, C>,
     pub(crate) fibre: Subtree<'a, V>,
     pub(crate) budget: &'a mut crate::physics::Budget,
+    /// 78.183 §8 (a) — the lane the walk reads along, where its caller named
+    /// one ([`Keyed::cursor_on`]); `None` spends unnamed.
+    pub(crate) lane: Option<forms::coordinate::Lane>,
     /// The key the walk began after; `None` began at the first key.
     pub(crate) from: Option<Vec<u8>>,
     pub(crate) last: Option<Vec<u8>>,
@@ -143,7 +146,11 @@ impl<'a, V, C: Coordinate> Iterator for Cursor<'a, V, C> {
                 }
                 _ => {}
             }
-            if !self.budget.spend() {
+            let spent = match &self.lane {
+                Some(l) => self.budget.spend_on(l),
+                None => self.budget.spend(),
+            };
+            if !spent {
                 return None;
             }
             self.last = Some(k.clone());

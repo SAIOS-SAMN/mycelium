@@ -1199,7 +1199,8 @@ impl Court {
             // 78.153b — ONE READ PER RECEIPT of the page: a stroke spent
             // mid-page ends it with what it admitted kept, nothing refused,
             // and the chase asks on from the head that moved.
-            if !budget.spend() {
+            // 78.183 §8 (a): a backfill page's receipts, read on T.
+            if !budget.spend_on(&forms::coordinate::Lane::T) {
                 break;
             }
             let recalled = self.recall_cited(r);
