@@ -504,6 +504,11 @@ impl Court {
                 Side::In => (c.state, false, taken),
             });
         }
+        // 78.128 — a mouth pair is held as a mouth, its state read the same
+        // way; a mouth has no sides to consume.
+        if let Some(m) = self.handoffs.mouths.get(id) {
+            return Some((m.state, false, false));
+        }
         let h = self.handoffs.held.get(id)?;
         Some((h.state, h.out.is_some(), h.inn.is_some()))
     }
