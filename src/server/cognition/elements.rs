@@ -214,13 +214,18 @@ impl Court {
             }
         }
         for m in motions {
+            // The crossing read on the court's own log: what each universe
+            // released and took, in thirds, and its account after.
+            let (out, inn) = (nucleons_of(&m.released), nucleons_of(&m.taken));
             let mut flow = match self.nucleon_flow.get(&m.domain) {
                 Some(f) => f.clone(),
                 None => (BigUint::zero(), BigUint::zero()),
             };
-            flow.0 += nucleons_of(&m.taken);
-            flow.1 += nucleons_of(&m.released);
+            flow.0 += &inn;
+            flow.1 += &out;
             self.nucleon_flow.insert(m.domain, flow);
+            let account = self.element_account(&m.domain);
+            eprintln!("  court crossed {:02x}{:02x}… at {:02x}{:02x}…: released {out} taken {inn} thirds, account {account:?}", crossing[0], crossing[1], m.domain[0], m.domain[1]);
         }
         self.mark_persist();
         Ok(())
