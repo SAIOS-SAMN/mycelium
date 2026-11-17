@@ -169,3 +169,37 @@ fn a_crossing_of_matter_on_an_empty_route_at_one_point_costs_nothing() {
     assert!(fee.is_zero(), "nothing to draw");
     assert_eq!(k.element_account(&domain(5)), Some(BigUint::from(27u32)), "nine hydrogen taken in, in thirds");
 }
+
+/// THE ELEMENT ACCOUNT AND THE CARRIED SHARES SURVIVE A RESTART, with a
+/// closure pending and a point held beside them: written on the court's own
+/// node in rising leaf order and read back whole. (Written before the
+/// closures leaf, they left every home unreadable after its first crossing,
+/// hypha a, 2026-11-17.)
+#[test]
+fn the_element_account_and_carried_shares_survive_a_restart() {
+    let (mut k, m, _) = founded();
+    granted(&mut k, 4, 1000);
+    let _ = k.deliver_at(&on_t(3, 2));
+    let _ = k.deliver_at(&on_t(4, 4));
+    assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
+    assert!(matches!(map(&mut k, 5, 10, mouth(m, 1, 3)), Mapped::Sealed { .. }));
+    assert!(matches!(commit(&mut k, 4, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
+    assert!(matches!(commit(&mut k, 5, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
+    let payer = reserve(4);
+    let head = |k: &Court, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
+    let ((entry_a, u_a), (entry_b, u_b)) = (head(&k, 4), head(&k, 5));
+    let point = |k: &Court, d: u8, side: u8| {
+        let id = crate::server::cognition::atlas::mouth_citation(&domain(d), &m, side);
+        k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point.clone())
+    };
+    let mut t = Traverse { from: domain(4), payer: verifying(&payer), mouth: m, side: 0, at: fp(10), point_a: point(&k, 4, 0), point_b: point(&k, 5, 1), entry_a, u_a, entry_b, u_b, route: Vec::new(), motions: Vec::new(), nonce: [1; 32] };
+    t.motions = vec![motion(&t, 4, 100, 0), motion(&t, 5, 0, 90)];
+    assert!(matches!(k.traverse(&t.sign(&payer).expect("signs"), Some(fp(10))), Crossed::Sealed { .. }));
+    k.closed_since_grant.insert(domain(4), Mu::counts([1, 0, 0, 0]));
+    let (a, b) = (k.element_account(&domain(4)), k.element_account(&domain(5)));
+    let carried = k.carried.scoped().map(|(_, v)| v.len()).sum::<usize>();
+    assert!(carried > 0, "the crossing carried owed shares");
+    let booted = Court::new().reconstruct(&k.snapshot()).expect("a clean reconstruction").into_object();
+    assert_eq!((booted.element_account(&domain(4)), booted.element_account(&domain(5))), (a, b), "the accounts read back");
+    assert_eq!(booted.carried.scoped().map(|(_, v)| v.len()).sum::<usize>(), carried, "every carried share read back");
+}
