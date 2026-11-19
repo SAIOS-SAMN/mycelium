@@ -849,13 +849,13 @@ impl Mind {
     /// `ascertain_on` stops at `Stop::Unknown` or `Stop::NoRule`, checks whether
     /// all training pairs share a conformal `SignedPermutation`, uniform scale
     /// `(up, down)`, and optional consistent residue symbol map that lowers to
-    /// `Act::Recolour` / `RuleElement::Tile` / `RuleElement::Dilate` closing
-    /// every training pair and `scene.tests`.
+    /// a conformal `RuleElement::Carriage` (fusing the `Cl(n+1, 1)` versor and
+    /// recolour gauge) plus optional `RuleElement::Dilate` closing every
+    /// training pair and `scene.tests`.
     pub(crate) fn ground_from_percept(&self, scene: &Scene) -> Option<(SentenceRule, Vec<crate::transducer::family::SectionSample>)> {
         use super::family::{disagreement_on, tests_spoken};
-        use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
-        use crate::transducer::sentence::clause::{Act, Clause, Pred};
-        use crate::transducer::sentence::rule_element::{lower, Lowered, RuleElement};
+        use crate::transducer::sentence::clause::{About, Paint, Pred};
+        use crate::transducer::sentence::rule_element::{still, Carriage, Lowered, Reach, RuleElement, Trace};
         use crate::transducer::sentence::{rule_of_form, Form};
 
         if scene.tests.is_empty() || scene.train.is_empty() {
@@ -883,15 +883,22 @@ impl Mind {
         }
         let (up, down) = uniform_enclosure_scale(&first_x.extents(), &first_y.extents())?;
         for cand in first.factored.held() {
-            let Some(turn) = perm_to_tile_turn(&cand.motion.permutation) else {
+            let Some(versor) = perm_to_versor(&cand.motion.permutation) else {
                 continue;
             };
+            let is_still = versor.projective_eq(&still());
             let mut recolour: Vec<(u8, u8)> = Vec::new();
             let all_match = percept.train.iter().zip(&scene.train).all(|(pf, (x, y))| {
                 let ex = x.extents();
                 let same_scale = uniform_enclosure_scale(&ex, &y.extents()) == Some((up, down));
-                let square_if_needed = turn < 4 || ex[0] == ex[1];
-                if !(same_scale && square_if_needed) {
+                let perm_enclosure_ok = cand
+                    .motion
+                    .permutation
+                    .matrix()
+                    .iter()
+                    .enumerate()
+                    .all(|(i, row)| row.iter().enumerate().all(|(j, &entry)| entry == 0 || ex.get(i) == ex.get(j)));
+                if !(same_scale && perm_enclosure_ok) {
                     return false;
                 }
                 let Some(f) = pf.factored.held().iter().find(|f| f.motion.permutation == cand.motion.permutation) else {
@@ -910,21 +917,22 @@ impl Mind {
                     }
                 })
             });
-            if !all_match || (turn == 0 && up == 1 && down == 1 && recolour.is_empty()) {
+            if !all_match || (is_still && up == 1 && down == 1 && recolour.is_empty()) {
                 continue;
             }
             let mut elements = Vec::new();
-            if !recolour.is_empty() {
-                let Some(lowered) = lower(&Clause { select: Pred::All, act: Act::Recolour(recolour) }) else {
-                    continue;
-                };
-                elements.push(lowered);
-            }
-            if turn != 0 {
+            if !is_still || !recolour.is_empty() {
                 elements.push(Lowered {
                     select: Pred::All,
                     parts: false,
-                    element: RuleElement::Tile { blocks: [1; ALPHABET_SAMPLE_RANK], turns: vec![turn] },
+                    element: RuleElement::Carriage(Carriage {
+                        motion: versor,
+                        about: About::Sample,
+                        reach: Reach::Once,
+                        trace: Trace::Clears,
+                        paint: Paint::Own,
+                        gauge: recolour,
+                    }),
                 });
             }
             if up > 1 || down > 1 {
@@ -1091,21 +1099,68 @@ impl Mind {
     }
 }
 
-/// Maps a rank-2 `SignedPermutation` to its `Act::Tile` dihedral turn code (`0..8`).
-fn perm_to_tile_turn(perm: &crate::transducer::family::transduce::SignedPermutation) -> Option<u8> {
+/// Factors an arbitrary-rank `SignedPermutation` into an exact conformal
+/// versor in `Cl(n+1, 1)(ℚ)` via Cartan–Dieudonné reflections over the
+/// algebra's base axes (no 2D dihedral tile codes).
+fn perm_to_versor(perm: &crate::transducer::family::transduce::SignedPermutation) -> Option<crate::transducer::cga::Mv> {
+    use crate::core::Q;
+    use crate::transducer::cga::{multivector::base_axis, Mv};
+
     let m = perm.matrix();
-    let [r0, r1] = m.as_slice() else { return None };
-    match (r0.as_slice(), r1.as_slice()) {
-        ([1, 0], [0, 1]) => Some(0),
-        ([1, 0], [0, -1]) => Some(1),
-        ([-1, 0], [0, 1]) => Some(2),
-        ([-1, 0], [0, -1]) => Some(3),
-        ([0, 1], [-1, 0]) => Some(4),
-        ([0, -1], [1, 0]) => Some(5),
-        ([0, 1], [1, 0]) => Some(6),
-        ([0, -1], [-1, 0]) => Some(7),
-        _ => None,
+    let n = m.len();
+    if n == 0 {
+        return None;
     }
+    let axes: Vec<usize> = (1..=n).map(base_axis).collect::<Option<Vec<_>>>()?;
+    // Column j of `m` is the signed basis image T(e_j) = sign * e_row.
+    let mut target: Vec<(usize, i8)> = Vec::with_capacity(n);
+    for j in 0..n {
+        let mut found = None;
+        for (i, row) in m.iter().enumerate() {
+            let entry = *row.get(j)?;
+            if entry != 0 {
+                let s = i8::try_from(entry).ok()?;
+                found = Some((i, s));
+                break;
+            }
+        }
+        target.push(found?);
+    }
+    let mut cur: Vec<(usize, i8)> = (0..n).map(|j| (j, 1i8)).collect();
+    let mut versor = Mv::scalar(Q::from_integer(1.into()));
+    for j in 0..n {
+        let (ax_a, s_a) = cur[j];
+        let (ax_b, s_b) = target[j];
+        if ax_a == ax_b && s_a == s_b {
+            continue;
+        }
+        if ax_a == ax_b {
+            // Opposite sign on the same axis: reflect across e_{ax_a}.
+            let u = Mv::blade(axes[ax_a], Q::from_integer(1.into()));
+            versor = u.geo(&versor);
+            for c in cur.iter_mut().skip(j) {
+                if c.0 == ax_a {
+                    c.1 = -c.1;
+                }
+            }
+        } else {
+            // Orthogonal basis vectors: reflect across u = s_a e_{ax_a} - s_b e_{ax_b}.
+            let u = Mv::blade(axes[ax_a], Q::from_integer(s_a.into()))
+                .add(&Mv::blade(axes[ax_b], Q::from_integer((-s_b).into())));
+            versor = u.geo(&versor);
+            let flip = s_a * s_b;
+            for c in cur.iter_mut().skip(j) {
+                if c.0 == ax_a {
+                    c.0 = ax_b;
+                    c.1 *= flip;
+                } else if c.0 == ax_b {
+                    c.0 = ax_a;
+                    c.1 *= flip;
+                }
+            }
+        }
+    }
+    Some(versor)
 }
 
 /// Uniform integer enclosure dilation `(up, down)` across arbitrary rank `ex`

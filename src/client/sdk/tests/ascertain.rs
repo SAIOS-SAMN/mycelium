@@ -227,6 +227,54 @@ fn ground_from_percept_solves_conformal_turn_and_recolour() {
         tests,
         reading: crate::client::sdk::mind::perceive::SceneKind::Task,
     };
-    let (_, outputs) = mind.ground_from_percept(&scene).expect("TaskPercept recolour + turn + dilation should ground");
+    let (rule, outputs) = mind.ground_from_percept(&scene).expect("TaskPercept recolour + turn + dilation should ground");
     assert_eq!(outputs, vec![digits(&["9977", "9977", "0000", "0000"])]);
+    assert!(
+        !rule.form.elements.iter().any(|l| matches!(l.element, crate::transducer::sentence::form::rule_element::RuleElement::Tile { .. })),
+        "conformal grounding must not emit RuleElement::Tile lattice blocks"
+    );
+    assert!(
+        rule.form.elements.iter().any(|l| matches!(l.element, crate::transducer::sentence::form::rule_element::RuleElement::Carriage(_))),
+        "conformal grounding must lower through RuleElement::Carriage"
+    );
+}
+
+/// Autonomous conformal grounding handles odd reflection versors (horizontal
+/// flip) on non-square rectangular enclosures via `RuleElement::Carriage`.
+#[test]
+fn ground_from_percept_solves_rectangular_reflection_via_carriage() {
+    crate::transducer::raster::stand_on(0);
+    // Horizontal flip on non-square 2x3 and 2x4 enclosures:
+    let train = vec![
+        (digits(&["120", "300"]), digits(&["021", "003"])),
+        (digits(&["4000", "0500"]), digits(&["0004", "0050"])),
+    ];
+    let tests = vec![digits(&["607", "080"])];
+    let to_sample = |s: &crate::transducer::family::SectionSample| {
+        let ex = s.extents();
+        let symbols: Vec<u8> = s.sites().map(|(_, h)| h).collect();
+        crate::transducer::sample::Sample::new(ex.to_vec(), 1, symbols, crate::transducer::sample::Place::new(vec![0, 0]))
+            .expect("valid sample")
+    };
+    let s_train: Vec<_> = train.iter().map(|(x, y)| (to_sample(x), to_sample(y))).collect();
+    let s_tests: Vec<_> = tests.iter().map(to_sample).collect();
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    let percept = crate::transducer::family::transduce::TaskPercept::of(&s_train, &s_tests, &mut budget).expect("valid percept");
+
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("conformal-reflect"));
+    let id = [12u8; 32];
+    mind.board.percepts.insert(id, percept);
+
+    let scene = crate::client::sdk::mind::perceive::Scene {
+        id: id.to_vec(),
+        train,
+        tests,
+        reading: crate::client::sdk::mind::perceive::SceneKind::Task,
+    };
+    let (rule, outputs) = mind.ground_from_percept(&scene).expect("rectangular reflection should ground");
+    assert_eq!(outputs, vec![digits(&["706", "080"])]);
+    assert!(
+        rule.form.elements.iter().all(|l| matches!(l.element, crate::transducer::sentence::form::rule_element::RuleElement::Carriage(_))),
+        "pure reflection lowers strictly to conformal RuleElement::Carriage"
+    );
 }

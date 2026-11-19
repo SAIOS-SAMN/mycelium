@@ -513,6 +513,26 @@ fn paint(canvas: &mut SectionSample, site: SectionSite, h: u8) {
     let _ = canvas.paint(site, h);
 }
 
+/// AN ORIGIN-FIXING CONFORMAL VERSOR (pure rotor or reflection) read `About::Sample`
+/// acts about the sample's enclosure centre `extents / 2`; translations and
+/// already-centred versors do not fix the origin and act as given.
+fn sample_motion(extents: [usize; ALPHABET_SAMPLE_RANK], motion: &Versor) -> Versor {
+    let zero: [Q; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|_| q(0));
+    let fixes_origin = crate::transducer::cga::base_at(
+        &motion.sandwich(&crate::transducer::cga::e_o()),
+        ALPHABET_SAMPLE_RANK,
+    )
+    .is_some_and(|p| p.as_slice() == zero.as_slice());
+    if !fixes_origin {
+        return motion.clone();
+    }
+    let two = q(2);
+    let centre: [Q; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|k| Q::from_integer(extents[k].into()) / &two);
+    let to = crate::transducer::cga::translator_at(&centre);
+    let from = crate::transducer::cga::translator_at(&centre.map(|c| -c));
+    to.geo(motion).geo(&from)
+}
+
 /// SPEAK A CARRIAGE on the selection `sel` of `seen`, onto `canvas`.
 fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample) -> Result<(), Unstated> {
     // A cleared cell is laid on the scene's one ground, read where a cell is
@@ -526,10 +546,11 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
             // applied to a cell it cannot move.
             let fixed = t.motion.projective_eq(&rule_element::still());
             let mut landed: Vec<PaintedSite> = Vec::new();
+            let sample_v = (!fixed && t.about == About::Sample).then(|| sample_motion(canvas.extents(), &t.motion));
             for &b in sel {
                 let v = match (fixed, t.about) {
                     (true, _) => None,
-                    (false, About::Sample) => Some(t.motion.clone()),
+                    (false, About::Sample) => sample_v.clone(),
                     (false, About::Body) => {
                         let centre = seen.centre(b).ok_or(Unstated::OffSubstrate)?;
                         let to = crate::transducer::cga::translator_at(&centre);
