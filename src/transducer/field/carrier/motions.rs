@@ -2,9 +2,9 @@
 //
 //! ROADMAP track 26 S8 (stage 5), MU-SENSING §3.7 *the field's motions*,
 //! LAW-FIELD v1 §2 (a motion) — THE FIELD'S MOTIONS AS ONE EXACT GROUP:
-//! rotate (turnings on named planes), flip (the reflection in a frame unit,
+//! rotate (turnings on named planes), flip (the reflection in a pole unit,
 //! of which the pole swap and the inversion in a plane's membrane are one),
-//! deflate and re-inflate (the boost on a frame plane), and stretch and thin
+//! deflate and re-inflate (the boost on a pole plane), and stretch and thin
 //! (the re-period of one phase, which no versor carries). A motion is the
 //! word of its generators, composed by concatenation and reduced only where
 //! the reduction is exact; it acts on frame states, on turnings and orbits
@@ -15,7 +15,7 @@ use super::atlas::{Orbit, Transition};
 use super::holonomy::Motion;
 use super::lift::Point;
 use super::refusal::{FieldRefusal, Residue};
-use super::turning::{FramePlanes, Meeting, Turning, TurningPlane};
+use super::turning::{PolePlanes, Meeting, Turning, TurningPlane};
 use crate::core::Q;
 use crate::transducer::cga::Clifford;
 use forms::coordinate::{Axis, Key, Square, DEGREES_PER_TURN};
@@ -39,11 +39,11 @@ type Image = (Unit, bool);
 pub enum Generator {
     /// ROTATE: turnings on pairwise disjoint turning planes.
     Turn(Motion),
-    /// FLIP: the reflection in the frame unit `u`, `u ↦ −u` and every other
+    /// FLIP: the reflection in the pole unit `u`, `u ↦ −u` and every other
     /// unit kept. On `e₋ₖ` it is plane `k`'s pole swap, `x ↦ e₊ₖ·x·e₊ₖ`,
     /// which is the inversion in plane `k`'s membrane ([`Generator::swap`]).
     Flip(Unit),
-    /// DEFLATE OR RE-INFLATE: the boost on frame plane `plane` by the exact
+    /// DEFLATE OR RE-INFLATE: the boost on pole plane `plane` by the exact
     /// gauge `scale`, its poles `n_Z ↦ λ·n_Z` and `n_Q ↦ n_Q/λ`; refused
     /// where it acts for `λ ≤ 0`.
     Boost { plane: u32, scale: Q },
@@ -241,9 +241,9 @@ impl FieldMotion {
     /// THE TURNING `t` CARRIED BY THE MOTION, `g·t·g⁻¹`: its plane's two
     /// units carried, its angle kept, negated where the image plane is the
     /// named plane reversed (one unit's sign turned). Refused `NotExact`
-    /// naming the plane where a unit is carried onto no frame unit or the
+    /// naming the plane where a unit is carried onto no pole unit or the
     /// two onto units of opposite squares.
-    pub fn carry_turning(&self, frame: &FramePlanes, t: &Turning) -> Result<Turning, FieldRefusal> {
+    pub fn carry_turning(&self, frame: &PolePlanes, t: &Turning) -> Result<Turning, FieldRefusal> {
         self.word.iter().try_fold(t.clone(), |held, g| {
             conjugating(g, held.plane())?.iter().try_fold(held, |held, piece| {
                 let key = held.plane().key().clone();
@@ -262,14 +262,14 @@ impl FieldMotion {
     }
 
     /// A MOTION OF TURNINGS CARRIED, each turning carried.
-    pub fn carry_motion(&self, frame: &FramePlanes, m: &Motion) -> Result<Motion, FieldRefusal> {
+    pub fn carry_motion(&self, frame: &PolePlanes, m: &Motion) -> Result<Motion, FieldRefusal> {
         Motion::of(m.turnings().iter().map(|t| self.carry_turning(frame, t)).collect::<Result<Vec<_>, _>>()?)
     }
 
     /// AN ORBIT CARRIED: each transition's motion carried, its charts kept
     /// (a chart is an invariant, which an isometry does not move). Refused
     /// as [`FieldMotion::carry_turning`] and [`Orbit::of`] refuse.
-    pub fn carry_orbit(&self, frame: &FramePlanes, orbit: &Orbit) -> Result<Orbit, FieldRefusal> {
+    pub fn carry_orbit(&self, frame: &PolePlanes, orbit: &Orbit) -> Result<Orbit, FieldRefusal> {
         Orbit::of(
             orbit
                 .revolution()

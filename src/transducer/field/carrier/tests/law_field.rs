@@ -17,7 +17,7 @@ use num_bigint::BigInt;
 #[test]
 fn precession_of_three_thirty_degree_steps_equals_ninety_degrees() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
     let Ok(Precession::Advances(h)) = revolution_turning(&charts, &p, 30, 1).precession() else {
         panic!("the orbit precesses")
     };
@@ -49,7 +49,7 @@ fn flat_region_binds_no_orbit_refused_unbound() {
 #[test]
 fn closed_geodesic_with_zero_precession_is_resonant() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
     let step = |i: usize, n: i64| Transition {
         from: charts[i].clone(),
         to: charts[(i + 1) % 3].clone(),
@@ -69,7 +69,7 @@ fn closed_geodesic_with_zero_precession_is_resonant() {
 #[test]
 fn flat_and_resonant_separated_by_kept_winding() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
     let orbit = revolution_turning(&charts, &p, 120, 1);
     assert!(orbit.revolution().iter().all(|t| !t.motion.turnings().is_empty()), "no step is the identity");
     let Ok(Precession::Resonant(h)) = orbit.precession() else { panic!("a resonant orbit") };

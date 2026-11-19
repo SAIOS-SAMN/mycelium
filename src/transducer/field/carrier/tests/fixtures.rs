@@ -21,12 +21,12 @@ pub(super) fn degrees(n: i64, d: i64) -> Q {
 }
 
 /// The field's frame of `count` planes.
-pub(super) fn frame(count: u32) -> FramePlanes {
-    FramePlanes::of(count).expect("the frame stands")
+pub(super) fn frame(count: u32) -> PolePlanes {
+    PolePlanes::of(count).expect("the frame stands")
 }
 
 /// The turning plane `e₊ₖe₊ₗ` of `frame`.
-pub(super) fn plane(frame: &FramePlanes, k: u32, l: u32) -> TurningPlane {
+pub(super) fn plane(frame: &PolePlanes, k: u32, l: u32) -> TurningPlane {
     TurningPlane::of(frame, Square::Positive, k, l).expect("the plane stands")
 }
 

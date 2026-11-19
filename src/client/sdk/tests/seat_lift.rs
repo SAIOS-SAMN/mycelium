@@ -51,7 +51,7 @@ fn field(m: &SeatMind, kind: u16) -> crate::transducer::field::carrier::Lifted {
 }
 
 /// A locator's series is a sample of rank one along its index: one site per
-/// observation held, lifted onto two frame planes, its one axis turning on
+/// observation held, lifted onto two pole planes, its one axis turning on
 /// `e₊₁e₊₂`, as any source of rank one is. No plane is assigned by record
 /// type.
 #[test]
@@ -60,7 +60,7 @@ fn seat_series_lifts_as_rank_one_sample_along_its_index() {
     let sample = series_sample(m.series(&at(30)).expect("held")).expect("a sample");
     assert_eq!(sample.extents(), &[4], "one site per observation, along the series index");
     let lifted = field(&m, 30);
-    assert_eq!(lifted.frame.count(), 2);
+    assert_eq!(lifted.poles.count(), 2);
     assert_eq!(lifted.planes.len(), 1);
     assert_eq!(lifted.planes[0].key().written(), "e_+1+2");
     assert_eq!((reading.lifted, reading.motions, reading.unlifted), (1, 0, 0), "the percept reads the series lifted");

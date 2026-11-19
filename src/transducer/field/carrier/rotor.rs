@@ -241,7 +241,7 @@ impl Rotor {
     /// units, ascending (`e_+1+3`), with its exact component, in the
     /// rate's canonical order. A boost plane's key names its two units of
     /// opposite squares. Refused `NotPlanes` with the masks of the parts on
-    /// no plane (grade 6 and above, in six or more frame units), and with
+    /// no plane (grade 6 and above, in six or more pole units), and with
     /// the masks whose units the frame does not name.
     pub fn planes(&self) -> Result<Vec<(Key, Q)>, FieldRefusal> {
         let negatives = self.rate.negatives();
@@ -421,8 +421,8 @@ impl LocalOrbit {
 
 /// THE FRAME UNIT OF ONE GENERATOR BIT under `negatives`: plane `k`'s
 /// `e₊ₖ` is base generator `2k − 1` and `e₋ₖ` base generator `2k`
-/// (`FramePlanes`); its square read from the value's negative mask must
-/// agree. `None` for a bit no frame unit holds.
+/// (`PolePlanes`); its square read from the value's negative mask must
+/// agree. `None` for a bit no pole unit holds.
 fn unit_of(negatives: usize, bit: usize) -> Option<Axis> {
     let g = (1..).map_while(|g| base_axis(g).map(|m| (g, m))).find(|(_, m)| *m == bit)?.0;
     let (square, k) = match g % 2 {
@@ -437,7 +437,7 @@ fn unit_of(negatives: usize, bit: usize) -> Option<Axis> {
 }
 
 /// The key of a grade-2 mask, its units ascending; `None` for any other
-/// grade, or a bit no frame unit holds.
+/// grade, or a bit no pole unit holds.
 fn key_of(negatives: usize, mask: usize) -> Option<Key> {
     if mask.count_ones() != 2 {
         return None;

@@ -5,7 +5,7 @@
 //! glued by, and the class it was seeded from.
 
 use super::*;
-use super::carrier::{Chart, ExpansionRing, FieldRefusal, FramePlanes, Holonomy, Inflation, LocalOrbit, Monodromy, Orbit, Precession, RotorPrecession, WellBody, WellStage};
+use super::carrier::{Chart, ExpansionRing, FieldRefusal, PolePlanes, Holonomy, Inflation, LocalOrbit, Monodromy, Orbit, Precession, RotorPrecession, WellBody, WellStage};
 
 /// THE KEYED READ OF A HELD WORD'S SECTION BY ADDRESS: the rotation the
 /// chart names and the carriage it names it at. Both halves, because a
@@ -476,14 +476,14 @@ impl Well {
         }
     }
 
-    /// THE FRAME PLANES A WELL STANDS ON (MU-SENSING §3.7, *the lift*): one
+    /// THE POLE PLANES A WELL STANDS ON (MU-SENSING §3.7, *the lift*): one
     /// per axis of the section its remainder's sites stand on, and the
     /// lift's own plane after them, as [`super::carrier::Lifted::of`]
     /// lifts a sample. Read from the section's rank, never fixed here.
-    pub fn planes() -> Result<FramePlanes, FieldRefusal> {
+    pub fn planes() -> Result<PolePlanes, FieldRefusal> {
         let rank = crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
-        let rank = u32::try_from(rank).map_err(|_| FieldRefusal::PastFrame { plane: u32::MAX })?;
-        FramePlanes::of(rank.checked_add(1).ok_or(FieldRefusal::PastFrame { plane: rank })?)
+        let rank = u32::try_from(rank).map_err(|_| FieldRefusal::PastPolePlane { plane: u32::MAX })?;
+        PolePlanes::of(rank.checked_add(1).ok_or(FieldRefusal::PastPolePlane { plane: rank })?)
     }
 
     /// THE CHART THE WELL STANDS AT: the invariant of its remainder, read

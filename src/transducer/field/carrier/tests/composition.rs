@@ -81,11 +81,11 @@ fn motion_refuses_irrational_motions_sharing_one_unit() {
 }
 
 /// A plane named by one unit twice holds no turning and is refused
-/// `NotTurningPlane`; a plane past the frame is refused `PastFrame`.
+/// `NotTurningPlane`; a plane past the frame is refused `PastPolePlane`.
 #[test]
 fn turning_plane_refuses_one_unit_twice_and_planes_past_frame() {
     let f = frame(2);
     assert!(matches!(TurningPlane::of(&f, Square::Positive, 1, 1), Err(FieldRefusal::NotTurningPlane(_))));
-    assert_eq!(TurningPlane::of(&f, Square::Positive, 1, 3), Err(FieldRefusal::PastFrame { plane: 3 }));
+    assert_eq!(TurningPlane::of(&f, Square::Positive, 1, 3), Err(FieldRefusal::PastPolePlane { plane: 3 }));
     assert!(TurningPlane::of(&f, Square::Negative, 1, 2).is_ok(), "the vacuum's e₋₁e₋₂ is a turning plane");
 }

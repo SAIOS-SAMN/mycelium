@@ -8,7 +8,7 @@
 use super::enclosing::Membrane;
 use super::holonomy::{Holonomy, Monodromy, Motion};
 use super::refusal::FieldRefusal;
-use super::turning::FramePlanes;
+use super::turning::PolePlanes;
 use crate::transducer::cga::Mv;
 use crate::transducer::stalk::{ChartAxis, Invariant};
 
@@ -203,28 +203,28 @@ impl Curvature {
     }
 }
 
-/// THE FIELD'S ATLAS (78.171 §1): its frame planes, its charts (each once,
+/// THE FIELD'S ATLAS (78.171 §1): its pole planes, its charts (each once,
 /// in the order of their coordinates), and the attractors it holds. The
 /// connection is the transitions of the orbits held, and nothing else: a
 /// step no held orbit takes is flat.
 #[derive(Clone, Debug)]
 pub struct Atlas {
-    frame: FramePlanes,
+    poles: PolePlanes,
     charts: Vec<Chart>,
     attractors: Vec<Attractor>,
 }
 
 impl Atlas {
     /// THE ATLAS OF `charts` on `frame`, holding no attractor: flat.
-    pub fn of(frame: FramePlanes, mut charts: Vec<Chart>) -> Atlas {
+    pub fn of(poles: PolePlanes, mut charts: Vec<Chart>) -> Atlas {
         charts.sort();
         charts.dedup();
-        Atlas { frame, charts, attractors: Vec::new() }
+        Atlas { poles, charts, attractors: Vec::new() }
     }
 
-    /// The frame planes.
-    pub fn frame(&self) -> &FramePlanes {
-        &self.frame
+    /// The pole planes.
+    pub fn poles(&self) -> &PolePlanes {
+        &self.poles
     }
 
     /// The charts, in the order of their coordinates.
@@ -251,8 +251,8 @@ impl Atlas {
     pub fn hold(&mut self, attractor: Attractor) -> Result<(), FieldRefusal> {
         self.charted(&attractor.centre)?;
         attractor.revolution().iter().try_for_each(|t| self.charted(&t.from).and_then(|()| self.charted(&t.to)))?;
-        if attractor.membrane.plane() > self.frame.count() {
-            return Err(FieldRefusal::PastFrame { plane: attractor.membrane.plane() });
+        if attractor.membrane.plane() > self.poles.count() {
+            return Err(FieldRefusal::PastPolePlane { plane: attractor.membrane.plane() });
         }
         self.attractors.push(attractor);
         Ok(())

@@ -134,7 +134,7 @@ fn pair_lifted_as_transitions_between_its_bodies_charts() {
     let transitions = transitions_of(&x, &y, f).expect("lifted");
     assert!(!transitions.is_empty());
     let (source, output) = (Lifted::of(&x).expect("lifts"), Lifted::of(&y).expect("lifts"));
-    let motion = motion_of(&source.frame, &Enclosure::of(&x), &f.motion).expect("lifted");
+    let motion = motion_of(&source.poles, &Enclosure::of(&x), &f.motion).expect("lifted");
     for t in &transitions {
         let t = t.as_ref().expect("every body carried whole");
         assert_eq!(t.motion, motion);
