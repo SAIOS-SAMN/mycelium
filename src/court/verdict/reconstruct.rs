@@ -133,7 +133,7 @@ fn face_rederives(
         return Ok(());
     }
     // The edge is evidence the court re-measures against the FAMILY
-    // (`edges_rederive_frames`), not something the vertices re-derive, so it
+    // (`edges_rederive_samples`), not something the vertices re-derive, so it
     // is carried in and compared by its presence alone here.
     match f.face_place(&o.from, &o.to, face.place.edge.clone()) {
         Some(p) if same_place(&p, &face.place) => Ok(()),
@@ -717,7 +717,7 @@ fn reconstruct_after_perceiving(
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
     if let Some(fam) = family {
-        stage!(Stage::Bodies, |from| super::body::vertices_carry_frames_from(
+        stage!(Stage::Bodies, |from| super::body::vertices_carry_samples_from(
             f,
             fam,
             frames,
@@ -769,7 +769,7 @@ fn reconstruct_after_perceiving(
                 break;
             }
             // 50.3, 52.3: an edge transport of any order is a face. What it
-            // carries is re-derived on the family below (`edges_rederive_frames`),
+            // carries is re-derived on the family below (`edges_rederive_samples`),
             // and a period is never a gate.
             // EVERY OVERLAP RE-DERIVES AT ITS MEMBER PAIR (AT1): the placement
             // and hue map re-derive from the two members its charts name, and an
@@ -795,7 +795,7 @@ fn reconstruct_after_perceiving(
     // the reading names it there; the orbit reading over that same edge
     // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
-        stage!(Stage::Edges, |from| super::body::edges_rederive_frames_from(traversed, fam, frames, budget, from));
+        stage!(Stage::Edges, |from| super::body::edges_rederive_samples_from(traversed, fam, frames, budget, from));
     }
     // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
     // court just traversed (54.5) — one read per orbit (78.153), in the

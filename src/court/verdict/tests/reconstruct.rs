@@ -621,7 +621,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
 /// on an edge has no period and is not refused for that: with no family to
 /// re-derive its transport against, the tape reconstructs exactly as it does
 /// with a 90° turn there. What an edge carries is judged on the family
-/// (`edges_rederive_frames`), never by its order.
+/// (`edges_rederive_samples`), never by its order.
 #[test]
 fn reconstruct_form_accepts_edge_of_infinite_order() {
     use crate::transducer::alphabet::{Order, Word};

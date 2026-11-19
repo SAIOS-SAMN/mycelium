@@ -118,9 +118,9 @@ fn reconstruct_resume_leaves_good_word_unread_on_short_stroke() {
 /// stroke short of what the edges need it is spent, and on the whole need
 /// it is refused, by application.
 #[test]
-fn edges_rederive_frames_from_spends_short_stroke_never_refuses() {
+fn edges_rederive_samples_from_spends_short_stroke_never_refuses() {
     crate::transducer::raster::stand_on(0);
-    use crate::verdict::body::{edges_rederive_frames_from, perceive_family};
+    use crate::verdict::body::{edges_rederive_samples_from, perceive_family};
     let a_in = ["110000", "000000", "110000", "000000"];
     let a_out = ["220000", "000000", "220000", "000000"];
     let b_in = ["011000", "000000", "011000", "000000"];
@@ -142,11 +142,11 @@ fn edges_rederive_frames_from_spends_short_stroke_never_refuses() {
     let perceived = perceive_family(&family);
     for (is_forged, form) in [(false, &rule.form), (true, &forged)] {
         let mut b = stroke(1 << 20);
-        let full = edges_rederive_frames_from(form, &family, &perceived, &mut b, 0);
+        let full = edges_rederive_samples_from(form, &family, &perceived, &mut b, 0);
         let need = (1 << 20) - b.remaining();
         for n in 0..need {
             assert!(
-                matches!(edges_rederive_frames_from(form, &family, &perceived, &mut stroke(n), 0), Err(Halt::Spent(_))),
+                matches!(edges_rederive_samples_from(form, &family, &perceived, &mut stroke(n), 0), Err(Halt::Spent(_))),
                 "a stroke of {n} of {need} reads is spent on the edges, never refused"
             );
         }

@@ -99,7 +99,7 @@ pub(crate) fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Vec<
 
 /// The frames over pairs already perceived: the frames' indexes, built from the
 /// bodies (no sensor read).
-pub(crate) fn frames_over<'a>(family: &'a [(SectionSample, SectionSample)], perceived: &'a [Perceived]) -> Vec<PerceivedPair<'a>> {
+pub(crate) fn pairs_over<'a>(family: &'a [(SectionSample, SectionSample)], perceived: &'a [Perceived]) -> Vec<PerceivedPair<'a>> {
     family.iter().zip(perceived).map(|((_, y), p)| PerceivedPair::over(p, y)).collect()
 }
 
@@ -151,7 +151,7 @@ fn site_key(site: SectionSite) -> Vec<u8> {
 /// 50.1 step 1 at one FRAME of the family's one body (51.8): `(V · W · γ) ·
 /// B_in = B_out` under exact equality compartment by compartment, for every body of
 /// the vertex's chart on the frame.
-pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, frame: u64) -> Carried {
+pub(crate) fn vertex_carries_sample(vertex: &Vertex, here: &PerceivedPair<'_>, frame: u64) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
     };
@@ -203,7 +203,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
                 let Some(t) = element::site_at(&p) else {
                     return Carried::Refused(FAIL_NO_COMPARTMENT, at());
                 };
-                let (Some(landed_at), true) = (SectionSite::of_family(&t), same_frame(&t, &l.site)) else {
+                let (Some(landed_at), true) = (SectionSite::of_family(&t), same_sample(&t, &l.site)) else {
                     return Carried::Refused(FAIL_NO_COMPARTMENT, at());
                 };
                 // Before the origin, and past the extent, are two different
@@ -279,7 +279,7 @@ fn form_covers_compartments(
             for b in at.on_chart(&member.chart) {
                 for l in &b.compartments {
                     let Some(t) = element::carry_site(&versor, &l.site) else { continue; };
-                    let (Some(landed_at), true) = (SectionSite::of_family(&t), same_frame(&t, &l.site)) else {
+                    let (Some(landed_at), true) = (SectionSite::of_family(&t), same_sample(&t, &l.site)) else {
                         continue;
                     };
                     let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, l.hue) else { continue; };
@@ -297,7 +297,7 @@ fn form_covers_compartments(
 /// (the axes the default perspective reads as space) equal? A compartment
 /// carried into another frame is no compartment of the sample this frame is
 /// reconstructed against.
-fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Site) -> bool {
+fn same_sample(a: &crate::transducer::base::Site, b: &crate::transducer::base::Site) -> bool {
     use crate::transducer::perspective::{family_role, Role};
     a.n() == b.n()
         && a.axes()
@@ -316,10 +316,10 @@ fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Si
 /// stands along the whole of `e₃` unless it is a section of some frames
 /// only — and the claim is a keyed read of its members' frames at the frame's
 /// own coordinate (AT1), never a walk of a list.
-pub(crate) fn vertices_carry_frames(f: &Form, family: &[(SectionSample, SectionSample)]) -> Option<(Refusal, &'static str)> {
+pub(crate) fn vertices_carry_samples(f: &Form, family: &[(SectionSample, SectionSample)]) -> Option<(Refusal, &'static str)> {
     let perceived = perceive_family(family);
     let mut why = None;
-    match carry_frames_from(f, family, &perceived, &mut Meter::Free, 0, &mut why) {
+    match carry_samples_from(f, family, &perceived, &mut Meter::Free, 0, &mut why) {
         // The fault the vertex failed by rides out with the refusal: the
         // mint names it (which check failed), where the obstruction's kind
         // alone does not say.
@@ -332,19 +332,19 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(SectionSample, SectionS
     }
 }
 
-/// 78.153 — [`vertices_carry_frames`] on a meter over the pairs already
+/// 78.153 — [`vertices_carry_samples`] on a meter over the pairs already
 /// perceived, from the `from`-th vertex of the form's own order: one read
 /// per (vertex, claimed frame) checked, and one per coverage read of a
 /// part-reached image. `Halt::Spent(i)` names the vertex the next stroke
 /// resumes at.
-pub(crate) fn vertices_carry_frames_from(
+pub(crate) fn vertices_carry_samples_from(
     f: &Form,
     family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
     meter: &mut Meter<'_>,
     from: usize,
 ) -> Step {
-    carry_frames_from(f, family, perceived, meter, from, &mut None)
+    carry_samples_from(f, family, perceived, meter, from, &mut None)
 }
 
 /// A refusal whose fault was not written: never reached, since every
@@ -353,9 +353,9 @@ fn r_proof_unread() -> &'static str {
     "the fault was not read"
 }
 
-/// [`vertices_carry_frames_from`], writing the fault a refused vertex failed
+/// [`vertices_carry_samples_from`], writing the fault a refused vertex failed
 /// by into `why` — the one reader both the reconstruction and the mint read.
-fn carry_frames_from(
+fn carry_samples_from(
     f: &Form,
     family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
@@ -363,7 +363,7 @@ fn carry_frames_from(
     from: usize,
     why_out: &mut Option<&'static str>,
 ) -> Step {
-    let frames = frames_over(family, perceived);
+    let frames = pairs_over(family, perceived);
     for (i, (vertex, v)) in f.vertices.entries().enumerate().skip(from) {
         let Vertex::Word { .. } = v else {
             continue;
@@ -385,7 +385,7 @@ fn carry_frames_from(
             if !meter.spend() {
                 return Err(Halt::Spent(i));
             }
-            if let Carried::Refused(why, chart) = vertex_carries_frame(v, at, frame) {
+            if let Carried::Refused(why, chart) = vertex_carries_sample(v, at, frame) {
                 if why == FAIL_PART {
                     // The coverage read walks the form's carriages over the
                     // frame's images: one read of its own.
@@ -561,13 +561,13 @@ fn motor_carries(
 /// two frames and carries the motor its member's body took between them,
 /// not a union edge; it is not re-measured here.
 #[cfg(test)]
-pub(crate) fn edges_rederive_frames(
+pub(crate) fn edges_rederive_samples(
     f: &Form,
     family: &[(SectionSample, SectionSample)],
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     let perceived = perceive_family(family);
-    match edges_rederive_frames_from(f, family, &perceived, budget, 0) {
+    match edges_rederive_samples_from(f, family, &perceived, budget, 0) {
         Ok(()) => None,
         Err(Halt::Refused(r)) => Some(r),
         // 78.153 — a spent stroke rules nothing; this reader answers with a
@@ -579,13 +579,13 @@ pub(crate) fn edges_rederive_frames(
     }
 }
 
-/// 78.153 — [`edges_rederive_frames`] on the stroke over the pairs already
+/// 78.153 — [`edges_rederive_samples`] on the stroke over the pairs already
 /// perceived, from the `from`-th face of the form's own order: one read per
 /// face, beside the reads `versor_between` draws. A spent stroke anywhere —
 /// `NoPose::Unbounded` included — is `Halt::Spent` at the face it stopped
 /// at, NEVER `REFUSE_EDGE` (defect 1 of the lock audit: it slashed a good
 /// word on a spent stroke).
-pub(crate) fn edges_rederive_frames_from(
+pub(crate) fn edges_rederive_samples_from(
     f: &Form,
     family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
@@ -593,7 +593,7 @@ pub(crate) fn edges_rederive_frames_from(
     from: usize,
 ) -> Step {
     use crate::network::nerve::coord::ChartAt;
-    let frames = frames_over(family, perceived);
+    let frames = pairs_over(family, perceived);
     for (i, (o, face)) in f.faces.entries().enumerate().skip(from) {
         let (ChartAt::At(x), ChartAt::At(y)) = (&o.from, &o.to) else {
             continue;

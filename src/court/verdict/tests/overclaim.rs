@@ -4,7 +4,7 @@
 // over-claim answered at the pivot, ruled 2026-10-18).
 
 use crate::transducer::family::{extract_rule, SectionSample};
-use crate::verdict::body::vertices_carry_frames;
+use crate::verdict::body::vertices_carry_samples;
 
 fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -27,5 +27,5 @@ fn extract_rule_claims_only_frames_gauge_reproduces() {
         (digits(&["000", "030", "000"]), digits(&["000", "005", "000"])),
     ];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the slide extracts");
-    assert_eq!(vertices_carry_frames(&rule.form, &family).map(|(_, why)| why), None, "no member claims a frame its gauge does not reproduce");
+    assert_eq!(vertices_carry_samples(&rule.form, &family).map(|(_, why)| why), None, "no member claims a frame its gauge does not reproduce");
 }

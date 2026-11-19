@@ -65,7 +65,7 @@ assert!(
 /// leaving frame by it and finds the body at the arriving frame, and it
 /// refuses a motor that does not — never solving for one.
 #[test]
-fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
+fn edges_rederive_samples_refuses_forged_frame_axis_motor() {
     crate::transducer::raster::stand_on(0);
     let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
     let a = ["111000", "100000", "000000", "000000", "000550", "000000"];
@@ -82,7 +82,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
         .collect();
     let [motor, ..] = motors.as_slice() else { panic!("the family's frame axis carries a motor overlap") };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
+        crate::court::verdict::body::edges_rederive_samples(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
         "the measured motor carries the body across its frames"
     );
     let mut forged = rule.form.clone();
@@ -91,7 +91,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(0), &q(1), &q(0));
     }
-    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::fixtures::budget())
+    let refusal = crate::court::verdict::body::edges_rederive_samples(&forged, &family, &mut super::fixtures::budget())
         .expect("a forged frame-axis motor is refused by application, never admitted");
     // PARALLEL TRANSPORT (A.13): the refusal carries the curvature the claim
     // missed — the transport the fibre took, against the forged motor — and
@@ -112,7 +112,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
 /// union at the next frame: a chart with several bodies is verified, never
 /// passed unread, and a forged motor on it is refused.
 #[test]
-fn edges_rederive_frames_applies_motor_to_whole_fibre() {
+fn edges_rederive_samples_applies_motor_to_whole_fibre() {
     crate::transducer::raster::stand_on(0);
     let a_in = ["110000", "000000", "110000", "000000"];
     let a_out = ["220000", "000000", "220000", "000000"];
@@ -132,7 +132,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
         panic!("the two dominoes' chart steps between its frames: a motor overlap")
     };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
+        crate::court::verdict::body::edges_rederive_samples(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
         "the measured motor carries the chart's two bodies onto its two bodies at the next frame"
     );
     let mut forged = rule.form.clone();
@@ -142,7 +142,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(1), &q(0), &q(0));
     }
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::fixtures::budget()).is_some(),
+        crate::court::verdict::body::edges_rederive_samples(&forged, &family, &mut super::fixtures::budget()).is_some(),
         "a forged motor on a chart of two bodies is refused, never passed unread"
     );
 }

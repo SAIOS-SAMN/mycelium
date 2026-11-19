@@ -604,7 +604,7 @@ fn mint_or_refuse(
     if !rule.form.acts() {
         return Err(ObstructionRefusal::MintNothingActs);
     }
-    if let Some((r, why)) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
+    if let Some((r, why)) = crate::court::verdict::body::vertices_carry_samples(&rule.form, family) {
         return Err(ObstructionRefusal::MintVertexNotCarried(r.obstruction.kind(), why));
     }
     // 50.5 — what the form leaves unspoken on this family is its demand. A
