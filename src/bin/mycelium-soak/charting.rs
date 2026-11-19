@@ -106,7 +106,7 @@ fn pairs(name: &str, train: &mycelium::transducer::family::Family) {
             continue;
         };
         let t = Instant::now();
-        let Some(residue) = mycelium::transducer::element::from_residue_framed(&chain, &frame) else {
+        let Some(residue) = mycelium::transducer::element::from_residue_reperiod(&chain, &frame) else {
             println!("  chart {name} pair {pair}: {} links, no canonical chain", chain.len());
             continue;
         };
