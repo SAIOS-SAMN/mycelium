@@ -389,9 +389,9 @@ impl Mouth {
         crate::chronometry::payload_hash(&b)
     }
 
-    /// Each frame a versor, never zero: it carries a horizon sphere onto a
+    /// Each chart a versor, never zero: it carries a horizon sphere onto a
     /// sphere.
-    pub fn frames_hold(&self) -> bool {
+    pub fn charts_hold(&self) -> bool {
         [&self.from_chart, &self.to_chart].iter().all(|f| !f.is_zero() && crate::transducer::cga::is_versor(f))
     }
 }

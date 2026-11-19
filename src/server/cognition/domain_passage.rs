@@ -644,7 +644,7 @@ impl Court {
                 if !keeper_ok {
                     return refuse(R::NotKeeper);
                 }
-                if !m.frames_hold() {
+                if !m.charts_hold() {
                     return refuse(R::Degenerate);
                 }
                 // 78.134 — A MOUTH IS A TUBE between two places, never two

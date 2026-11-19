@@ -22,13 +22,13 @@ use crate::transducer::element::Element;
 /// ONE WORD THE SENTENCE WAS SAID WITH: how many held generators it was
 /// factored through (the language it stands on), whether it is a new letter
 /// (adjoined: an action the alphabet cannot spell, carried as itself), and
-/// how many charts it acts on across how many frames.
+/// how many charts it acts on across how many samples.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct WordReason {
     pub generators: u64,
     pub adjoined: bool,
     pub charts: u64,
-    pub frames: u64,
+    pub samples: u64,
 }
 
 /// ONE LOOP OF THE SENTENCE, ONE MEMBER PATH: whether it returns curved —
@@ -75,12 +75,12 @@ impl Reasons {
         for (_, v) in f.vertices.entries() {
             match v {
                 Vertex::Word { derivation, acts, .. } => {
-                    let frames = acts.scoped().map(|(_, a)| a.frames.len() as u64).sum();
+                    let samples = acts.scoped().map(|(_, a)| a.frames.len() as u64).sum();
                     words.push(WordReason {
                         generators: derivation.generators.len() as u64,
                         adjoined: derivation.is_spelled() && derivation.word_local().is_none(),
                         charts: acts.len() as u64,
-                        frames,
+                        samples,
                     });
                 }
                 Vertex::Demand { kind, measure, pieces, .. } => {
@@ -110,8 +110,8 @@ impl Reasons {
             self.words.len()
         ));
         let charts: u64 = self.words.iter().map(|w| w.charts).sum();
-        let frames: u64 = self.words.iter().map(|w| w.frames).sum();
-        out.push(format!("acting on {charts} chart(s) across {frames} frame(s)"));
+        let samples: u64 = self.words.iter().map(|w| w.samples).sum();
+        out.push(format!("acting on {charts} chart(s) across {samples} sample(s)"));
         let curved: Vec<&OrbitReason> = self.orbits.iter().filter(|l| l.curved).collect();
         match (self.orbits.len(), curved.len()) {
             (0, _) => out.push("no loop closes: nothing here is meant beyond the motion".to_string()),
@@ -148,7 +148,7 @@ impl Reasons {
         use crate::transducer::address::put_key_count;
         put_key_count(out, self.words.len());
         for w in &self.words {
-            for x in [w.generators, w.charts, w.frames] {
+            for x in [w.generators, w.charts, w.samples] {
                 out.extend_from_slice(&x.to_le_bytes());
             }
             out.push(u8::from(w.adjoined));
@@ -193,8 +193,8 @@ impl Reasons {
         };
         let mut words = Vec::new();
         for _ in 0..take_key_count(b, p)? {
-            let (generators, charts, frames) = (u(p)?, u(p)?, u(p)?);
-            words.push(WordReason { generators, adjoined: flag(p)?, charts, frames });
+            let (generators, charts, samples) = (u(p)?, u(p)?, u(p)?);
+            words.push(WordReason { generators, adjoined: flag(p)?, charts, samples });
         }
         let mut orbits = Vec::new();
         for _ in 0..take_key_count(b, p)? {

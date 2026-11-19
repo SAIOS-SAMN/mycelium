@@ -105,7 +105,7 @@ fn mouth_round_trips_with_orbits() {
         tariff: None,
         tube: None,
     };
-    assert!(mouth.frames_hold());
+    assert!(mouth.charts_hold());
     // 78.133 — a tariffed mouth is its own kind, its tariff in its id; the
     // flat mouth's id is what it was.
     let tariff = Tariff { rate_s: (3, 2), rate_h: (1, 7), split: vec![([1u8; 32], (2, 3)), ([5u8; 32], (1, 3))] };
