@@ -236,7 +236,7 @@ pub type Frames = FamilyBodies;
 /// frame's bodies read by its components, the one reading an extraction's
 /// stroke is sized by ([`super::extraction_spend`]) and the percept then
 /// reads, so no frame's components are read a second time to size the draw.
-pub fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Frames {
+pub fn perceive_family(family: &[(SectionSample, SectionSample)]) -> FamilyBodies {
     crate::transducer::raster::on_ground_of(family, || {
         family
             .iter()

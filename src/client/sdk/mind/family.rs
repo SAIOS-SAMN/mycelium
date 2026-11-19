@@ -8,7 +8,7 @@
 //! wire. A sentence with demand vertices is asserted whole (50.5).
 
 use crate::client::sdk::*;
-use crate::transducer::family::{Family, Frames};
+use crate::transducer::family::{Family, FamilyBodies};
 use crate::transducer::sentence::SentenceRule;
 
 /// The magnitude of a family, per lane: the sum over its pairs of the lane
@@ -136,7 +136,7 @@ pub(crate) enum Unexempt {
 /// frames it was perceived on, and the stroke it was extracted on.
 pub(crate) struct Thought {
     pub rule: Option<SentenceRule>,
-    pub frames: Frames,
+    pub bodies: FamilyBodies,
     pub budget: crate::physics::Budget,
 }
 
@@ -177,7 +177,7 @@ impl MintRefused {
 /// and leaves on that pair.
 pub(crate) struct PairPercept {
     pub form: crate::transducer::sentence::Form,
-    pub frames: Frames,
+    pub bodies: FamilyBodies,
     pub pair: Vec<crate::transducer::family::TrainPair>,
     pub mag: [u64; 4],
     pub remainders: Vec<Chain>,
@@ -189,12 +189,12 @@ pub(crate) struct PairPercept {
 pub(crate) fn extract_on(memo: &mut crate::transducer::family::ExtractMemo, epi: &MindLanguage, id: &[u8], train: &Family) -> Thought {
     let gen = epi.atlas_root();
     let frames = match memo.holds(id, &gen) {
-        true => Frames::new(),
+        true => FamilyBodies::new(),
         false => crate::transducer::family::perceive_family(train),
     };
     let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(train, &frames));
     let rule = crate::transducer::family::extract_rule_cached(memo, id, train, gen, &mut budget, epi, Some(&frames));
-    Thought { rule, frames, budget }
+    Thought { rule, bodies: frames, budget }
 }
 
 /// ONE PAIR AS ITS SCENE FORM on the language given, on a stroke sized by
@@ -218,7 +218,7 @@ pub(crate) fn scene_percept(epi: &MindLanguage, x: &crate::transducer::family::S
         let frames = crate::transducer::family::perceive_family(&pair);
         let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
         let form = crate::transducer::family::scene_form_on(epi, &mut budget, x, y, &frames)?;
-        Some(PairPercept { form, frames, pair: pair.clone(), mag: [0; 4], remainders: Vec::new() })
+        Some(PairPercept { form, bodies: frames, pair: pair.clone(), mag: [0; 4], remainders: Vec::new() })
     })
 }
 
@@ -256,16 +256,16 @@ pub(crate) fn speech_of(epi: &MindLanguage, rule: &SentenceRule, train: &Family,
 /// the mind LIFTS into its sensorium where the reading lands, never drops.
 #[cfg(test)]
 pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRule) -> (Ascertained, Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)>) {
-    ascertain_with_frames(epi, train, rule, None)
+    ascertain_with_bodies(epi, train, rule, None)
 }
 
 /// [`ascertain_on`] reusing already-perceived `full_frames` when available,
 /// avoiding redundant `perceive_family` work across leave-one-out folds.
-pub(crate) fn ascertain_with_frames(
+pub(crate) fn ascertain_with_bodies(
     epi: &MindLanguage,
     train: &Family,
     rule: &SentenceRule,
-    full_frames: Option<&Frames>,
+    full_frames: Option<&FamilyBodies>,
 ) -> (Ascertained, Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)>) {
     use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
     crate::observe::note_mind(|m| m.perspective[0] += 1);
@@ -275,7 +275,7 @@ pub(crate) fn ascertain_with_frames(
         return (Ascertained::OnePerspective, lifts);
     }
     let owned_frames;
-    let all_frames: &Frames = match full_frames {
+    let all_frames: &FamilyBodies = match full_frames {
         Some(f) if f.len() == train.len() => f,
         _ => {
             owned_frames = perceive_family(train);
@@ -289,7 +289,7 @@ pub(crate) fn ascertain_with_frames(
         }
         let siblings: Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> =
             train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
-        let frames: Frames = all_frames.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, f)| f.clone()).collect();
+        let frames: FamilyBodies = all_frames.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, f)| f.clone()).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&siblings, &frames));
         let (x, y) = &train[k];
         let Some(rule) = extract_rule_on(&siblings, &frames, epi, &mut budget) else {
@@ -443,7 +443,7 @@ impl Mind {
     /// demands is asserted whole with them (50.5); a form with a remainder, an
     /// unmeasurable span, or no mint is held as thought; the wire never sees
     /// a nerve. Answers the magnitude asserted.
-    pub(crate) fn speak_form(&mut self, rule: &SentenceRule, train: &Family, frames: &Frames, family: &[u8], budget: &mut crate::physics::Budget) -> Option<[u64; 4]> {
+    pub(crate) fn speak_form(&mut self, rule: &SentenceRule, train: &Family, frames: &FamilyBodies, family: &[u8], budget: &mut crate::physics::Budget) -> Option<[u64; 4]> {
         let prepared = speech_of(&self.language, rule, train, budget);
         self.speak_prepared(prepared, train, frames, family, budget)
     }
@@ -457,7 +457,7 @@ impl Mind {
         &mut self,
         (rule, mag, remainders): (SentenceRule, [u64; 4], Vec<Chain>),
         train: &Family,
-        frames: &Frames,
+        frames: &FamilyBodies,
         family: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> Option<[u64; 4]> {
@@ -499,7 +499,7 @@ impl Mind {
     fn speak_with_demands(
         &mut self,
         rule: &SentenceRule,
-        (train, frames): (&Family, &Frames),
+        (train, frames): (&Family, &FamilyBodies),
         family: &[u8],
         remainders: &[Chain],
         budget: &mut crate::physics::Budget,
@@ -557,8 +557,8 @@ impl Mind {
     /// ONE PAIR PERCEIVED, WITHHELD under its scene: held with the frames it
     /// was perceived from, what it leaves its demand (`withhold_perceived`).
     pub(crate) fn withhold_pair(&mut self, p: PairPercept, family: &[u8]) {
-        let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&p.pair, &p.frames));
-        self.withhold_perceived(p.form, &p.frames, &p.pair, &p.remainders, p.mag, family, &mut budget);
+        let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&p.pair, &p.bodies));
+        self.withhold_perceived(p.form, &p.bodies, &p.pair, &p.remainders, p.mag, family, &mut budget);
     }
 
     /// A PERSPECTIVE THE SIBLINGS DID NOT COVER, LIFTED INTO THE SENSORIUM:

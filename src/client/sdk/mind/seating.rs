@@ -728,7 +728,7 @@ impl Mind {
             return Some(Stop::RefusedBefore);
         }
         let frames = match seat.memo.holds(id, &gen) {
-            true => crate::transducer::family::Frames::new(),
+            true => crate::transducer::family::FamilyBodies::new(),
             false => crate::transducer::family::perceive_family(&train),
         };
         let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&train, &frames));

@@ -123,7 +123,7 @@ impl Contemplation {
     pub fn hold_perceived(
         &mut self,
         f: Form,
-        frames: &crate::transducer::family::Frames,
+        frames: &crate::transducer::family::FamilyBodies,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<SectionLink>],
         escrow: [u64; 4],

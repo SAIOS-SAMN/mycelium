@@ -292,7 +292,7 @@ pub(crate) struct Perceived {
     lifted: Vec<PairPercept>,
     /// The rule's speech, prepared (`speech_of`), with the frames it was
     /// perceived on.
-    speech: Option<(Prepared, crate::transducer::family::Frames)>,
+    speech: Option<(Prepared, crate::transducer::family::FamilyBodies)>,
     /// A rule its perspectives know, with the tests' outputs where it speaks
     /// them whole.
     known: Option<(SentenceRule, Option<Vec<crate::transducer::family::SectionSample>>)>,
@@ -404,7 +404,7 @@ fn perceive_family(memo: &mut crate::transducer::family::ExtractMemo, epi: &Mind
 }
 
 fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &MindLanguage, scene: Scene) -> Perceived {
-    use super::family::{ascertain_with_frames, chain_percept, extract_on, pair_percept, scene_percept, speech_of, tests_spoken};
+    use super::family::{ascertain_with_bodies, chain_percept, extract_on, pair_percept, scene_percept, speech_of, tests_spoken};
     let mut read = Perceived {
         ground: crate::transducer::raster::ground(),
         admission: None,
@@ -426,7 +426,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &M
     }
     let mut t = extract_on(memo, epi, id, train);
     // 78.56 III — each pair its own hour, held with no bundle.
-    if read.scene.reading == SceneKind::Task && !t.frames.is_empty() {
+    if read.scene.reading == SceneKind::Task && !t.bodies.is_empty() {
         read.hours = train.iter().filter_map(|(a, b)| scene_percept(epi, a, b)).collect();
     }
     let Some(rule) = t.rule.take() else {
@@ -439,14 +439,14 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &M
         return read;
     };
     if read.scene.reading != SceneKind::Again {
-        read.speech = Some((speech_of(epi, &rule, train, &mut t.budget), t.frames.clone()));
+        read.speech = Some((speech_of(epi, &rule, train, &mut t.budget), t.bodies.clone()));
     }
     // MU-CLIENT §4.9 — COMPREHENSION OF THE SCENE: a rule known by its
     // perspectives, its tests spoken through it. A feed's family is read
     // the same way and its test inputs spoken, so a rule known on it emits
     // its solve; its uncovered perspectives are not lifted onto the mind
     // (its rule's speech is what it gives).
-    let (ascertained, lifts) = ascertain_with_frames(epi, train, &rule, (!t.frames.is_empty()).then_some(&t.frames));
+    let (ascertained, lifts) = ascertain_with_bodies(epi, train, &rule, (!t.bodies.is_empty()).then_some(&t.bodies));
     read.perspectives = Some(Perspectives::of(&ascertained));
     let known = match ascertained {
         Ascertained::Known => Some(rule),

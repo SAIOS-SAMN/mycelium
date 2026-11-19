@@ -45,7 +45,7 @@ use crate::transducer::cga::{Conjugacy, Mv};
 pub type Spores = Keyed<Vec<Shape>>;
 
 /// The input bodies a family's frames were perceived as, by chart.
-pub fn spores_of(frames: &crate::transducer::family::Frames) -> Spores {
+pub fn spores_of(frames: &crate::transducer::family::FamilyBodies) -> Spores {
     let mut spores: Spores = Keyed::new();
     for pair in frames {
         for b in &pair.input {
