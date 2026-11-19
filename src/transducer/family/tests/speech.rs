@@ -333,7 +333,7 @@ fn speech_sample_refuses_site_outside_frame() {
     let fits = Speech {
         unresolved: Vec::new(),
         cycled: Vec::new(),
-        frame: (3, 3),
+        extents: (3, 3),
         painted: painted(&[(2, 2, 5)]),
         remainder: Vec::new(),
         unspoken: Vec::new(),

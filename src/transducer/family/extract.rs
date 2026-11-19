@@ -187,7 +187,7 @@ fn extract_rule_on_ground(
     rebase_named_faces(&mut form);
     trace::trace("extract/5 unfold", trace::Wrote::Nothing, Some(budget));
     // 5. Unfold grow-to-frame.
-    if family.iter().all(|(a, b)| grows_to_frame(a, b)) {
+    if family.iter().all(|(a, b)| grows_to_enclosure(a, b)) {
         form.unfold(crate::transducer::sentence::Measure::Occupied);
     }
     trace::trace_carriage("extract/4 rebase", &measured, &form);
