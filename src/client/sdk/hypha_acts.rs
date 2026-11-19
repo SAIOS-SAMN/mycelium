@@ -27,10 +27,10 @@ use crate::anastome::dialogue::ReceiptsAnswer;
 use crate::chronometry::{ActKind, KStepReceipt, Parent};
 use crate::court::admission::{Predecessor, Reconstructed};
 
-/// ONE HYPHA ACT PERCEIVED: its frame per lane and the height it stands at.
+/// ONE HYPHA ACT PERCEIVED: its measured `μ` per lane and the height it stands at.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HyphaAct {
-    pub frame: [u64; 4],
+    pub mu: [u64; 4],
     pub height: u64,
 }
 
@@ -120,7 +120,7 @@ impl Session {
             self.acts_read.borrow_mut().insert(signer, at);
             return ActsRead::Refused;
         };
-        at.pending.extend(run.iter().filter(|r| is_hypha_act(r.kind)).map(|r| HyphaAct { frame: r.mu, height: r.stamp.h }));
+        at.pending.extend(run.iter().filter(|r| is_hypha_act(r.kind)).map(|r| HyphaAct { mu: r.mu, height: r.stamp.h }));
         at.reached = reached;
         let read = match at.reached.at.place() == head.stamp.place() {
             true => {
@@ -154,8 +154,8 @@ impl Attachment {
     /// greatest seen. `None` where a lane's flux passes its carrier.
     pub fn take_in(&mut self, acts: &[HyphaAct]) -> Option<()> {
         for a in acts {
-            for (slot, f) in self.flux.iter_mut().zip(a.frame) {
-                *slot = slot.checked_add(f)?;
+            for (slot, m) in self.flux.iter_mut().zip(a.mu) {
+                *slot = slot.checked_add(m)?;
             }
             self.height = self.height.max(a.height);
         }

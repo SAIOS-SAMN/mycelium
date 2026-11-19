@@ -73,7 +73,7 @@ fn hypha_act_reaches_the_mind_as_flux_on_its_lanes() {
     let reads = session.read_hypha_acts();
     assert_eq!(
         reads,
-        vec![(vk, ActsRead::Read(vec![HyphaAct { frame: [1, 0, 0, 0], height: line[1].stamp.h }, HyphaAct { frame: [0, 2, 0, 3], height: line[3].stamp.h }]))],
+        vec![(vk, ActsRead::Read(vec![HyphaAct { mu: [1, 0, 0, 0], height: line[1].stamp.h }, HyphaAct { mu: [0, 2, 0, 3], height: line[3].stamp.h }]))],
         "the hypha's acts, its List not among them"
     );
     let before = mind.pressing();
@@ -106,7 +106,7 @@ fn act_kind_carries_no_meaning_beyond_its_coordinate() {
     assert!(read.iter().all(|r| r == &vec![frame]), "one frame, whatever the kind: {read:?}");
     let mut wells = [crate::client::sdk::hypha_acts::Attachment::default(); 3];
     for (w, r) in wells.iter_mut().zip(&read) {
-        w.take_in(&r.iter().map(|f| HyphaAct { frame: *f, height: 1 }).collect::<Vec<_>>()).expect("fits");
+        w.take_in(&r.iter().map(|m| HyphaAct { mu: *m, height: 1 }).collect::<Vec<_>>()).expect("fits");
     }
     assert!(wells.iter().all(|w| w.flux == frame), "and one flux on the well");
 }
