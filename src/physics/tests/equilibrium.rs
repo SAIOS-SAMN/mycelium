@@ -51,7 +51,7 @@ fn equilibrium_balances_frames_on_axis() {
     let b_orbit = turn().grade(2);
     let v = coupling(&a, &b).grade(2);
     assert!(v.geo(&b_orbit).sub(&b_orbit.geo(&v)).is_zero(), "the coupling commutes with the generator");
-    let c = Constellation { frames: vec![a, b], generator: turn() };
+    let c = Constellation { poses: vec![a, b], generator: turn() };
     assert!(net_torque(&c).is_zero(), "the torque vanishes");
     assert_eq!(equilibrium(&c), Ok(()), "stationary equilibrium");
     assert_eq!(stability(&net_torque(&c), &net_torque(&c), &mut budget()), Ok(Stability::Kept), "its torque opens no plane");
@@ -64,7 +64,7 @@ fn equilibrium_balances_frames_on_axis() {
 fn coupling_transposes_and_inversive_is_symmetric() {
     for pose in [one(), translator_at(&at([0, 0, 2]))] {
         let (a, b) = (frame([0, 0, 0], one()), frame([0, 0, 2], pose));
-        let c = Constellation { frames: vec![a.clone(), b.clone()], generator: turn() };
+        let c = Constellation { poses: vec![a.clone(), b.clone()], generator: turn() };
         assert_eq!(equilibrium(&c), Ok(()), "on the axis: equilibrium");
         assert_eq!(inversive(&a, &b), inversive(&b, &a), "the pair symmetric, one well");
         assert!(coupling(&b, &a).projective_eq(&coupling(&a, &b).reverse()), "V_ji ∝ Ṽ_ij");
@@ -78,7 +78,7 @@ fn coupling_transposes_and_inversive_is_symmetric() {
 #[test]
 fn equilibrium_refuses_null_torque_read_as_parabolic_mode() {
     let c = Constellation {
-        frames: vec![frame([0, 0, 0], one()), frame([0, 0, 1], translator_at(&at([2, 0, 0])))],
+        poses: vec![frame([0, 0, 0], one()), frame([0, 0, 1], translator_at(&at([2, 0, 0])))],
         generator: turn(),
     };
     let tau = net_torque(&c);
@@ -151,10 +151,10 @@ fn equilibrium_balances_about_centroid_not_origin() {
     let unit = frame([1, 0, 0], one()).nucleus;
     assert!(hour(&unit, &r, 2).nucleus.projective_eq(&unit), "the unit sphere is the torus's pole");
     let frames: Vec<PosedNucleus> = (0..3).map(|m| hour(&s, &r, m)).collect();
-    let own = Constellation { frames: frames.clone(), generator: r };
+    let own = Constellation { poses: frames.clone(), generator: r };
     assert_eq!(equilibrium(&own), Ok(()), "about its own centroid it balances");
     assert!(net_torque(&own).is_zero(), "no torque");
-    let trapped = Constellation { frames, generator: turn() };
+    let trapped = Constellation { poses: frames, generator: turn() };
     assert!(matches!(equilibrium(&trapped), Err(Refusal::UnbalancedTensegrity { .. })), "about the origin it does not");
 }
 
@@ -168,7 +168,7 @@ fn equilibrium_balances_synchronous_binary() {
     let r = succession(&turn(), &star.centre).expect("the turn winds");
     let bodies = [frame([1, 0, 0], one()).nucleus, frame([-1, 0, 0], one()).nucleus];
     let frames: Vec<PosedNucleus> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
-    let binary = Constellation { frames, generator: r };
+    let binary = Constellation { poses: frames, generator: r };
     assert_eq!(equilibrium(&binary), Ok(()), "the attitudes balance");
     let moved: Vec<(Mv, Mv)> = bodies.iter().map(|s| (s.clone(), turn().sandwich(s))).collect();
     assert_eq!(rigid(&moved), Ok(()), "the turn keeps the pair's inversive distance");
@@ -181,7 +181,7 @@ fn equilibrium_refuses_tumble_and_rigid_refuses_drift() {
     let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
     let tumble = rotator_on_blade(&q(1, 1), &q(1, 1), E1 | E3);
     let frames = vec![frame([1, 0, 0], one()), frame([-1, 0, 0], one()), carried(&frame([1, 0, 0], one()), &tumble)];
-    let c = Constellation { frames, generator: r };
+    let c = Constellation { poses: frames, generator: r };
     assert!(matches!(equilibrium(&c), Err(Refusal::UnbalancedTensegrity { .. })), "the tumble precesses");
     let s = |x: i64| frame([x, 0, 0], one()).nucleus;
     let drift = [(s(1), s(2)), (s(-1), s(-2))];
@@ -199,7 +199,7 @@ fn coherence_closes_only_at_zero_defect() {
     let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
     let tumble = rotator_on_blade(&q(1, 1), &q(1, 1), E1 | E3);
     let frames = vec![frame([1, 0, 0], one()), frame([-1, 0, 0], one()), carried(&frame([1, 0, 0], one()), &tumble)];
-    let c = Constellation { frames, generator: r };
+    let c = Constellation { poses: frames, generator: r };
     let mut defect = coherence(&c, &c, &mut budget()).expect("the frames stand and the torque rises on no plane");
     let s = |x: i64| frame([x, 0, 0], one()).nucleus;
     defect.metric.extend(metric_defect(&[(s(1), s(2)), (s(-1), s(-2))]));
@@ -219,7 +219,7 @@ fn coherence_closes_only_at_zero_defect() {
     let r = succession(&turn(), &star.centre).expect("the turn winds");
     let bodies = [frame([1, 0, 0], one()).nucleus, frame([-1, 0, 0], one()).nucleus];
     let frames: Vec<PosedNucleus> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
-    let binary = Constellation { frames, generator: r };
+    let binary = Constellation { poses: frames, generator: r };
     let mut closed = coherence(&binary, &binary, &mut budget()).expect("the binary stands");
     closed.metric.extend(metric_defect(&bodies.iter().map(|s| (s.clone(), turn().sandwich(s))).collect::<Vec<_>>()));
     let after = BodyMoments { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
@@ -265,12 +265,12 @@ fn spin_of_is_set_by_star_place() {
 #[test]
 fn force_keeps_axial_turn_and_opens_slide_plane() {
     let c = Constellation {
-        frames: vec![frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2])))],
+        poses: vec![frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2])))],
         generator: turn(),
     };
     assert_eq!(force(&c, 1, &turn(), &mut budget()), Some(Ok(Stability::Kept)), "the turn about the axis exerts nothing");
     let mut kept = c.clone();
-    kept.frames[1] = carried(&kept.frames[1], &turn());
+    kept.poses[1] = carried(&kept.poses[1], &turn());
     assert_eq!(consolidate(&c, &kept, &mut budget()), Ok(()), "and is consolidated");
     let off = translator_at(&at([1, 0, 0]));
     assert!(
@@ -278,7 +278,7 @@ fn force_keeps_axial_turn_and_opens_slide_plane() {
         "the slide across the axis opens a plane"
     );
     let mut after = c.clone();
-    after.frames[1] = carried(&after.frames[1], &off);
+    after.poses[1] = carried(&after.poses[1], &off);
     assert!(
         matches!(consolidate(&c, &after, &mut budget()), Err(Refusal::UnbalancedTensegrity { net_torque }) if !net_torque.is_zero()),
         "and law II refuses it"
@@ -289,11 +289,11 @@ fn force_keeps_axial_turn_and_opens_slide_plane() {
 #[test]
 fn equilibrium_refuses_contraction_to_one_frame() {
     let a = frame([0, 0, 0], one());
-    let alone = Constellation { frames: vec![a.clone()], generator: turn() };
+    let alone = Constellation { poses: vec![a.clone()], generator: turn() };
     assert_eq!(equilibrium(&alone), Err(Refusal::MonocularOrbit));
-    let crushed = Constellation { frames: vec![a.clone(), a.clone()], generator: turn() };
+    let crushed = Constellation { poses: vec![a.clone(), a.clone()], generator: turn() };
     assert_eq!(equilibrium(&crushed), Err(Refusal::SingularCollapse));
-    let coherent = Constellation { frames: vec![a, frame([0, 0, 2], translator_at(&at([0, 0, 2])))], generator: turn() };
+    let coherent = Constellation { poses: vec![a, frame([0, 0, 2], translator_at(&at([0, 0, 2])))], generator: turn() };
     assert_eq!(consolidate(&coherent, &alone, &mut budget()), Err(Refusal::MonocularOrbit), "the contraction refused");
 }
 

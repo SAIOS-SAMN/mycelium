@@ -69,7 +69,7 @@ pub struct PosedNucleus {
 /// one generator.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Constellation {
-    pub frames: Vec<PosedNucleus>,
+    pub poses: Vec<PosedNucleus>,
     pub generator: Mv,
 }
 
@@ -222,7 +222,7 @@ fn pair_ratios(bodies: &[(Mv, Mv)]) -> (Vec<PairRead>, Vec<PairRead>) {
 /// generator. The caller adds the transition's metric defect and τ_ext (they depend on
 /// which bodies it relates) and asks `Defect::closes`.
 pub fn coherence(before: &Constellation, after: &Constellation, budget: &mut crate::physics::Budget) -> Result<Defect, Refusal> {
-    frames_stand(after)?;
+    poses_stand(after)?;
     let mut defect = Defect::default();
     match stability(&net_torque(before), &net_torque(after), budget) {
         Err(why) => return Err(Refusal::StabilityUnread { why }),
@@ -240,8 +240,8 @@ pub fn coherence(before: &Constellation, after: &Constellation, budget: &mut cra
 /// THE DELIMITED STAND (the structural half of `equilibrium`): at least two, no
 /// two collapsed into one. Where they do not, the coherence form cannot be
 /// read at all — a refusal, never a defect.
-pub fn frames_stand(c: &Constellation) -> Result<(), Refusal> {
-    let [first, rest @ ..] = c.frames.as_slice() else { return Err(Refusal::MonocularOrbit) };
+pub fn poses_stand(c: &Constellation) -> Result<(), Refusal> {
+    let [first, rest @ ..] = c.poses.as_slice() else { return Err(Refusal::MonocularOrbit) };
     if rest.is_empty() {
         return Err(Refusal::MonocularOrbit);
     }
@@ -525,8 +525,8 @@ pub fn torque(coupling: &Mv, generator: &Mv) -> Mv {
 /// summed in the algebra.
 pub fn net_torque(c: &Constellation) -> Mv {
     let mut tau = Mv::zero();
-    for (a, i) in c.frames.iter().enumerate() {
-        for j in c.frames.iter().skip(a + 1) {
+    for (a, i) in c.poses.iter().enumerate() {
+        for j in c.poses.iter().skip(a + 1) {
             tau = tau.add(&torque(&coupling(i, j), &c.generator));
         }
     }
@@ -715,7 +715,7 @@ pub fn stability(before: &Mv, after: &Mv, budget: &mut crate::physics::Budget) -
 /// STATIONARY EQUILIBRIUM (A.10.1 laws I, II): at least two co-present
 /// frames, no two collapsed into one, and the net torque zero, exactly.
 pub fn equilibrium(c: &Constellation) -> Result<(), Refusal> {
-    frames_stand(c)?;
+    poses_stand(c)?;
     let tau = net_torque(c);
     match tau.is_zero() {
         true => Ok(()),
@@ -734,7 +734,7 @@ pub fn carried(f: &PosedNucleus, t: &Mv) -> PosedNucleus {
 /// `None` where `k` names no frame; `Some(Err)` where a torque is unread.
 pub fn force(c: &Constellation, k: usize, t: &Mv, budget: &mut crate::physics::Budget) -> Option<Result<Stability, cga::Undecomposed>> {
     let mut after = c.clone();
-    let f = after.frames.get_mut(k)?;
+    let f = after.poses.get_mut(k)?;
     *f = carried(f, t);
     Some(stability(&net_torque(c), &net_torque(&after), budget))
 }
