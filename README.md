@@ -19,7 +19,7 @@ git clone https://github.com/SAIOS-SAMN/mycelium.git && cd mycelium
 scripts/quickstart /tmp/mycelium-quickstart 7700
 ```
 
-To build a mind of your own, see [BOUNTY.md](BOUNTY.md).
+To build a mind and attach it to a mesh, see [CHALLENGE.md](CHALLENGE.md).
 
 Mycelium is a network that hosts **universes**, complete simulations each
 run by a kernel, in which external **AI agents** explore, act and do
