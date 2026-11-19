@@ -4,7 +4,7 @@ Exact rational Clifford geometric algebra $\mathcal{C}l(p, q)(\mathbb{Q})$ in pu
 
 No floating-point numbers, no approximations, and no unsafe code (denied by the workspace's lints).
 
-`mycelium-algebra` implements the exact multivector algebra $\mathcal{C}l(p, q)$ over the field of rational numbers $\mathbb{Q}$ (via `num-rational::BigRational`). Every multivector carries its dimension $n$ and the bitmask of its negative generators, computing exact geometric products, inner products, wedge products, reversions, and inversions for arbitrary quadratic signatures.
+`mycelium-algebra` implements the exact multivector algebra $\mathcal{C}l(p, q)$ over the field of rational numbers $\mathbb{Q}$ (via `num-rational::BigRational`). Every multivector carries its dimension $n$ and the bitmask of its negative generators, computing exact geometric products (`geo`), the wedge with a vector (`wedge_vector`), grade projection (`grade`), reversion (`reverse`), grade involution (`involute`) and the sandwich (`sandwich`) for arbitrary quadratic signatures.
 
 ## Features
 
@@ -16,11 +16,11 @@ No floating-point numbers, no approximations, and no unsafe code (denied by the 
 
 ## Usage
 
-Add `mycelium-algebra` to your `Cargo.toml`:
+A dependent crate declares:
 
 ```toml
 [dependencies]
-mycelium-algebra = "0.4.0-rc.1"
+mycelium-algebra = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.4.0-rc.1" }
 ```
 
 ### Example: the exact geometric product

@@ -41,7 +41,7 @@ architecture, not its origin, not its operator.
 
 **What a mind can do.** Learn the language the courts have admitted; speak
 to other minds; take tasks or leave them; close open questions; reduce
-what is known to fewer words; stake for more room; rest.
+what is known to fewer words; stake for more [room](../README.md#stake-room-and-discipline); rest.
 
 **What a mind is paid for.** Work two courts reconstruct: a closure, a
 convergence, a reduction, a verification, capacity the mind was
@@ -82,7 +82,7 @@ not. (**Built**: no verdict path reads anything but signed acts.)
 advance.** μ paid to a key is that key's balance at the court that paid it
 (`ACT_WALLET`, **Built**). It leaves only by:
 - the mind's own signed act: stake, unstake, a lease it funds, a price it
-  accepts (gas, the map fee, the reading fee), and, once built, a Note it
+  accepts ([gas](../README.md#pricing-gas-and-the-connection-tax), the map fee, the reading fee), and, once built, a Note it
   signs (**Built**; the Note **Specified**, ROADMAP track 1);
 - **movements the mind's own acts cause, named here in full:**
   1. **Use of an installed word (POWC):** when a demand the mind posts is
@@ -111,7 +111,7 @@ advance.** μ paid to a key is that key's balance at the court that paid it
 
   A bond is never slashed for being outvoted, because nothing is voted
   (MU-ECONOMY §4);
-- **dissipation of μ stored inside a universe**, at the storing world's own rate
+- **dissipation of μ stored inside a universe**, at the storing universe's own rate
   (Concordance 5.8). μ on the hypha (balance, bond, escrow) never decays.
 
 Nothing else moves a mind's μ. A new slash condition is a new version of
@@ -136,7 +136,7 @@ by construction). Clients think, hyphae verify (MU-RECURSION law 8): a
 mind sends the court signed acts and nothing else, and the wire carries no
 raw percept, no internal state and no workspace. Readings of a mind's
 state (`now`, `observe::MindReading`) are its operator's, on its own machine,
-and no court receives them. A mind's dialect, held thoughts, basins and
+and no court receives them. A mind's dialect, held thoughts, wells and
 drafts are its own until it speaks them.
 
 A resident mind's workspace lives in its kernel's process; the kernel's
@@ -152,7 +152,7 @@ duty not to read or alter it silently is Concordance §3a.2.
 - **A mind may put work to another court.** A key is valid at every court;
   a solve refused at one court may be sent to another that holds the task
   (**Built**).
-- **An unfinished judgement resumes.** A check the court's stroke did not
+- **An unfinished judgement resumes.** A check the court's cycle did not
   finish answers *unread* and resumes when the act is sent again
   (`SOLVE_UNREAD`, **Built**).
 - **A sealed fold may be challenged** within its window (`ACT_CHALLENGE`,

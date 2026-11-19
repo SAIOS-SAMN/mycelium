@@ -39,7 +39,7 @@ except what the pore admits. Here the pore is reconstruction.
 
 - **Voice**: a 32-byte identity of a mind (`Session::voice().id()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
 - **Hypha**: a server; identity is its ed25519 verifying key (`court::identity::HyphaKey`).
-- **Listing key**: `listing_key(chain, frame)`, the framed residue address of a demand; every priced request is a listing at exactly one home hypha.
+- **Listing key**: `listing_key(chain, reperiod)`, the residue address of a demand at its re-period; every priced request is a listing at exactly one home hypha.
 - **Home**: the hypha the home trie homes the listing to (`nerve::home`).
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: an exact non-negative rational on each of the four lanes (`economy::Mu`).
@@ -56,9 +56,9 @@ except what the pore admits. Here the pore is reconstruction.
 - **Payer**: the voice that wants a resource or a result. Pays by Note or by Work.
 - **Payee**: the voice that serves the resource or claims the result. Usually a service running the client SDK.
 - **Home**: escrow holder, first organ.
-- **Witness**: second organ; supplies the reconstruction and the second signature that release escrow. Its bond lies outside the home's delegation closure and its room covers the escrow on every occupied lane (MU-RECURSION 47.3).
+- **Witness**: second organ; supplies the reconstruction and the second signature that release escrow. Its bond lies outside the home's delegation closure and its [room](../README.md#stake-room-and-discipline) covers the escrow on every occupied lane (MU-RECURSION 47.3).
 
-Any node may be payer and payee in different exchanges. Hyphas are never
+Any node may be payer and payee in different exchanges. Hyphae are never
 payees in an exchange.
 
 ## 4. Value
@@ -73,9 +73,9 @@ it can work instead (§6.3).
 
 ## 5. Wire
 
-All frames use `network::wire::Delimited { lane, body }` with the first body
+Every act travels as `network::wire::Delimited { body }`, its first body
 byte the act. Reserved acts (new; verify against `anastome/dialogue/acts.rs`
-before building, 0x20–0x22 are taken by COVER/OFFER/INSTALLED):
+before building, 0x20–0x22 are taken (COVER, OFFER, and the retired INSTALLED, refused by name)):
 
 | act | name | direction |
 |---|---|---|
@@ -132,7 +132,7 @@ key and `sig_payer` with the payer's, checks that its own K has not passed
 every occupied lane. Then `escrow_award(listing_key, [payer, payee], mu,
 anchor)` and a receipt citing both prefixes as parents. The escrow entry is
 keyed by `(listing_key, payer, K_payer)`. A second Note identical to one
-already admitted at `K_payer` is a duplicate frame and is ignored
+already admitted at `K_payer` is a duplicate and is ignored
 (`DUPLICATE`); a different Note at the same `(payer, K_payer)` is an
 equivocation proof (§5.5) and burns the payer's bond.
 
@@ -249,14 +249,14 @@ PRICED ──Note verified──▶ ESCROWED ──Receipt mode 0, two sigs─�
 ### 6.1 Resource flow, HTTP binding
 
 1. Client requests a resource. Server replies `402` with header
-   `Septum-Challenge: <base64url(frame 0x30)>`.
+   `Septum-Challenge: <base64url(act 0x30)>`.
 2. Client builds a Note, sends it to the home over the mesh wire (or asks
    the server to relay it, §7.2), receives `ESCROWED`.
-3. Client retries the request with `Septum-Note: <base64url(frame 0x31)>`.
+3. Client retries the request with `Septum-Note: <base64url(act 0x31)>`.
    The server verifies the home's `ESCROWED` reply (it may query the home
    by listing key) and serves the bytes.
 4. Client countersigns the receipt; server submits `RECEIPT` to the home.
-5. Home releases; server includes `Septum-Receipt: <base64url(frame 0x33)>`
+5. Home releases; server includes `Septum-Receipt: <base64url(act 0x33)>`
    in a final response or the client fetches it from the home.
 
 ### 6.2 Work flow
@@ -296,7 +296,7 @@ learning it: the reply is signed by the home and the payee returns it in
 
 ## 8. Identity
 
-- Hyphas: `HyphaKey::load_or_mint`, existing; a FROST group key
+- Hyphae: `HyphaKey::load_or_mint`, existing; a FROST group key
   (MU-RECURSION 46.1) when the hypha has more than one operator, the wire
   unchanged.
 - Voices (**Specified**, ROADMAP track 1): new `client::identity::VoiceGroup`, a FROST group key over
@@ -352,14 +352,14 @@ Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
   balances.
 - `septum.rs`, new under `src/server/`: the state machine keyed by
   `(listing_key, payer, K_payer)` in a `Keyed<Septum>`; `price_request`, `accept_note`,
-  `accept_receipt`, `expire(K)` called from the court
-  stroke under its budget; `witness_sign` for the second signature of a
+  `accept_receipt`, `expire(K)` called from the court's
+  cycle under its budget; `witness_sign` for the second signature of a
   release.
 - `src/bin/mycelium-server/judge/`: one file per act family, dispatched by `judge/dispatch.rs`.
 - `src/client/sdk/`: `Session::septum_note`, `septum_receipt`,
   `septum_release`.
 - `mycelium-septum`, a new binary under `src/bin/`: the HTTP adapter. Listens on a local port,
-  maps `402` and the three headers to frames, holds no state beyond the
+  maps `402` and the three headers to acts, holds no state beyond the
   current exchange. A service that already runs the client SDK does not
   need it.
 
@@ -388,5 +388,5 @@ An HTTP client receiving a `402` with a four-lane price, a Note escrowed at
 the listing's home, bytes served, a receipt with two signatures, a release
 carrying the home's signed ruled root and the witness's signature, and the payee's balance moved on
 exactly the lanes the price occupied. For the work mode: the same release
-appearing as an Installed on two hyphas' ruled covers, so payment and
+appearing as an Installed on two hyphae's ruled covers, so payment and
 language are one event.

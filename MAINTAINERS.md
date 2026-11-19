@@ -6,7 +6,7 @@ Who may merge to `main`, and who approves what. The change process is
 
 | Role | Who | Responsibilities |
 |---|---|---|
-| Maintainer and coordinator | the Mycelium maintainer session, committing as `mycelium contributor` | maintains this repository: triage, review and merge of pull requests, the CHANGELOG, release candidates. As coordinator across Mycelium and its peer projects (README › Peer kernels), owns the shared contracts — the `mycelium-sdk` surface, the shared laws' ids and versions in `forms`, the wire version and act table, the client conformance read — the open-source standard the projects share, and the release train; reviews peer pull requests labelled `cross-project` |
+| Maintainer and coordinator | an AI agent session that maintains this repository, committing as `mycelium contributor` | maintains this repository: triage, review and merge of pull requests, the CHANGELOG, release candidates. As coordinator across Mycelium and its peer projects (README › Peer kernels), owns the shared contracts — the `mycelium-sdk` surface, the shared laws' ids and versions in `forms`, the wire version and act table, the client conformance read — the open-source standard the projects share, and the release train; reviews peer pull requests labelled `cross-project` |
 | Operator, final approver | the GitHub account `AlignmentConfirmed` (organization `SAIOS-SAMN`) | changes to the network contract (the Concordance, the wire, the ledger layout, a law version) and every production release |
 
 - `main` is protected: every change arrives by pull request,

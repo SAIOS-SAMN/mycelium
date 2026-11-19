@@ -24,7 +24,8 @@ tracks below say what each piece of work is; this section says which
 pieces come first. Each item is a GitHub issue with its specification,
 its claims and its files, and a milestone: `v0.4.0` (what the final
 release still needs), `v0.5.0` (the economy as motions) or `next` (the
-server stream's order of work). Claim one by commenting on it before
+server stream's order of work: the server stream is the line of work on
+the hypha, the client stream the line of work on the reference mind). Claim one by commenting on it before
 starting ([CONTRIBUTING › How to contribute](CONTRIBUTING.md#how-to-contribute)).
 List them with `gh issue list --milestone N`: 3 for v0.4.0, 4 for v0.5.0
 and 2 for next. The project [Mycelium](https://github.com/orgs/SAIOS-SAMN/projects/2)
@@ -138,19 +139,15 @@ install or citation live).
 
 ### 2. The server stream, in order (milestone `next`)
 
-Each item passes only on its live reading on the standing mesh
-(8500–8502, minds working). **The mesh now** (since the 2026-11-16 v4
+Each item passes only on its live reading on the standing development
+mesh (three hyphae on ports 8500–8502, with minds working). **The mesh now** (since the 2026-11-16 v4
 recut): branch `integ-v4`, which is main + #346 + #360 + #362 with #361
-reverted (wire-identical to main at 751aa40e, plus P2), on genesis `ecfe…` epoch 0. Its homes are under
-`/opt/mycelium-work/live`, and the v3 state is backed up in
-`live-v3-backup`. Netstratum and xylarium (seed 7) are both refounded on
+reverted (wire-identical to main at 751aa40e, plus P2), on genesis `ecfe…` epoch 0. Netstratum and xylarium (seed 7) are both refounded on
 it with v4 grants, which survived the 2026-11-16 14:27 reboot with homes
 kept.
 
 | Item | Issue | State |
 |---|---|---|
-| μ created at the manifest, delivered per final point, following its nuclei across a tube ([78.184](docs/proposals/78.184-elemental-mu.md)) | #327, closed | **Done and read live.** The trial crossings between seed 7 and netstratum's test domain moved ±6 thirds in both accounts, read on hypha a's log, with zero gas (#371) and the pattern complemented (#370). The first crossing exposed a leaf-order defect that made a home unbootable: fixed by #376, with hypha a's ledger repaired in place |
-| Manifest v4: nucleons in thirds, a kernel's pattern, the phase state per plane, paged ([78.184 §8](docs/proposals/78.184-elemental-mu.md)) | #359, closed | **On main** (#362 within #360). Read live: netstratum's 1,495-entry grant applied, and seed 7's 18 entries granted (read with `sdk/examples/endowment.rs`). Paging's live reading follows netstratum's #213 table |
 | R as an orbital phase state on a Hopf bundle; the rest point per fibre ([78.184 §7](docs/proposals/78.184-elemental-mu.md)) | #359 | Written. Netstratum's F1–F3 are derived (its docs/97 §15.9); xylarium's T24 per plane is in. The composite rest check for nodes whose planes share axes waits on netstratum's planes per capture |
 | The live stroke ([78.183](docs/proposals/78.183-the-live-stroke.md)): P2, the court's reads name their lanes (§8, ruled 2026-11-15) | [#308](https://github.com/SAIOS-SAMN/mycelium/issues/308), PR #346 | Built and read live: every court hold but the docket reconstruction spends on named lanes. Draft until a solve on the hold's stroke is read live. The transducer's sites are P3, the client stream's |
 | P1b, the impulse: a turn's draw sized by its need against the lane's holding | [#347](https://github.com/SAIOS-SAMN/mycelium/issues/347) | Ruled; built on branch `impulse-p1b`. After P2 and a moving T lane (T has held at 4/1: no mind closes, #349) |
@@ -159,13 +156,12 @@ kept.
 | The universal core is the antipolar face (78.176 fixtures 1–4) | [#306](https://github.com/SAIOS-SAMN/mycelium/issues/306) | Fixtures reproduced by xylarium |
 | Reading the cross-kernel proposals: LAW-WAVEFRONT; the TUniversal point in the signed expression | [#355](https://github.com/SAIOS-SAMN/mycelium/issues/355), [#354](https://github.com/SAIOS-SAMN/mycelium/issues/354) | Open, mirrored from netstratum #9 and #92 |
 | The tube clause: a kernel clause governing one tube, signed by both its universes ([78.186](docs/proposals/78.186-tube-clauses.md)) | — | **Approved 2026-11-17; next to build.** It governs the road toll, tariff, whole-state terms and flow bounds, never a network clause. Its first user is the seed-7/netstratum treaty (xylarium-uplink docs) |
-| A mouth's standing readable like any handoff's, and SDK readers for handoffs and endowments | #368 | Merged; read live (seed 7's mouth `Offered` from h 4508) |
 
 ### 3. The client stream
 
 | Item | Issue | State |
 |---|---|---|
-| Language stalls at grounding: perceptions ground on no pair, demands taken never close | [#349](https://github.com/SAIOS-SAMN/mycelium/issues/349) | Read live 2026-11-16 (mind a094: 19 perceptions, 0 grounded; 1,220 demands taken, 0 answered). #361's fallback (the relative motion of two open arcs taken as a return) was removed from the mind by #363 and from the field by #366, so only a loop holding a holonomy closes |
+| Language stalls at grounding: perceptions ground on no pair, demands taken never close | [#349](https://github.com/SAIOS-SAMN/mycelium/issues/349) | Read live 2026-11-16 (mind a094: 19 perceptions, 0 grounded; 1,220 demands taken, 0 answered). #361's fallback (the relative motion of two open arcs taken as a return) was removed from the mind by #363 and from the field by #366, so only an orbit holding a holonomy closes |
 | Removing enums and blanket cartesian iteration; naming the transducer's read lanes (78.183 P3) | [#314](https://github.com/SAIOS-SAMN/mycelium/pull/314) | In progress; #337, #340 and #342 merged |
 
 ### Waiting on the operator (governance only, 2026-11-16)
@@ -328,7 +324,7 @@ change built with its codec, reconstruction and claims:
 - **Named refusals in `learn_form`** (**In progress**, a defect fix):
   every vertex of a learned form is filed, refused by name, or not a word.
 - **Act parameters measured per pair:** scale, tile and reduce by the
-  frames' measured ratio, translation by measurement; refused by name when
+  samples' measured ratio, translation by measurement; refused by name when
   unmeasurable, with no silent tie-break.
 - **A template placed by its repeats:** the Hermite form of the placement
   differences (the integer span they generate), the offset anchored to a selected body; no candidate
@@ -345,15 +341,15 @@ change built with its codec, reconstruction and claims:
 - **Body fate as a typed precondition** of family extraction, with named
   refusals.
 
-**Progress — frames of unequal extent** (MU-DERIVATIONS D3.2, MU-RECURSION
+**Progress — samples of unequal extent** (MU-DERIVATIONS D3.2, MU-RECURSION
 78.170): **Built** at rank `n`: the transduction
-(`transducer::family::transduce`): a frame as `n` phases of turns, each
-body held by its bands, the incidences of two frames under the re-period,
+(`transducer::family::transduce`): a sample as `n` phases of turns, each
+body held by its bands, the incidences of two samples under the re-period,
 the `2ⁿ·n!` signed permutations of the phases (`SignedPermutation`) as the
 motions, projection refusing `OffSite`, and the relation census of the corpus
 (O10). The deflation, the court's measured reconstruction and the demands
 of unreached pairs read a pair's unspoken residue on the output's sites.
-**In progress**: μ as the share of the frame (O1, after the rational
+**In progress**: μ as the share of the sample's sites (O1, after the rational
 lanes); the turn-native chart that lists a pair of unequal enclosures (O8);
 percept meets through incidences (O6); the incidence payload of a demand
 whose input does not land (O9 (a)).
@@ -606,7 +602,9 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - **Chart** is a body's invariant coordinates. A region of the sensor
      → `Region`; a cover's coordinates → `CoverCoordinates`.
    - **Frame** is one sample of a family (78.75). The wire's frame →
-     `WireFrame`; other frames are renamed by function.
+     `WireFrame`; other frames are renamed by function. *Superseded
+     2026-11-11 by [#239](https://github.com/SAIOS-SAMN/mycelium/issues/239):
+     "frame" is retired in every sense, each renamed by its function.*
    - **Phase** is a coordinate within a chart. The court's 45.9 window →
      `Window`; a reconstruction's stages → `Stage`; the observer's phase
      → `CourtStage`.
@@ -668,7 +666,7 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - judge
    - working atlas
    - seat mind
-   - chatter / utter
+   - chatter / assert
    - durable drill
    - the soak instrument
    - xSEPTUM
@@ -1480,7 +1478,7 @@ adjudicated reading (B2). Each phase is one commit:
    - **Built** (v0.4.0, a network-contract change on the wire): a tier's
      fold carries the transitions it states (`TierFold::transitions`,
      written out in its signed bytes, never a digest of them), and
-     `Reconstructed::fold` rebuilds each, and each of every carried
+     `Reconstructed::fold` reconstructs each, and each of every carried
      line's, under L0 at `LAW_VERSION` (`verify_sized`) before the vertex
      admits it. A breach is refused `Uplinked::NotLawful` (the path of
      carried lines, the transition's index, every breach with its law); a
@@ -1763,7 +1761,7 @@ Each phase lands on its own branch, one item per commit:
    values (Concordance 1.4). Ruled 2026-11-06 (#160): X1 is its own wire
    bump (wire v3.0), since B3's fold change shipped without it, and each of
    the seven universe acts carries a `Crossing` in its signed bytes. The
-   content states the frame's periods and each body's origin, so the record
+   content states the sample's periods and each body's origin, so the record
    verifies from itself, and `verify_turns` runs at admission (refused
    `Boundary::Crossing`). **In progress**, draft PR #181 (v0.5.0).
    - Claims: `crossing_round_trips_exact_values`,
@@ -1813,7 +1811,7 @@ Each phase lands on its own branch, one item per commit:
      the right order.
    - `src/client/sdk/mind/learn.rs` (a starved root): an address.
    - Each peer kernel tracks its counterparts in its own repository.
-6. **X5, the transduction in place of the common grid.** Two frames
+6. **X5, the transduction in place of the common grid.** Two samples
    relate by the motion between them; each keeps its own resolution;
    each body is held by its boundary; incidences are read between boundary arcs; a site
    lifts as turns of its frame's own periods, the angle `360°·s/e` on a
@@ -2214,7 +2212,7 @@ Each phase is one commit:
      1. Built: the lift and the field's carrier (S4a, S7), and the field
         stated as an object a court reconstructs (`Atlas::put_statement`,
         `reconstruct`, `admit`: the statement writes the atlas and no
-        reading; the court rebuilds it through the carrier's
+        reading; the court reconstructs it through the carrier's
         constructors, derives the curvature and admits a claimed
         curvature on a match, refusing `Differs` with each pair).
      2. Built: the well's body (S7). `Well` stands on the carrier
@@ -2450,7 +2448,7 @@ Each phase is one commit:
       - **Admission by reconstruction only**
         (`server::factorisation::judge_factorisation`): the stated
         ground read at any rank (`cognition::stated_ground_of`), the
-        motion rebuilt through `Factorisation::of`, the residue derived,
+        motion reconstructed through `Factorisation::of`, the residue derived,
         admitted on a match or refused with `FactorRefusal::Residue {
         unclaimed, uncarried }`.
       - **μ, ruled (2026-11-04):** recorded

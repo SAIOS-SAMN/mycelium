@@ -50,7 +50,7 @@ corpus manifests (configuration) and the ledger or genome it writes
 - **Chart** (`transducer/stalk/`): the atlas; charts are invariant
   vectors whose prefixes are planes; a Keyed trie of strata.
 - **Comprehension** (`transducer/family/`, `client/sdk/`): perceive
-  bodies, peel shells, carry bodies pair to pair, assemble the nerve,
+  bodies, peel layers, carry bodies pair to pair, assemble the nerve,
   extract the rule, speak it onto a test. Hearing a word is deconstructing
   its tape and gluing it against the representative on its chart.
 - **The eye is a cover** (`MU-RECURSION.md` 24.4): specified, not yet
@@ -85,15 +85,15 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
 
 - **Home trie** (`network/nerve/home_trie.rs`, `HomeTrie`): per lane, a trie of chart
   prefixes to the hyphae whose active work covers them. Home is the fibre
-  intersection on every occupied lane, then per-lane room, then identity.
+  intersection on every occupied lane, then per-lane [room](../README.md#stake-room-and-discipline), then identity.
 - **Digest exchange**: signed cover and ruled roots; fetch of discordant
   strata; paced per peer by that peer's Λ counted in the court's own K
   and by the court's own roots moving, never by a timer and never on every
-  orbit; a deferral carries the door's per-lane deficit and dwells the
-  asker (`MU-RECURSION.md` 45.7, 23.8).
+  orbit; a deferral carries the hypha's per-lane deficit and makes the
+  asker wait (`MU-RECURSION.md` 45.7, 23.8).
 - **Roots**: solved families announced by key, keyed by task and solver.
-- **Wire** (`anastome/dialogue/`, `network/wire.rs`): one frame, one act
-  byte. The act constants and the frame layout of each are documented in
+- **Wire** (`anastome/dialogue/`, `network/wire.rs`): one delimited expression, one act
+  byte. The act constants and the layout of each are documented in
   [`src/anastome/dialogue/acts.rs`](../src/anastome/dialogue/acts.rs); the
   byte of each act is assigned by `Action::byte` in
   [`src/physics/actions/mod.rs`](../src/physics/actions/mod.rs). The families are:
@@ -114,7 +114,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
     rest of its range is reserved;
   - retired acts (`ACT_PERCEPT`, `ACT_GOSSIP`, `ACT_DEMAND`,
     `ACT_TEACH`, `ACT_SETTLE`, `ACT_DOCKET`, `ACT_INSTALLED`), whose
-    bytes stand only so the door can refuse them by name; the routed
+    bytes stand only so the hypha can refuse them by name; the routed
     demand's byte (0x14) stands in `Action::DemandRouted` alone, with no
     constant.
 
@@ -146,7 +146,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   it is written at as its last two bytes (`anastome::dialogue::expression`).
   A reader reads it first and refuses another major by name,
   `Unheard::Version { spoken, served }`, before the point or the act: the
-  door answers such an act refused at its own version and closes, and a
+  hypha answers such an act refused at its own version and closes, and a
   session refuses such a reply naming both versions. A minor step, being
   additive, is heard.
 
@@ -162,7 +162,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   multi-dimensional ledger, read from receipts;
   it measures how long a carrier has stood at one home and never orders two
   events across nodes. No court and no mind reads a wall clock, a unix clock, or a
-  timer; every duration is a count of strokes or heights (`MU-RECURSION.md`
+  timer; every duration is a count of heights or of closed orbits (`K`) (`MU-RECURSION.md`
   Part IX). Lane 2 of μ⃗ is temporal extent in heights.
 - Lanes: S spatial, G gauge, T temporal, H holonomic. Sections and torsion
   are holonomic content on lane 3.
@@ -242,7 +242,7 @@ restart. Every other document points here and describes no other path.
    never where their bytes are.
 4. **Where state is held is the language's own structure, not a
    placement.** Peers are not chosen round robin, and there is no replica
-   count. The anastome carries the algorithm inside the algorithm: a word
+   count. A word
    holds the derivation that reconstructs it (two layers, the word and the
    presentation that re-derives it), across the dimensions of the
    multi-dimensional ledger (lane, layer and grade). A node whose dialect
@@ -344,22 +344,22 @@ is refused as stale.
 
 | Violation | Where | Fix | When |
 |---|---|---|---|
-| ~~The frame's lane byte: the transport labels meaning~~ | `src/network/wire.rs` | The envelope is `[len u32 LE][body]` (`wire::HEAD`, `delimited_len`, `DELIMITED_MAX`); `Lane`, `read_lane` and `POINTED` are gone, from the SDK too. A Noise door tells the opening from a plaintext envelope by the first four bytes, held and read again (`channel::Paced::take_head`) | Closed (v0.5.0 recut) |
+| ~~The frame's lane byte: the transport labels meaning~~ | `src/network/wire.rs` | The envelope is `[len u32 LE][body]` (`wire::HEAD`, `delimited_len`, `DELIMITED_MAX`); `Lane`, `read_lane` and `POINTED` are gone, from the SDK too. A Noise listener tells the opening from a plaintext envelope by the first four bytes, held and read again (`channel::Paced::take_head`) | Closed (v0.5.0 recut) |
 | ~~The TUniversal point rides the envelope~~ | `src/network/wire.rs`, `src/network/noise.rs`, `src/bin/mycelium-server/transport.rs` | The point stands in the expression, `[act][point][point count u16 LE]` (`src/anastome/dialogue/expression.rs`), a count of zero for no point; MU-CONCORDANCE 1.11 changed with it. The pointed-connection book is retired: every expression carries its slot | Closed (v0.5.0 recut) |
-| The transport reads and writes content: the frame's encoder reads the act tag for the observer (`act_tag`), the door writes a refusal body (`encode_outcome`), and the door hands each act to the door's clock to be written or heard as an expression (`tuniversal::express`, `tuniversal::hear`) | `src/network/wire.rs`, `src/bin/mycelium-server/transport.rs` | The observer counts bytes by act above the transport; the refusal is spoken by the judge layer; the expression is formed and read above the door | Open (found by this audit) |
+| The transport reads and writes content: the delimiter's encoder reads the act tag for the observer (`act_tag`), the hypha's listener writes a refusal body (`encode_outcome`), and the listener hands each act to the listener's clock to be written or heard as an expression (`tuniversal::express`, `tuniversal::hear`) | `src/network/wire.rs`, `src/bin/mycelium-server/transport.rs` | The observer counts bytes by act above the transport; the refusal is spoken by the judge layer; the expression is formed and read above the listener | Open (found 2026-11-05) |
 | `Mu` as four scalar lanes | `src/economy/mu.rs` | `Modes` replaces `Mu` (ROADMAP 1b) | v0.5.0 |
 | `[u64; 4]` in quotes and deferrals | `src/anastome/dialogue/quote.rs` (`encode_outcome`, `encode_deferral`) | `Modes` on the wire | v0.5.0 |
 | `payload_hash` and `==` on digests as identity | `src/chronometry/receipt.rs`, and the sites track 25 X0 lists | Identity is the content written out (A21); a digest only locates, links or commits | Track 25 (X0 drift guards, #28) |
-| ~~Noise built and not wired: the mesh runs in plaintext~~ | `src/network/noise.rs` | The door and the session open the channel: `src/network/channel.rs`, the door and every ask in `src/bin/mycelium-server/transport.rs`, `Session::with_noise`; opt-in per peer, a plaintext peer named (MU-PRECURSORS §3.1) | Closed (noise-wired) |
-| `home_trie`'s `lane & 3`: a lane folded onto the base four | `src/network/nerve/home_trie.rs` | Lanes read as keys, never masked | In progress |
+| ~~Noise built and not wired: the mesh runs in plaintext~~ | `src/network/noise.rs` | The hypha's listener and the session open the channel: `src/network/channel.rs`, the listener and every ask in `src/bin/mycelium-server/transport.rs`, `Session::with_noise`; opt-in per peer, a plaintext peer named (MU-PRECURSORS §3.1) | Closed (noise-wired) |
+| ~~`home_trie`'s `lane & 3`: a lane folded onto the base four~~ | `src/network/nerve/home_trie.rs` | Lanes read as keys, never masked: a lane byte of 4 or more is refused by name (`LaneRefused`) | Closed |
 
 ### 9.3 Names to settle
 
 "Frame" names ten distinct things. By MU-STANDARDS one name has one
 meaning, so each is to be renamed by its function; and by the ruling of
 2026-11-11 (#239) the word itself is retired, a collapse of volume and
-dimensions, so no meaning keeps it. No code identifier is
-renamed here; the renames follow the dead-code cleanup of
+dimensions, so no meaning keeps it. Renames already made are
+marked per row; the rest follow the dead-code cleanup of
 `src/network/wire.rs`. Counts are of the distinctive identifiers in Rust
 sources (`src/`, `algebra/`, `forms/`, `sdk/`, `sources/`, `tests/`,
 `gate/`) and of matching phrases in the documents (`docs/`, README,

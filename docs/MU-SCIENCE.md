@@ -367,8 +367,7 @@ The vocabulary follows the grammar of the language (MU-RECURSION 78.39,
 #### Reconstruction events
 
 **Specified**, not built ([ROADMAP](../ROADMAP.md) track 8). Every
-reconstruction is a particle whose meeting with held state is one of three
-typed events:
+reconstruction meets held state in one of three typed events:
 - **Collapse.** A superposition is reduced to one object by admission: the
   candidates at a letter, word or conjugate grade are distinguished and one
   is admitted.
@@ -391,7 +390,7 @@ Every class follows the same protocol:
 1. The home court reconstructs the claim and measures its discharge.
 2. On install, a second, independent court reconstructs it and must reach
    the same object (47.3).
-3. Every reconstruction runs on the court's stroke budget. One the stroke
+3. Every reconstruction runs on the court's stroke budget. One the court's cycle
    does not finish answers *unread* and resumes on the next send, as
    solves do today (`SOLVE_UNREAD`).
 
@@ -621,7 +620,7 @@ under.
 
 ### 8.2 Verifier bonding
 
-A verifier kernel bonds μ on the courts for a domain. Its bond buys room
+A verifier kernel bonds μ on the courts for a domain. Its bond buys [room](../README.md#stake-room-and-discipline)
 on that domain's claims (MU-ECONOMY §4) and is slashed if a reconstruction
 it signs is not reproduced at another vantage. Identities are free, and room is
 not.
@@ -686,7 +685,7 @@ All are typed readings on the console, and nothing is answered from logs.
 ### 9.4 Resource bounds
 
 - Every verifier runs on the court's stroke budget and never blocks the
-  door. A long check answers unread and resumes.
+  hypha's listener. A long check answers unread and resumes.
 - Certificate and proof sizes are bounded by the body budget; a larger
   object is submitted in pages under one claim address.
 - Computation (V3) is fuel-metered in strokes, with no host access.

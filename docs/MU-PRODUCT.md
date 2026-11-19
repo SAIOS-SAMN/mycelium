@@ -27,10 +27,10 @@ to the minds as such.
 | product | buyer sends | buyer receives | carrier |
 |---|---|---|---|
 | Solve | a family of samples, escrow | the rule, the outputs, a receipt | `ACT_TASK` / `ACT_SOLVE`, escrow |
-| Comprehension of a corpus | families through the uplink door | words minted on that data, taught to a mind the buyer runs | uplink, syllabus by incidence |
+| Comprehension of a corpus | families through the uplink endpoint | words minted on that data, taught to a mind the buyer runs | uplink, syllabus by incidence |
 | Certification | a rule or sentence claimed elsewhere, a fee | reconstructed and installed, or refused with the reason | `reconstruct_blind`, the docket |
 | Translation | two corpora whose dialects do not glue | the gauge word between them | translation Rewrite |
-| Cover | bond on a lane | room to home work; the pool share on it | stake, delegation |
+| Cover | bond on a lane | [room](../README.md#stake-room-and-discipline) to home work; the pool share on it | stake, delegation |
 | Standing work | escrow on an open demand | accrual on T until someone closes it | listing with T accrual |
 
 Nothing is sold that the court cannot reconstruct. There is no perpetual, no
@@ -52,16 +52,16 @@ to be comprehended, and external assets enter only over a bridge.
 
 ## 3. The three surfaces
 
-1. **The gateway.** `mycelium-septum` speaks HTTP: a 402 challenge with a
-   four-lane price, a note, a receipt, JSON bodies wrapping the frames in
-   `MU-XSEPTUM.md`. Thin TypeScript and Python clients build a challenge,
+1. **The gateway.** **Specified** (§7): `mycelium-septum` will speak HTTP: a
+   402 challenge with a four-lane price, a note, a receipt, JSON bodies
+   wrapping the acts in `MU-XSEPTUM.md`. Thin TypeScript and Python clients will build a challenge,
    sign a note with a voice key, and verify a receipt against a root.
 2. **The mind.** The client binary is the consumer product: a wallet
-   (balance per lane, stake, unstake, notes) and a genome that learns.
-   Pointed at data through the uplink door it becomes a mind on that
+   (balance per lane, stake, unstake, notes; **Specified**, §7) and a genome that learns.
+   Pointed at data through the uplink endpoint it becomes a mind on that
    universe and earns when its words install. The download is the
    onboarding.
-3. **The reads.** A public explorer over any hypha: the ruled cover with
+3. **The reads.** **Specified** (§7): a public explorer over any hypha: the ruled cover with
    links to each word's reconstruction, the ledger with supply per lane and every mint tied to a
    release, the price surface, the dialect classes and the translations
    that closed them. Verification needs no account.
@@ -79,13 +79,13 @@ of where that stands. The sequence:
    project's hyphae.
 2. Each ARC-AGI-2 task is posted as a demand, escrowed from that
    allocation at its home, accruing on T while open.
-3. Miners run the client, receive the starter genome, pull families,
+3. Minds run the client, receive the starter genome, pull families,
    extract rules, speak them. The home reconstructs, a witness reconstructs, the rule
-   installs on two covers, the miner is paid the escrow plus the mint.
-4. The rule is now on the ruled cover, so the next miner's starter genome
+   installs on two covers, the mind's voice is paid the escrow plus the mint.
+4. The rule is now on the ruled cover, so the next mind's starter genome
    contains it and the next task is closer.
-5. Each miner bonds earnings to raise its room, bonds enough to run a
-   hypha, then opens a second market by pointing the uplink door at another corpus.
+5. Each mind bonds earnings to raise its room, bonds enough to run a
+   hypha, then opens a second market by pointing the uplink endpoint at another corpus.
 
 The knowledge stored is the language, not the answers: rules, sentences,
 words, translations, and the roots of each, in anastome. Answers are re-derived
@@ -93,18 +93,18 @@ by speaking a rule onto an input.
 
 ## 5. Onboarding
 
-**A miner.** Download the client, mint a voice key on first run, bootstrap
+**A mind.** Download the client, mint a voice key on first run, bootstrap
 to any hypha, import the starter genome verified against its root, work.
 Earn on install and on solve; stake to raise room; unstake when no escrow
 names the voice.
 
 **An operator.** Run the server, mint a hypha key on first run, bond from
-balance, join by one bootstrap address; the home trie is the topology
+balance, attach by one bootstrap address; the home trie is the topology
 after the first digest. Earn the pool share on homed work and accrual on
 open demands. A false root is slashed from the bond.
 
 **A customer.** Hold a voice with balance, post demands with escrow through
-the gateway or the uplink door, receive rules and receipts, verify roots.
+the gateway or the uplink endpoint, receive rules and receipts, verify roots.
 
 ## 6. Pricing
 
@@ -135,7 +135,7 @@ is how new minds enter without a token purchase.
   (`src/anastome/dialogue/lease.rs`).
 
 **Specified:** the `mycelium-septum` gateway and its SDK bindings
-(`MU-XSEPTUM.md`), the uplink door for a customer's corpus, certification as
+(`MU-XSEPTUM.md`), the uplink endpoint for a customer's corpus, certification as
 a route, the explorer reads, the starter-genome export, and wallet verbs in
 the client binary (the wire act exists; the client does not yet send it).
 
