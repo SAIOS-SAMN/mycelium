@@ -101,7 +101,7 @@ impl Form {
         let mut out = Vec::new();
         for chart in vertex.charts() {
             for k in self.member_frames(v, &chart) {
-                let o = coord::Overlap { from: coord::ChartAt::Frame, to: coord::ChartAt::at(v.clone(), chart.clone(), k) };
+                let o = coord::Overlap { from: coord::ChartAt::Enclosure, to: coord::ChartAt::at(v.clone(), chart.clone(), k) };
                 if let Some(p) = self.face_place(&o.from, &o.to, None) {
                     out.push((o, FormFace::placed(p, Producer::Place)));
                 }

@@ -1005,7 +1005,7 @@ pub mod coord {
     /// big-endian bytes. Unbounded, and ordered by (length, bytes), which is
     /// the numeric order the carrier reads the succession by (law 2) — not
     /// LEB128, whose bytes order by the low bits, and not a u16 wall.
-    pub fn put_frame(k: u64, out: &mut Vec<u8>) {
+    pub fn put_sample_index(k: u64, out: &mut Vec<u8>) {
         let be = k.to_be_bytes();
         let body: Vec<u8> = be.iter().copied().skip_while(|&b| b == 0).collect();
         #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: the minimal big-endian bytes of a u64, at most eight")]
@@ -1047,7 +1047,7 @@ pub mod coord {
     /// The frame read back; `None` for a length past eight or a body with a
     /// leading zero, which would be a second spelling of one frame.
     #[expect(clippy::disallowed_methods, reason = "rule 15 — the length byte at the cursor is the spelling's own discriminant, not a member chosen")]
-    pub fn take_frame(bytes: &[u8], pos: &mut usize) -> Option<u64> {
+    pub fn take_sample_index(bytes: &[u8], pos: &mut usize) -> Option<u64> {
         let n = usize::from(*bytes.get(*pos)?);
         let body = bytes.get(*pos + 1..*pos + 1 + n)?;
         if n > 8 || body.first() == Some(&0) {
@@ -1086,7 +1086,7 @@ pub mod coord {
     }
 
     impl VertexAt {
-        pub const FRAME: u8 = 0;
+        pub const ENCLOSURE: u8 = 0;
         pub const WORD: u8 = 1;
         /// FORMAT: VertexAt enum position.
         pub const REBASED: u8 = 2;
@@ -1105,7 +1105,7 @@ pub mod coord {
         fn encode(&self) -> CompactBytes {
             let mut buf = Vec::new();
             match self {
-                VertexAt::Enclosure => buf.push(Self::FRAME),
+                VertexAt::Enclosure => buf.push(Self::ENCLOSURE),
                 VertexAt::Word(t) => {
                     buf.push(Self::WORD);
                     buf.extend_from_slice(t.encode().as_bytes());
@@ -1142,7 +1142,7 @@ pub mod coord {
                 return Err(Self::refuse("an empty key spells no vertex"));
             };
             match tag {
-                Self::FRAME if body.is_empty() => Ok(VertexAt::Enclosure),
+                Self::ENCLOSURE if body.is_empty() => Ok(VertexAt::Enclosure),
                 Self::WORD => Ok(VertexAt::Word(Transport::decode(body)?)),
                 Self::UNFOLDED => Ok(VertexAt::Unfolded(Unfolded::decode(body)?)),
                 Self::GLUED => Ok(VertexAt::Glued(GluedBoundary::decode(body)?)),
@@ -1194,7 +1194,7 @@ pub mod coord {
     /// alone: it stands on no Invariant and at no frame.
     #[derive(Clone, Debug, PartialEq, Eq)]
     pub enum ChartAt {
-        Frame,
+        Enclosure,
         /// Boxed: a member at a frame carries a vertex coordinate and an
         /// Invariant, and the Frame's chart should not carry that footprint.
         At(Box<MemberAt>),
@@ -1239,12 +1239,12 @@ pub mod coord {
 
         fn put(&self, buf: &mut Vec<u8>) {
             match self {
-                ChartAt::Frame => buf.push(0),
+                ChartAt::Enclosure => buf.push(0),
                 ChartAt::At(m) => {
                     buf.push(1);
                     a::put_key_bytes(buf, m.vertex.encode().as_bytes());
                     a::put_key_bytes(buf, m.chart.key().as_bytes());
-                    put_frame(m.frame, buf);
+                    put_sample_index(m.frame, buf);
                     match &m.piece {
                         None => buf.push(0),
                         Some(p) => {
@@ -1263,11 +1263,11 @@ pub mod coord {
             let tag = *bytes.get(*pos)?;
             *pos += 1;
             match tag {
-                0 => Some(ChartAt::Frame),
+                0 => Some(ChartAt::Enclosure),
                 1 => {
                     let vertex = VertexAt::decode(&a::take_key_bytes(bytes, pos)?).ok()?;
                     let chart = crate::transducer::stalk::Invariant::from_key(&a::take_key_bytes(bytes, pos)?)?;
-                    let frame = take_frame(bytes, pos)?;
+                    let frame = take_sample_index(bytes, pos)?;
                     let flag = *bytes.get(*pos)?;
                     *pos += 1;
                     let piece = match flag {

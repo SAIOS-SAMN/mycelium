@@ -202,11 +202,11 @@ fn face_place_of_is_none_for_missing_vertex() {
     // places nothing.
     let missing = super::fixtures::chart_of(&word_vertex_on(5, word_turn_90(), stalk::Invariant::counts(&[5])), stalk::Invariant::counts(&[5]));
     assert!(
-        f.face_place(&coord::ChartAt::Frame, &missing, None).is_none(),
+        f.face_place(&coord::ChartAt::Enclosure, &missing, None).is_none(),
         "a missing vertex is not the identity word"
     );
     assert!(
-        f.face_place(&coord::ChartAt::Frame, &coord::ChartAt::Frame, None).is_some(),
+        f.face_place(&coord::ChartAt::Enclosure, &coord::ChartAt::Enclosure, None).is_some(),
         "the frame is present"
     );
 }
@@ -267,7 +267,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     let [placement] = at_glued.as_slice() else {
         panic!("glue writes one overlap at the glued vertex, got {}", at_glued.len())
     };
-    assert_eq!(placement.from, coord::ChartAt::Frame, "glue writes the Frame→Glued placement overlap");
+    assert_eq!(placement.from, coord::ChartAt::Enclosure, "glue writes the Frame→Glued placement overlap");
     assert_eq!(placement.to_vertex(), gi, "to the glued vertex");
     assert!(host.retract_vertices(std::slice::from_ref(&c1.vertex())), "the retracted form's depth reads");
     assert_eq!(host.vertices.len(), 3, "Frame, remaining Word, Glued");
@@ -590,7 +590,7 @@ fn faces_names_no_adjacency_between_separated_bodies() {
 /// Does this overlap stand on the Frame's chart at either end — a star
 /// overlap (Q-B1)?
 fn on_frame(o: &coord::Overlap) -> bool {
-    o.from == coord::ChartAt::Frame || o.to == coord::ChartAt::Frame
+    o.from == coord::ChartAt::Enclosure || o.to == coord::ChartAt::Enclosure
 }
 
 /// A row of three has faces by constancy: the faces are bounded per chart

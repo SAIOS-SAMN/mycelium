@@ -101,9 +101,9 @@ fn cycles_of_leaves_null_carriage_orbit_unread() {
         // from the Frame to a fourth body comes first and roots it at the
         // Frame. Then `c`'s star face, written from `c`, is crossed against
         // its orientation.
-        f.place_overlap(ChartAt::Frame, d.clone(), None).expect("the star face of d, from the Frame");
+        f.place_overlap(ChartAt::Enclosure, d.clone(), None).expect("the star face of d, from the Frame");
         let star_c = f
-            .place_overlap(c.clone(), ChartAt::Frame, None)
+            .place_overlap(c.clone(), ChartAt::Enclosure, None)
             .expect("the star face of c, oriented towards the Frame");
         f.place_overlap(c.clone(), a.clone(), None).expect("c to a");
         f.place_overlap(c.clone(), b.clone(), None).expect("c to b");

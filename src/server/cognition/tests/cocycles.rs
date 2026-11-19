@@ -74,7 +74,7 @@ for tag in [2u8, 3u8] {
         None,
     );
     let c = f.stand_member(&v, 0).expect("a word vertex stands");
-    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c.clone(), None).expect("star");
     charts.push(c);
 }
 // The chord carries the 90° turn as the pivot writes a word on an

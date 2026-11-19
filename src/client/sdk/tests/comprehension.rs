@@ -106,7 +106,7 @@ let inner = {
         None,
     );
     let c = f.stand_member(&v, 0).expect("a word vertex stands");
-    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None).expect("vertices");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
@@ -173,7 +173,7 @@ let word_vertex = |addr: u64| Vertex::word_on(
 let inner = {
     let mut f = Form::default();
     let c = f.stand_member(&word_vertex(1), 0).expect("a word vertex stands");
-    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None).expect("vertices");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
@@ -181,7 +181,7 @@ let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
 let inner_addr = inner_e.address();
 let mut outer = Form::default();
 let word_chart = outer.stand_member(&word_vertex(2), 0).expect("a word vertex stands");
-outer.place_overlap(crate::network::nerve::coord::ChartAt::Frame, word_chart.clone(), None).expect("vertices");
+outer.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, word_chart.clone(), None).expect("vertices");
 let gi = outer
     .glue(&inner, inner_addr.clone(), Word::identity(), [1, 0, 0, 0])
     .expect("glue");
@@ -190,7 +190,7 @@ assert!(
     "glue records the cited address on the cover"
 );
 assert!(
-    outer.faces.entries().any(|(o, _)| matches!(o.from, crate::network::nerve::coord::ChartAt::Frame)
+    outer.faces.entries().any(|(o, _)| matches!(o.from, crate::network::nerve::coord::ChartAt::Enclosure)
         && o.to_vertex() == gi
         && o.to_vertex() != word_chart.vertex()),
     "the glue's placement face is not the first Word face"
@@ -297,7 +297,7 @@ let other = {
             None,
         );
         let c = f.stand_member(&v, 0).expect("a word vertex stands");
-        f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
+        f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c.clone(), None).expect("star");
         charts.push(c);
     }
     // The chord carries the 180° turn on its EDGE, which is measured content
@@ -366,7 +366,7 @@ let v = Vertex::word_on(
     None,
 );
 let c = f.stand_member(&v, 0).expect("a word vertex stands");
-f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
+f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None).expect("vertices");
 f.orbits = Form::orbits_of(&f.faces, &f.vertices);
 assert!(f.is_closed(), "a tree of two vertices coheres");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
@@ -437,7 +437,7 @@ let inner = {
         None,
     );
     let c = f.stand_member(&v, 0).expect("a word vertex stands");
-    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None).expect("vertices");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };

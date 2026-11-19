@@ -103,8 +103,8 @@ fn crossing(forward: bool) -> crate::transducer::sentence::circuit::CarriedTrans
     let carriage = cga::translator_at(&[q(2), q(-1), q(0)]);
     crate::transducer::sentence::circuit::CarriedTransition {
         face: crate::network::nerve::coord::Overlap {
-            from: crate::network::nerve::coord::ChartAt::Frame,
-            to: crate::network::nerve::coord::ChartAt::Frame,
+            from: crate::network::nerve::coord::ChartAt::Enclosure,
+            to: crate::network::nerve::coord::ChartAt::Enclosure,
         },
         forward,
         transport: Some(crate::transducer::sentence::Transport { word, carriage, gauge: Vec::new() }),

@@ -37,7 +37,7 @@ fn drop_dialect_removes_word_from_axis_index() {
         None,
     );
     let c = f.stand_member(&v, 0).expect("a word vertex stands");
-    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("the star face");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None).expect("the star face");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");

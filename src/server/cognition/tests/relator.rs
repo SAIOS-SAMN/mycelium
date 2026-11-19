@@ -217,7 +217,7 @@ fn court_torsion_files_relator_at_period() {
             None,
         );
         let c = f.stand_member(&v, 0).expect("a word vertex stands");
-        f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
+        f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c.clone(), None).expect("star");
         charts.push(c);
     }
     // The chord carries the RELATOR the triangle left, not a word this

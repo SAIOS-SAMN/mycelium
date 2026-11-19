@@ -23,7 +23,7 @@ let v = Vertex::word_on(
     contact,
 );
 let c = f.stand_member(&v, FRAME).expect("a word vertex stands");
-f.place_overlap(coord::ChartAt::Frame, c, None).expect("star");
+f.place_overlap(coord::ChartAt::Enclosure, c, None).expect("star");
 f.orbits = crate::transducer::sentence::Form::orbits_of(&f.faces, &f.vertices);
 f
 }
@@ -52,7 +52,7 @@ for (i, g) in gauges.iter().enumerate() {
         None,
     );
     let c = f.stand_member(&v, FRAME).expect("a word vertex stands");
-    f.place_overlap(coord::ChartAt::Frame, c, None).expect("star");
+    f.place_overlap(coord::ChartAt::Enclosure, c, None).expect("star");
 }
 f.orbits = Form::orbits_of(&f.faces, &f.vertices);
 as_element_form(&f, [1, 0, 0, 0]).expect("v2 sentence")

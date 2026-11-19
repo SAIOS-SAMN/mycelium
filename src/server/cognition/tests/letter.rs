@@ -34,7 +34,7 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
         None,
     );
     let c = f.stand_member(&v, 0).expect("a word vertex stands");
-    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("star");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None).expect("star");
     f.put_vertex(Vertex::demand(
         kind,
         crate::transducer::stalk::Invariant::counts(&[17]),

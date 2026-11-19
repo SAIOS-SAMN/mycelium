@@ -224,7 +224,7 @@ fn list_sentence_charges_orbit_orders_on_depleted_lane() {
     // AT1 (Q1): three bodies of the identity's class are ONE vertex with a
     // member per chart; the triangle is the Frame's chart and two of those
     // members, overlapped pairwise.
-    let mut charts = vec![crate::network::nerve::coord::ChartAt::Frame];
+    let mut charts = vec![crate::network::nerve::coord::ChartAt::Enclosure];
     for tag in [2u8, 3u8, 4u8] {
         let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
@@ -307,7 +307,7 @@ fn orbit_words_reads_true_holonomy_not_coboundary() {
     let mut f = Form::default();
     // AT1 (Q1): the two bodies are ONE vertex of the identity's class with a
     // member per chart; the triangle is the Frame's chart and the two.
-    let mut charts = vec![crate::network::nerve::coord::ChartAt::Frame];
+    let mut charts = vec![crate::network::nerve::coord::ChartAt::Enclosure];
     for tag in [2u8, 3u8] {
         let v = Vertex::word_on(
             Derivation::spelled(Word::identity()),

@@ -39,7 +39,7 @@ fn rekey_vertex(f: &mut Form, at: &coord::VertexAt, edit: impl FnOnce(&mut Verte
 /// citation's star is held on a vertex with no members to stand it.
 fn star_of(f: &Form, v: &coord::VertexAt) -> coord::Overlap {
     let stars: Vec<coord::Overlap> =
-        f.overlaps_at(v).into_iter().filter(|o| matches!(o.from, coord::ChartAt::Frame)).collect();
+        f.overlaps_at(v).into_iter().filter(|o| matches!(o.from, coord::ChartAt::Enclosure)).collect();
     let [o] = stars.as_slice() else { panic!("one member at one frame, got {}", stars.len()) };
     o.clone()
 }
@@ -128,7 +128,7 @@ fn triangle_with_edges(
             None,
         );
         let c = f.stand_member(&v, FRAME).expect("a word vertex stands");
-        f.place_overlap(coord::ChartAt::Frame, c.clone(), Some(star.clone())).expect("a star overlap");
+        f.place_overlap(coord::ChartAt::Enclosure, c.clone(), Some(star.clone())).expect("a star overlap");
         charts.push(c);
     }
     let [c1, c2] = charts.as_slice() else { panic!("two members") };
@@ -533,7 +533,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     // relates two charts); the unfolded vertex's star from the Frame stands
     // in its place.
     un.place_overlap(
-        coord::ChartAt::Frame,
+        coord::ChartAt::Enclosure,
         coord::ChartAt::at(unfolded, stalk::Invariant::default(), FRAME),
         None,
     )

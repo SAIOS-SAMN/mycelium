@@ -30,7 +30,7 @@ fn member(i: u16) -> Vec<u8> {
 fn face(n: u64) -> crate::network::nerve::coord::Overlap {
     use crate::network::nerve::coord;
     coord::Overlap {
-        from: coord::ChartAt::Frame,
+        from: coord::ChartAt::Enclosure,
         to: coord::ChartAt::at(identity_at(), crate::transducer::stalk::Invariant::counts(&[n]), 0),
     }
 }

@@ -49,8 +49,8 @@ pub(super) fn coboundary_triangle_with_edge(q: &Word) -> (Form, crate::network::
     let c1 = f.stand_member(&word_vertex(1), FRAME).expect("member 1");
     let c2 = f.stand_member(&word_vertex(2), FRAME).expect("member 2");
     for (from, to, edge) in [
-        (ChartAt::Frame, c1.clone(), None),
-        (ChartAt::Frame, c2.clone(), None),
+        (ChartAt::Enclosure, c1.clone(), None),
+        (ChartAt::Enclosure, c2.clone(), None),
         (c1, c2, Some(q.clone())),
     ] {
         f.put_face(Overlap { from, to }, FormFace::placed(place(edge), Producer::Place));

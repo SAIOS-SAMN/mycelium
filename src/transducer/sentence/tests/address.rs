@@ -108,7 +108,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
     );
     let word_chart = coord::ChartAt::at(word.clone(), stalk::Invariant::counts(&[3, 5]), FRAME);
     let edged = edge_chord(&mut f, &word_chart, &glued_chart, Transport::from_word(w.clone()));
-    let star = coord::Overlap { from: coord::ChartAt::Frame, to: word_chart };
+    let star = coord::Overlap { from: coord::ChartAt::Enclosure, to: word_chart };
     assert!(f.faces.holds(&star), "the fixture's star overlap");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.remainder = crate::transducer::element::place_chain(&[link(9, 9, 1, 0)])

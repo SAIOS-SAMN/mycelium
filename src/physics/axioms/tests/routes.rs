@@ -216,7 +216,7 @@ fn read_chamber_capacity_is_rank_of_action_algebra() {
         // Each circuit its own ring over its own overlap: the Frame's chart
         // to a member on chart `[i + 1]` (AT1: a face is an overlap).
         let overlap = |i: u64| Overlap {
-            from: ChartAt::Frame,
+            from: ChartAt::Enclosure,
             to: ChartAt::at(VertexAt::Enclosure, crate::transducer::stalk::Invariant::counts(&[i + 1]), 0),
         };
         let circuits: Vec<ChamberCircuit> = hs
