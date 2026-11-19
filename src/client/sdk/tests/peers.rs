@@ -52,9 +52,9 @@ fn peer_record_folds_answer_frames_by_the_residue_class() {
         let (gain, _) = gain_and_conjugate();
         assert!(mind.question(&pk, b"said", b"vertex", &gain).is_some(), "the gain is asked of the peer");
         let (key, frame) = answer(&p, b"said", b"vertex", std::slice::from_ref(&gain));
-        mind.hold_answer_frame(&key, frame);
+        mind.hold_answer_envelope(&key, frame);
         let (_, stray) = answer(&other, b"said", b"vertex", std::slice::from_ref(&gain));
-        mind.hold_answer_frame(&key, stray);
+        mind.hold_answer_envelope(&key, stray);
         mind.peer_record(&pk)
     });
     mind.field = field;
@@ -85,7 +85,7 @@ fn peer_inexact_on_a_class_is_not_asked_it_again() {
             assert!(mind.question(&pk, b"said", b"vertex", &gain).is_some());
             let wrong = crate::transducer::cga::dilator(&q(3));
             let (key, frame) = answer(&p, b"said", b"vertex", &[wrong]);
-            mind.hold_answer_frame(&key, frame);
+            mind.hold_answer_envelope(&key, frame);
             let addressed = mind.addressed(&of, &inverse);
             let asked = mind.question(&of, b"again", b"vertex", &inverse).is_some();
             (addressed, asked, mind.questions.len())
@@ -110,7 +110,7 @@ fn peer_frames_lapse_with_the_question() {
         let (gain, _) = gain_and_conjugate();
         assert!(mind.question(&pk, b"said", b"vertex", &gain).is_some());
         let (key, frame) = answer(&p, b"said", b"vertex", &[crate::transducer::cga::dilator(&q(3))]);
-        mind.hold_answer_frame(&key, frame);
+        mind.hold_answer_envelope(&key, frame);
         let held = mind.peer_record(&pk).len();
         let mut line = crate::client::sdk::mind::chatter::QUESTION_LINE.to_vec();
         line.extend_from_slice(&key);

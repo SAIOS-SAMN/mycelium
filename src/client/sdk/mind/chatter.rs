@@ -38,7 +38,7 @@ use std::sync::mpsc::{channel, Sender};
 /// the field stood and says, a letter the field holds for its union, the
 /// mind's clock as it moves, and what the field read of a thought's loops.
 enum Inflow {
-    Frame(Vec<u8>),
+    Envelope(Vec<u8>),
     /// A thing said: what was stood, and its rings, each with the vantage
     /// the mind's field reads it from; and the scene it was spoken under —
     /// the family's citation, empty for none (MU-CLIENT §5.4, E1), so what
@@ -69,7 +69,7 @@ pub(crate) enum FieldWork {
     /// MU-CLIENT §5.3(5) (#145) — a peer's verified frame said under a
     /// question's coordinates (`key`: the peer, then the coordinates),
     /// held with the question it answers.
-    Answered { key: Vec<u8>, frame: Vec<u8> },
+    Answered { key: Vec<u8>, envelope: Vec<u8> },
 }
 
 /// ONE QUESTION THIS MIND ASKED (MU-CLIENT §5.3): the ring it did not know,
@@ -92,7 +92,7 @@ pub(crate) struct Question {
     /// MU-CLIENT §5.3(5) (#145) — THE PEERS' VERIFIED DELIMITED said under this
     /// question's coordinates: the receipts a peer record is folded from,
     /// held while the question is and lapsing with it.
-    pub(super) frames: Vec<Vec<u8>>,
+    pub(super) envelopes: Vec<Vec<u8>>,
 }
 
 impl Question {
@@ -136,7 +136,7 @@ enum Answer {
     /// The hearer HOLDs the speaker's reading where it converged.
     Hold { speaker: [u8; 32], said: Vec<u8> },
     /// The speaker speaks agreed language carrying the hearer's HOLD.
-    Agree { said: Vec<u8>, frame: Vec<u8> },
+    Agree { said: Vec<u8>, envelope: Vec<u8> },
 }
 
 /// WHAT THE FIELD READ OF A THOUGHT'S LOOPS: the exact strain its echoes
@@ -460,7 +460,7 @@ impl Mind {
             "127.0.0.1:0",
             noise.clone(),
             move |f| {
-                let _ = deliver.send(Inflow::Frame(f));
+                let _ = deliver.send(Inflow::Envelope(f));
             },
             move |q: &[u8]| observed(&voice, q),
         )?;
@@ -544,7 +544,7 @@ impl Mind {
                 },
                 // A peer's frame under a question's coordinates is held with
                 // the question at once: it is a receipt, never a hearing.
-                Some(FieldWork::Answered { key, frame }) => self.hold_answer_frame(&key, frame),
+                Some(FieldWork::Answered { key, envelope }) => self.hold_answer_envelope(&key, envelope),
                 Some(w) => self.board.field_waiting.push_back(w),
                 None => break,
             }
@@ -609,9 +609,9 @@ impl Mind {
                         self.speak_agreed(body, agreed);
                     }
                 },
-                FieldWork::Answered { key, frame } => {
+                FieldWork::Answered { key, envelope } => {
                     read += 1;
-                    self.hold_answer_frame(&key, frame);
+                    self.hold_answer_envelope(&key, envelope);
                 }
             }
         }
@@ -703,7 +703,7 @@ impl Mind {
             return None;
         }
         let at = self.own_k();
-        self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at, evidence: None, frames: Vec::new() });
+        self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at, evidence: None, envelopes: Vec::new() });
         crate::observe::note_mind(|m| m.asks[0] += 1);
         Some(residue)
     }
@@ -757,7 +757,7 @@ impl Mind {
             for k in ready {
                 let Some(mut q) = self.questions.remove(&k) else { continue };
                 // #145 — its peers' frames stay while the closure is cited.
-                self.keep_closed_frames(&k, &q.residue, std::mem::take(&mut q.frames));
+                self.keep_closed_envelopes(&k, &q.residue, std::mem::take(&mut q.envelopes));
                 // GIVEN where the ring was asked whole and came back an atom;
                 // DERIVED where known words or known factors made it.
                 let given = atom(&q) && q.parts.is_empty() && q.ring.projective_eq(&q.residue);
@@ -1204,7 +1204,7 @@ impl Carrier {
     /// ONE INFLOW TAKEN, and what has stood its aperture cycle let go.
     fn take(&mut self, inflow: Inflow) {
         match inflow {
-            Inflow::Frame(f) => self.hear_frame(&f),
+            Inflow::Envelope(f) => self.hear_envelope(&f),
             Inflow::Say(e, words, family, ground) => self.say(&e, words, family, ground),
             Inflow::Wait(e, words, family, ground) => {
                 let address = e.address();
@@ -1257,12 +1257,12 @@ impl Carrier {
         match p.answer {
             Answer::Hold { speaker, said } => {
                 let to = chatter::peer_of(&self.dir, &speaker);
-                if let (Some(frame), Some(to)) = (self.frame(Said::Hold { said, words: p.loops, deviation: p.deviation }), to) {
-                    self.send(&frame, Some(&to));
+                if let (Some(envelope), Some(to)) = (self.envelope(Said::Hold { said, words: p.loops, deviation: p.deviation }), to) {
+                    self.send(&envelope, Some(&to));
                     crate::observe::note_mind(|m| m.held += 1);
                 }
             }
-            Answer::Agree { said, frame } => {
+            Answer::Agree { said, envelope } => {
                 let Some(u) = self.union.get_mut(&said) else { return };
                 if u.shared {
                     return;
@@ -1288,26 +1288,26 @@ impl Carrier {
                 }
                 // Posted on the conversation's court carrier (R6); counted
                 // agreed where the court's answer lands.
-                let _ = self.speak_agreed(&agreed, Some(&frame), &family, ground.as_deref());
+                let _ = self.speak_agreed(&agreed, Some(&envelope), &family, ground.as_deref());
             }
         }
     }
 
     /// A frame of this mind's, signed by its key.
-    fn frame(&self, said: Said) -> Option<Vec<u8>> {
+    fn envelope(&self, said: Said) -> Option<Vec<u8>> {
         Chatter { speaker: self.voice, point: self.point.clone(), said }.sign(&self.key)
     }
 
     /// SEND a frame to every peer at the rendezvous, or to the one named; a
     /// rendezvous entry that refuses its connection names a mind gone, and
     /// leaves.
-    fn send(&self, frame: &[u8], to: Option<&str>) {
+    fn send(&self, envelope: &[u8], to: Option<&str>) {
         let peers = match to {
             Some(a) => vec![a.to_string()],
             None => chatter::peers(&self.dir, &self.voice),
         };
         for p in peers {
-            if let Err(e) = chatter::send_over(&p, &chatter::named(&self.dir, &p), frame, self.noise.as_ref()) {
+            if let Err(e) = chatter::send_over(&p, &chatter::named(&self.dir, &p), envelope, self.noise.as_ref()) {
                 if e.kind() == std::io::ErrorKind::ConnectionRefused {
                     chatter::forget(&self.dir, &p);
                 }
@@ -1338,17 +1338,17 @@ impl Carrier {
             (Ok(scene), true) => e.to_bytes().map(|word| chatter::Evidence { scene: scene.to_vec(), word }),
             _ => None,
         };
-        let Some(frame) = self.frame(Said::Say { said: address.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
+        let Some(envelope) = self.envelope(Said::Say { said: address.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
         self.union.insert(&address, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, crossed: false, family, ground });
         self.said.insert(&address, ());
-        self.send(&frame, None);
+        self.send(&envelope, None);
     }
 
-    /// A FRAME HEARD: opened under its speaker's signature, and taken by
-    /// what it says. A frame that does not open, or this mind's own, is
+    /// AN ENVELOPE HEARD: opened under its speaker's signature, and taken by
+    /// what it says. An envelope that does not open, or this mind's own, is
     /// nothing.
-    fn hear_frame(&mut self, f: &[u8]) {
-        let Some(c) = Chatter::verify(f) else { return };
+    fn hear_envelope(&mut self, e: &[u8]) {
+        let Some(c) = Chatter::verify(e) else { return };
         if c.speaker == self.voice {
             return;
         }
@@ -1359,13 +1359,13 @@ impl Carrier {
                 if said.starts_with(b"?") {
                     let mut key = c.speaker.to_vec();
                     key.extend_from_slice(&said);
-                    let _ = self.field.send(FieldWork::Answered { key, frame: f.to_vec() });
+                    let _ = self.field.send(FieldWork::Answered { key, envelope: e.to_vec() });
                 }
                 self.hear_said(&c.speaker, said, &words, evidence)
             }
             Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words),
             Said::Ack { said, words } => self.acknowledged(&c.speaker, &said, &words),
-            Said::Hold { said, words, .. } => self.held_back(&c.speaker, &said, &words, f),
+            Said::Hold { said, words, .. } => self.held_back(&c.speaker, &said, &words, e),
         }
     }
 
@@ -1397,7 +1397,7 @@ impl Carrier {
     fn understood(&mut self, speaker: &[u8; 32], said: Vec<u8>, heard: Vec<(Spoken, HeardWord)>, evident: super::converge::Evident) {
         use super::converge::Evident;
         let (words, out): (Vec<Spoken>, Vec<HeardWord>) = heard.into_iter().unzip();
-        let Some(frame) = self.frame(Said::Heard { said: said.clone(), words: out.clone() }) else { return };
+        let Some(envelope) = self.envelope(Said::Heard { said: said.clone(), words: out.clone() }) else { return };
         let mut key = speaker.to_vec();
         key.extend_from_slice(&said);
         match evident {
@@ -1407,7 +1407,7 @@ impl Carrier {
             Evident::Refuted | Evident::Unread => {}
         }
         if let Some(to) = chatter::peer_of(&self.dir, speaker) {
-            self.send(&frame, Some(&to));
+            self.send(&envelope, Some(&to));
         }
     }
 
@@ -1457,17 +1457,17 @@ impl Carrier {
                 _ => factors_of(residue, &gauge, &h.vertex),
             };
             let question = question_key(said, &h.vertex);
-            if let (Some(frame), Some(to)) =
-                (self.frame(Said::Say { said: question.clone(), words: factors.clone(), evidence: None }), chatter::peer_of(&self.dir, hearer))
+            if let (Some(envelope), Some(to)) =
+                (self.envelope(Said::Say { said: question.clone(), words: factors.clone(), evidence: None }), chatter::peer_of(&self.dir, hearer))
             {
-                self.send(&frame, Some(&to));
+                self.send(&envelope, Some(&to));
                 self.answered.insert(&question, (factors, false));
                 crate::observe::note_mind(|m| m.asks[1] += 1);
             }
         }
         let acks: Vec<AckWord> =
             words.iter().filter_map(|h| spoken.iter().find(|s| s.vertex == h.vertex).map(|s| chatter::loop_of(s, h))).collect();
-        let frame = self.frame(Said::Ack { said: said.to_vec(), words: acks.clone() });
+        let envelope = self.envelope(Said::Ack { said: said.to_vec(), words: acks.clone() });
         let to = chatter::peer_of(&self.dir, hearer);
         // TWO VANTAGES (MU-CLIENT §5.3): every word the hearer derived, read
         // from a vantage of its own, distinct from the one this mind offered;
@@ -1487,8 +1487,8 @@ impl Carrier {
         let Some(u) = self.union.get_mut(said) else { return };
         let held: Vec<crate::transducer::cga::Mv> = words.iter().flat_map(|h| h.held.iter().cloned()).collect();
         u.acked.insert(hearer, (acks, held, distinct));
-        if let (Some(frame), Some(to)) = (frame, to) {
-            self.send(&frame, Some(&to));
+        if let (Some(envelope), Some(to)) = (envelope, to) {
+            self.send(&envelope, Some(&to));
         }
     }
 
@@ -1521,7 +1521,7 @@ impl Carrier {
     /// with the hearer's rings for MUTUAL balance: where the echoes
     /// converge here too, it is spoken to the court carrying the hearer's
     /// signed HOLD, once.
-    fn held_back(&mut self, hearer: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8]) {
+    fn held_back(&mut self, hearer: &[u8; 32], said: &[u8], holds: &[AckWord], envelope: &[u8]) {
         let Some(u) = self.union.get_mut(said) else { return };
         let Some((sent, mutual, distinct)) = u.acked.remove(hearer) else { return };
         if !one_reading(&sent, holds) || !understood(&sent) {
@@ -1532,7 +1532,7 @@ impl Carrier {
         // whether it read from vantages of its own.
         let forms = vec![said.to_vec()];
         crate::observe::note_mind(|m| m.returned += 1);
-        let heard = HeardLoops { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() }, forms, mutual, distinct };
+        let heard = HeardLoops { loops: sent, answer: Answer::Agree { said: said.to_vec(), envelope: envelope.to_vec() }, forms, mutual, distinct };
         let _ = self.field.send(FieldWork::ReadLoops(heard));
     }
 
