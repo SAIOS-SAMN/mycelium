@@ -24,6 +24,18 @@ pub(crate) fn arm_deadline(s: &TcpStream) {
     let _ = s.set_write_timeout(None);
 }
 
+thread_local! {
+    /// The kind of the act this thread is answering, so a reply refused past
+    /// the wire budget names the act it answered (#349: hypha a refused
+    /// replies of 1.3–2.1 MB and the log could not say which read).
+    static ANSWERING: std::cell::Cell<Option<u8>> = const { std::cell::Cell::new(None) };
+}
+
+/// The act this thread now answers, by its kind byte.
+pub(crate) fn answering(kind: Option<u8>) {
+    ANSWERING.with(|a| a.set(kind));
+}
+
 /// THIS HOST'S NOISE HOME, opened once at boot: its static key and its pins.
 static HOME: std::sync::OnceLock<NoiseHome> = std::sync::OnceLock::new();
 
@@ -116,7 +128,8 @@ pub(crate) fn answer_written(s: &mut Channel, delimited: Delimited) -> bool {
         // fill whole buffer", netstratum's READ-ENDOWMENT, 2026-11-14).
         None => {
             let point = crate::tuniversal::final_point().map(|p| p.to_bytes().len());
-            eprintln!("  court reply refused: body {len} with the final point's {point:?} bytes past the wire budget; answered refused");
+            let act = ANSWERING.with(std::cell::Cell::get);
+            eprintln!("  court reply refused: act {act:02x?} body {len} with the final point's {point:?} bytes past the wire budget; answered refused");
             refuse_over_budget(s);
             false
         }

@@ -929,6 +929,7 @@ fn main() {
             arm_deadline(&stream);
             let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
             let Some(delimited) = read_delimited(&mut stream) else { continue };
+            crate::transport::answering(mycelium::anastome::dialogue::act_tag(&delimited.body));
             if mycelium::anastome::dialogue::act_tag(&delimited.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                 judge::observe::judge(&mut stream, &delimited, &context);
                 mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
@@ -971,6 +972,7 @@ fn main() {
             // counted under no kind: 0xff was a sentinel standing for a byte
             // that was not read.
             let kind = mycelium::anastome::dialogue::act_tag(&delimited.body);
+            crate::transport::answering(kind);
             judge::judge(&mut stream, delimited, &context);
             // #234: a judgement may have moved the court; the idle exchange,
             // parked until the next motion, reads it.
@@ -1004,6 +1006,7 @@ fn main() {
                 arm_deadline(&stream);
                 let Some(mut stream) = crate::transport::accept(stream, Pace::Blocking) else { continue };
                 let Some(delimited) = read_delimited(&mut stream) else { continue };
+                crate::transport::answering(mycelium::anastome::dialogue::act_tag(&delimited.body));
                 if mycelium::anastome::dialogue::act_tag(&delimited.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                     judge::observe::judge(&mut stream, &delimited, &context);
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
