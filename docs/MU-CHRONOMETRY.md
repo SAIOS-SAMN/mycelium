@@ -59,7 +59,7 @@ its book.
   | `G` | Gauge lane: cumulative verified issuance of hue cycles and moves |
   | `T` | Temporal lane: cumulative verified issuance of null flux |
   | `H` | Holonomic lane: cumulative verified issuance of rotations, each in exact degrees on a named plane (a circuit's composite around a ring) |
-  | `K` | The orbits the keeper's court closed, each a cycle closed by name (OK1): a count, never an orbit itself and never a receipt index (the receipt index is `i`; ruled 2026-11-05) |
+  | `K` | The orbits the keeper's court closed, each an orbit closed by name (OK1): a count, never an orbit itself and never a receipt index (the receipt index is `i`; ruled 2026-11-05) |
 
   The four lanes advance only when work on that lane is verified, so the
   clock measures distance travelled, not seconds (MU-RECURSION 78.43). The
@@ -83,9 +83,9 @@ its book.
   `K`. `TPoint` is no longer `Copy`.
 - **Every act carries it** (TU-7). A client reads the latest final point
   with `Session::tuniversal`, or asks a court for it
-  (`encode_clock_request`); chatter frames carry it. The point stands in
-  the expression, never on the envelope (v0.5.0 recut; MU-ENGINEERING
-  §9.1): a frame is `[len u32 LE][expression]`, and an expression is
+  (`encode_clock_request`); chatter expressions carry it. The point stands in
+  the expression, never in the transport's delimiter (v0.5.0 recut; MU-ENGINEERING
+  §9.1): a delimited expression (`Delimited`) is `[len u32 LE][expression]`, and an expression is
   `[act][point][point len u16 LE]` (`anastome::dialogue::expression`): the
   act's bytes, the point's wire bytes (genesis 32, epoch u32 LE, `h` u64 LE,
   the four lanes in the rational lane codec, `K` u64 LE), then the point's
@@ -337,4 +337,4 @@ each universe stands (§4.1).
 | **K3** | The bridge-keeper pattern as a named form in `forms` (§2.1). |
 | **K4** | Optional lanes of attachment in anchors, with per-lane distance and dilation readings (§5). |
 | **K5** | Books linked across origins, with branching (78.155). |
-| **K6** | A conformance read for kernels: the §7 checklist as typed readings a kernel's operator runs against its own domain. |
+| **K6** | A conformance check for kernels: the §7 checklist as typed readings a kernel's operator runs against its own domain. |

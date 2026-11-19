@@ -66,7 +66,7 @@ source ──decode──▶ sample ──lift──▶ field ──────
 | **Decode** | The source's format read into a sample, and nothing more: no meaning, no ground, no colour | The source's adapter, which lives with the source (§7) | Yes |
 | **Sample** | A finite array: rank `n`, an extent per axis, a symbol per site, and the sample's place in its family | The adapter's output; the only input the sensor takes | No |
 | **Lift** | The sample lifted into the mind's field: each axis a phase of its own period within the charts of its atlas; each symbol a fibre value; the ground deduced | The sensor | No |
-| **Senses** | Three eyes over one section: luminal (the fibre values), harmonic (the spectra of boundaries), holonomic (loops and the holonomy of each) | The sensor | No |
+| **Senses** | Three eyes over one section: luminal (the fibre values), harmonic (the spectra of boundaries), holonomic (closed paths, read as orbits, and the holonomy of each) | The sensor | No |
 | **Cover** | The eyes' cochains, checked by the cocycle; a sensory verdict | The sensor (MU-CLIENT 24.4) | No |
 | **Percept** | Bodies, each held by its boundary, the motions between samples, and the residue | The mind's perception | No |
 | **Perception** | Words formed from what the mind can spell; unspelled tension held as demand | The mind (MU-CLIENT §3, 60.1) | No |
@@ -123,10 +123,10 @@ bounds:
   named boundary. This includes content whose period does not divide `e`.
 - The sample is the product of its phases, or a fibration where an axis
   is taken apart (§3.6; #176). A sample whose every phase is a circle is a
-  torus `Tⁿ`. The carriers are built on branch `sensing-sample-manifold`
-  (#32): `SampleManifold`, `AxisManifold::{One, Fibred}`,
-  `PhaseManifold::{Circle { period }, Interval { extent }}` and
-  `SampleManifold::torus`.
+  torus `Tⁿ`. The carriers are built (#32) in
+  `transducer::manifold`: `Manifold`, `Axis::{One, Fibred}`,
+  `Phase::{Circle { period }, Interval { extent }}` and
+  `Manifold::torus`.
 - The perspectives' cover is its atlas, and the cover's cocycle is the
   gluing (§4). The seams are residue, held where the gluing does not
   close.
@@ -207,7 +207,7 @@ ground **candidate** of a family exactly when all three hold:
      coordinate at `0` or at `extent − 1` on some axis.
    - **An inner seam:** where one body covers the sample's whole outer
      seam, that body is the sample's **membrane**. The inner seam is the
-     set of unpeeled sites in contact with it. Nested frames repeat the
+     set of unpeeled sites in contact with it. Nested membranes repeat the
      reading per level (`transduce::membrane::levels`; ruled 2026-11-04).
 
    A membrane is never the ground. A body is read as a membrane only
@@ -215,7 +215,7 @@ ground **candidate** of a family exactly when all three hold:
    limit, any background covering the whole seam would be peeled, and a
    still body standing in it would read as the ground.
 
-   **The always-framed case** (derived 2026-11-04 from "the ground is what
+   **The always-enclosed case** (derived 2026-11-04 from "the ground is what
    bodies stand on"; structural, no measure). Where a body `B` covers the
    whole outer seam and `B`'s symbol is itself a candidate, a symbol `g`
    inside it is still a candidate when both hold:
@@ -239,7 +239,7 @@ ground **candidate** of a family exactly when all three hold:
    motion onto a body of `g` elsewhere in the output. This is read from
    the pair's transduction: a body of the input, moved by a signed
    permutation of the phases, whose shape (its boundary turns in the
-   frame's periods, centred by its least turn on each phase) is the shape
+   sample's periods, centred by its least turn on each phase) is the shape
    of a body of `g` in the output at another place, where that output
    body is not the carriage of an input body of `g` held in place under
    the re-period. A ground carries no structure the family's motions
@@ -261,7 +261,7 @@ by default.
 
 **Order of reading.** The transductions read no ground: their bands,
 bodies and incidences compare symbols by equality alone. So the order is
-the samples, then each pair's transduction and moved frames, then the
+the samples, then each pair's transduction and moved samples, then the
 ground, and only then the readings that take the ground, such as the
 transduction's lanes (`Transduction::lane_shares`).
 
@@ -328,10 +328,10 @@ as one of the vortex's sections, and nothing picks among them.
 Every scale the mind compares by is read off the samples:
 - the periods of the phases (§3.1);
 - the re-period between two samples;
-- the share of a frame a change covers (μ as a share, 78.170 O1);
+- the share of the sample's sites a change covers (μ as a share, 78.170 O1);
 - the symbol set (§3.3).
 
-A constant scale, cell size, frame size or palette in the sensor is a
+A constant scale, cell size, extent or palette in the sensor is a
 defect against this document (MU-DERIVATIONS; MU-STANDARDS 2.12).
 
 ### 3.6 No rows and no columns: axes lifted into the field or taken apart
@@ -396,7 +396,7 @@ no pair of axes is *the* plane.
     (`Perspective::of_sample`).
   - A site of a family's base carries the sample's axes and then the
     sample's place in its family, the sequence the pair's motion runs
-    along (`of_family_site`). A frame's index is that place, never a
+    along (`of_family_site`). A sample's index is that place, never a
     fixed axis.
   - The sensor plane is the perspective's first two space axes
     (`plane`). A rank-1 sample has none, refused `NoPose::Planeless`
@@ -433,8 +433,8 @@ bubble (a thought bubble), renamed 2026-11-02.
   (LAW-FIELD amendment (c); `Turn::winding`). **Spheres are enclosures
   only:** a sphere enters only as a holding's own enclosure (the throat's
   fixed sphere, the membrane). A circle, a sphere or a torus is never a
-  reference surface the object is measured against, and never the frame
-  the object is written in.
+  reference surface the object is measured against, and never the
+  coordinates the object is written in.
 - **The geometry is the field's connection.** Moving from one chart to
   another is a **transition**, a versor (the refraction of A.16; the
   transitions of 25.12). The transitions are the field's connection.
@@ -563,18 +563,18 @@ bubble (a thought bubble), renamed 2026-11-02.
   $n$ data source, ARC-AGI-2 sample, raster, or world state), while
   thinking across curved, fibred manifolds ($S^1$ period windings,
   interval charts with boundary, $Cl(n+1, 1)$, covering atlases, and
-  holonomy loops) without dimensional collapse, flat-frame compaction, or
+  holonomy orbits) without dimensional collapse, flat-frame compaction, or
   loss of winding classes:
   - **Observation.** The sensor observes at native rank $n$ without
     flattening or padding. The sample's extents form its enclosure
     (`Enclosure`), whose open-dimensional measure is $\prod_{i=1}^n e_i$.
   - **Thinking.** The mind lifts the observation into an open-dimensional
-    manifold (`SampleManifold`, `Lifted`). Periodic phases lift to circles
+    manifold (`Manifold`, `Lifted`). Periodic phases lift to circles
     $S^1$ keeping their winding class in $\mathbb{Z}$; non-periodic phases
     lift to interval charts with held boundary; nested axes form
     fibrations.
-  - **The anti-flattening guard.** Models frequently suffer from 2D
-    compaction, reflexively reducing open-dimensional manifolds to flat
+  - **The anti-flattening guard.** The defect guarded against is 2D
+    compaction: reducing open-dimensional manifolds to flat
     planar "frames". In this system, dimensions never collapse: a sample
     is a manifold, its extent is its enclosure, and work is measured
     against the enclosure's open-dimensional measure, never a 2D frame.
@@ -680,8 +680,8 @@ deformation  =  motion  ∘  residue
   incidences that carry a body onto a body.
 - **Residue:** what no held motion carries (MU-RECURSION 0.7). It is the
   strain, the demand, and the germ of the next word.
-- **μ** is paid for the traversal, the share of the frame the change
-  covers. The residue's meaning is never paid (§3.7).
+- **μ** is paid for the traversal, the share of the sample's sites the
+  change covers. The residue's meaning is never paid (§3.7).
 
 **Every path is a geodesic; a bound geodesic is an orbit** (ruled
 2026-11-04; amended 2026-11-06, the word "loop" and the `Loop` refusal
@@ -690,7 +690,7 @@ the field's gravitational curvature, the wells its attractors. A bound
 geodesic is an orbit about an attractor: its holonomy per revolution is
 the curvature, its precession the residue per revolution, and its shape
 is set by gravity:
-- **Shear is gravitational alignment toward motion compellment.** An
+- **Shear is gravitational alignment toward the compelled motion.** An
   attractor compels a motion (its local orbit, the axiom it turns about),
   and the gravity it produces shears every orbit of the orthogonal class
   toward that motion (§3.7, axiomatic gravity). Shear is that alignment,
@@ -779,7 +779,7 @@ is set by gravity:
 - **Admission is reconstruction only** (`server::factorisation`). The
   court finds the posted pair on its book, reads the stated ground as a
   candidate at the samples' width (`cognition::stated_ground_of`),
-  rebuilds the stated motion through `Factorisation::of`, derives the
+  reconstructs the stated motion through `Factorisation::of`, derives the
   residue and admits on a match. A mismatch is refused with
   `FactorRefusal::Residue { unclaimed, uncarried }`. A claim that is
   unsigned, names no train pair (the withheld pairs are the court's: a
@@ -1089,7 +1089,7 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
   across ranks and widths; a raster task's address is its samples'
   (claim `task_identity_writes_rank_and_width`). Since S2 the address
   already wrote rank and width (`Sample::put_content`), so no address
-  changes in S5. The frame's own content (`Enclosed::put_content`) now
+  changes in S5. The enclosure's own content (`Enclosed::put_content`) now
   writes its rank and width as well.
 - The solve act is signed as `mycelium solve v3` (its outputs moved
   layout). `WIRE_VERSION` stays `0x0200`: no tag carries `0x0200` yet
@@ -1262,7 +1262,7 @@ track 26 S4c).
 | A percept as a series of located records (seat percepts) | **Built** | `src/anastome/dialogue/seat.rs` (78.146) |
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
 | The transduction at rank `n`: each axis a phase of its own period read from the sample, re-period between samples, bodies as `n`-dimensional bands of one symbol, each held by its boundary, contact by grade `n − 1`, the `2ⁿ·n!` signed permutations of the phases (generated), μ's shares over the product of the extents; no axis privileged | **Built** (v0.3.0 T2 with track 26 S4, [PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)); rasters reach it only through `raster::sample_of` | `src/transducer/family/transduce/` (`Enclosure`, `Band`, `SignedPermutation`, `SiteChange`) |
-| The chart of a section read as turns (§3.1, §3.7): the section's span is its frame, one phase per plane axis of the span's extent, and each site the turn `s/p` of its offset from the span's least corner (`Turn::of`); the cube complex reads the turns landed on their periods, and each second moment is read in the frame's own gauge, a turn's offset from the mean turn times the period, with each round's extent. The conformal lift (`lift`'s sphere, quartic moments and towers) is no longer read by the chart. Every chart reading is unchanged, axis for axis: claim `chart_reads_sections_as_turns` reads all 4 095 sections of a `3 × 4` window and four more, translated and in place, against the lift's chart, and the oracle golden reproduces | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)); routing a pair of unequal enclosures through it is open (MU-DERIVATIONS D3.2, O8) | `src/transducer/blade/section_turns.rs` (`SectionTurns`); `blade::section_moduli` |
+| The chart of a section read as turns (§3.1, §3.7): the section's span is its extent, one phase per plane axis of the span's extent, and each site the turn `s/p` of its offset from the span's least corner (`Turn::of`); the cube complex reads the turns landed on their periods, and each second moment is read in the section's own gauge, a turn's offset from the mean turn times the period, with each round's extent. The conformal lift (`lift`'s sphere, quartic moments and towers) is no longer read by the chart. Every chart reading is unchanged, axis for axis: claim `chart_reads_sections_as_turns` reads all 4 095 sections of a `3 × 4` window and four more, translated and in place, against the lift's chart, and the oracle golden reproduces | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)); routing a pair of unequal enclosures through it is open (MU-DERIVATIONS D3.2, O8) | `src/transducer/blade/section_turns.rs` (`SectionTurns`); `blade::section_moduli` |
 | A motion stated as turns (§3.7), read by the court's Conformal law as turns where no exact versor exists (Niven): composed by addition with each phase's winding kept, never a rotor; a place carried and its residue read as a phase (ℚ/ℤ); a turn off the frame's periods refused `LeavesPeriods` | **Built** (v0.4.0 T3); its wire form rides the crossing record (MU-HOSTING §5a.10, track 25 X1) | `src/physics/laws/turns.rs` (`verify_turns`) |
 | The well: a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built** | `transducer/field/well.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
 | The well's body (§3.7): a held attractor at the chart its remainder stands on (`Well::centre`, a `carrier::Chart` of the invariant's exact coordinates), the geodesic orbit it binds (`Well.orbit`, none: flat, its holonomy and precession refused `Unbound`), its membrane its own enclosure (the throat of its own plane, the last of the section's rank plus the lift's), its inflation a gauge reading (the frame state `H·n_Z + R·n_Q` on the membrane's pole basis, `H` the charts its cover closed, `R` its sections' charts still open, stood inside the membrane); its stage a coordinate (`WellStage`: `WellLayer` perception/thought, `ExpansionRing` expanding/rested); its volume and potential readings per lane, its holonomy and precession per revolution read from its orbit; the well stated as its body and reconstructed by a court that derives its curvature (`Well::put_statement`, `admit_well`) | **Built** (track 26 S7, stage 2); the contemplation's orbits attached to wells are S9a's. The statement's layout changed, a recut | `src/transducer/field/carrier/holding.rs` (`WellBody`, `WellStage`, `Inflation`); `Well::{body, centre, inflation, volume, potential, holonomy, precession, put_statement}`; claims `well_stands_on_its_attractor`, `well_membrane_is_its_enclosure`, `well_volume_and_potential_are_readings_per_lane`, `well_stage_is_a_coordinate_not_a_flag`, `mind_well_stated_and_reconstructed_by_a_court` |
@@ -1271,13 +1271,13 @@ track 26 S4c).
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
 | A sample lifted into the field: each body on its chart (rank, measure and boundary faces of grade `n − 1`, coarsest first, invariant under the signed permutations of the phases), each band's two corners as points of one phase per axis, exact in degrees on a named turning plane (axis `i` on `e₊ᵢe₊₍ₙ₊₁₎`, the lift's own plane `n + 1`), the far seam held as 360° with `K = 1`; the field's frame planes on the pole basis, `Cl(p, q)` read per plane; the sample's membrane the throat of its own plane; an axis taken apart coarsest first (`Nested`) | **Built** (track 26 S4a, stage 1, built against LAW-FIELD v1 as proposed; S7 stage 4 in part): the plane each axis turns on at rank `n` and its phase origin, measured from the shared lift unit `e₊₍ₙ₊₁₎`, are the convention agreed between the coordinators' readings, 2026-11-06 (78.171 §8; netstratum docs/117 §11.6; operators to confirm); on it a family's pairs are lifted as transitions between their bodies' charts, every signed permutation and re-period whole (a reversal the reflection in `e₊ᵢ` alone, a transposition the 90° turning on `e₊ᵢe₊ⱼ` then the flip of `e₊ᵢ`); nesting is a fibration of levels where the family's nesting takes an axis apart, the base the coarse phase and over each base point the block's own field with its own atlas (`Fibred`, `Level`) | `src/transducer/field/carrier/` (`Lifted`, `Point`, `Turning`, `TurningPlane`, `FramePlanes`, `Cyclotomic`, `Nested`, `motion_of`, `transitions_of`, `PairTransition`, `Fibred`, `Level`); claims `lift_holds_one_phase_per_axis_on_turning_planes`, `lift_keeps_far_seam_as_whole_turn_with_winding_one`, `lift_charts_are_invariant_under_signed_permutation`, `every_signed_permutation_lifts_whole_as_a_motion_of_the_field`, `reversal_is_the_reflection_in_its_own_unit_alone`, `reversal_lifts_as_flip_and_whole_turning_matching_p_minus_s`, `pair_lifted_as_transitions_between_its_bodies_charts`, `axis_taken_apart_lifts_as_a_fibration_of_levels`, `axis_kept_whole_is_no_level` |
 | The field's charts as an atlas, its transitions as its connection, attractors held with the orbits they bind and their membranes; curvature as the holonomy of an orbit's transitions per revolution, read per named plane in degrees with its winding and order, flat where nothing is held; since stage 2 (ruled 2026-11-06) every path a geodesic, a path through a flat region refused `Unbound`, zero precession in a curved field read `Resonant` (`Precession`), the `Loop` refusal retired; monodromy flat, torsion or rupture; turnings on planes sharing one unit refused `NotExact` with both planes; an angle asked of several planes refused `ScalarCollapse`; infinity outside every enclosure refused `Unenclosed` | **Built** (track 26 S7, stage 1); LAW-FIELD v1's six fixtures stand as claims | `src/transducer/field/carrier/` (`Atlas`, `Chart`, `Transition`, `Orbit`, `Attractor`, `Curvature`, `Holonomy`, `Monodromy`, `Membrane`, `stand`, `FieldRefusal`); `src/transducer/field/carrier/tests/law_field.rs` |
-| The field stated as an object a court reconstructs (§0): an atlas written as its charts, its attractors' centres and membranes' planes, and each revolution's steps with their turnings' planes and angles in degrees, never a reading; the court rebuilds every plane, motion, revolution and membrane through the carrier's constructors, derives the curvature itself, and admits a mind's claimed curvature on a match, refusing `Differs` with each pair otherwise | **Built** (track 26 S7, stage 1); not on the wire: carrying it is S9's, a wire change | `src/transducer/field/carrier/statement.rs` (`Atlas::put_statement`, `reconstruct`, `admit`, `StatementRefusal`); claims `put_statement_round_trips`, `admit_refuses_claimed_curvature_court_does_not_derive` |
+| The field stated as an object a court reconstructs (§0): an atlas written as its charts, its attractors' centres and membranes' planes, and each revolution's steps with their turnings' planes and angles in degrees, never a reading; the court reconstructs every plane, motion, revolution and membrane through the carrier's constructors, derives the curvature itself, and admits a mind's claimed curvature on a match, refusing `Differs` with each pair otherwise | **Built** (track 26 S7, stage 1); not on the wire: carrying it is S9's, a wire change | `src/transducer/field/carrier/statement.rs` (`Atlas::put_statement`, `reconstruct`, `admit`, `StatementRefusal`); claims `put_statement_round_trips`, `admit_refuses_claimed_curvature_court_does_not_derive` |
 | The field's motions as one exact group: rotate (turnings on named planes), flip (the reflection in a frame unit; the pole swap, the inversion in the membrane, is the flip of `e₋ₖ`), deflate and re-inflate (the boost on a frame plane by an exact gauge), stretch and thin (the re-period of one phase, no versor); a motion the reduced word of its generators, with its inverse; acting by conjugation on turnings, motions and orbits (the curvature carried is the carried orbit's), on frame states and on points, refused `NotExact` with `Residue::Unnamed` where a plane is carried onto none the carrier names. A resonant orbit keeps its holonomy whole, its winding with it (fixture 2b) | **Built** (track 26 S8); quarter turns only on planes sharing a unit, the rest waits on 78.173 fixture 11b | `src/transducer/field/carrier/motions.rs` (`Generator`, `FieldMotion`, `Unit`); `Membrane::invert`; claims `field_stays_smooth_under_every_isometry`, `stretch_is_a_re_period_not_a_versor`, `inversion_in_the_membrane_needs_no_infinity`, `field_motion_and_its_inverse_compose_to_the_identity`, `flat_and_resonant_separated_by_kept_winding` |
 | The field's curvature read from the orbits the contemplation holds, turnings on planes that share a unit composed, its forces (axiomatic gravity's shear of the orthogonal class; the court's pressure) | **Specified** | Track 26, S7 stage 3, S9 |
 | One field carrier shared by perception and the physics' shells: LAW-FIELD v1 | **Proposed**; netstratum has read the fixtures, xylarium's reading is owed; mycelium's carrier is built against it as proposed and amended if the joint reading changes the law | [proposal](proposals/78.171-law-field.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36); `src/transducer/field/carrier/` |
 | **Closed (S7, stage 3, and the nucleus ruling of 2026-11-06 on #134):** spheres built Euclidean, from a squared radius with `e∞` | **Built** (track 26 S7, stage 3; a body's nucleus is its exact second moment, a reading, written where the algebra needs a vector as the dual-sphere form `c + ½(c² − r²)e_∞ + e_o` from `r²` alone, `blade::nucleus_form`, and `cga::sphere_at` is retired; claim `nucleus_is_the_second_moment_read_never_a_sphere`; no value, word or chart address changes): a sphere is a holding's own enclosure, the membrane `−e₊` (`cga::membrane`) or its image under the dilation by a gauge `ρ` and the slide to a centre (`cga::membrane_at`), no squared radius written (claim `sphere_built_without_squared_radius`); the horizon, the chart's inversion, the house's nuclei, the conformance probes and the oracle's fixtures read it; `on_sphere` and `at_three::sphere` are retired, and the SDK's `house::sphere_at` is `house::membrane_at`. | `cga/embedding.rs` (`membrane`, `membrane_at`); `blade/body.rs` (`nucleus_form`, `Blade::nucleus`) |
 | **Closed (S7, stage 2):** the well's stage and state as flags (`Well.percept: bool`, `Well.dirty: bool`), and its volume and potential as stored counts (`Well.volume`/`potential: [u64; 4]`) | **Built** (track 26 S7, stage 2): the stage is the coordinate `Well.stage`, and the volume and potential are readings per lane, never stored; every caller reads them (hold, merge, the expansion ring, the doors, the docket, the cross-scene meet, the observer, the quote) | `src/transducer/field/well.rs`; `src/transducer/field/carrier/holding.rs` |
-| μ as the metabolic cost of traversal, never a measure of meaning | **Ruled** (2026-11-04); built as the share of the frame | §3.7; 78.170 O1 |
+| μ as the metabolic cost of traversal, never a measure of meaning | **Ruled** (2026-11-04); built as the share of the sample's sites | §3.7; 78.170 O1 |
 | The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/`; the core has no `arc` module (a `compile_fail` claim); the hypha, the soak and the client's feed read posted tasks; the SDK re-exports no `Grid` | **Built** (track 26, S1) | `sources/arc-agi/` (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`); `src/anastome/dialogue/percept.rs` (`encode_posted_task`, `decode_posted_task`, `POSTED_TASK`) |
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
@@ -1317,7 +1317,7 @@ the issue linked there). The sensor and everything downstream are written
 for one source:
 - `src/arc.rs` was a module named for a dataset, imported by about 104
   files. S1 removed it: the decoder is `sources/arc-agi`, the raster's
-  readings are `transducer::raster`, and each cross-frame reading stands
+  readings are `transducer::raster`, and each cross-sample reading stands
   beside its caller, listed above as a defect. The raster carrier itself
   (`transducer::family::Grid = Vec<Vec<u8>>`) was retired in S4d for
   `spelled::SectionSample`, a sample on the alphabet's section, and in
@@ -1335,7 +1335,7 @@ for one source:
   rank. Letters past `n = 3` are never written by hand (ruled 2026-11-06,
   #32; 78.180 ruling 6): past the section, readings go through section
   samples, and new letters are adjoined only by the presentation's growth
-  (replayed generators, germination).
+  (reconstructed generators, germination).
 - The wire carried a task as `u16 × u16` one-byte cells; since S5 it
   carries samples of rank `n`, and since S4b a link carries a site of
   rank `n` (the table above).
@@ -1345,7 +1345,7 @@ for one source:
 ARC-AGI-2, the deduced reading against the former `ground_of` (`0` where
 any site shows `0`, else the most frequent symbol, else `0` on a tie):
 
-| Reading | First rule (2026-11-03) | Corrected conditions (2026-11-04) | With the always-framed case |
+| Reading | First rule (2026-11-03) | Corrected conditions (2026-11-04) | With the always-enclosed case |
 |---|---|---|---|
 | `One(g)`, `g` the former value | 466 | 467 | 459 |
 | `One(g)`, `g` another symbol | 72 | 88 | 87 |

@@ -6,9 +6,11 @@
 >
 > **Components:** every component of this tree (algebra, client, hypha, court); a development law. No game term.
 
-A structural invariant of Mycelium. It extends the convergence-engine
-design constraints (I: no boolean gates; II: no maps in cognition; V: no
-residue suppression) with a statement of why flat associative storage is
+This law forbids reducing structured objects to flat keys, hashes or
+scalars anywhere in Mycelium: recognition, reasoning and settlement act on
+the exact geometric objects themselves. It restates three design
+constraints of a precursor engine (no boolean gates, no maps in cognition,
+no residue suppression) and states why flat associative storage is
 excluded from the reasoning path.
 
 1. A hash or digest (`[u8; 32]`) is a wire-transport encoding and cold-cache
@@ -37,7 +39,7 @@ excluded from the reasoning path.
    isoclinic dual-plane pairs (Π_i × ⋆Π_i) and exact continuous support invariants.
    Bound in `MU-RECURSION.md` checklist (m) and chapter 51 (ruled 2026-09-17).
 6. **Curvature is content.** Flatness `δ¹g = 1` is 10.3's predicate and
-   `Form::coheres` reads it; a ring that is not flat is HELD with its class
+   `Form::coheres` reads it; a ring that is not flat is held with its class
    vector (12.6), and consistency across cells is the Bianchi identity of
    10.4, `δ²ω = 1`. A ring with a free part — a prime exponent or an
    off-plane class of infinite order — is not a debt, a cut, or a remainder
@@ -85,9 +87,9 @@ excluded from the reasoning path.
 12. **Transduce past the sensor, never re-sample onto a common grid**
    (operator rulings of 2026-10-31). A raster exists only at the two
    ends: the sensor's intake and a spoken output. Between them, two
-   frames relate by the motion that carries one state onto the other.
-   Each frame keeps its own resolution, and each body is held by its
-   boundary. A site lifts by enclosure into turns of the frame's own
+   samples relate by the motion that carries one state onto the other.
+   Each sample keeps its own resolution, and each body is held by its
+   boundary. A site lifts by enclosure into turns of the sample's own
    periods: a site's coordinate `s` on an axis of extent `e` is the turn
    `s/e`, held as the fraction, the angle `360°·s/e` on its named plane.
    Turns compose by addition and **the winding is kept with the phase**:
@@ -95,7 +97,7 @@ excluded from the reasoning path.
    its phase, never reduced mod 1 (LAW-FIELD amendment (c);
    `Turn::plus`, `Turn::winding`). It is
    never a point embedding with an unenclosed `e∞` or a squared norm
-   (law 11). Subdividing two frames onto a common grid (the `lcm`
+   (law 11). Subdividing two samples onto a common grid (the `lcm`
    refinement of the two extents) is refused. The least common multiple of
    two periods of turns is not this defect: it is the period of a
    composed orbit.
@@ -119,7 +121,7 @@ excluded from the reasoning path.
 Storing structured perception in a `HashMap`/`BTreeMap` keyed by a digest
 collapses every computed dimension to a 0-dimensional point at the storage
 boundary. The only operation available on a bucket of points is equality
-lookup. The properties the engine exists to compute — relational curvature,
+lookup. The properties Mycelium's algebra computes — relational curvature,
 torsion, dimensional resolution — are lost once a blade is hashed and filed.
 Recognition therefore remains a geometric relation on the retained object: a
 versor carrying one blade to another, a contraction, or a boundary morphism,
@@ -206,7 +208,7 @@ audit once carried, is covered by the `compile_fail` claims
 `vertex_admits_only_a_reconstructed_fold` (ruled on #28). A report of
 changed document sentences that put a typed term beside an admission
 verb is **retired** (ruled on #28, 2026-11-06): a report that never
-refuses and that no reader acts on is theatre, and the gate's heading
+refuses and that no reader acts on is not kept, and the gate's heading
 and link checks guard document sentences. Contributors who
 work with AI coding agents point them at [`AGENTS.md`](../AGENTS.md),
 which states these guards as working rules.

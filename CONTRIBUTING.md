@@ -84,8 +84,9 @@ The full standards are [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md). The
 essentials:
 
 **Arithmetic**
-- Every quantity is exact: ℚ, or the multivectors of `Cl(n+1, 1)`(ℚ), with
-  `n` read from the data (`Cl(4,1)` at `n = 3`).
+- Every quantity is exact: ℚ, or the multivectors of `Cl(p, q)`(ℚ) with
+  the signature carried as data (perception's case `Cl(n+1, 1)`, with `n`
+  read from the data; `Cl(4,1)` at `n = 3`).
 - Float arithmetic and lossy casts are denied by lint.
 - No structure is projected to a scalar
   ([`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md)).

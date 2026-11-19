@@ -4,6 +4,11 @@
 >
 > **Components:** the court on each hypha (holdings, settlement, the POW++ proofs); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
+This document specifies μ, the network's currency: how courts mint it for
+verified work, how it is held and paid, and the rules that keep the supply
+exact. In v0.5.0 every holding and payment becomes a motion with its causes
+cited ("the economy as motions").
+
 **Status:** specification of v0.5.0's headline, the economy as motions
 (ruled 2026-11-05). §0–§8 and §10–§11 state the model. The implementation
 built today (release 0.3.0, carried through v0.4.0) keeps a journal of
@@ -27,7 +32,8 @@ section named:
 3. A payment is a motion's advance, an event at a coordinate with its
    causes cited. A balance and the supply are readings (§5, §6).
 4. The four proofs are relations between motions (§0).
-5. A payout is proven by re-traversal. Equivocation is burned, and one
+5. A payout is proven by re-traversal: each cited cause is reconstructed
+   from the payment back to the verified closure (§5.3). Equivocation is burned, and one
    closure is one point network-wide (§3.4, §5.3).
 6. Between courts the Note settles; between universes μ is the connecting
    reserve and crosses only at the universal core tube (§5.4, §10).
@@ -79,7 +85,7 @@ strongest separator at the minds' level.
 
 ## 1. The unit
 
-**The inverse-Sisyphus protocol (ruled 2026-10-11): nothing is squared.**
+**Nothing is squared (ruled 2026-10-11; MU-RECURSION 78.162).**
 No reading collapses dimensionality or exact mathematics into a scalar or
 a lossy signal, and no curved object is forced into a flat one or a flat
 one imposed on it. μ is the exact **modes** the verified work moved, each
@@ -122,18 +128,18 @@ v0.5.0 (§9).
 μ never measures what a perception means: holonomy and residue are
 content, adjudicated and never paid (MU-SENSING §3.9).
 
-**A share of the frame (ruled 2026-11-01; MU-RECURSION 78.170 O1).** A
+**A share of the enclosure (ruled 2026-11-01; MU-RECURSION 78.170 O1).** A
 discharge read on a family is, per closed pair, a share of that pair's own
-frame, never a count of its sites, so it reads the same at any resolution:
+enclosure, never a count of its sites, so it reads the same at any resolution:
 
 | Lane | Share |
 |---|---|
-| S | The share of the frame's measure (the product of its extents) that changed between the ground the claim states and another symbol (MU-SENSING §6.1, §6.2): one changed site of a `30 × 30` frame is `1/900`, read under the stated ground (`cognition::stated_ground`) |
-| G | The share of the frame's measure that changed from one non-ground symbol to another |
-| T | The flux over the carried mass, taken as the frames' share of it: `T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`, `mᵢ` the mass pair `i` carried |
+| S | The share of the enclosure's measure (the product of its extents) that changed between the ground the claim states and another symbol (MU-SENSING §6.1, §6.2): one changed site of a `30 × 30` sample is `1/900`, read under the stated ground (`cognition::stated_ground`) |
+| G | The share of the enclosure's measure that changed from one non-ground symbol to another |
+| T | The flux over the carried mass, taken as the enclosures' share of it: `T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`, `mᵢ` the mass pair `i` carried |
 | H | The shell count: topological, already resolution-free |
 
-A discharge with no frame (a rewrite's yield, a listing bound to no
+A discharge with no enclosure (a rewrite's yield, a listing bound to no
 family) keeps its own measure as `n/1`. The readers are
 `DeflationRead::mu`, `Local::mu`, `transduce::share_of_enclosure` and
 `Transduction::lane_shares`. A word's magnitude, a family's metabolism, a
@@ -148,8 +154,9 @@ its share (`DeflationRead::modes`, `Modes::of_motion`, `Modes::of_gauge`).
 network's base lanes. μ, the coordinate and the Concordance are
 open-dimensional: a further lane opens only by a ruled act agreed between
 kernels, with its motion type and its modes stated, never by one kernel or
-one court alone. The mechanism is to be drafted with the coordinate's v3
-(78.173 §1); until a lane is opened, μ has the four.
+one court alone. The mechanism is built (`forms::coordinate::Openings`, refused
+`LaneNotOpened`; `FORMS-COORDINATE` v4); no lane is opened yet, and P
+(parity) is proposed in 78.178. Until a lane is opened, μ has the four.
 
 **Lanes never convert.** μ is a vector on its lanes, never summed and
 never converted across lanes. A payment moves value on exactly the lanes
@@ -233,7 +240,7 @@ origin / h : S:G:T:H : K
   2026-11-05): for a holding it is LAW-COORDINATE's reading, the whole
   turns of H, and a line's receipt index is `i` (§12 item 3).
 
-`FORMS-COORDINATE` v3 holds each lane as a vector of exact signed
+`FORMS-COORDINATE` v4 holds each lane as a vector of exact signed
 components keyed by axis, H's by generator in degrees with `K` per
 component (78.173 §1). How a holding's modes read as those components is
 still to be stated (§12 item 1).
@@ -278,7 +285,7 @@ coordinator on 2026-11-06, under the operator's delegation (#169;
   balance's modes unchanged into the bond (§2.3, §4).
 - **A genesis allocation is held at the founding mode.** The founding
   mode is the identity motion of its lane. It is stated explicitly as the
-  mode, never left empty, and its amount is its share of the frame (§1).
+  mode, never left empty, and its amount is its share of the enclosure (§1).
   Its issuance cites the founding receipt (§2.4).
 - **A Note's mode-0 receipt is a founding-mode receipt** (#168). It is
   admitted under the rule that admits a genesis allocation and is not held
@@ -316,7 +323,7 @@ New μ enters only when a closure is verified, or, since 2026-11-13, when a
 manifest founds nuclei: μ created against their elemental rows (78.184;
 MU-EQUATIONS §6.13). The closing orbit advanced
 the lanes by its modes, and that advance is minted to the closer's
-holding, per closed pair as a share of the pair's frame (§1): a solve that
+holding, per closed pair as a share of the pair's enclosure (§1): a solve that
 repaints one site of a `30 × 30` output is paid `1/900` on G, not one
 unit. There is no block reward, no schedule, no difficulty and no issuance
 to operators as such. There is also no block: the lines are causal and
@@ -925,7 +932,7 @@ mint found when partitions rejoin is burned (§3.4). Tests:
 per lane and its obstruction kind if a refusal stands on it, paged to the
 body budget; served by the SDK as `Session::frontier()`. No μ and no
 admission effect. Tests: `frontier_lists_open_tasks_by_lane`,
-`frontier_omits_closed_tasks`, `frontier_pages_to_frame_budget`.
+`frontier_omits_closed_tasks`, `frontier_pages_to_body_budget`.
 
 **F4. The race reading** (Medium; instrument; track 14). Per closure: the
 task citation, the first-closing voice, the stamp of the earliest offer or
@@ -943,7 +950,7 @@ for its lessee for one window.
 
 1. **Lanes as vectors in the coordinate.** *Closed (operator,
    2026-11-05; proposal 78.174 §1 item 2: a holding is a point whose
-   lanes are `Modes`).* `FORMS-COORDINATE` v3 holds each lane as a vector
+   lanes are `Modes`).* `FORMS-COORDINATE` v4 holds each lane as a vector
    of exact components keyed by axis, with the advance, merger and fission
    per component (78.173 §1, §3); a holding's modes are its coordinate's
    components, never `Mu` scalars.

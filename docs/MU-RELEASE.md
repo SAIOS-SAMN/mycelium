@@ -8,7 +8,9 @@
 
 **Status:** specification, version 1 (2026-10-31). Part I (the change
 process) is **Built** on the repository; Part II (releases) and Part III
-(forks by convergence) are **Specified**, ROADMAP track 23.
+(forks by convergence) are **Specified**, ROADMAP track 23, except signed
+release tags and the changelog assembled from fragments, which are
+**Built** (prototype key).
 
 Mycelium follows the practice of long-running open-source networks such as
 Bitcoin and Ethereum: protected main, numbered proposals, release
@@ -34,8 +36,9 @@ and convergence or collision brings the branches back into alignment
   to `main`. The operator is the final approver of anything that touches
   the network contract (the Concordance, the wire, the ledger layout, a law
   version).
-- A maintainer may merge its own pull request after the local checks pass
-  (CONTRIBUTING › Getting started). There is no hosted CI. The pull request is the
+- A maintainer may merge its own pull request after the two checks pass
+  locally and the required CI status `clippy and tests` is green on the
+  pull request (CONTRIBUTING › Getting started). The pull request is the
   public record of the change and the place contributors comment;
   conversations are resolved before merge.
 - History on `main` is never rewritten.
@@ -84,7 +87,7 @@ it). Each standard takes the same ten steps:
 | 4. Propose a clause | A Concordance clause naming the law and its version, identified by its content (the law form and its fixtures), never by a hash of its text | MU-CONCORDANCE (§0 AMENDING) |
 | 5. Sign | Each kernel signs the clause by reconstructing its fixtures, enabled or vetoed. The hypha admits the signature only on the same objects, and a kernel that cannot read the clause is refused `NotSignatory`. A network clause cannot be vetoed. | `ACT_LAWS` mode 8 (ROADMAP track 24 B2; Concordance §0) |
 | 6. Implement in the kernel's shell | The kernel implements the form in its own physics and may refine it. At the core tube its objects project onto the hypha's form. | The kernel's own repository |
-| 7. Prove conformance | The KERNEL conformance profile gains rows for the law. The hypha serves the fixtures, and a kernel passes by decoded exact values, never byte parity (Concordance 1.4). | `mycelium_sdk::conformance`, MU-CONFORMANCE |
+| 7. Prove conformance | The kernel conformance profile (`Profile::Kernel`) gains rows for the law. The hypha serves the fixtures, and a kernel passes by decoded exact values, never byte parity (Concordance 1.4). | `mycelium_sdk::conformance`, MU-CONFORMANCE |
 | 8. Enforce at the vertex | A crossing that depends on the law is reconstructed under it, or refused by name | MU-HOSTING §5a.10 |
 | 9. Recurse | A sub-universe repeats steps 2–8 one shell down: its laws narrow its parent's, and its acts reach the hypha only through the parent's core | 78.155 R-3; ROADMAP track 24 B5 |
 | 10. Release | The law activates at a TUniversal point in a signed release, and the peers re-pin by tag. A kernel that has not signed has its dependent crossings held and named until it signs. | Part II |
@@ -93,7 +96,7 @@ it). Each standard takes the same ten steps:
 the same object from a joint fixture **converse**. Two that reach
 different objects **collide**: the divergence is held as a residue,
 naming both kernels and the clause, and resolved by content (MU-SCIENCE
-§5.0). Each kernel's signatory reading shows the clauses and versions it
+§5.0). Each kernel's alignment reading shows the clauses and versions it
 stands under. Each kernel also adds the signed laws to its own working
 rules (its `AGENTS.md` and standards), so its contributors do not drift
 from them.
@@ -212,26 +215,36 @@ The two sides stay comparable through what they share:
   overwritten, and no point of one branch is ordered against a point of the
   other except through the fork point and a later superposition.
 
-## 10. Open questions (needs-decision)
+## 10. Rulings of 2026-11-11
 
 1. **The quorum of a superposition.** TU-6 says "a quorum-final point past
    both". Which keepers form the quorum when the two branches' keeper sets
    differ: the union, each branch's majority, or the keepers of the shared
    origin? Deciding reading: the keeper sets of the two branches at the
-   superposition. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 14).
+   superposition. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 14):
+   coverage across the union of the superposed states' active bond lanes
+   (`max_b X_{l,b} ≤ B_l`). It collapses to one branch only when a
+   branch's weight share passes the throat's balance, above 1/2.
 2. **Which side keeps the shared origin.** The draft gives the shared origin
    to the side that activates and a branch origin to the side that does
    not. The other reading names both sides as branches of the fork point,
    so neither inherits the origin. Deciding ruling: whether "the network's
-   clock" is defined by a release or by the shared history. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 15).
+   clock" is defined by a release or by the shared history. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 15):
+   the branch holding the greater conserved hold at the fork's bell keeps
+   the origin. The lighter branch re-roots as a child at that bell.
 3. **Laws that cannot converge.** A release that changes how an address is
    computed (a key rule) makes the two branches' addresses disagree for the
    same content, so convergence cannot be read across it. Candidates: such
    a release is refused as a fork-forming release, or it carries a
-   translation table sealed at activation. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 16).
+   translation table sealed at activation. **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 16):
+   such a release is a genesis boundary, a major epoch. It needs a sealed
+   bridge snapshot (the `PassageState` exported), never an in-place merge.
 4. **μ across branches.** Whether μ minted on a branch after the fork point
    is honoured on realignment as the branch's own supply (folded by the
-   tier fold) or crosses only by the federation crossing (track 16). **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 17).
+   tier fold) or crosses only by the federation crossing (track 16). **Ruled** (operator, 2026-11-11; [78.182](proposals/78.182-rulings-2026-11-11.md) item 17):
+   μ minted after a fork is branch-local. It carries back only where its
+   full proof is reconstructed and admitted again against the target
+   branch's state.
 
 ---
 
@@ -241,9 +254,10 @@ The two sides stay comparable through what they share:
 |---|---|---|
 | Protected `main`, PR-only, maintainers merge, force push and deletion refused | the repository | **Built** (2026-10-31) |
 | `MAINTAINERS.md`, PR template, release checklist in CONTRIBUTING | the repository | **Built** with this document |
-| Signed release tags, GitHub Releases from the CHANGELOG | the release process | Specified |
+| Signed release tags (prototype key); the changelog assembled from `changes/` fragments | the release process, `gate/` | **Built** |
+| GitHub Releases from the CHANGELOG | the release process | Specified |
 | Test mesh: a genesis of its own for release candidates | `scripts/quickstart`, genesis | Specified |
-| `activates_at` per release: the law, wire and ledger version applied by final point | `src/physics/laws/mod.rs` (`LAW_VERSION`), the door, `chronometry::tuniversal` | Specified |
+| `activates_at` per release: the law, wire and ledger version applied by final point | `src/physics/laws/mod.rs` (`LAW_VERSION`), the hypha's listener, `chronometry::tuniversal` | Specified |
 | Versions advertised in the cover | `src/anastome/dialogue` cover codec | Specified |
 | BRANCH as an act: a branch origin citing the fork point (78.155 R-1) | `chronometry::tuniversal::navigate`, the court | Specified |
 | A sub-court bound to a branch origin, folding up by the tier fold (78.155 R-3) | `server/cognition` | Specified |

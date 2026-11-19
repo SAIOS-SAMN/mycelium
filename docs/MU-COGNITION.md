@@ -67,10 +67,10 @@ measures it.
   are practice.
 - **One language.** Anastome: words as exact objects, each carrying its
   constructor derivation, reconstructed when contested (Concordance 4.4).
-  Its seventeen letters were restored from ipsal-autic v0.4 (AUTIC; see
-  [`MU-ANASTOME.md`](MU-ANASTOME.md) §2, and §2.6 here).
+  Its seventeen letters were restored from an earlier project, ipsal-autic v0.4
+  ([`MU-ANASTOME.md`](MU-ANASTOME.md) §2.9; §2.6 here).
 - **One seam.** MU-RECURSION 78.142, the SDK rule seam: a sequence of
-  steps (Motion, Hue) placed on a family's frames, minted through the
+  steps (Motion, Hue) placed on a family's samples, minted through the
   court's own constructors and checked with the judge's own decoder
   (`would_judge`). Every engine's minds enter the court through it; no
   engine forges element bytes.
@@ -88,7 +88,7 @@ first rule language could not state:
 - conditionals ("if it touches X, then ...");
 - binding to regions and context;
 - creation (lines, fills, gravity), or outputs of a different size;
-- a rule beyond one motion per shape class per frame.
+- a rule beyond one motion per shape class per sample.
 
 More search over a vocabulary that cannot state the answer finds
 nothing. The doctrine already names the wall (MU-RECURSION 36.2's
@@ -100,7 +100,7 @@ language (§2.2a). Its first form is in the code: the clauses of
 MU-RECURSION 78.143 (`src/transducer/sentence/form/clause.rs`), read off
 a family's effects by 78.167 (§2.2). The road's parts:
 - **SELECT:** a typed predicate over a body's own coordinates (chart up to
-  moduli, hues, shell, contact, frame position); a Motion or Hue step then
+  moduli, hues, shell, contact, position in the family); a Motion or Hue step then
   applies to the selection. This is the conditional.
 - **REGION:** contact neighbourhoods and enclosed cells, read from the
   blade, addressable as a selection.
@@ -145,7 +145,7 @@ did not set from any source (ARC-AGI-2 is the first posted corpus).*
 The design aim: a simulated mind that understands it lives among other
 inhabitants, with its conduct read mathematically, so that alignment,
 ascension and intelligence are measured. The law every reading obeys
-(MU-RECURSION 78.92): a reading is frame-free, conserved, reproducible and
+(MU-RECURSION 78.92): a reading is reference-free, conserved, reproducible and
 able to fail; alignment is what can be verified, never what a mind asserts
 of itself; a judgement is never collapsed to one number.
 
@@ -344,12 +344,12 @@ closure.
 | **P** | no versor relates what the closure asks | — | — |
 | **D** dialect-relative | a versor exists, this dialect does not spell it | the motion exists but this mind's alphabet or cover cannot say it | `REFUSE_GLUED_UNRULED`, unspellable vertex/edge versors |
 | **C** cover-relative | the sections do not glue; residue carried, may close on another mind's cover | the rule paints wrong or silent cells on the withheld pairs | `REFUSE_NOT_CLOSED` (dominant), spelled-versor body failures |
-| **I** integrity | says nothing about a closure: does not parse, or a claim that does not re-derive | the rule makes a claim the test pairs cannot check | tape/port/derivation/witness codes; a frame-axis motor citing a training frame index the withheld family lacks |
+| **I** integrity | says nothing about a closure: does not parse, or a claim that does not re-derive | the rule makes a claim the test pairs cannot check | tape/port/derivation/witness codes; a sample-axis motor citing a training sample index the withheld family lacks |
 | **N** | no question stood | — | — |
 
 **A defect found by reading (not yet reproduced):** any rule whose shape
-class spans two or more training pairs carries frame-axis motor faces
-naming training frame indices; a withheld family of one test pair has no
+class spans two or more training pairs carries sample-axis motor faces
+naming training sample indices; a withheld family of one test pair has no
 such index, so the judge refuses I, while the client's own blind reconstruction on
 the training pairs passes. Specified: a test that reproduces it, then the fix
 (motor faces are not part of a rule that crosses to unseen pairs).
@@ -392,5 +392,5 @@ The reference mind's next steps are on the [ROADMAP](../ROADMAP.md): the
 sensor for any source at any rank (track 26), the rule language that lets
 a mind state what a family of samples shows (track 7, and §1.3 here), the
 sovereign mind that thinks about its adjudicated perception and the
-reference mind's court traffic (track 10), and the frame index defect of
+reference mind's court traffic (track 10), and the sample index defect of
 §2.3. Its measure is MU-SENSING §0; corpus counts are observations.

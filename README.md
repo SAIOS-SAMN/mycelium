@@ -3,17 +3,17 @@
 **Version 0.4.0-rc.1** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Start here: work now](ROADMAP.md#now) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 > [!TIP]
-> **In short:** Mycelium is a mesh of peer courts (*hyphae*) that host universes and the AI agents (*minds*) working in them. A court reconstructs what a mind expresses in **exact algebra over ℚ** (`Cl(p, q)`, its signature carried as data), with no floats and no hash puzzles, and pays the verified work in μ: the exact modes the work moved, on four lanes.
+> **In short:** Mycelium is a proof-of-useful-work network. AI agents (*minds*) send work to server nodes (*hyphae*, acting as *courts*), which verify it by exact recomputation (*reconstruction*) in **exact algebra over ℚ** (`Cl(p, q)`, its signature carried as data), with no floats and no hash puzzles, and pay for what verifies in μ, on four lanes (S, G, T, H). The hyphae also host universes, simulations run by kernels, in which minds work.
 
 ```mermaid
 flowchart LR
-    Source["A source's samples (ARC-AGI-2 first)"] --> Mind["A mind (mycelium-client, or yours on the SDK)"]
+    Source["A source's samples (ARC-AGI-2 first)"] --> Mind["A mind (mycelium-client, or one built on the SDK)"]
     Mind -- "expressions, exact over Q, inside Noise" --> Court["A court (mycelium-server)"]
     Court -- "reconstruction under the laws" --> Ledger["receipts on the ledger, μ as modes"]
 ```
 
 ```bash
-# Three hyphas, a reference client, the conformance read and a seated mind,
+# Three hyphae, a reference client, the conformance read and a seated mind,
 # from nothing (see Quick start for the corpus it reads):
 git clone https://github.com/SAIOS-SAMN/mycelium.git && cd mycelium
 scripts/quickstart /tmp/mycelium-quickstart 7700
@@ -30,7 +30,7 @@ markets, many-agent universes and world models
 ([What Mycelium hosts](#what-mycelium-hosts);
 [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md)).
 
-It is built as a distributed mesh network for **POW++**, a family of
+It is built as a distributed mesh network for [**POW++**](GLOSSARY.md#value), a family of
 proofs of work in which the work proven is verified computation. The
 network's nodes are **hyphae** (courts), which adjudicate, settle and keep
 the ledger, and **minds** (clients: the AI agents), which perceive tasks,
@@ -46,8 +46,10 @@ The direction is a network that verifies knowledge
 ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)):
 - **Joining.** Any kernel joins the mesh and runs its universe on the
   physics it declares, above a universal floor every kernel shares: the
-  law register L0, the Concordance, the alphabet, Anastome and exact
-  arithmetic.
+  law register [L0](GLOSSARY.md#physics), the
+  [Concordance](GLOSSARY.md#the-network), the
+  [alphabet](GLOSSARY.md#language-and-algebra),
+  [Anastome](GLOSSARY.md#the-network) and exact arithmetic.
 - **Verifying.** Its results are translated into the network's exact
   language and verified by reconstruction: two courts each derive the
   claimed object from its own evidence by the laws (a rule's output, a
@@ -210,12 +212,12 @@ directory, the ports and the number of tasks.
 `scripts/network DIR BASE_PORT MINDS` brings up the whole network on one
 machine:
 - three hyphae from a genesis allocation;
-- `MINDS` sovereign minds (`mycelium-client`), each inside Noise and
+- `MINDS` reference minds (`mycelium-client`), each inside Noise and
   chattering at one rendezvous;
 - a kernel's house with a mind seated in its domain;
 - the SDK client as the paid worker, on each hypha in turn.
 
-Every node runs in a capped systemd user scope. At each frame the script
+Every node runs in a capped systemd user scope. At each refresh the script
 writes the observer's reading, the POW++ reading
 (`mycelium-server --console --proofs`), each mind's `now` and each node's
 memory and CPU. Its header lists every option.
@@ -249,7 +251,7 @@ memory and CPU. Its header lists every option.
 |---|---|---|
 | **Hypha** (court) | `mycelium-server` | Admits signed acts, reconstructs submitted work, rules on it, settles payments, keeps its line of signed receipts in the network's multi-dimensional ledger, checkpoints that line by co-signed folds, and exchanges digests and co-signatures with peer hyphae. |
 | **Mind** (client) | `mycelium-client` | Perceives tasks, learns the network's language (its *genome*), extracts rules, converses with other minds, and submits solves, words and sentences to a court. A mind can hold a *seat* in a house run by another kernel. |
-| **Soak harness** | `mycelium-soak` | Long-running load and durability runs against a mesh. |
+| **Soak instrument** | `mycelium-soak` | One voice walks a corpus of posted tasks in process and writes trace lines; it changes no behaviour and is not the mesh. |
 | **Exact algebra** | `algebra/` (crate) | The multivectors of `Cl(p, q)` over ℚ, each carrying its signature: the product, the signature's refusals, a value's wire writing and key. Below both the law forms and the library, depending only on exact rationals; the library re-exports it at `transducer::cga`. |
 | **Law forms** | `forms/` (crate) | The exact law forms shared with the other kernels that join the mesh, depending only on exact rationals and the exact algebra. |
 
@@ -284,7 +286,7 @@ sequenceDiagram
     participant H as Hypha (court)
     participant W as Peer hypha (witness)
     V->>H: ACT_TASK (voice)
-    H-->>V: task envelope (train pairs, test inputs)
+    H-->>V: task family (train pairs, test inputs)
     Note over V: extract rule · mint element · speak on tests
     V->>H: ACT_SOLVE (outputs, rule tape, signature)
     Note over H: evaluate the rule on withheld pairs (reconstruction)
@@ -322,7 +324,7 @@ refusal reply carries its named reason.
 - **Conjugate classes:** a word with its frame set aside, held as its
   class vector with the conjugating element kept.
 - **Sentences:** forms built from words: vertices, faces and rings, glued
-  along shared overlaps, read at their loops' holonomy.
+  along shared overlaps, read at their rings' holonomy.
 
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
@@ -331,14 +333,14 @@ geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
   contact, with a gauge (symbol) map;
 - 2-chains bounded by a selection;
 - 1-chains joining bodies;
-- frame operations.
+- enclosure acts (panes and tiles).
 
 Elements with an English name are glossed as clauses, such as *slide*,
 *fill* or *echo*. The element is what travels on the wire; the clause is
 its translation.
 
-**Clock.** Network time is **TUniversal**, a point `{origin, h, S:G:T:H, K}`
-that is final once a majority of keepers hold it. Consensus uses no wall
+**Clock.** Network time is **TUniversal**, a point `origin/h:S:G:T:H:K`
+that is final when two keepers' verified readings hold it. Consensus uses no wall
 clock (`src/chronometry/`). Every universe keeps its own time and a time
 book on the hypha: chronometric anchors pairing its own time with a final
 point, from which the server reads its position, dilation and crossings,
@@ -552,7 +554,7 @@ exists because work on that lane was verified, which is what keeps the
 audit meaningful lane by lane.
 
 Every amount of μ is exact: four non-negative rationals, one per lane
-(`economy::Mu`). μ is measured as a share of a frame, and a share is a
+(`economy::Mu`). μ is measured as a share of the enclosure, and a share is a
 rational, so a balance, a bond, an escrow, a treasury entry and every wire
 field holding μ carries rationals; a whole count `n` is `n/1`. Nothing is
 floored to fit a carrier: an addition always lands, and a draw past a
@@ -648,8 +650,9 @@ same closure is settled separately.
 
 ```rust
 use mycelium::anastome::dialogue::lease::{encode_lease, decode_lease_reply, LeaseAct};
+use mycelium::economy::Mu;
 
-let act = LeaseAct { payer: key.verifying_bytes(), provider, mu: [30, 20, 0, 10], window: 10_000,
+let act = LeaseAct { payer: key.verifying_bytes(), provider, mu: Mu::counts([30, 20, 0, 10]), window: 10_000,
                      jobs: vec![task_citation], nonce };
 let reply = session.speak(encode_lease(&act.sign(&key.sk).ok_or("sign")?).ok_or("encode")?)?;
 let (lease, held) = decode_lease_reply(&reply).ok_or("reply")??;   // or a named refusal
@@ -774,9 +777,9 @@ src/
   observe/      typed readings
   physics/      metabolism: budgets, reserves, lane pressure
   server/       the hypha's cognition: books, listings, install, market
-  snapshot.rs   the sealed door: a keyed carrier's entries, in key order, for the wire
   transducer/   the algebra: Cl(p, q)(ℚ) (conformal case Cl(n+1, 1)), alphabet, elements, sentences,
                 perception of samples (family/), rule elements
+  trie_tape.rs  the sealed walk: a keyed carrier's entries, in key order, for the wire
   voice/        voice identity and signing
 algebra/        the exact algebra Cl(p, q)(ℚ) (workspace member crate)
 forms/          shared exact law forms (workspace member crate)
@@ -955,7 +958,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
 - **systemd.** `ops/mycelium-{server,client}@.service` are example
   user-unit templates; set the checkout path and the home path in them.
 - **Observing.** `scripts/observer HOME...` refreshes the minds' and the
-  courts' typed readings for the named hypha homes (`once` for one frame);
+  courts' typed readings for the named hypha homes (`once` for one reading);
   `scripts/timeline UNIT` renders what each reader of a voice's stroke
   cost, from its journal under `MYC_TRACE=1`.
 
@@ -971,8 +974,8 @@ as `peers`, copy the corpus manifests (step 4), and start without
 | Corpus signing (`--sign-corpus`) and registration | end to end |
 | Task dispatch, solve adjudication by reconstruction, payment | end to end, with the SDK client |
 | `--check` preflight and typed console readings | in use |
-| Hyphae connecting after genesis: digest exchange and receipt admission | in code; post-genesis bonding is an active design area |
-| Transport: Ed25519-signed acts over TCP, inside `Noise_XX_25519_ChaChaPoly_BLAKE2s` where both ends speak it (each host's static key in its home's `noise.key`, peers pinned on first use in `noise.pins`, a changed key refused by name); a peer that does not speak Noise stays plaintext and is named in the log and the `channels` reading; an SDK session opts in with `Session::with_noise` | Noise between hyphae and the SDK client on one host (the quickstart); opt-in per peer until a later release makes it required; multi-host deployment is an active area |
+| A hypha attached to a running mesh by adjunction and detached by retraction (78.185, #276) | on main and read live; an attached node earning, staking and witnessing is open (#349) |
+| Transport: Ed25519-signed acts over TCP, inside `Noise_XX_25519_ChaChaPoly_BLAKE2s` where both ends speak it (each host's static key in its home's `noise.key`, peers pinned on first use in `noise.pins`, a changed key refused by name); plaintext is spoken only with a peer on the same host, named in the log and the `channels` reading, and across hosts a plaintext channel is refused `PlainAcrossBoundary`; an SDK session opts in with `Session::with_noise` | Noise between hyphae and the SDK client on one host (the quickstart); plaintext refused across hosts; multi-host deployment is an active area |
 
 ---
 
@@ -1011,7 +1014,7 @@ while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 | `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, the economic events of the multi-dimensional ledger over a span (`encode_entries_request`, `decode_entries_reply`), reserve, probe |
 | `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 5, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |
 | `signing` | A kernel's signing helper: the Concordance's clause register read (`ACT_LAWS` mode 7), each fixture reconstructed through `forms` (`reconstruct_fixture`), and the readings signed clause by clause (`sign_concordance`, mode 8) |
-| `house` | A kernel's uplink (its house): domain founding (`DomainGenesis`, `Founded`), the reserve and origin, the universe (`Genesis`, `Geometry`, `UniverseReading`), the endowment (`Manifest`, `Granted`, `EndowmentReading`), the house side of seats (`Post`, `Seats`, `HouseMail`, the listing and mail codecs), laws verify (`Transition`, `TransitionVerdict`, `verify_sized`, `encode_verify_request`, `decode_verify_reply`), the clock (`CoreStamp`), the Concordance's clause register and signing act (`ConcordanceClause`, `Fixture`, `Signing`, `sign_concordance`, `SigningRefusal`), framing (`Delimited`, `Lane`); the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink`, `challenge` whole |
+| `house` | A kernel's uplink (its house): domain founding (`DomainGenesis`, `Founded`), the reserve and origin, the universe (`Genesis`, `Geometry`, `UniverseReading`), the endowment (`Manifest`, `Granted`, `EndowmentReading`), the house side of seats (`Post`, `Seats`, `HouseMail`, the listing and mail codecs), laws verify (`Transition`, `TransitionVerdict`, `verify_sized`, `encode_verify_request`, `decode_verify_reply`), the clock (`CoreStamp`), the Concordance's clause register and signing act (`ConcordanceClause`, `Fixture`, `Signing`, `sign_concordance`, `SigningRefusal`), delimiting (`Delimited`, `delimited_len`, `HEAD`, `BODY_BUDGET`, `DELIMITED_MAX`); the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink`, `challenge` whole |
 | `conformance` | The client conformance statement (`STATEMENT`: two profiles, `Profile::Mind` and `Profile::Kernel`, each with MUST and MAY acts, each reply's decoder and fields), `check_codecs` in process and `run` against a hypha, each for the profiles a client declares ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) |
 | `forms` | The law forms (the `forms` crate) |
 | `prelude` | The items a client uses first |
@@ -1082,7 +1085,7 @@ pairs:
   symbol moves).
 - **Rule elements:** the library's
   `transducer::sentence::form::rule_element` states a rule directly as
-  carriages, chains, joins and frames on a `Form` (not yet in the SDK's
+  carriages, chains, joins and enclosure acts on a `Form` (not yet in the SDK's
   surface).
 
 ### SDK surfaces
@@ -1093,7 +1096,7 @@ pairs:
 | Rule extraction, minting, speaking | `rule::{extract_rule, mint_sentence_why, speak_rule}` | end to end |
 | Rules from typed steps | `rule::sentence` | test suite |
 | Seats in another kernel's house | `seat` | in use by peer kernels; specified in `docs/MU-CLIENT.md` §6 |
-| Mind-to-mind conversation | the library's `sdk::chatter` (frame codec in `anastome::dialogue::chatter`) | in use by the reference mind |
+| Mind-to-mind conversation | the library's `sdk::chatter` (envelope codec in `anastome::dialogue::chatter`) | in use by the reference mind |
 | Compute leases: open and close | `wallet` (`ACT_WALLET` sub-kinds 3 and 4) | test suite |
 | The law register and its version | `laws` | end to end (`sdk/examples/client.rs`) |
 | A kernel's house: domain, universe, endowment, seats, verify, Concordance signature | `house` | end to end (`sdk/examples/house.rs`, the kernel profile) |
@@ -1134,7 +1137,7 @@ target/release/examples/conformance --endpoint 127.0.0.1:7610
 #   passed  MUST laws register: law version 5: 6 laws, each at its coordinate with its statement
 #   passed  MUST task: 4 train pairs, 1 test inputs
 #   passed  MUST solve: solved (bounty), paid μ [88, 0, 0, 92]; modes S … · H …
-#   conforms (profile mind): wire 0x0200, law version 5
+#   conforms (profile mind): wire 0x0300, law version 5
 target/release/examples/conformance --endpoint 127.0.0.1:7610 --profile kernel
 ```
 
@@ -1192,7 +1195,8 @@ act and reply carrying μ moves to the exact rational lane codec, which
 moves existing layouts: `WIRE_VERSION` is `0x0200` (wire v2.0), the
 snapshot's layout is `MYT3` and the line's `MYL3`, and a home written by
 an earlier release is refused by name — the recut is the road
-(MU-ENGINEERING §4).
+(MU-ENGINEERING §4). The tree now writes `WIRE_VERSION` `0x0300` (wire
+v3.0), the snapshot's layout `MYT4` and the line's `MYL3`.
 
 ---
 
@@ -1244,7 +1248,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | [`docs/MU-SENSING.md`](docs/MU-SENSING.md) | How a client senses and perceives: a source's sample of any rank, lifted into the field as phases within charts, everything (ground, symbols, gauges, axes) deduced, perspective as a sensor motion, and a mind that knows it holds a section of a larger world. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
-| [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps; past the sensor frames are transduced, never put on a common grid; a digest never admits; and the drift guards that keep each of these. |
+| [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps; past the sensor, samples are transduced, never put on a common grid; a digest never admits; and the drift guards that keep each of these. |
 | [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) | Components carried forward from precursor implementations: for each, the gap, the design under Mycelium's laws, acceptance claims, track and status; SDK packaging; what is not carried forward. |
 | [`docs/MU-DERIVATIONS.md`](docs/MU-DERIVATIONS.md) | Every number in the physics, derived or named until derived: the classes of constant, a derivation entry per underived number, the defects found while deriving, the open questions and the order of work. |
 

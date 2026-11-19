@@ -21,13 +21,13 @@
 //! |---|---|
 //! | [`voice`] | The identity: the voice key, loaded or minted; the mesh record of a voice home |
 //! | [`session`] | A session with a hypha; the transport aperture; the TUniversal point; the deferral a full hypha answers every act with and its reader; the reference mind, opened on a session |
-//! | [`task`] | Task request and envelope; solve with rule; the verdict and its `SOLVE_*` codes |
+//! | [`task`] | The task request (`TaskFamily`); solve with rule; the verdict and its `SOLVE_*` codes |
 //! | [`rule`] | The rule seam: typed steps and clauses, extraction, minting and speaking a rule |
 //! | [`seat`] | Seats in a house: list, take, call, read mail |
 //! | [`wallet`] | Wallet reading; stake and unstake; lease open, reply and close |
 //! | [`readings`] | The typed readings a client may ask a hypha for |
 //! | [`laws`] | The L0 law register at its `LAW_VERSION`, its read, and the `forms` law ids |
-//! | [`house`] | A kernel's uplink (its house): domain founding, the universe, the endowment's manifest and grant, the house side of seats, laws verify, the clock, the Concordance's clause register and signing act, framing |
+//! | [`house`] | A kernel's uplink (its house): domain founding, the universe, the endowment's manifest and grant, the house side of seats, laws verify, the clock, the Concordance's clause register and signing act, delimitation |
 //! | [`signing`] | A kernel's signing helper: the Concordance's clauses read, each fixture reconstructed through `forms`, and the readings signed clause by clause |
 //! | [`conformance`] | The client conformance statement (two profiles, mind and kernel, each with MUST and MAY acts), its in-process check and its suite on a network |
 //! | [`forms`] | The law forms of the Concordance's nested shells |

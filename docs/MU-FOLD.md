@@ -11,12 +11,16 @@ code is `src/economy/fold.rs` (the net and its conservation),
 `src/chronometry/era.rs` (an era and its cold segment) and
 `src/server/cognition/court/era.rs` (the eras a court holds).
 
+A fold is a checkpoint of a prefix of one signer's receipt chain: the net
+per identity per lane, co-signed by a witness hypha, after which the prefix
+moves to cold storage and the chain stays unbroken (GLOSSARY *Era / fold*).
+
 ## The problem it answers
 
 `Treasury.entries` and every court's receipt chain are append-only. The
 hot ledger grows with everything the mesh ever did, where the value the
 mesh holds is the net per identity, the ruled cover and the proofs the
-compensation rests on. A late joiner would have to admit the whole
+compensation rests on. A hypha attaching late would have to admit the whole
 history; a court asked about an old era would have to hold it all.
 
 ## When a chain folds
@@ -26,7 +30,7 @@ open holds it back: a listing or a provisional word below the cut stays
 citable by the stamp of the act that admitted it, through its era, and an
 escrow is a claim carried off the ledger, so none of them pins the fold.
 Each closes after the fold at the act that closes it. The fold's floor is
-the line's own last close, within one `ACT_RECEIPTS` frame. A fold is
+the line's own last close, within one `ACT_RECEIPTS` reply. A fold is
 never triggered at a height interval, on memory alone, or on a wall clock
 (rule 5, law 9). An era is therefore per chain, as K is; the mesh's shared
 coordinate stays the height (45.7).
@@ -60,11 +64,11 @@ paid) and the presentation (the ruled cover). Work receipts — attests,
 quotes, offers, pages — go cold. A fold changes no price, extent or
 ruling.
 
-## Extraction and joining
+## Extraction and attachment
 
 Any holder serves an archived prefix by K range; a court proves a citation
 into era N by fetching the era's receipts by K range and re-deriving each
-receipt's hash and predecessor up to the fold root (an era proof). A joiner adopts a fold root the way it adopts a
+receipt's hash and predecessor up to the fold root (an era proof). An attaching hypha adopts a fold root the way it adopts a
 genesis: on the two signatures and its own §6 re-derivation over the
 `epoch` rows it received, seeding its chain from the fold's head and
 height; the archive is fetched and its chain re-derived on demand, never as

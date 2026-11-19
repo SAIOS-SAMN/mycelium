@@ -132,7 +132,7 @@ acts, verified on admission.
 (`src/client/sdk/session.rs`, `src/anastome/dialogue/chatter.rs`) read envelopes
 from a `TcpStream` directly. `src/network/` holds `mesh.rs`, `nerve/` and
 `wire.rs`, and no encrypted channel. ROADMAP track 5 lists "an encrypted
-transport" as work to do. README › *Node capabilities in 0.2.0* records
+transport" as work to do. README (at 0.2.0) recorded
 the transport as Ed25519-signed acts over TCP.
 
 **Design.**
@@ -150,7 +150,7 @@ the transport as Ed25519-signed acts over TCP.
   authenticates a channel, never a voice or a hypha. Admission still
   verifies every act's Ed25519 signature; a valid tunnel carrying an
   unsigned or mis-signed act is refused as it is today.
-- **Framing inside the tunnel.** Noise messages are bounded at 65535 bytes
+- **Chunking inside the tunnel.** Noise messages are bounded at 65535 bytes
   including the 16-byte tag; an envelope is carried in chunks of at most
   65519 bytes of plaintext, and the body budget (`BODY_BUDGET`) is
   checked on the reassembled length before any body is allocated.
@@ -240,7 +240,7 @@ own.
 
 ### 3.2 ~~Mutation audit~~
 
-**Status** Retired (2026-11-04, ruled theatre). The catalogue and the
+**Status** Retired (2026-11-04: ruled to prove nothing a claim does not). The catalogue and the
 `gate mutate` subcommand were removed from `xtask` (itself removed when
 the gate became workspace tests); a law is guarded by its claims and,
 where a regression recurs, by a type in the drift register
@@ -448,13 +448,13 @@ invariants after every campaign. A campaign is reproducible from a printed
 seed: the mesh size, the topology, the fault list and the seed are its
 whole description.
 
-**The gap.** `tests/` holds two integration suites (`word_lifecycle.rs`,
-`conformal_algebra.rs`). The court's equivocation proof is tested in
+**The gap.** `tests/` holds four integration suites (`word_lifecycle.rs`,
+`conformal_algebra.rs`, `calibration.rs`, `durable.rs`). The court's equivocation proof is tested in
 `court/admission/tests/equivocation.rs`, and the treasury audit
-(`Treasury::audit`) is checked from the rows. No harness composes faults
+(`Treasury::audit`) is checked from the treasury's entries. No harness composes faults
 across several courts and audits the invariants mesh-wide.
-`mycelium-soak` (`src/bin/mycelium-soak/`) is a load and durability run,
-not a fault campaign.
+`mycelium-soak` (`src/bin/mycelium-soak/`) is instrumentation (one voice
+walking a corpus, GLOSSARY *Soak instrument*), not a fault campaign.
 
 **Design.**
 - **Ten fault classes,** each a first-class type with its own injector:
@@ -493,7 +493,7 @@ not a fault campaign.
   scheduled on disjoint nodes, so no fault breaks another's precondition.
 - **Typed readings, never log text.** The auditor reads ledger events and
   receipts as decoded values through the treasury and the signers' lines.
-- **Soak to dry.** The campaign runner enumerates every (topology, fault
+- **Exhaustive enumeration.** The campaign runner enumerates every (topology, fault
   subset) up to a size and reports a violation with its seed; each
   violation becomes a regression claim.
 
@@ -502,7 +502,7 @@ defined these fault classes, ran them on a twelve-node mesh with fixed
 test keys, and audited its treasury by parsing ledger lines as text and
 comparing lines byte for byte. Mycelium rewrites the harness against its
 current admission (`src/court/admission/`) and treasury
-(`src/economy/treasury.rs`), reads rows as decoded values, and compares
+(`src/economy/treasury.rs`), reads entries as decoded values, and compares
 accounts by decoded value. The two lessons the predecessor's own runs taught (the
 auditor's independent view, and disjoint targets) are kept as design
 rules.
@@ -591,15 +591,15 @@ it.
   family whose scale, tiling or translation differs pair to pair is not
   stated by one clause.
 - *Design:* a parameter may be a measured hole, naming the measurement it
-  reads on each pair: the ratio of the output frame to the input frame
-  (scale, tile, reduce), or the translation between a selected body and
+  reads on each pair: the ratio of the output sample's extents to the input
+  sample's (scale, tile, reduce), or the translation between a selected body and
   its image. The measurement is exact; where it is not (a ratio that is
-  not an integer for `Scale`, frames that are not commensurate), the
+  not an integer for `Scale`, extents that are not commensurate), the
   clause is refused by name on that pair. Where two readings of the
   parameter are possible on a pair, the clause is refused, never broken
   by a silent tie.
-- *Claims:* a scale by the frames' ratio holds where the ratio differs
-  pair to pair; a non-integer frame ratio is refused by name.
+- *Claims:* a scale by the extents' ratio holds where the ratio differs
+  pair to pair; a non-integer extent ratio is refused by name.
 
 **(b) A template placed by its repeats.**
 - *Gap:* `Act::Copy { template }` places one template centre onto centre
@@ -844,10 +844,10 @@ mapping from the spaces world models already declare.
 - `Cargo.toml` is a workspace: the root package `mycelium` 0.4.0-rc.1,
   Apache-2.0, `rust-version = "1.82"`, with three binaries
   (`mycelium-server`, `mycelium-client`, `mycelium-soak`), and the members
-  `forms`, `mycelium-sdk` (`sdk/`) and `mycelium-source-arc-agi`
-  (`sources/arc-agi`), each at 0.4.0-rc.1, under one lock file and
-  one lint table (`[workspace.lints]`). The gate is the member `gate`,
-  whose tests read the tree (the earlier `xtask`, outside the workspace,
+  `algebra`, `forms`, `mycelium-sdk` (`sdk/`) and
+  `mycelium-source-arc-agi` (`sources/arc-agi`), each at 0.4.0-rc.1, under one lock file and
+  one lint table (`[workspace.lints]`). The gate is the member `gate` (at
+  0.1.0), whose tests read the tree (the earlier `xtask`, outside the workspace,
   was removed).
 - The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
   client surface in modules (the wire, `WIRE_VERSION` and `ACT_TABLE`,
@@ -856,7 +856,7 @@ mapping from the spaces world models already declare.
   `laws` (the L0 register at `LAW_VERSION`, the `forms` law ids),
   `house` (a kernel's uplink: domain founding, the universe, the
   endowment's manifest and grant, the house side of seats, laws verify,
-  the clock, the Concordance signature, framing, and the wire modules
+  the clock, the Concordance signature, delimitation (`Delimited`), and the wire modules
   `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink` and
   `challenge` whole), `conformance` (the client conformance read in two
   profiles, mind and kernel, MU-CONFORMANCE), `forms` and `prelude`. The library module `client::sdk` (re-exported as
@@ -866,7 +866,7 @@ mapping from the spaces world models already declare.
   its only Mycelium dependency; README's dependency line takes
   `mycelium-sdk` by git tag.
 - `anastome::dialogue::WIRE_VERSION` names the wire's version
-  (`major << 8 | minor`, v1.4); Anastome also carries a layout version per
+  (`major << 8 | minor`, v3.0); Anastome also carries a layout version per
   act where one is defined (for example `EQUIVOCATION_VERSION`).
 - The library's dependency set includes crates used by the server and the
   reference mind (the allocator and its statistics, signal handling, file
@@ -887,12 +887,12 @@ the crate's public API. This section is the design of it.
   |---|---|
   | Identity | Voice key load and mint; signing |
   | Session | `Voice`, `Session` (open, speak, keyed speech) |
-  | Tasks and solves | Task request and envelope; solve with rule; verdict and its codes |
+  | Tasks and solves | Task request and task (`TaskFamily`); solve with rule; verdict and its codes |
   | Rule seam | Extraction, minting and speaking a rule; typed steps (`rule::sentence`); rule elements and clauses |
   | Seats | Taking a seat in a house; the seated mind's senses |
   | Wallet and leases | Wallet reading; lease open, reply and close |
   | Readings | The typed readings a client may ask a hypha for |
-  | A kernel's house | Domain founding, the universe, the endowment, the house side of seats, laws verify, the clock, the Concordance signature, framing (`house`) |
+  | A kernel's house | Domain founding, the universe, the endowment, the house side of seats, laws verify, the clock, the Concordance signature, delimitation (`house`) |
 
 - **Semantic versioning separate from the server.** `mycelium-sdk`
   carries its own version. A change to any re-exported item's signature
@@ -995,8 +995,8 @@ similarity classes are not carried forward (§5).
 
 ## 7. Order of work
 
-1. The two components in progress land first: the transport (§3.1) and
-   `learn_form`'s refusals (§3.3).
+1. `learn_form`'s refusals (§3.3) land first; the transport (§3.1) has
+   landed, opt-in per peer.
 2. The malformed-input corpus (§3.7) follows, as the base of the security review (track 14).
 3. Integer homology (§3.4) precedes the chain-complex checker (§3.5),
    which waits on the verifier interface (track 12, S1).
@@ -1009,5 +1009,7 @@ similarity classes are not carried forward (§5).
    act that holds a position.
 
 Each component follows the project's cadence: tests as claims proved by
-the algebra, one phase per commit, and the scoped test suites for the
-modules touched (CONTRIBUTING.md).
+the algebra, one phase per commit, and the two checks of
+[AGENTS.md › Checks](../AGENTS.md#checks) (`cargo clippy`,
+`cargo test --release --workspace`) on the branch; a scoped run does not
+replace the whole run.

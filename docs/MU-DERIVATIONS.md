@@ -24,10 +24,12 @@ carries it.
 
 MU-RECURSION §0.0 binds every reader with the corollary **No constant**:
 a number in the physics is read off the field or the geometry, or it is
-undefined physics, NAMED in the register's `OPEN_PHYSICS` with what will
+undefined physics, named in the register's `OPEN_PHYSICS` with what will
 derive it until it is derived. Today the register names two numbers (the
-challenge window `W = 1024` and the throat grid `2⁻⁶⁴`), and nothing
-refuses a third. This document is the inventory behind the corollary:
+throat grid `2⁻⁶⁴`, `THROAT_LEVEL_BITS`, and `CANDIDATES_PER_PAIR`), its
+sibling `OPEN_ENGINEERING` names the engineering numbers, and the numbers
+gate (`gate/src/numbers.rs`, D1.4) refuses a literal-bearing numeric item
+that is neither classified nor registered. This document is the inventory behind the corollary:
 every numeric item and literal site in the tree was read and classified,
 and every number that stands where a reading belongs has an entry here.
 
@@ -623,7 +625,7 @@ Concordance amendment.
 **Status.** **Built** as far as the reading allows (2026-10-31, the
 live-readings ruling). The defect (§2 item 2) is fixed: `encode_receipts_reply`
 admits the head receipt against the caller's budget and refuses one past
-it by name; the door's receipts reply budget is the frame less the reading
+it by name; the door's receipts reply budget is the delimited message less the reading
 height behind it (`Court::receipts_reply_budget`), the tapes' budget that
 less the reply's count (`Court::receipts_bounds`). Every page envelope is its
 codec's own header, a FORMAT constant beside the encoder
@@ -631,7 +633,7 @@ codec's own header, a FORMAT constant beside the encoder
 `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`, `QUOTE_REPLY_HEADER`,
 `atlas::LEDGER_PAGE_HEADER`, `presentation_answer_len`): the literal `64`,
 `66` and `34` are gone, and the encoders that count the reply's header
-themselves (rows, observe, the mind's chatter replies) take the frame whole. O1 read:
+themselves (rows, observe, the mind's chatter replies) take the delimited message whole. O1 read:
 a receipt carries `u32`-counted parents, cites and cover blobs, no `u16`
 wall, so `MAX_WIRE(receipt)` is not finite in the derivation's sense and
 candidate (b) holds: `BODY_BUDGET` stays REGISTERED as an open protocol
@@ -655,22 +657,22 @@ read (`wire.rs:171`, `noise.rs:460`, `transport.rs:88, 208`,
 (`synthesis.rs:122`, `− 34`), chatter
 (`client/sdk/mind/chatter.rs:309, 319`), learn (`learn.rs:249, 372`),
 the awaited-citations ask (`exchange.rs:881`), and the seat mind's series
-bound (`seat_mind/mind.rs:170`). A frame is
+bound (`seat_mind/mind.rs:170`). A delimited message is
 `[len u32 LE 4][expression]`, and the expression `[act][TPoint 84][count u16]`
 (`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`; ruled 2026-11-01, the point's
 lanes are exact rationals and the point is `[point][point len u16]`, of
 no fixed length: at least `96 + 2` bytes and at most `TPoint::TRAILER_MAX =
 u16::MAX + 2`, so the `84` below reads as the trailer a given point takes;
 the v0.5.0 recut retired the lane byte and moved the point from the
-frame into the expression, the frame's bound `wire::DELIMITED_MAX =
+delimited message into the expression, the delimited message's bound `wire::DELIMITED_MAX =
 BODY_BUDGET + u16::MAX + 2`).
-Under Noise a frame rides in
+Under Noise a delimited message rides in
 plaintext chunks of `CHUNK = MESSAGE_MAX − TAG_LEN = 65535 − 16 = 65519`
 bytes (`noise.rs:47–52`).
 
 **Governs.** Protocol size and liveness. An act over the budget is
 refused by name at the door. A page stops at the budget. A challenge span
-past one frame is published in Parts (78.125). Every node of the mesh
+past one delimited message is published in Parts (78.125). Every node of the mesh
 must agree on it (the wire-MTU ruling, stated in the `BODY_BUDGET`
 comment).
 
@@ -1970,7 +1972,7 @@ stroke minted that is not the residue's).
 
 ---
 
-### D3.2 The common refinement `K_lcm` — two frames related by transduction in turns, never by a common lattice
+### D3.2 The common refinement `K_lcm` — two samples related by transduction in turns, never by a common lattice
 
 **Status.** **Built** (MU-RECURSION 78.170, the operator's rulings of
 2026-10-31). The lcm cap (`MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600`) and
@@ -1982,7 +1984,7 @@ organ is `src/transducer/family/transduce/`.
 **What was wrong.** `K_lcm = lcm(h_in, h_out) × lcm(w_in, w_out)` is the
 uniform subdivision both samples embed in. It turned an incidence question
 into an equality question by writing unit cells, so its size was the lcm,
-not the frames: on `18 × 19 → 7 × 9` (task `0b148d64`, pair 0) `K_lcm` is
+not the samples' extents: on `18 × 19 → 7 × 9` (task `0b148d64`, pair 0) `K_lcm` is
 `126 × 171 = 21 546` cells, the change set 14 045 links, and charting it
 (`invariant_of`) took ≥ 19 s a pair. Reading the code whole found four more
 defects: the input pulled back onto `K_lcm` was written (`L_h·L_w` per
@@ -2019,7 +2021,7 @@ sensor and where a raster is spoken.
   (`transduce::need`, `need_of`; at rank 2, `R_h·R_w`). An anisotropic
   scale is a re-period per phase, carried by no versor (Liouville: a
   versor's differential is a scalar times an orthogonal map). `share` is
-  the changed share of the frame, exact (O1). `carried` reads a body
+  the changed share of the sample's sites, exact (O1). `carried` reads a body
   carried whole onto one output body, else `Mixed`. The motions keeping the
   seams are the `2ⁿ·n!` signed permutations of the `n` phases
   (`SignedPermutation`, generated, the identity one element among them;
@@ -2053,7 +2055,7 @@ sensor and where a raster is spoken.
 | Extraction strokes, `extraction_spend` | `transduce::need` per non-planar pair |
 | Intake routes, `route::routes_of` | planar pairs as before; a pair of unequal enclosures has no route yet (its chart and pieces read a chain site by site, O8) |
 | Family magnitude, `family_magnitude` | the planar pairs' count, the mind's metabolism and not μ, so it stays a count; `transduce::family_share` reads every pair's exact share beside it |
-| μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output frame's `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_enclosure`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
+| μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output sample's extent `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_enclosure`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
 | `family_ratio`, `Form.ratio` | each phase's re-period (`Enclosure::reperiod`) |
 
 **Readings.**
@@ -2250,7 +2252,7 @@ discarded).
 - **Open:**
   - **O1, whose token pays, and therefore where the boundary falls.**
     Candidates: (a) the extraction's stroke: `extraction_spend` today
-    sizes `Σ h·w` per frame plus `3V·CANDIDATES_PER_PAIR` per frame pair
+    sizes `Σ h·w` per sample plus `3V·CANDIDATES_PER_PAIR` per sample pair
     (`finish.rs:48`); add `need(…)` per non-trivial pair, so the stroke is
     read off the family and a 29×29 → 30×30 family is sized at about
     `1.5·10⁶` reads rather than refused; (b) the S lane of the mind's

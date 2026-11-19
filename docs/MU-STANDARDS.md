@@ -152,7 +152,7 @@ of `Cl(p, q)`(ℚ), with the rank and the signature read from the data:
 stands only under an `#[expect]` naming where its bound comes from. A
 decimal approximation of an irrational is not served anywhere: in a value,
 a printed reading, a doc line or a test name. A turn is written in degrees
-where exact, otherwise as its rational point. No structure is projected to
+where exact, otherwise as its exact fraction `r/h` of the period. No structure is projected to
 a scalar ([MU-ANTI-FLATTENING.md](MU-ANTI-FLATTENING.md)).
 
 2.10 **The code vocabulary.** One spelling per concept across the tree:
@@ -187,7 +187,7 @@ pronouns.
 2.12 **Live readings** (ruled 2026-10-31; beside the constants rule 2.6
 and MU-RECURSION §0.0's *No constant*). The environment is dynamic and not
 boolean: a quantity that governs a decision (a window, a deadline, a
-budget, a bound, a price, a pool) is a LIVE READING of the current state,
+budget, a bound, a price, a pool) is a live reading of the current state,
 derived from the physics, never a constant written at the site.
 
 - *Derived on change, held keyed by its inputs.* A reading is computed
@@ -199,7 +199,7 @@ derived from the physics, never a constant written at the site.
 - *What may be fixed.* Only names (wire tags, act bytes, codes, layout
   versions), invariants of the algebra (each with the test that proves
   it), and external formats (each citing its standard and clause). Every
-  other number is a reading, or it is NAMED in the open-physics register
+  other number is a reading, or it is named in the open-physics register
   (`physics::axioms::OPEN_PHYSICS`, MU-DERIVATIONS D1.4) with what will
   derive it, and the numbers gate (§4.1) refuses it unnamed.
 - *A decision with magnitude is a graded reading.* Where the state admits

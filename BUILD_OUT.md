@@ -30,7 +30,7 @@ in which an item is built, and the gates it passes.
    [AGENTS › Checks](AGENTS.md#checks) pass on the branch with `main`
    merged in.
 3. **Reads.** A change passes only once it is live on the standing mesh
-   (three hyphas on 8500–8502, minds working). The issue names the live
+   (three hyphae on ports 8500–8502, minds working). The issue names the live
    reading it expects, and the pull request records the reading it got: a
    log line, an observer table or a peer kernel's own read. CI is no
    substitute for it.

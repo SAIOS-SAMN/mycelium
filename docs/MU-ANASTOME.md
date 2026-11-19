@@ -6,6 +6,12 @@
 >
 > **Components:** the shared algebra, used alike by the client and the court (`src/transducer/alphabet/`, `src/transducer/layers.rs`, `src/transducer/sentence/`, `algebra/src/multivector.rs`, `forms/src/coordinate.rs`); the wire (`src/anastome/dialogue/`, `src/physics/actions/mod.rs`); letter admission and the presentation on the court (`src/server/cognition/listings/listing.rs`, `src/transducer/sentence/presentation.rs`). No game term.
 
+Anastome is Mycelium's wire language: the closed set of signed acts
+between minds, courts and kernels, whose payloads are exact geometric
+objects (GLOSSARY *Anastome*). This document specifies its levels
+(letters, words, conjugate classes, sentences, expressions), its alphabet,
+its growth, its vocabulary and its wire.
+
 **Status:** reference, version 1 (2026-11-06). The one home of the
 anastome language: its levels, its alphabet, its concurrency, its growth,
 its vocabulary, its wire, the reading of its state, and its traversal
@@ -53,9 +59,9 @@ level where a word's class, and so its order, lives (corrected
 |---|---|---|---|---|
 | Letter | An adjoined generator: the Cayley rotor of two reflections a mind composed, opened in the language by a court (U14, U15; §1.1) | A turning on one plane; with `∇B = ΔB = ∅` a `Cl(4,1)` versor at rank 3 (§2.8) | Projective rotor equality (1.5) | Admission **Built**; the empty seed and the triad **Specified** (§2) |
 | Word | A product of letters, spelled by the peel (§2.4) | The whole even element: scalar, a bivector per plane, and the grade-4 volume `b₁∧b₂` where two disjoint planes turn together (§3) | Projective equality; the key is the canonical coordinates written out (A21) | Words over the seed **Built**; the volume **Specified** |
-| Conjugate class | The word with its frame set aside | Its angles on mutually disjoint invariant planes (§3) | Class-vector equality (law 3's third equality; 15.3) | **Built** (`ClassVector`) |
+| Conjugate class | The word with its conjugating element set aside | Its angles on mutually disjoint invariant planes (§3) | Class-vector equality (law 3's third equality; 15.3) | **Built** (`ClassVector`) |
 | Sentence | A closure composing words | Its orbit's holonomy per revolution: curvature; precession the residue per revolution | Read at the orbit's holonomy, never by the letters of the whole | Composition **Built**; precession in the contemplation **Specified**; resonance and `Unbound` **Built** in the field's carrier |
-| Expression | What crosses the wire: an assertion, a read, a court-to-court exchange or a universe crossing (§1.5) | Carriers at coordinates; the transport carries sound | Its content written out (A21), never a digest of its bytes | Vocabulary ruled; code names owed (§5.1) |
+| Expression | What crosses the wire: an assertion, a read, a court-to-court exchange or a universe crossing (§1.5) | Carriers at coordinates; the transport carries sound | Its content written out (A21), never a digest of its bytes | Vocabulary ruled; code names taken (§5.1: `mind/express.rs`, `Assertion`) |
 
 ### 1.1 Letters
 
@@ -107,7 +113,7 @@ fixture 11b (proposal 78.173 §5, §7): **Specified**.
 
 ### 1.3 Conjugate classes
 
-A conjugate class is the word with its frame set aside: `W′ = Γ W Γ⁻¹` is
+A conjugate class is the word with its conjugating element set aside: `W′ = Γ W Γ⁻¹` is
 the same word in another context (MU-CLIENT §4.1), and what the class keeps
 is the word's angles on mutually disjoint invariant planes, its
 concurrency structure (§3; the commuting simple planes of a motion,
@@ -118,7 +124,7 @@ a face is the conjugating element" (23.9), solved exactly by
 `Presentation::conjugate_of` (78.166 1c).
 
 Convergence meets here. Two proofs whose holonomy around the cover of
-minds is trivial are one proof in two frames, paid once (23.9, the
+minds is trivial are one proof seen from two charts, paid once (23.9, the
 membrane); POWC is the convergence of lineages onto one class (78.33,
 widened 2026-11-05), and a conjugate's transport is paid what its
 conjugator added (MU-CLIENT §5.6 C). Superposition at the conjugate grade is
@@ -178,7 +184,7 @@ the act table (`Action::kind`, §6):
 - **Universe crossings:** a tier's fold (`ACT_UPLINK`), a domain
   (`ACT_DOMAIN`), a handoff, a challenge (MU-HOSTING §5a).
 
-*Historical note (dated).* The five-utterance algebra ruled 2026-09-01
+*Historical note (dated).* The five-expression-kind algebra ruled 2026-09-01
 named percept, demand, quote, teach and settle. Four of its acts were
 retired: percept and demand on 2026-09-10 (a court hears sentences and
 nothing else, law 8), teach and settle by 78.94 (encoders with no
@@ -212,10 +218,10 @@ open work (ROADMAP track 19). Components: the shared algebra
 the client and the court; letter admission on the court
 (`src/server/cognition/listings/listing.rs`).
 
-### 2.1 What the alphabet is, and why it is fixed
+### 2.1 What the alphabet is, and why it is exact
 
 Every motion a mind states (a rule's rotation, a turn of a body, the
-orientation of a frame) has to reach a court as an exact object the court
+orientation of a sample) has to reach a court as an exact object the court
 can reconstruct and compare by identity. The alphabet is how that is done: a
 small set of exact rotations, the **letters**, from which every motion the
 language can say is built as a product, a **word**.
@@ -742,7 +748,7 @@ A perception persists at the perception layer under the physics — while someth
 
 Every act is one byte, `Action::byte` in
 [`src/physics/actions/mod.rs`](../src/physics/actions/mod.rs), and its kind
-is `Action::kind` there; the constants and frame layouts stand in
+is `Action::kind` there; the constants and act layouts stand in
 [`src/anastome/dialogue/acts.rs`](../src/anastome/dialogue/acts.rs), and
 the acts a client may send are the SDK's `ACT_TABLE` (`sdk/src/lib.rs`;
 [MU-CONFORMANCE](MU-CONFORMANCE.md) §2). A retired act's byte stands only
@@ -753,7 +759,7 @@ The column *Expression* reads each act's kind of expression (§1.5) off
 the current wire: an **assertion** (a signed claim a court adjudicates),
 a **read** (an expression, not an assertion; it admits nothing), a
 **court-to-court exchange**, or a **universe crossing**; the seat relay is
-none of these, and a retired act is none of them. The five-utterance
+none of these, and a retired act is none of them. The five expression
 kinds of 2026-09-01 are historical (§1.5) and are noted where a retired
 act carried one.
 
@@ -896,7 +902,7 @@ from any source.
   through the hypha's own acts: `Return` (a ring returned, one full age),
   `RankStep` (a holonomy algebra stepped in rank) and `Reconnect` (the
   field reconnected; `src/physics/actions/mod.rs`). Each reaches the mind
-  as its frame `S:G:T:H`, flux on the mind's lanes landed on its well for
+  as a point `S:G:T:H` (a lane vector per lane), flux on the mind's lanes landed on its well for
   that hypha, the kind carrying no meaning beyond its coordinate (MU-CLIENT
   §3.1; issue #136; `src/client/sdk/hypha_acts.rs`).
 - **Any source, any rank.** A sense is any source at any rank (MU-SENSING
@@ -933,8 +939,8 @@ Code: `src/transducer/field/` (`well.rs`, `carrier/`) and
 sample of rank one along its series index, as any source is, and a versor
 series as motions (`src/client/sdk/seat_mind/lift.rs`; #147, MU-CLIENT
 §6). **Built:** the seat's functions and untried arguments as thoughts
-whose orbits escape, worked by the drive with anti-turtling doctrine
-inversion, carrying certified moves into physics actions (`client/sdk/seat_mind/`,
+whose orbits escape, worked by the drive, which never repeats a futile act against a
+counterparty (MU-CLIENT, `test_doctrine_inversion_anti_turtling`), carrying certified moves into physics actions (`client/sdk/seat_mind/`,
 `client/sdk/mind/seating.rs`; #147).
 
 ### 9.3 The mind thinks in orbital masses that collide and converge
@@ -1030,7 +1036,7 @@ Where it lives in code:
 | The vortex, collapsed by a deciding word at its conjugacy stratum | `Contemplation::collapse_on` (`src/transducer/field/contemplation.rs`) | **Built** |
 | Cocycles on a cover: a cell filled where every triangle closes, otherwise obstructed by that triangle's holonomy | `src/transducer/cech/cover.rs` (78.123 A) | **Built**; the sensory verdict at the eye (24.4) **Specified** |
 | Contemplation's gate: relations admitted as thoughts only where the fill decides | `Contemplation::gate` (`src/transducer/field/cross_scene.rs`, A.10.1) | **Built** |
-| Cohesion as a named reading of the held field, multi-plane shares $c_k + d_k = 1$, throat traversal state (`Balanced`, `TooCohesive`, `TooFluid`), and first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ refusing $1/r^2$ fallacies | `forms::coupling::held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`; `field::carrier::Cohesion` (`src/transducer/field/carrier/shares.rs`), `WellBody::cohesion` (`src/transducer/field/carrier/holding.rs`), `Well::cohesion` (`src/transducer/field/shares.rs`), reading across membrane pole plane and turning planes; claims in `src/transducer/field/tests/shares.rs` and `src/client/sdk/tests/cohesion.rs` | **Built** (#149, #249) |
+| Cohesion as a named reading of the held field, multi-plane shares $c_k + d_k = 1$ ($d_k$ the open share, the fluidity), throat traversal state (`Balanced`, `TooCohesive`, `TooFluid`), and first-degree planar orbital shear $\Delta\theta_k = 360^\circ \cdot c_k = \frac{360^\circ}{1 + t_k}$ with no inverse-square reading | `forms::coupling::held_share`, `Parcel::held_share`, `Parcels::cohesion`, `Parcels::fluidity`; `field::carrier::Cohesion` (`src/transducer/field/carrier/shares.rs`), `WellBody::cohesion` (`src/transducer/field/carrier/holding.rs`), `Well::cohesion` (`src/transducer/field/shares.rs`), reading across membrane pole plane and turning planes; claims in `src/transducer/field/tests/shares.rs` and `src/client/sdk/tests/cohesion.rs` | **Built** (#149, #249) |
 
 ### 9.5 The mind asserts sentences as expressions
 
@@ -1071,7 +1077,7 @@ by keys, never by the universe's topology (Concordance 6.2a; MU-HOSTING
 ### 9.8 Minds with different sensoria meet at the conjugate class
 
 Two minds whose sensoria differ build different words for one structure.
-The two constructions meet as the same structure up to frame: one
+The two constructions meet as the same structure up to conjugation: one
 conjugate class, `W′ = Γ W Γ⁻¹` (§1.3).
 
 - **The conjugating element is the translation** between the two

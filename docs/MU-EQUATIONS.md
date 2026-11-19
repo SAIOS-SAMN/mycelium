@@ -417,14 +417,14 @@ transvection:        R = 1 − v_b v_a
                      R R̃ = 2 (1 − v_a · v_b)
                      R v_a R̃ = 2 (1 − v_a · v_b) v_b
 geodesic 2-blade:    ⟨R⟩₂ = v_a ∧ v_b,   (v_a ∧ v_b)² = (v_a · v_b)² − v_a² v_b²
-frame base point:    v = V v₀ Ṽ / ⟨V Ṽ⟩₀,  checked v² = −1
+pose base point:     v = V v₀ Ṽ / ⟨V Ṽ⟩₀,  checked v² = −1
 ```
 
 A compartment lands on the interior sheet `v² = −1` exactly, with no
 square root; `M`, the integer quantum, is an integer with
 `M² > r² + c² + k²`. The transvection carries `v_a` to `v_b` forward,
 exactly, and is checked to be a versor. The same construction about `e₊`
-puts a frame's point on the 3-sphere `v² = +1`.
+puts a pose's point on the 3-sphere `v² = +1`.
 
 Sources: MU-RECURSION 54.7 Axiom B (ruled 2026-09-21). Code:
 `src/transducer/cga/hyperboloid.rs::hyperbolic_compartment`,
@@ -477,13 +477,13 @@ its boundary chain. The caller names the space `n` the dual is taken in.
 Sources: MU-RECURSION 78.28(2); MU-ANTI-FLATTENING item 2 (`∂₂Σ = Q`).
 Code: `src/transducer/cga/embedding.rs::boundary_dual`.
 
-#### 2.19 Rounds, meets, dual frames and enclosure
+#### 2.19 Rounds, meets, dual bases and enclosure
 
 ```text
 outer product with a vector:   A ∧ v = ⟨A v⟩_{g+1}         (A a blade of grade g)
 round through points:          R = X₀ ∧ X₁ ∧ … ∧ X_k
 meet of constructors:          M = s₀ ∧ … ∧ s_k
-dual frame:                    s^a = (−1)^a (s₀ ∧ … ŝ_a … ∧ s_k) M⁻¹,   M⁻¹ = M̃ / (M M̃)
+dual basis:                    s^a = (−1)^a (s₀ ∧ … ŝ_a … ∧ s_k) M⁻¹,   M⁻¹ = M̃ / (M M̃)
                                s^a · s_b = δ_ab
 centre of a nucleus:           −½ s e_∞ s     (at weight one)
 enclosure carrier:             σ = ⟨R F⁻¹⟩₁,   F = R ∧ e_∞
@@ -606,7 +606,7 @@ Sources: MU-RECURSION 16.4. Code:
 o = carried centre of (0, 0),  a = of (1, 0),  b = of (0, 1)
 (dr, dc) = o − (½, ½)
 the step is (dr, dc)  ⇔  dr, dc ∈ ℤ,  a = (dr + 1 + ½, dc + ½),  b = (dr + ½, dc + 1 + ½),
-                          and the frame coordinate stays 0
+                          and the sample-place coordinate (e3) stays 0
 ```
 
 The integer translation a versor is, read on three cell centres; any other
@@ -653,8 +653,8 @@ count  = 1 + 2·C(4, 2) + 4 = 17
 ```
 
 Each letter is a rotor of `Cl(4,0)` with its carried inverse, exact over
-ℚ. The sensor plane is `(e0, e1)`: rows on `e0`, columns on `e1`, the frame
-on `e3`.
+ℚ. The sensor plane is `(e0, e1)`: rows on `e0`, columns on `e1`, the sample's
+place on `e3`.
 
 Sources: MU-RECURSION 1.1, 1.2, law 6; MU-ANASTOME.md §2.2. Code:
 `src/transducer/alphabet/letters.rs::rotor_pair`, `::letter`,
@@ -1589,7 +1589,7 @@ Sources: MU-ECONOMY §1, §9; MU-RECURSION A21. Code:
 #### 6.13 The elemental row: μ created at the manifest (78.184, ruled 2026-11-13)
 
 A nucleus of element `Z` with `Q` neutrons, as its universe states it in a
-basket entry (`BasketEntry`, #282), is ONE coupled body, the nucleon dipole
+basket entry (`BasketEntry`, #282), is one coupled body, the nucleon dipole
 (LAW-COUPLING v2, 78.181). `Z` and `Q` are coupled:
 
 ```text
@@ -1600,7 +1600,7 @@ geometrically   D(p) = Z/Q                      the dilation, a boost on S
 whole           3W = 3(Z + Q)                   the nucleon whole (= M, the basket's mass)
 ```
 
-The ELEMENTAL ROW of `(Z, Q)` is the modes its motion advances on
+The **elemental row** of `(Z, Q)` is the modes its motion advances on
 `S:G:T:H`, read by the multi-axial machinery (`cga::motion_modes`) over one
 full rotational completion:
 
@@ -1621,7 +1621,7 @@ only at a few angles (Niven), so `ℓ` mostly does not exist. Ruled
 2026-11-13: the boost and the completed turn are read apart, weighed by
 `3W`.
 
-μ CREATED at a manifest, and distributed by ledger alignment:
+μ created at a manifest, and distributed by ledger alignment:
 
 ```text
 created_l     = Σ_Z  n_Z · row(Z, Q_Z)_l                  n_Z the nuclei per Z the manifest carries (as built in #331, whole at the manifest; superseded by delivery, below)
@@ -1691,9 +1691,9 @@ its `Physics` holds. A stroke budget reads its work's own need where one
 exists in closed form (`modes_need`, `need`, `need_of`), the capacity's
 spend otherwise (MU-DERIVATIONS D2.5 lists those owed). A settlement goes
 cold when its challenge window closes; the nerve's queue is bounded by
-`M_proc`. The ratio `8` reads the fixed frame
-axis, which ROADMAP track 26 S4 removes; it is an open dependency
-(MU-DERIVATIONS D2.5 O3).
+`M_proc`. The ratio `8` is derived as `2ⁿ` at the
+alphabet's base `n = LETTER_RANK − 1` (`STROKES_PER_RESERVE`; MU-DERIVATIONS
+D2.5 O3, built in track 26 S4b).
 
 Sources: MU-RECURSION 78.8, 45.7; MU-CLIENT §4.13; MU-DERIVATIONS D2.5.
 Code: `src/physics/memory.rs` (`Memory`, `MemorySource`, `memory_of`,
@@ -1832,11 +1832,11 @@ Sources: MU-RECURSION 45.3. Code: `src/chronometry/chain/mod.rs::precedes`.
 stamp            h ‖ vk ‖ K ‖ i          (i the act's place in orbit K)
 after an act     (K, i) → (K, i + 1)
 after a close    (K, i) → (K + 1, 0)
-close frame      μ⃗ = Σ over the orbit's acts, per lane
+close lane vector μ⃗ = Σ over the orbit's acts, per lane
 ```
 
 `K` counts a node's cycles closed by name. A close with no act since the
-last seals nothing; a close whose frame is not its orbit's sum is refused.
+last seals nothing; a close whose lane vector is not its orbit's sum is refused.
 
 Sources: MU-RECURSION 78.23 (OK1), 78.24. Code:
 `src/physics/axioms/native.rs` (`OK1_K_COUNTS_CLOSED_CYCLES`);
@@ -2124,7 +2124,7 @@ the progenitors' cost = banked mass in proportion to the region's mass-energy ×
 Sources: CONCORDANCE 1.8, 7.3, 2.10.
 
 ```text
-a share compounds frame by frame:
+a share compounds ring by ring:
   f(a + b) = f(a)·f(b),  f(1) = 1 − x   ⇒   n rings leave (1 − x)^n
   remaining = ∏ (1 − x_i)^(n_i)          one factor per run of rings at one share
 ```

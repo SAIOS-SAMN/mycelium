@@ -39,7 +39,7 @@ What that buys:
 | A set of overlapping views | Each view | Whether the views glue into one consistent whole, and where they do not (the obstruction, by class) |
 | Agreement between parties | A count of signatures | Which parties and which terms agree, and the exact disagreement where they do not |
 | Value | A number | Four lanes kept apart, each the exact modes the work moved |
-| Time | A timestamp | A point on four lanes plus the closed-cycle count, and distance along an orbit |
+| Time | A timestamp | A point on four lanes plus the closed-orbit count, and distance along an orbit |
 
 ---
 
@@ -69,12 +69,13 @@ across grades 0 to 5:
   commutator of two is a rotation scaled by the curvature, so curvature is read
   off motions rather than assumed (2.15–2.17; MU-ANTI-FLATTENING 7).
 - **Periods are exact.** A rotation's order is read as a cyclotomic period
-  under Niven's restriction, and a turn is a rational point or an exact
-  fraction of 360°, never a decimal (2.21, 2.22).
+  under Niven's restriction, and a turn is the exact fraction `r/h` of a
+  period, the angle `360°·r/h` on a named plane, with its winding, never a
+  decimal (2.21, 2.22).
 
-**Specified:** the general algebra Cl(n+1,1)(ℚ) for any `n`, with
-Cl(4,1) as its `n = 3` case, and bonding between pole states held as
-versors and stabilizers (ROADMAP track 19).
+**Built:** `Cl(p, q)`(ℚ) with the signature as data (`algebra/`).
+**Specified:** bonding between pole states held as versors and
+stabilizers (ROADMAP track 19).
 
 The alphabet of seventeen letters is a fixed set of versors of this
 algebra; a word is a product of letters, one exact versor whose meaning is the
@@ -91,7 +92,7 @@ and holonomic (H). μ is a vector on the four lanes, never summed and
 never converted across them, because value on a lane exists only where
 work on that lane was verified. The network clock, TUniversal, is a point
 `origin/h:S:G:T:H:K`: a height, the cumulative issuance on each lane, and
-`K`, the count of closed cycles. Comparisons return a reading per lane,
+`K`, the count of closed orbits. Comparisons return a reading per lane,
 never a verdict on the whole.
 
 ---
@@ -202,7 +203,7 @@ same algebra:
   (MU-SCIENCE §6.2, **Specified**).
 - **Agreements as complexes.** An agreement's parties are vertices, the
   parties' acceptances edges carrying the transport between the parties'
-  frames, and its
+  references, and its
   certificate is the class showing the terms glue (ROADMAP track 18,
   **Specified**).
 
