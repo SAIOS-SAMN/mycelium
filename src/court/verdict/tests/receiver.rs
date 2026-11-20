@@ -156,13 +156,13 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
 
     // THE SECTION HALF OF THIS TEST IS GONE WITH THE EDGE (T1). What stood
     // below re-derived a TAMPERED edge against the frames a face claims —
-    // `edges_rederive_frames` with `face.pairs` set to every frame, to a
+    // `edges_rederive_samples` with `face.pairs` set to every frame, to a
     // frame the face does not stand on, and to the one it does — and every
     // one of those assertions needed an edge to tamper. The fixture's two
     // bodies are disjoint, so there is none.
     //
     // WHAT IS NOW UNTESTED, named so a green suite cannot hide it:
-    // `edges_rederive_frames`' section restriction, and `REFUSE_EDGE` in
+    // `edges_rederive_samples`' section restriction, and `REFUSE_EDGE` in
     // both its whole-reconstruction and its per-move form. The organs are intact
     // and unchanged; they have no input. Restoring them needs a fixture
     // whose bodies genuinely share support — a replication or a merge,
@@ -187,7 +187,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     // TAKEN AT THE MOVE, not at the verdict: a tampered edge is a real
     // defect and the form is refused for it by the orbit-holonomy check too,
     // so asserting a whole reconstruction here would pass with the section ignored.
-    // `edges_rederive_frames` is the organ that changed, and it is what was
+    // `edges_rederive_samples` is the organ that changed, and it is what was
     // asked (§3.2).
     //
     // It is still asked HERE, on the honest form, which is the one half of
@@ -195,7 +195,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     // refuses nothing. That is not the tampering assertion and it is not
     // offered as one.
     let rederives = |f: &crate::transducer::sentence::Form| {
-        crate::verdict::body::edges_rederive_frames(f, &family, &mut super::fixtures::budget()).map(|r| r.reason)
+        crate::verdict::body::edges_rederive_samples(f, &family, &mut super::fixtures::budget()).map(|r| r.reason)
     };
     assert_eq!(
         rederives(&f),
@@ -212,7 +212,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
 /// sample of the family, and so does the edge reconstruction, whatever the number of
 /// vertices, faces and member pairs asked about that frame.
 #[test]
-fn vertices_carry_frames_perceives_each_frame_once() {
+fn vertices_carry_samples_perceives_each_frame_once() {
     // H1, 70.4 — the three objects are SEPARATED rather than abutting in
     // different hues. This read `"110000"/"033000"`, where the L's foot at
     // (2,1) is 4-adjacent to the bar at (3,1): under chapter 20 that was
@@ -254,8 +254,8 @@ fn vertices_carry_frames_perceives_each_frame_once() {
         "three disjoint bodies relate through no face without the stencil: {:?}",
         rule.form.faces
     );
-    let _ = crate::verdict::body::vertices_carry_frames(&rule.form, &family);
-    let _ = crate::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget());
+    let _ = crate::verdict::body::vertices_carry_samples(&rule.form, &family);
+    let _ = crate::verdict::body::edges_rederive_samples(&rule.form, &family, &mut super::fixtures::budget());
 }
 
 /// MEMBER RECONSTRUCTION IS SCOPED TO ACTIVE CHART SECTIONS.
