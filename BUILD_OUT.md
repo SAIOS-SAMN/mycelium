@@ -12,7 +12,7 @@ in which an item is built, and the gates it passes.
 | Step | Where it lives | What it holds |
 |---|---|---|
 | Document section | `docs/` (a governing document or a proposal in `docs/proposals/`) | The claim as algebra: formulas, refusals by name, joint-read fixtures where kernels share it |
-| Ruling | A labelled comment on the issue, recorded in the proposal's *Ruled* section | Who ruled, when, and what. A change to the network contract (the Concordance, the wire, the ledger layout, a law version) needs the operator's ruling |
+| Ruling | A labelled comment on the issue, recorded in the proposal's *Ruled* section | Who ruled, when, and what. A change to the network contract is a Concordance amendment (§0 AMENDING), approved by the operator and in force for each kernel when it signs |
 | Milestone | GitHub milestones | A build-out phase named by what it delivers, its design documents and its done-when in the description |
 | Issue | GitHub issues, on the project [Mycelium](https://github.com/orgs/SAIOS-SAMN/projects/2) | One item: the section it builds (the project's *Doc* field), its done-when as a test or a live reading, its milestone, its *Area* and its *Seam* |
 | Branch | One `git worktree` and branch per item | The claims first, then the code |
@@ -34,9 +34,13 @@ in which an item is built, and the gates it passes.
    reading it expects, and the pull request records the reading it got: a
    log line, an observer table or a peer kernel's own read. CI is no
    substitute for it.
-4. **Network contract.** A change to the wire, the ledger layout, a law
-   version or the Concordance is stated under *Network contract* in the
-   pull request, with the operator's approval cited.
+4. **Network contract.** The network contract is the Concordance, with
+   the wire, the ledger layout and the law versions its clauses govern.
+   A change to it is proposed as a Concordance amendment (§0 AMENDING):
+   a proposal in `docs/proposals/` with joint-read fixtures and a draft
+   section in MU-CONCORDANCE. The pull request states it under *Network
+   contract* and cites the operator's approval. It binds each kernel when
+   that kernel signs the clause (MU-RELEASE §3a).
 
 ## 3. The project's fields
 

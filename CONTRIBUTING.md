@@ -49,9 +49,13 @@ Part I.
 2. **Specification first.** A change of behaviour is a change of the
    specification: written as a proposal in
    [`docs/proposals/`](docs/proposals/) and amended into the governing
-   document when it is accepted. A change to the network contract (the
-   Concordance, the wire, the ledger layout, a law version) needs the
-   operator's approval.
+   document when it is accepted. The network contract is the
+   [Concordance](docs/MU-CONCORDANCE.md), with the wire, the ledger
+   layout and the law versions its clauses govern. A change to it is a
+   Concordance amendment (§0 AMENDING): a proposal with joint-read
+   fixtures and a draft section in MU-CONCORDANCE. The operator approves
+   it, and it binds each kernel when that kernel signs the clause
+   (`ACT_LAWS` mode 8; [MU-RELEASE §3a](docs/MU-RELEASE.md#3a-how-a-hypha-standard-becomes-a-kernel-standard)).
 3. **Branch and pull request.** One phase of work per pull request: the
    code, its tests and its documentation together, a CHANGELOG fragment
    under `changes/` ([AGENTS › Checks](AGENTS.md#checks)), and the

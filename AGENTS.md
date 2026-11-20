@@ -164,6 +164,9 @@ How the work is held:
 
 - The [Checks](#checks) pass on the branch with main merged in.
 - Read the change against [The regressions that recur](#the-regressions-that-recur).
-- If the change touches the wire, the ledger layout, a law version or the
-  Concordance, state it under *Network contract* in the pull request. It then needs operator
-  approval.
+- The network contract is the Concordance, with the wire, the ledger
+  layout and the law versions its clauses govern. A change to any of them
+  is a Concordance amendment (§0 AMENDING): a proposal with joint-read
+  fixtures and a draft section in MU-CONCORDANCE, stated under *Network
+  contract* in the pull request. The operator approves it, and it binds
+  each kernel when that kernel signs the clause (MU-RELEASE §3a).
