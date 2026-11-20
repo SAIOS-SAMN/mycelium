@@ -57,6 +57,10 @@ pub const BREATH: [&str; 4] = ["radial", "pinched", "null", "boost"];
 /// 2), in the order the counts are kept.
 pub const BODIES: [&str; 3] = ["fused", "precessing", "contact"];
 
+/// REAL-TIME SPHERE COUPLING ACROSS COGNITION (`forms::coupling::Meets`):
+/// `Within` (converging), `Bound` (touching at the bound), `Apart` (diverging).
+pub const COUPLING: [&str; 3] = ["converging", "bound", "diverging"];
+
 /// WHAT ITS TASKS' PERSPECTIVES SAID (MU-CLIENT §4.4): tasks seen; rules
 /// known (every held-out pair re-derived), unknown (fitted, not re-derived),
 /// of one perspective, unread; held-out pairs lifted into the mind; solves
@@ -241,6 +245,8 @@ pub struct MindReading {
     pub flex: [u64; 9],
     /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
     pub bodies: [u64; 3],
+    /// Real-time sphere coupling (`forms::coupling::meets`), by [`COUPLING`].
+    pub coupling: [u64; 3],
     /// Its tasks' perspectives, by [`PERSPECTIVE`].
     pub perspective: [u64; 9],
     /// What its failed perspectives disagreed about, by [`DISAGREE`].
@@ -351,6 +357,7 @@ impl Default for MindReading {
             constructed: [0; 7],
             flex: [0; 9],
             bodies: [0; 3],
+            coupling: [0; 3],
             perspective: [0; 9],
             disagree: [0; 9],
             demanded_kinds: [0; 6],
@@ -503,6 +510,9 @@ impl MindReading {
             put_u64(out, v);
         }
         crate::transducer::alphabet::put_q(out, &self.fed_share);
+        for v in self.coupling {
+            put_u64(out, v);
+        }
         Some(())
     }
 
@@ -587,6 +597,11 @@ impl MindReading {
         let fed = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let fed_unshared = take_u64(b, p)?;
         let fed_share = crate::transducer::alphabet::take_q(b, p)?;
+        let coupling = if *p < b.len() {
+            [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?]
+        } else {
+            [0; 3]
+        };
         Some(MindReading {
             k,
             heard,
@@ -597,6 +612,7 @@ impl MindReading {
             constructed,
             flex,
             bodies,
+            coupling,
             perspective,
             disagree,
             demanded_kinds,
@@ -684,9 +700,10 @@ impl MindReading {
                 self.remembered
             ),
             format!(
-                "  fibres {} · bodies met {} · holes standing {} · scars {} · frozen {} · breath {}",
+                "  fibres {} · bodies met {} · coupling {} · holes standing {} · scars {} · frozen {} · breath {}",
                 FLEX.iter().zip(&self.flex).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 BODIES.iter().zip(&self.bodies).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                COUPLING.iter().zip(&self.coupling).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 self.holes,
                 self.scars,
                 self.frozen,
