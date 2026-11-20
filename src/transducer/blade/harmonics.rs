@@ -1,13 +1,17 @@
-// 20, 24.4, A6, 51.3 — THE HARMONICS of a body: the conformal invariants
-// of its stack and the hue spectrum, the axes it is heard on, coarsest
-// first.
+// 20, 24.4, A6, 51.3, 78.188 — THE HARMONICS of a body: its readings, and
+// the chart it is filed under, which holds only what is invariant on Sⁿ.
 //
-//! Exact in ℚ and invariant under every versor `carry_compartment` accepts: what
-//! a body sounds like, whatever its size, place, frame or orientation. The
-//! axes run coarsest first — the base's `n`, the topology (the Betti
-//! numbers of the union, then the turns), then the boundary and moment
-//! ratios, then the hue spectrum — so a prefix of a chart is a stratum
-//! bodies share (A21 §2) and the atlas is read by peel.
+//! Exact in ℚ. THE CHART IS READ ON Sⁿ (78.188; Concordance 1.1, 2.10): the
+//! base is the sphere `Sⁿ = ℝⁿ ∪ {∞}`, whose motions are the conformal
+//! (Möbius) maps the algebra `Cl(n+1, 1)` carries. A single body has no
+//! metric invariant under them: any round can be carried onto any other.
+//! So the chart's axes are the base's `n`, the Betti numbers of the body on
+//! Sⁿ (homeomorphism invariants), then the hue spectrum (a fraction of the
+//! body's own compartments, which no map of the base moves). The turns and
+//! the boundary and moment ratios are similarity invariants of the sensor's
+//! lattice, not of Sⁿ: they stay readings the physics measures, never chart
+//! axes. A prefix of a chart is a stratum bodies share (A21 §2), and the
+//! atlas is read by peel.
 //!
 //! THE CHART ONLY LOCATES (71.2(6)): the physics decides congruence and
 //! contact, the tower, the frame and the tether; these axes find the
@@ -23,9 +27,13 @@ pub struct Harmonics {
     /// The base's `n`, the chart's first axis: strata of different `n` are
     /// disjoint by construction (71.2(1), 38.2's `d` prefix).
     pub n: u64,
-    /// β₀ … β_{n−1} of the closed union of the body's cubes (38.2, 71.2(6)):
-    /// components, tunnels, cavities, and every higher hole the base's `n`
-    /// has room for. `n` of them, generated from `n`.
+    /// β₀ … β_{n−1} of the body on Sⁿ (78.188): components, tunnels,
+    /// cavities, and every higher hole the base's `n` has room for. `n` of
+    /// them, generated from `n`. They are read on the sensor's cover of the
+    /// body ([`blade::topology`]); being homeomorphism invariants, they do not
+    /// depend on that cover, and they close on Sⁿ by Euler–Poincaré and by
+    /// Alexander duality with the complement, whose component holding ∞ is
+    /// the outside.
     pub betti: Vec<u64>,
     /// The sections' turning count.
     pub turns: u64,
@@ -85,35 +93,27 @@ impl Harmonics {
         })
     }
 
-    /// The harmonics laid out as the atlas's axes, coarsest first: the
-    /// base's `n`, the `n` Betti numbers and the turns, then the conformal
-    /// ratios, then the hue spectrum. Each is ONE coordinate carrying its
-    /// own exact value (A21 as ruled 2026-09-18), so a ratio is a
-    /// `ChartAxis::Ratio` in ℚ and never a pair of integer limbs that
-    /// `peel` could cut between. Strata of different `n` are disjoint by
-    /// construction, since `n` leads; within one `n` a prefix is a coarser
-    /// stratum (A21 §2), and the count axes are not prefix-stable ACROSS
-    /// `n` (71.2(6)).
+    /// The harmonics laid out as the atlas's axes: [`sphere_axes`] on this
+    /// body's `n`, Betti numbers and hue spectrum. The turns and the four
+    /// ratios are similarity invariants of the sensor's lattice and are not
+    /// filed on (78.188).
     pub fn axes(&self) -> Vec<crate::transducer::stalk::ChartAxis> {
-        use crate::transducer::stalk::ChartAxis;
-        let mut axes: Vec<ChartAxis> = std::iter::once(self.n)
-            .chain(self.betti.iter().copied())
-            .chain(std::iter::once(self.turns))
-            .map(ChartAxis::Count)
-            .collect();
-        for r in [
-            &self.isoperimetric,
-            &self.enclosure_boundary,
-            &self.anisotropy,
-            &self.spread,
-        ] {
-            axes.push(ChartAxis::Ratio(r.clone()));
-        }
-        for f in &self.gauge {
-            axes.push(ChartAxis::Ratio(f.clone()));
-        }
-        axes
+        sphere_axes(self.n, &self.betti, &self.gauge)
     }
+}
+
+/// THE CHART ON Sⁿ (78.188), coarsest first: the base's `n`, the `n` Betti
+/// numbers, then the hue spectrum. Each is ONE coordinate carrying its own
+/// exact value (A21 as ruled 2026-09-18). Strata of different `n` are
+/// disjoint by construction, since `n` leads; within one `n` a prefix is a
+/// coarser stratum (A21 §2), and the count axes are not prefix-stable ACROSS
+/// `n` (71.2(6)). The ONE producer of a body's chart (law 12): the body's
+/// harmonics and a section's turns both write it here.
+pub fn sphere_axes(n: u64, betti: &[u64], gauge: &[BigRational]) -> Vec<crate::transducer::stalk::ChartAxis> {
+    use crate::transducer::stalk::ChartAxis;
+    let mut axes: Vec<ChartAxis> = std::iter::once(n).chain(betti.iter().copied()).map(ChartAxis::Count).collect();
+    axes.extend(gauge.iter().cloned().map(ChartAxis::Ratio));
+    axes
 }
 
 /// HEAR a voice's carried body — one section's chain — lift it through
