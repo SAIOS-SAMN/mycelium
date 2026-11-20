@@ -53,7 +53,7 @@ assert_eq!(k.basis_len(), 1, "transposition mints nothing");
 #[test]
 fn refine_stratum_keeps_survivor_at_last_index() {
     crate::transducer::raster::stand_on(0);
-use crate::transducer::element::{from_canonical, from_canonical_framed};
+use crate::transducer::element::{from_canonical, from_canonical_reperiod};
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -62,11 +62,11 @@ k.basis_insert(from_canonical(&germinate(&painted(&a), &painted(&rot)).unwrap())
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 k.basis_insert(
-    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[4, 4], &[8, 8]).expect("one rank")),
+    from_canonical_reperiod(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[4, 4], &[8, 8]).expect("one rank")),
     [7; 32],
 );
 k.basis_insert(
-    from_canonical_framed(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[3, 3], &[6, 6]).expect("one rank")),
+    from_canonical_reperiod(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap(), &crate::transducer::element::Reperiod::of_extents(&[3, 3], &[6, 6]).expect("one rank")),
     [8; 32],
 );
 assert!(k.basis_len() >= 2, "two distinct addresses remain");

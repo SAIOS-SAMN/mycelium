@@ -63,7 +63,7 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
         let Some(reperiod) = crate::transducer::element::Reperiod::of_extents(a.sample().extents(), b.sample().extents()) else {
             continue;
         };
-        let Some(residue) = crate::transducer::element::from_residue_framed(&chain, &reperiod) else {
+        let Some(residue) = crate::transducer::element::from_residue_reperiod(&chain, &reperiod) else {
             continue;
         };
         out.push(PairRoute {

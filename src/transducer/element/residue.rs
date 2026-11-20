@@ -231,7 +231,7 @@ pub fn from_canonical(chain: &CanonicalChain) -> Element {
 /// input's and the output's period on each phase, exact counts, never a
 /// ratio and never a guess, at the pair's own rank. A word whose phases
 /// re-period alike by `ρ ≠ 1` is a DIFFERENT word from its unframed shadow
-/// (`from_canonical_framed` reads the re-period off the counts). It replaces
+/// (`from_canonical_reperiod` reads the re-period off the counts). It replaces
 /// the four planar counts `(h_in, w_in, h_out, w_out)`, which fixed two axes
 /// (the defect MU-SENSING §8 named).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -280,20 +280,20 @@ pub fn listing_key(
     chain: &[SectionLink],
     frame: &Reperiod,
 ) -> Option<crate::transducer::address::Address> {
-    Some(from_residue_framed(&chain.to_vec(), frame)?.address())
+    Some(from_residue_reperiod(&chain.to_vec(), frame)?.address())
 }
 
 /// Identity frame: no scale. Unframed speech uses this so its key matches
 /// a planar intake.
 pub const IDENTITY_FRAME: Reperiod = Reperiod::IDENTITY;
 
-pub fn from_residue_framed(g: &ResidueGerm, frame: &Reperiod) -> Option<Element> {
-    Some(from_canonical_framed(&canonical_chain(g)?, frame))
+pub fn from_residue_reperiod(g: &ResidueGerm, frame: &Reperiod) -> Option<Element> {
+    Some(from_canonical_reperiod(&canonical_chain(g)?, frame))
 }
 
 /// The framed word of a chain A5 has already accepted. Total, as
 /// [`from_canonical`] is.
-pub fn from_canonical_framed(chain: &CanonicalChain, frame: &Reperiod) -> Element {
+pub fn from_canonical_reperiod(chain: &CanonicalChain, frame: &Reperiod) -> Element {
     let mut e = from_canonical(chain);
     if let Some(rho) = frame.shared().filter(|r| !r.is_one()) {
         e.action.spatial = Some(crate::transducer::cga::dilator(&rho));

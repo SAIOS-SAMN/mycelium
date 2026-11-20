@@ -214,11 +214,11 @@ fn reperiod_is_read_per_phase_at_any_rank() {
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let chain = canonical_chain(&germinate(&painted(&a), &painted(&b)).unwrap()).expect("A5's chain");
-    let shadow = from_canonical_framed(&chain, &Reperiod::IDENTITY).address();
+    let shadow = from_canonical_reperiod(&chain, &Reperiod::IDENTITY).address();
     let still = Reperiod::of_extents(&[3, 3], &[3, 3]).expect("one rank");
     let anisotropic = Reperiod::of_extents(&[3, 3], &[6, 3]).expect("one rank");
     let doubled = Reperiod::of_extents(&[3, 3], &[6, 6]).expect("one rank");
-    assert_eq!(from_canonical_framed(&chain, &still).address(), shadow, "a re-period of 1 is the shadow");
-    assert_eq!(from_canonical_framed(&chain, &anisotropic).address(), shadow, "no dilator carries an anisotropic re-period");
-    assert_ne!(from_canonical_framed(&chain, &doubled).address(), shadow, "a shared re-period of 2 is another word");
+    assert_eq!(from_canonical_reperiod(&chain, &still).address(), shadow, "a re-period of 1 is the shadow");
+    assert_eq!(from_canonical_reperiod(&chain, &anisotropic).address(), shadow, "no dilator carries an anisotropic re-period");
+    assert_ne!(from_canonical_reperiod(&chain, &doubled).address(), shadow, "a shared re-period of 2 is another word");
 }

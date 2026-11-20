@@ -338,7 +338,7 @@ pub fn prepare_intake(
     }
     crate::transducer::sentence::pieces(chain)
         .into_iter()
-        .filter_map(|body| element::from_residue_framed(&body, reperiod))
+        .filter_map(|body| element::from_residue_reperiod(&body, reperiod))
         .map(|residue| {
             let chart = crate::transducer::stalk::invariant_of(&residue);
             (residue, chart)
