@@ -16,7 +16,7 @@ use super::fixtures::{atlas_holding, frame, plane, revolution_turning, three_cha
 #[test]
 fn candidate_monodromy_reads_flat_torsion_and_unbound_between_charts() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
 
     // Three 30° steps compose to 90°, order 4 torsion on e₊₁e₊₂.
     let atlas_torsion = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));

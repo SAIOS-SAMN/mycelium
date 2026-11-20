@@ -62,9 +62,9 @@ pub enum FieldRefusal {
     /// A plane named by units that hold no turning, or no writing (the
     /// coordinate form's refusal).
     NotTurningPlane(FormRefusal),
-    /// A frame plane past the field's frame planes, or past the algebra's
+    /// A pole plane past the field's pole planes, or past the algebra's
     /// masks: the plane's index.
-    PastFrame { plane: u32 },
+    PastPolePlane { plane: u32 },
     /// A path whose transitions do not chain chart to chart and return to
     /// the chart it left in one revolution: the step at which it broke.
     NotRevolution { at: usize },
@@ -76,7 +76,7 @@ pub enum FieldRefusal {
     /// (`forms::turning`'s refusal).
     Turning(TurningRefusal),
     /// A rotor's rate holding parts on no plane: grade 6 and above, or
-    /// units no frame plane names. Their masks.
+    /// units no pole plane names. Their masks.
     NotPlanes { masks: Vec<usize> },
     /// A statement that does not decode: the byte at which it stopped.
     Malformed { at: usize },

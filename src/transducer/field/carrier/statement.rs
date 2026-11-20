@@ -9,7 +9,7 @@ use super::enclosing::Membrane;
 use super::holding::{ExpansionRing, WellBody, WellLayer, WellStage};
 use super::holonomy::Motion;
 use super::refusal::FieldRefusal;
-use super::turning::{FramePlanes, Turning, TurningPlane};
+use super::turning::{PolePlanes, Turning, TurningPlane};
 use crate::core::Q;
 use crate::transducer::stalk::ChartAxis;
 use algebra::component::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
@@ -44,7 +44,7 @@ fn put_chart(out: &mut Vec<u8>, c: &Chart) {
 /// A turning written: its plane's square and two unit indices in the
 /// plane's orientation, then its angle's numerator and denominator.
 fn put_turning(out: &mut Vec<u8>, t: &Turning) {
-    // A turning plane's key is two frame units of one square, by its
+    // A turning plane's key is two pole units of one square, by its
     // constructor; the first unit's square is the plane's.
     if let [a, b] = t.plane().key().axes() {
         out.push(a.square().map_or(0, square_byte));
@@ -63,7 +63,7 @@ impl Atlas {
     /// in degrees, exact). No reading is written: the holonomies, windings
     /// and orders are the reconstruction's to derive.
     pub fn put_statement(&self, out: &mut Vec<u8>) {
-        put_key_count(out, self.frame().count() as usize);
+        put_key_count(out, self.poles().count() as usize);
         put_key_count(out, self.charts().len());
         self.charts().iter().for_each(|c| put_chart(out, c));
         put_key_count(out, self.attractors().len());
@@ -115,7 +115,7 @@ impl Reader<'_> {
         (0..n).map(|_| self.axis()).collect::<Result<Vec<_>, _>>().map(Chart::of)
     }
 
-    fn turning(&mut self, frame: &FramePlanes) -> Result<Turning, FieldRefusal> {
+    fn turning(&mut self, frame: &PolePlanes) -> Result<Turning, FieldRefusal> {
         let at = self.p;
         let square = match self.b.get(self.p) {
             Some(0) => Square::Positive,
@@ -137,7 +137,7 @@ impl Reader<'_> {
     /// An atlas as [`Atlas::put_statement`] writes it, rebuilt through the
     /// carrier's constructors.
     fn atlas(&mut self) -> Result<Atlas, FieldRefusal> {
-        let frame = FramePlanes::of(self.index()?)?;
+        let frame = PolePlanes::of(self.index()?)?;
         let charts = (0..self.count()?).map(|_| self.chart()).collect::<Result<Vec<_>, _>>()?;
         let mut atlas = Atlas::of(frame, charts);
         for _ in 0..self.count()? {
@@ -233,7 +233,7 @@ pub fn reconstruct_well(stated: &[u8]) -> Result<WellBody, FieldRefusal> {
     };
     let stage = r.stage()?;
     r.ended()?;
-    WellBody::held(*atlas.frame(), attractor.clone(), stage)
+    WellBody::held(*atlas.poles(), attractor.clone(), stage)
 }
 
 /// THE COURT'S ADMISSION OF A STATED WELL: the well reconstructed, its

@@ -17,7 +17,7 @@ fn q(n: i64, d: i64) -> Q {
 }
 
 /// `c` times the plane's bivector.
-fn rate(frame: &FramePlanes, plane: &TurningPlane, c: Q) -> Clifford {
+fn rate(frame: &PolePlanes, plane: &TurningPlane, c: Q) -> Clifford {
     plane.bivector().product(&Clifford::blade(frame.negatives(), 0, c).expect("a scalar")).expect("one signature")
 }
 

@@ -41,7 +41,7 @@ pub use rotor::{LocalOrbit, Rotor, RotorPrecession, RotorTransition};
 pub use shares::{frame_plane, pole_plane, Cohesion, TraversalState};
 pub use statement::{admit, admit_well, reconstruct, reconstruct_well, StatementRefusal};
 pub use transitions::{motion_of, transitions_of, PairTransition};
-pub use turning::{FramePlanes, Meeting, Turning, TurningPlane};
+pub use turning::{PolePlanes, Meeting, Turning, TurningPlane};
 pub(crate) use turning::whole_turn;
 
 #[cfg(test)]

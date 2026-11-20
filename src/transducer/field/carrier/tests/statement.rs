@@ -12,7 +12,7 @@ use super::fixtures::{atlas_holding, plane, revolution_turning, three_charts};
 #[test]
 fn put_statement_round_trips() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
     let atlas = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
     let mut stated = Vec::new();
     atlas.put_statement(&mut stated);
@@ -28,7 +28,7 @@ fn put_statement_round_trips() {
 #[test]
 fn admit_refuses_claimed_curvature_court_does_not_derive() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
     let atlas = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
     let mut stated = Vec::new();
     atlas.put_statement(&mut stated);
@@ -46,8 +46,8 @@ fn admit_refuses_claimed_curvature_court_does_not_derive() {
 #[test]
 fn well_body_stated_and_admitted_by_its_curvature() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
-    let body = WellBody::of(lifted.frame, charts[0].clone(), Some(revolution_turning(&charts, &p, 30, 1)), WellStage::perceived()).expect("the well stands");
+    let p = plane(&lifted.poles, 1, 2);
+    let body = WellBody::of(lifted.poles, charts[0].clone(), Some(revolution_turning(&charts, &p, 30, 1)), WellStage::perceived()).expect("the well stands");
     let mut stated = Vec::new();
     body.put_statement(&mut stated).expect("stated");
     let claimed = Curvature { centre: charts[0].clone(), holonomy: body.holonomy() };
@@ -58,10 +58,10 @@ fn well_body_stated_and_admitted_by_its_curvature() {
     assert_eq!(admitted.monodromy(), body.monodromy(), "monodromy derived by the court");
     assert_eq!(claimed.monodromy(), body.monodromy(), "claimed monodromy agrees");
     assert_eq!(claimed.precession(), body.precession(), "claimed precession agrees");
-    let other = WellBody::of(lifted.frame, charts[0].clone(), Some(revolution_turning(&charts, &p, 45, 1)), WellStage::perceived()).expect("stands");
+    let other = WellBody::of(lifted.poles, charts[0].clone(), Some(revolution_turning(&charts, &p, 45, 1)), WellStage::perceived()).expect("stands");
     let wrong = Curvature { centre: charts[0].clone(), holonomy: other.holonomy() };
     assert_eq!(admit_well(&stated, &wrong).map(|_| ()), Err(StatementRefusal::Differs { pairs: vec![(Some(wrong.clone()), Some(claimed))] }));
-    let flat = WellBody::of(lifted.frame, charts[1].clone(), None, WellStage::default()).expect("stands");
+    let flat = WellBody::of(lifted.poles, charts[1].clone(), None, WellStage::default()).expect("stands");
     let mut stated = Vec::new();
     flat.put_statement(&mut stated).expect("stated");
     let unbound = Curvature { centre: charts[1].clone(), holonomy: Err(FieldRefusal::Unbound { charts: vec![charts[1].clone()] }) };
@@ -72,7 +72,7 @@ fn well_body_stated_and_admitted_by_its_curvature() {
 #[test]
 fn reconstruct_well_refuses_an_atlas_of_two_attractors() {
     let (lifted, charts) = three_charts();
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
     let mut atlas = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
     atlas.hold(Attractor { centre: charts[1].clone(), orbit: Some(revolution_turning(&charts, &p, 30, 1)), membrane: lifted.membrane.clone() }).expect("held");
     let mut stated = Vec::new();

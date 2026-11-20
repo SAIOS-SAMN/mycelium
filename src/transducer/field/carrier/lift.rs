@@ -7,7 +7,7 @@
 use super::atlas::{Atlas, Chart};
 use super::enclosing::Membrane;
 use super::refusal::FieldRefusal;
-use super::turning::{FramePlanes, Turning, TurningPlane};
+use super::turning::{PolePlanes, Turning, TurningPlane};
 use crate::core::Q;
 use crate::transducer::family::transduce::{Enclosed, Factoring, Turn};
 use crate::transducer::sample::Sample;
@@ -39,7 +39,7 @@ pub struct LiftedBody {
 /// planes, the turning plane each axis's phase stands on, its membrane, and
 /// its bodies.
 ///
-/// THE PLANES. A sample of rank `n` is lifted onto `n + 1` frame planes:
+/// THE PLANES. A sample of rank `n` is lifted onto `n + 1` pole planes:
 /// one per axis and the lift's own, plane `n + 1`. Axis `i`'s phase turns on
 /// `e₊ᵢe₊₍ₙ₊₁₎`, the turning of the axis into the lift's plane, so no axis is
 /// privileged and every axis stands on a plane whose two units square
@@ -56,7 +56,7 @@ pub struct LiftedBody {
 /// `e₊ᵢ` (`carrier::motion_of`). No degree written by the lift moves.
 #[derive(Clone, Debug)]
 pub struct Lifted {
-    pub frame: FramePlanes,
+    pub poles: PolePlanes,
     pub planes: Vec<TurningPlane>,
     pub membrane: Membrane,
     pub bodies: Vec<LiftedBody>,
@@ -126,16 +126,16 @@ fn charts_of(e: &Enclosed) -> Result<Vec<Chart>, FieldRefusal> {
 }
 
 impl Lifted {
-    /// THE SAMPLE LIFTED. Refused `PastFrame` where the rank's frame planes
+    /// THE SAMPLE LIFTED. Refused `PastPolePlane` where the rank's pole planes
     /// pass the algebra's masks.
     pub fn of(sample: &Sample) -> Result<Lifted, FieldRefusal> {
         let e = Enclosed::of(sample);
         let periods = e.enclosure.periods().to_vec();
-        let rank = u32::try_from(periods.len()).map_err(|_| FieldRefusal::PastFrame { plane: u32::MAX })?;
-        let own = rank.checked_add(1).ok_or(FieldRefusal::PastFrame { plane: rank })?;
-        let frame = FramePlanes::of(own)?;
-        let planes = (1..=rank).map(|i| TurningPlane::of(&frame, Square::Positive, i, own)).collect::<Result<Vec<_>, _>>()?;
-        let membrane = Membrane::of(&frame, own)?;
+        let rank = u32::try_from(periods.len()).map_err(|_| FieldRefusal::PastPolePlane { plane: u32::MAX })?;
+        let own = rank.checked_add(1).ok_or(FieldRefusal::PastPolePlane { plane: rank })?;
+        let poles = PolePlanes::of(own)?;
+        let planes = (1..=rank).map(|i| TurningPlane::of(&poles, Square::Positive, i, own)).collect::<Result<Vec<_>, _>>()?;
+        let membrane = Membrane::of(&poles, own)?;
         let charts = charts_of(&e)?;
         let corner = |pick: fn((usize, usize)) -> usize, spans: &[(usize, usize)]| -> Result<Point, FieldRefusal> {
             let phases = spans
@@ -155,14 +155,14 @@ impl Lifted {
                 .collect::<Result<Vec<_>, FieldRefusal>>()?;
             bodies.push(LiftedBody { chart, symbol, boundary });
         }
-        Ok(Lifted { frame, planes, membrane, bodies })
+        Ok(Lifted { poles, planes, membrane, bodies })
     }
 
     /// THE ATLAS THE LIFT STANDS ON: the bodies' charts on its frame, no
     /// attractor held, so flat. A sample holds no orbit; orbits are held
     /// over pairs and thoughts (ROADMAP track 26 S9).
     pub fn atlas(&self) -> Atlas {
-        Atlas::of(self.frame, self.bodies.iter().map(|b| b.chart.clone()).collect())
+        Atlas::of(self.poles, self.bodies.iter().map(|b| b.chart.clone()).collect())
     }
 }
 

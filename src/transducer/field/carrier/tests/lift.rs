@@ -10,14 +10,14 @@ use forms::coordinate::Plane;
 use forms::passage::Place;
 use num_bigint::BigInt;
 
-/// A sample of rank 3 lifts onto four frame planes; every boundary point
+/// A sample of rank 3 lifts onto four pole planes; every boundary point
 /// holds one phase per axis, axis `i`'s on `e₊ᵢe₊₄`, a plane whose two
 /// units square alike, each phase exact in degrees within `[0°, 360°]`. No
 /// norm, radius or reference surface is held.
 #[test]
 fn lift_holds_one_phase_per_axis_on_turning_planes() {
     let lifted = Lifted::of(&sample_of(&[2, 3, 2], "110110220220")).expect("lifts");
-    assert_eq!(lifted.frame.count(), 4);
+    assert_eq!(lifted.poles.count(), 4);
     let written: Vec<String> = lifted.planes.iter().map(|p| p.key().written()).collect();
     assert_eq!(written, ["e_+1+4", "e_+2+4", "e_+3+4"]);
     assert!(lifted.planes.iter().all(|p| matches!(p.key().plane(), Some(Plane::Turning(_)))));
@@ -72,7 +72,7 @@ fn atlas_revolution_reads_holonomy_only_where_orbit_held() {
     let (lifted, charts) = three_charts();
     let flat = lifted.atlas();
     assert_eq!(flat.revolution(&charts), Err(FieldRefusal::Unbound { charts: charts.clone() }));
-    let p = plane(&lifted.frame, 1, 2);
+    let p = plane(&lifted.poles, 1, 2);
     let curved = atlas_holding(&lifted, revolution_turning(&charts, &p, 30, 1));
     let h = curved.revolution(&charts).and_then(|o| o.holonomy()).expect("the held orbit curves the revolution");
     assert_eq!(h.angle().map(|t| t.degrees().clone()), Ok(degrees(90, 1)));

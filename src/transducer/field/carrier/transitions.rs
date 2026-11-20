@@ -29,7 +29,7 @@ use super::holonomy::Motion;
 use super::lift::Lifted;
 use super::motions::{FieldMotion, Generator, Unit};
 use super::refusal::FieldRefusal;
-use super::turning::{FramePlanes, Turning, TurningPlane};
+use super::turning::{PolePlanes, Turning, TurningPlane};
 use crate::core::Q;
 use crate::transducer::family::transduce::{Enclosed, Enclosure, Factorisation, Motion as Transduced, Sense, TransductionRefusal};
 use crate::transducer::sample::Sample;
@@ -48,19 +48,19 @@ pub struct PairTransition {
 
 /// Frame plane `k`'s unit `e₊ₖ`, for axis `k − 1`.
 fn axis_unit(axis: usize) -> Result<Unit, FieldRefusal> {
-    let plane = u32::try_from(axis + 1).map_err(|_| FieldRefusal::PastFrame { plane: u32::MAX })?;
+    let plane = u32::try_from(axis + 1).map_err(|_| FieldRefusal::PastPolePlane { plane: u32::MAX })?;
     Ok(Unit { square: Square::Positive, plane })
 }
 
 /// The turning by `degrees` on `e₊ₖe₊ₗ` of `frame`, as one generator.
-fn turn(frame: &FramePlanes, k: u32, l: u32, degrees: i64) -> Result<Generator, FieldRefusal> {
+fn turn(frame: &PolePlanes, k: u32, l: u32, degrees: i64) -> Result<Generator, FieldRefusal> {
     let plane = TurningPlane::of(frame, Square::Positive, k, l)?;
     Ok(Generator::Turn(Motion::of(vec![Turning::of(plane, Q::from_integer(BigInt::from(degrees)))?])?))
 }
 
-/// The machine count `x` as a frame plane index.
+/// The machine count `x` as a pole plane index.
 fn plane_index(x: usize) -> Result<u32, FieldRefusal> {
-    u32::try_from(x).map_err(|_| FieldRefusal::PastFrame { plane: u32::MAX })
+    u32::try_from(x).map_err(|_| FieldRefusal::PastPolePlane { plane: u32::MAX })
 }
 
 /// THE FACTORISATION'S MOTION LIFTED (MU-SENSING §3.9, the motion): the
@@ -74,7 +74,7 @@ fn plane_index(x: usize) -> Result<u32, FieldRefusal> {
 /// reads it; each output axis whose period moves is re-periodded. Refused
 /// `Transduction` where the motion's rank is not the enclosure's, and as
 /// the frame refuses its planes.
-pub fn motion_of(frame: &FramePlanes, from: &Enclosure, motion: &Transduced) -> Result<FieldMotion, FieldRefusal> {
+pub fn motion_of(frame: &PolePlanes, from: &Enclosure, motion: &Transduced) -> Result<FieldMotion, FieldRefusal> {
     let permutation = &motion.permutation;
     let moved = permutation.enclosure(from).map_err(FieldRefusal::Transduction)?;
     let rank = permutation.rank();
@@ -122,7 +122,7 @@ pub fn motion_of(frame: &FramePlanes, from: &Enclosure, motion: &Transduced) -> 
 pub fn transitions_of(x: &Sample, y: &Sample, f: &Factorisation) -> Result<Vec<Result<PairTransition, TransductionRefusal>>, FieldRefusal> {
     let source = Lifted::of(x)?;
     let from = Enclosure::of(x);
-    let motion = motion_of(&source.frame, &from, &f.motion)?;
+    let motion = motion_of(&source.poles, &from, &f.motion)?;
     let permutation = &f.motion.permutation;
     let own = permutation.enclosure(&from).map_err(FieldRefusal::Transduction)?;
     let moved = permutation.spoken_onto(&Enclosed::of(x), &own).map_err(FieldRefusal::Transduction)?;

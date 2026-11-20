@@ -10,7 +10,7 @@ use super::enclosing::{stand, Labels, Membrane};
 use super::holonomy::{Holonomy, Monodromy};
 use super::refusal::FieldRefusal;
 use super::shares::{pole_plane, Cohesion};
-use super::turning::FramePlanes;
+use super::turning::PolePlanes;
 use crate::core::Q;
 use forms::passage::{PassageState, Place};
 use num_traits::{One, Signed, Zero};
@@ -85,14 +85,14 @@ pub struct Inflation {
 }
 
 /// A WELL'S BODY (78.171 §2, a well): the curvature around one attractor.
-/// It holds the frame planes it stands on, the attractor (its centre, a
+/// It holds the pole planes it stands on, the attractor (its centre, a
 /// chart; the geodesic orbit it binds, none in a flat region; its
 /// membrane, the throat of the planes' own last plane, as a lifted
 /// sample's is), and its stage. No mass, radius or count is held: its
 /// holonomy, precession and inflation are readings.
 #[derive(Clone, Debug)]
 pub struct WellBody {
-    planes: FramePlanes,
+    planes: PolePlanes,
     attractor: Attractor,
     stage: WellStage,
 }
@@ -101,14 +101,14 @@ impl WellBody {
     /// THE BODY OF A WELL AT `centre` on `planes`: its membrane the throat
     /// of the planes' last plane, the orbit it binds `orbit` (none: flat).
     /// Refused as the membrane refuses its plane.
-    pub fn of(planes: FramePlanes, centre: Chart, orbit: Option<Orbit>, stage: WellStage) -> Result<WellBody, FieldRefusal> {
+    pub fn of(planes: PolePlanes, centre: Chart, orbit: Option<Orbit>, stage: WellStage) -> Result<WellBody, FieldRefusal> {
         let membrane = Membrane::of(&planes, planes.count())?;
         WellBody::held(planes, Attractor { centre, orbit, membrane }, stage)
     }
 
     /// THE BODY OF A HELD ATTRACTOR, as a statement reconstructs it: held
     /// in its own atlas first, refused as [`Atlas::hold`] refuses.
-    pub(super) fn held(planes: FramePlanes, attractor: Attractor, stage: WellStage) -> Result<WellBody, FieldRefusal> {
+    pub(super) fn held(planes: PolePlanes, attractor: Attractor, stage: WellStage) -> Result<WellBody, FieldRefusal> {
         let body = WellBody { planes, attractor, stage };
         body.atlas()?;
         Ok(body)
@@ -124,8 +124,8 @@ impl WellBody {
         Ok(atlas)
     }
 
-    /// The frame planes the well stands on.
-    pub fn planes(&self) -> &FramePlanes {
+    /// The pole planes the well stands on.
+    pub fn planes(&self) -> &PolePlanes {
         &self.planes
     }
 

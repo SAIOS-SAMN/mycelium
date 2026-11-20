@@ -2,10 +2,10 @@
 //
 //! LAW-FIELD v1 §1a, §4 `Unenclosed` (proposal 78.171 amendments (a), (d)) —
 //! THE MEMBRANE: a holding's own enclosure, the throat's fixed sphere on one
-//! frame plane's pole basis; infinity, a plane's pole, stands only inside one.
+//! pole plane's pole basis; infinity, a plane's pole, stands only inside one.
 
 use super::refusal::FieldRefusal;
-use super::turning::FramePlanes;
+use super::turning::PolePlanes;
 use crate::core::Q;
 use crate::transducer::cga::Clifford;
 use forms::coordinate::Square;
@@ -31,7 +31,7 @@ impl Labels {
     }
 }
 
-/// A MEMBRANE (78.171 §1a, §2): the throat of one frame plane, `H = R`,
+/// A MEMBRANE (78.171 §1a, §2): the throat of one pole plane, `H = R`,
 /// the frame state on `e₊` alone, the fixed sphere of the pole swap and
 /// never null. It is a holding's own enclosure (a well's, a sample's),
 /// never a reference surface anything is measured against. A pole of the
@@ -45,9 +45,9 @@ pub struct Membrane {
 
 impl Membrane {
     /// THE MEMBRANE ON FRAME PLANE `k` of `frame`: the throat state at the
-    /// gauge `H = R = ½`, which is `e₊ₖ` itself. Refused `PastFrame` past
+    /// gauge `H = R = ½`, which is `e₊ₖ` itself. Refused `PastPolePlane` past
     /// the frame, and as the pole basis refuses the plane's units.
-    pub fn of(frame: &FramePlanes, k: u32) -> Result<Membrane, FieldRefusal> {
+    pub fn of(frame: &PolePlanes, k: u32) -> Result<Membrane, FieldRefusal> {
         let (positive, negative) = (frame.unit_value(Square::Positive, k)?, frame.unit_value(Square::Negative, k)?);
         let poles = Poles::of(&positive, &negative).map_err(FieldRefusal::Passage)?;
         let half = algebra::multivector::half();
@@ -55,7 +55,7 @@ impl Membrane {
         Ok(Membrane { plane: k, poles, throat })
     }
 
-    /// The frame plane the membrane stands on.
+    /// The pole plane the membrane stands on.
     pub fn plane(&self) -> u32 {
         self.plane
     }

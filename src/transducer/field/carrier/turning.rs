@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! LAW-FIELD v1 §1a, §2 (a point, a motion; proposal 78.171 amendments (b),
-//! (c)) — THE FRAME PLANES, A TURNING PLANE AND A TURNING: an angle exact in
+//! (c)) — THE POLE PLANES, A TURNING PLANE AND A TURNING: an angle exact in
 //! degrees on a named plane, its winding kept, its motion over `ℚ(ζ_ℓ)`.
 
 use super::cyclotomic::Cyclotomic;
@@ -13,29 +13,29 @@ use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, ToPrimitive};
 
-/// THE FIELD'S FRAME PLANES (78.171 §1a): plane `k` is held by its two
+/// THE FIELD'S POLE PLANES (78.171 §1a): plane `k` is held by its two
 /// units, `e₊ₖ` squaring to +1 and `e₋ₖ` to −1, so the algebra is
 /// `Cl(p, q)` with `p = q` the count of planes, its signature read per
 /// plane from each value's negative mask, never a fixed `Cl(n+1, 1)`.
 /// `e₊ₖ` is base generator `2k − 1` and `e₋ₖ` base generator `2k`, so no
 /// unit of one plane is a unit of another.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FramePlanes {
+pub struct PolePlanes {
     count: u32,
 }
 
-impl FramePlanes {
-    /// THE FRAME OF `count` PLANES. Refused `PastFrame` with the first
+impl PolePlanes {
+    /// THE FRAME OF `count` PLANES. Refused `PastPolePlane` with the first
     /// plane whose units the algebra's masks cannot hold.
-    pub fn of(count: u32) -> Result<FramePlanes, FieldRefusal> {
-        let frame = FramePlanes { count };
+    pub fn of(count: u32) -> Result<PolePlanes, FieldRefusal> {
+        let frame = PolePlanes { count };
         match (1..=count).find(|&k| frame.unit(Square::Negative, k).is_none()) {
-            Some(plane) => Err(FieldRefusal::PastFrame { plane }),
+            Some(plane) => Err(FieldRefusal::PastPolePlane { plane }),
             None => Ok(frame),
         }
     }
 
-    /// How many frame planes the field holds.
+    /// How many pole planes the field holds.
     pub fn count(&self) -> u32 {
         self.count
     }
@@ -57,10 +57,10 @@ impl FramePlanes {
     }
 
     /// PLANE `k`'S UNIT OF SQUARE `square` as a value of the field's
-    /// algebra, at coefficient one. Refused `PastFrame` past the field's
+    /// algebra, at coefficient one. Refused `PastPolePlane` past the field's
     /// planes.
     pub fn unit_value(&self, square: Square, k: u32) -> Result<Clifford, FieldRefusal> {
-        let mask = (k <= self.count).then(|| self.unit(square, k)).flatten().ok_or(FieldRefusal::PastFrame { plane: k })?;
+        let mask = (k <= self.count).then(|| self.unit(square, k)).flatten().ok_or(FieldRefusal::PastPolePlane { plane: k })?;
         Clifford::blade(self.negatives(), mask, Q::one()).map_err(FieldRefusal::Mismatched)
     }
 }
@@ -76,7 +76,7 @@ pub enum Meeting {
     Sharing,
 }
 
-/// A TURNING PLANE (FORMS-COORDINATE v4's H key): two frame units of one
+/// A TURNING PLANE (FORMS-COORDINATE v4's H key): two pole units of one
 /// square on two planes, `e₊ₖe₊ₗ` (written `e_+k+l`) or `e₋ₖe₋ₗ`, its
 /// bivector `B` with `B² = −1` read from the units' squares, never computed
 /// as a quantity. Its orientation is the order written: `e_+2+1` is
@@ -91,15 +91,15 @@ pub struct TurningPlane {
 impl TurningPlane {
     /// THE TURNING PLANE `e_{square k} e_{square l}` of `frame`. Refused
     /// `NotTurningPlane` where `k = l` or a unit has no writing, and
-    /// `PastFrame` past the frame's planes.
-    pub fn of(frame: &FramePlanes, square: Square, k: u32, l: u32) -> Result<TurningPlane, FieldRefusal> {
+    /// `PastPolePlane` past the frame's planes.
+    pub fn of(frame: &PolePlanes, square: Square, k: u32, l: u32) -> Result<TurningPlane, FieldRefusal> {
         let axis = |i| Axis::unit(square, i).map_err(FieldRefusal::NotTurningPlane);
         let key = Key::generator(axis(k)?, axis(l)?).map_err(FieldRefusal::NotTurningPlane)?;
         let (Some(Plane::Turning(_)), Some(a), Some(b)) = (key.plane(), frame.unit(square, k), frame.unit(square, l)) else {
-            return Err(FieldRefusal::PastFrame { plane: k.max(l) });
+            return Err(FieldRefusal::PastPolePlane { plane: k.max(l) });
         };
         if k.max(l) > frame.count {
-            return Err(FieldRefusal::PastFrame { plane: k.max(l) });
+            return Err(FieldRefusal::PastPolePlane { plane: k.max(l) });
         }
         let sign = match a < b {
             true => Q::one(),
