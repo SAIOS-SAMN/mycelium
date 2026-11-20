@@ -63,7 +63,7 @@ pub(crate) fn germ_of_pair(
 ///
 /// A STROKE SIZE, never μ: the reads an extraction may take, so it counts
 /// reads and feeds no payment (ruled 2026-11-01).
-pub fn extraction_spend(family: &[(SectionSample, SectionSample)], frames: &super::perceive::Frames) -> usize {
+pub fn extraction_spend(family: &[(SectionSample, SectionSample)], frames: &super::perceive::FamilyBodies) -> usize {
     let mut n = 0usize;
     for (a, b) in family {
         for g in [a, b] {

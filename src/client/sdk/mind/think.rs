@@ -26,8 +26,8 @@ impl Mind {
     /// it was perceived from, under `family` (empty: a remainder scene is
     /// named by no task).
     pub(crate) fn hold_scene(&mut self, p: super::family::PairPercept, family: &[u8]) {
-        let mut budget = self.physics.stroke_n(crate::transducer::family::extraction_spend(&p.pair, &p.frames));
-        self.hold_perceived_from(p.form, &p.frames, (&[][..], &p.pair), &[], family, &mut budget);
+        let mut budget = self.physics.stroke_n(crate::transducer::family::extraction_spend(&p.pair, &p.bodies));
+        self.hold_perceived_from(p.form, &p.bodies, (&[][..], &p.pair), &[], family, &mut budget);
     }
 
     /// N4 — HOLD A PERCEPTION with the pair bodies it was perceived from, so the
@@ -38,7 +38,7 @@ impl Mind {
     pub(crate) fn hold_perceived(
         &mut self,
         f: crate::transducer::sentence::Form,
-        frames: &crate::transducer::family::Frames,
+        frames: &crate::transducer::family::FamilyBodies,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         family: &[u8],
@@ -54,7 +54,7 @@ impl Mind {
     pub(crate) fn hold_perceived_from(
         &mut self,
         f: crate::transducer::sentence::Form,
-        frames: &crate::transducer::family::Frames,
+        frames: &crate::transducer::family::FamilyBodies,
         (train, scene): (&crate::transducer::family::Family, &crate::transducer::family::Family),
         remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         family: &[u8],
@@ -755,7 +755,7 @@ impl Mind {
     pub(crate) fn withhold_perceived(
         &mut self,
         f: crate::transducer::sentence::Form,
-        frames: &crate::transducer::family::Frames,
+        frames: &crate::transducer::family::FamilyBodies,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         mag: [u64; 4],
@@ -769,7 +769,7 @@ impl Mind {
     fn withhold_with(
         &mut self,
         f: crate::transducer::sentence::Form,
-        frames: Option<&crate::transducer::family::Frames>,
+        frames: Option<&crate::transducer::family::FamilyBodies>,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         mag: [u64; 4],

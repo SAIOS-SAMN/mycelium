@@ -182,7 +182,7 @@ fn extract_rule_cached_never_keeps_none() {
 /// beyond its cells.
 #[test]
 fn extraction_spend_includes_transduction_need() {
-    let contacts = |frames: &Frames| -> usize {
+    let contacts = |frames: &FamilyBodies| -> usize {
         frames.iter().map(|p| (p.input.len() + p.output.len()) * 3 * crate::transducer::blade::CANDIDATES_PER_PAIR).sum()
     };
     let scaled = vec![(digits(&["10", "00"]), digits(&["1100", "1100", "0000", "0000"]))];

@@ -178,7 +178,7 @@ struct ClassRead {
 /// vortex, no ground) the percept is refused by name (`Unground`).
 pub(super) fn family_percept(
     family: &[(SectionSample, SectionSample)],
-    frames: &super::perceive::Frames,
+    frames: &super::perceive::FamilyBodies,
     scale: Ratio,
     budget: &mut crate::physics::Budget,
 ) -> Result<Percept, transduce::Unground> {

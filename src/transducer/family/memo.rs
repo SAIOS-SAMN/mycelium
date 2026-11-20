@@ -283,7 +283,7 @@ pub fn extract_rule_cached(
     atlas_root: crate::transducer::address::Address,
     budget: &mut crate::physics::Budget,
     crystal: &dyn Crystal,
-    frames: Option<&super::perceive::Frames>,
+    frames: Option<&super::perceive::FamilyBodies>,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
     if let Some(rule) = cache.get(fam, &atlas_root) {
         return Some(rule.clone());

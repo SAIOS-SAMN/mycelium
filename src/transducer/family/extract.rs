@@ -40,7 +40,7 @@ pub fn extract_rule_with(
 /// the family's own ground (`arc::on_ground_of`).
 pub fn extract_rule_on(
     family: &[(SectionSample, SectionSample)],
-    frames: &super::perceive::Frames,
+    frames: &super::perceive::FamilyBodies,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
@@ -49,7 +49,7 @@ pub fn extract_rule_on(
 
 fn extract_rule_on_ground(
     family: &[(SectionSample, SectionSample)],
-    frames: &super::perceive::Frames,
+    frames: &super::perceive::FamilyBodies,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
@@ -281,7 +281,7 @@ pub fn scene_form_on(
     budget: &mut crate::physics::Budget,
     a: &SectionSample,
     b: &SectionSample,
-    frames: &super::perceive::Frames,
+    frames: &super::perceive::FamilyBodies,
 ) -> Option<Form> {
     let pair = [(a.clone(), b.clone())];
     extract_rule_on(&pair, frames, crystal, budget).map(|r| r.form)
