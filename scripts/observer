@@ -33,6 +33,41 @@ case "${1:-}" in
 esac
 [ "$#" -gt 0 ] || usage
 
+# Per-hypha court hold spend per lane (78.183 P2, #346, #351): reads lines
+# `court hold <site> took N spent S:G:T:H [..] unnamed M` from the hypha's
+# sibling log, keeping each site's latest spend and unnamed count, sorted by
+# unnamed descending.
+hold_spend() {
+  local h="$1"
+  local log="$(dirname "$h")/$(basename "$h").log"
+  [ -r "$log" ] || return 0
+  local rows
+  rows=$(awk '
+    /court hold / {
+      site = ""; spent = ""; unnamed = "";
+      for (i = 1; i <= NF; i++) {
+        if ($i == "hold" && i + 1 <= NF) site = $(i + 1);
+        else if ($i == "spent" && i + 1 <= NF) spent = $(i + 1);
+        else if ($i == "unnamed" && i + 1 <= NF) unnamed = $(i + 1);
+      }
+      if (site != "" && spent != "" && unnamed != "") {
+        latest_spent[site] = spent;
+        latest_unnamed[site] = unnamed + 0;
+      }
+    }
+    END {
+      for (s in latest_spent) {
+        printf "%d\t%s\t%s\n", latest_unnamed[s], s, latest_spent[s];
+      }
+    }
+  ' "$log" | sort -t$'\t' -k1,1nr -k2,2)
+  if [ -n "$rows" ]; then
+    printf '── COURT HOLD SPEND (%s)\n' "$(basename "$h")"
+    printf '  %-28s %-20s %s\n' "site" "spent (S:G:T:H)" "unnamed"
+    printf '%s\n' "$rows" | awk -F'\t' '{ printf "  %-28s %-20s %s\n", $2, $3, $1 }'
+  fi
+}
+
 # One frame; non-zero where any reading did not answer.
 frame() {
   failed=0
@@ -48,6 +83,7 @@ frame() {
     "$BIN" --console --home "$h" --reading acts || failed=1
     "$BIN" --console --home "$h" --reading agreements || failed=1
     "$BIN" --console --home "$h" --reading channels || failed=1
+    hold_spend "$h"
   done
   return "$failed"
 }
