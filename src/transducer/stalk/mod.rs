@@ -5,6 +5,7 @@
 //! filed under exact scale-free coordinates; the members are addresses.
 
 pub mod chart;
+pub mod sphere;
 pub mod stalks;
 pub mod stratum;
 
