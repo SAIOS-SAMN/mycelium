@@ -63,8 +63,8 @@ pub struct Residue {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NotCarried {
     /// The two supports stand on different towers or bases, or on a base
-    /// whose axes the algebra does not hold (no frame to carry).
-    Frames,
+    /// whose axes the algebra does not hold.
+    Bases,
     /// The versor is not read at both poles (`conformal_factors`).
     Unfactored(crate::transducer::element::Unfactored),
     /// The versor moves infinity — a transversion, or the inversion's cell:
@@ -183,7 +183,7 @@ impl<'a> ContinuousSupport<'a> {
     pub fn matches(&self, other: &Self, v: &Mv, through: Harmonic) -> Result<Covariance, NotCarried> {
         let n = self.centre.len();
         if self.tower != other.tower || other.centre.len() != n {
-            return Err(NotCarried::Frames);
+            return Err(NotCarried::Bases);
         }
         let f = crate::transducer::element::conformal_factors(v).map_err(NotCarried::Unfactored)?;
         if f.inverted || f.transverses() {
@@ -222,12 +222,12 @@ impl<'a> ContinuousSupport<'a> {
     ) -> Result<Covariance, NotCarried> {
         let n = self.centre.len();
         if self.tower != other.tower || other.centre.len() != n {
-            return Err(NotCarried::Frames);
+            return Err(NotCarried::Bases);
         }
         cga::weight_of(rotation).filter(|w| !w.is_zero()).ok_or(NotCarried::Weightless)?;
         // The frame's axes: a body standing on axes the algebra does not hold
         // has no frame to carry.
-        let unit: Vec<Mv> = (0..n).map(axis).collect::<Option<Vec<Mv>>>().ok_or(NotCarried::Frames)?;
+        let unit: Vec<Mv> = (0..n).map(axis).collect::<Option<Vec<Mv>>>().ok_or(NotCarried::Bases)?;
         let images: Vec<Mv> = unit.iter().map(|e| rotation.twisted(e)).collect();
         if !images.iter().all(|y| y.sub(&on_base(y, n)).is_zero()) {
             return Err(NotCarried::OffAxes);

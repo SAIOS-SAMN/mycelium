@@ -7,7 +7,7 @@
 use super::*;
 use crate::transducer::sentence::frame_key;
 
-pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
+pub(crate) fn grows_to_enclosure(a: &SectionSample, b: &SectionSample) -> bool {
     let (fa, fb) = (frame_of(a), frame_of(b));
     if fa != fb || fa.0 == 0 || fa.1 == 0 {
         return false;
@@ -59,7 +59,7 @@ pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
 /// The output frame of a scaled bundle. A ratio that does not divide the
 /// input frame exactly, or that is not a ratio at all, leaves the frame
 /// where it is; nothing is rounded.
-pub(crate) fn output_frame(fx: (usize, usize), ratio: ((usize, usize), (usize, usize))) -> (usize, usize) {
+pub(crate) fn output_extents(fx: (usize, usize), ratio: ((usize, usize), (usize, usize))) -> (usize, usize) {
     let ((hn, hd), (wn, wd)) = ratio;
     if hd == 0 || wd == 0 || fx.0 == 0 || fx.1 == 0 || (fx.0 * hn) % hd != 0 || (fx.1 * wn) % wd != 0 {
         return fx;
@@ -297,7 +297,7 @@ fn speak_on_scene(
     ctx: &mut Speaking<'_>,
 ) -> Option<Speech> {
     let fx = frame_of(x);
-    let mut fy = output_frame(fx, f.ratio);
+    let mut fy = output_extents(fx, f.ratio);
     let Scene { bodies, atlas, .. } = scene;
     let mut painted: Vec<PaintedSite> = Vec::new();
     let mut remainder: Vec<PaintedSite> = Vec::new();
@@ -621,7 +621,7 @@ fn speak_on_scene(
         false => reached.iter().enumerate().filter(|(_, hit)| !**hit).map(|(i, _)| i).collect(),
     };
     Some(Speech {
-        frame: fy,
+        extents: fy,
         painted,
         remainder,
         unspoken,
@@ -633,10 +633,10 @@ fn speak_on_scene(
 }
 
 /// What a form says about a new input: the spoken painted sites on the
-/// output frame, and the remainder — input sites the form does not speak.
+/// output enclosure, and the remainder — input sites the form does not speak.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Speech {
-    pub frame: (usize, usize),
+    pub extents: (usize, usize),
     pub painted: Vec<PaintedSite>,
     pub remainder: Vec<PaintedSite>,
     /// The vertices, by coordinates, whose class fibre was empty on
@@ -678,7 +678,7 @@ impl Speech {
         // where one is left and the scope has none (a vortex, no ground, no
         // family open), no sample stands for the speech. A speech that paints
         // every site needs no ground.
-        let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; self.frame.1]; self.frame.0];
+        let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; self.extents.1]; self.extents.0];
         for p in &self.painted {
             let [ur, uc] = p.site.indices()?;
             *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = Some(p.symbol);
