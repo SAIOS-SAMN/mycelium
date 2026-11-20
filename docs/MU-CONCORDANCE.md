@@ -754,3 +754,43 @@ UNCHANGED, and why:
   once the fixtures are read alike.
 
 (end of draft 5)
+
+## 13. Proposed amendment (draft 6), 2026-11-20: LAW-SHEAF-SYNC v1
+
+**Proposed amendment (draft 6): not signed, not in force.** Mycelium
+proposes it under §0 AMENDING, for the maintainer's approval, from proposal
+[78.187](proposals/78.187-sheaf-sync.md) and the live finding on #349: the
+digest reply listed every stratum of the language, outgrew the wire
+budget, and was refused whole, which split the mesh around one hypha. It is
+independent of drafts 4 and 5. If approved, it is written into §4 as a new
+clause, and it binds a kernel when that kernel signs it (§0, 9.3).
+
+PROPOSED, 4.6 (a new clause):
+> 4.6 THE LANGUAGE IS SYNCHRONISED BY DESCENT ALONG ITS CHARTS,
+> LAW-SHEAF-SYNC v1.
+> - A holder's language is read as its stalk tree. Each node is a chart,
+>   and each child refines its chart by one axis. A node reads as its
+>   count and its root: the members at and below it, and the locator over
+>   its own members' root and its children's roots in axis order. A root
+>   locates and admits nothing; a word is admitted only by reconstruction
+>   (4.4).
+> - A digest request names a chart and a resume axis. Its reply is the
+>   node's reading and its children's readings from the resume, filled to
+>   the wire budget, with the next resume where children remain. The
+>   asker descends only where roots do not locate each other. A fetch
+>   inside a stratum names the roots of address ranges, never the
+>   asker's whole member list. No reply or request grows with the size of
+>   the language.
+> - FIXTURES: 78.187 §3, fixtures 1–7.
+> - A kernel that has not signed this clause is answered under the act as
+>   signed: the flat strata, filled to the budget and never refused whole,
+>   held and named as partial.
+
+PROPOSED, 0.1 (the scope map): 4.6 is a **Network** clause, enforced by
+every hypha and read by every client; the Network row's "4.2–4.5" becomes
+"4.2–4.6".
+
+WHAT LANDING NEEDS (Mycelium's engineering, not a term of the clause):
+78.187 §7, then the live reading of 78.187 §6 on the mesh.
+
+(end of draft 6)
