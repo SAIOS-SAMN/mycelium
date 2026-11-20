@@ -83,7 +83,7 @@ fn has_separator(g: &SectionSample) -> bool {
 /// reciprocal — the output is `|a|` times SMALLER. A ratio that is not a
 /// whole number either way is no ratio at all and refuses (rule 11), and a
 /// pair whose factors disagree with an earlier pair's refuses the family.
-fn frame_ratio(input: &SectionSample, output: &SectionSample) -> Option<(i64, i64)> {
+fn enclosure_ratio(input: &SectionSample, output: &SectionSample) -> Option<(i64, i64)> {
     let shape = |g: &SectionSample| -> (i64, i64) {
         let [h, w] = g.extents();
         (h as i64, w as i64)
@@ -168,7 +168,7 @@ fn read(task: &Task) -> FamilyCensus {
     // One ratio for the family or none: the pairs must agree, or the frames
     // do not stand in a ratio at all.
     let ratio = task.train.iter().try_fold(None, |acc, (i, o)| {
-        let r = frame_ratio(i, o)?;
+        let r = enclosure_ratio(i, o)?;
         match acc {
             None => Some(Some(r)),
             Some(was) if was == r => Some(Some(r)),
