@@ -2,6 +2,7 @@
 // D3.2), and the rank-n claims of ROADMAP track 26, S4. Every fixture is a
 // sample: the transduction reads nothing else.
 
+mod discover;
 mod enclosed;
 mod factor;
 mod ground;

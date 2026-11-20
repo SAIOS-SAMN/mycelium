@@ -21,6 +21,7 @@
 //! the projection that speaks onto an output frame.
 
 mod collapse;
+mod discover;
 mod enclosed;
 mod factor;
 mod ground;
@@ -38,6 +39,7 @@ mod turn;
 mod tests;
 
 pub use collapse::{collapse_of, CandidateReading, Collapse, GroundReading};
+pub use discover::{discover_enclosure, Discovered};
 pub use enclosed::{Band, Enclosed};
 pub use factor::{factorisations, factorisations_need, need_of_motion, Factored, Factorisation, Motion};
 pub use ground::{Candidacy, Ground, Unground};
