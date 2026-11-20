@@ -1206,8 +1206,8 @@ impl Contemplation {
                 after.push(hour(&ray(carry.sandwich(x)), &r_hour, next));
             }
             let (before, after) = (
-                Constellation { frames: before, generator: r_hour.clone() },
-                Constellation { frames: after, generator: r_hour },
+                Constellation { poses: before, generator: r_hour.clone() },
+                Constellation { poses: after, generator: r_hour },
             );
             // THE STRUCTURE FIRST — frames that do not stand, or a strain that
             // rises, leave no form to read, refused — then Δω, the torque the
@@ -1564,8 +1564,8 @@ impl Contemplation {
         // every matched body, then τ_ext of every body's step; closed only
         // where every component vanishes.
         let verdict = coherence(
-            &Constellation { frames: before, generator: g.coupling.clone() },
-            &Constellation { frames: after, generator: g.coupling.clone() },
+            &Constellation { poses: before, generator: g.coupling.clone() },
+            &Constellation { poses: after, generator: g.coupling.clone() },
             budget,
         )
         .and_then(|mut defect| {
