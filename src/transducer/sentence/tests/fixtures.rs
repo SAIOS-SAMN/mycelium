@@ -57,7 +57,7 @@ pub const FRAME: u64 = 0;
 /// Frame's chart (Q-B1): the member's chart back.
 pub fn stand_with_star(f: &mut Form, v: &Vertex) -> coord::ChartAt {
     let c = f.stand_member(v, FRAME).expect("a word vertex stands");
-    f.place_overlap(coord::ChartAt::Frame, c.clone(), None).expect("star");
+    f.place_overlap(coord::ChartAt::Enclosure, c.clone(), None).expect("star");
     c
 }
 
@@ -183,7 +183,7 @@ pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
 /// each. `extra` names chords by spoke number, `0` the Frame's chart.
 pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
     let mut f = Form::default();
-    let mut charts = vec![coord::ChartAt::Frame];
+    let mut charts = vec![coord::ChartAt::Enclosure];
     for i in 0..n_words {
         let j = u16::try_from(i).expect("a star fixture's spoke, n_words small") + 1;
         let v = word_vertex_on(
@@ -278,7 +278,7 @@ pub fn coboundary_chord_form() -> Form {
     // identity's class, each overlapped from the Frame's chart.
     let c1 = f.stand_member(&word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])), FRAME).expect("member 1");
     let c2 = f.stand_member(&word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])), FRAME).expect("member 2");
-    let charts = [coord::ChartAt::Frame, c1, c2];
+    let charts = [coord::ChartAt::Enclosure, c1, c2];
     for (i, j, w) in [(0usize, 1usize, r.clone()), (0, 2, Word::identity()), (1, 2, r.inverse())] {
         chord(&mut f, &charts[i], &charts[j], w);
     }
@@ -291,7 +291,7 @@ pub fn coboundary_chord_form() -> Form {
 /// Frame's chart to the identity's member on chart `[1]` at [`FRAME`].
 pub fn some_overlap() -> coord::Overlap {
     coord::Overlap {
-        from: coord::ChartAt::Frame,
+        from: coord::ChartAt::Enclosure,
         to: chart_of(&word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])), stalk::Invariant::counts(&[1])),
     }
 }

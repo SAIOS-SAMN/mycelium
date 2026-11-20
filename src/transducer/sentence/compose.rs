@@ -224,7 +224,7 @@ fn term_choices(carried: &super::circuit::PathCarried) -> Result<Vec<Vec<Term>>,
 fn edgeless(o: &crate::network::nerve::coord::Overlap) -> TermUnread {
     use crate::network::nerve::coord::ChartAt;
     match (&o.from, &o.to) {
-        (ChartAt::Frame, _) | (_, ChartAt::Frame) => TermUnread::StarUnread,
+        (ChartAt::Enclosure, _) | (_, ChartAt::Enclosure) => TermUnread::StarUnread,
         // One vertex's own step along e₃ — its chart kept, or (AT1 A2) across
         // two of its charts — never a pair of members.
         (ChartAt::At(a), ChartAt::At(b)) if a.vertex == b.vertex => TermUnread::StepUnread,

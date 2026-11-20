@@ -28,7 +28,7 @@ fn round() -> (Mv, Vec<Mv>) {
 fn overlap(n: u64) -> crate::network::nerve::coord::Overlap {
     use crate::network::nerve::coord::{ChartAt, Overlap, VertexAt};
     Overlap {
-        from: ChartAt::Frame,
+        from: ChartAt::Enclosure,
         to: ChartAt::at(VertexAt::Enclosure, crate::transducer::stalk::Invariant::counts(&[n + 1]), 0),
     }
 }

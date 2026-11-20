@@ -97,8 +97,8 @@ fn rebase_conjugates_by_versor_never_subtracts() {
     let mut v = word_vertex(1, word_turn_90());
     v.set_carriage(element::carriage(&q1(), &(q1(), q0())));
     let c = stand_with_star(&mut f, &v);
-    let star = coord::Overlap { from: coord::ChartAt::Frame, to: c.clone() };
-    let by = f.face_place(&coord::ChartAt::Frame, &c, None).expect("relative");
+    let star = coord::Overlap { from: coord::ChartAt::Enclosure, to: c.clone() };
+    let by = f.face_place(&coord::ChartAt::Enclosure, &c, None).expect("relative");
     assert!(
         !element::same_versor(&by.carriage, &element::identity_versor())
             || f.vertices.at(&c.vertex()).is_some(),
@@ -114,7 +114,7 @@ fn rebase_conjugates_by_versor_never_subtracts() {
     // The rebased vertex's member at the fixture's frame, on the chart it
     // stood on (AT1: a rebase keeps every chart and frame `of` held).
     let rebased = coord::ChartAt::at(of, c.invariant().expect("a member's chart").clone(), FRAME);
-    let t = f.face_place(&coord::ChartAt::Frame, &rebased, None).expect("rebased face");
+    let t = f.face_place(&coord::ChartAt::Enclosure, &rebased, None).expect("rebased face");
     let _ = t.carriage;
 }
 

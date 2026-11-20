@@ -565,14 +565,14 @@ impl Eq for Interface {}
 /// the trie's order is the succession and no width walls it.
 pub fn frame_key(k: u64) -> Vec<u8> {
     let mut out = Vec::new();
-    coord::put_frame(k, &mut out);
+    coord::put_sample_index(k, &mut out);
     out
 }
 
 /// The frame a section's inner key names. `None` for a key that is not one.
 pub fn frame_of_key(k: &[u8]) -> Option<u64> {
     let mut pos = 0usize;
-    let f = coord::take_frame(k, &mut pos)?;
+    let f = coord::take_sample_index(k, &mut pos)?;
     (pos == k.len()).then_some(f)
 }
 
@@ -648,7 +648,7 @@ impl coord::ChartAt {
     /// The vertex this chart belongs to; the Frame's chart is the Frame's.
     pub fn vertex(&self) -> coord::VertexAt {
         match self {
-            coord::ChartAt::Frame => coord::VertexAt::Enclosure,
+            coord::ChartAt::Enclosure => coord::VertexAt::Enclosure,
             coord::ChartAt::At(m) => m.vertex.clone(),
         }
     }
@@ -656,7 +656,7 @@ impl coord::ChartAt {
     /// The Invariant the member acts on; `None` at the Frame.
     pub fn invariant(&self) -> Option<&stalk::Invariant> {
         match self {
-            coord::ChartAt::Frame => None,
+            coord::ChartAt::Enclosure => None,
             coord::ChartAt::At(m) => Some(&m.chart),
         }
     }
@@ -664,7 +664,7 @@ impl coord::ChartAt {
     /// The frame; `None` at the Frame.
     pub fn frame(&self) -> Option<u64> {
         match self {
-            coord::ChartAt::Frame => None,
+            coord::ChartAt::Enclosure => None,
             coord::ChartAt::At(m) => Some(m.frame),
         }
     }

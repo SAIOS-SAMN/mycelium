@@ -630,7 +630,7 @@ fn edge_holonomies_refuses_orbit_without_edges() {
     // Three bodies, three charts. AT1 — one transport class is ONE vertex
     // (Q1), so the three are three MEMBERS of the identity's class, each at
     // its own chart; the star is an overlap from the Frame's chart to each.
-    let mut charts = vec![crate::network::nerve::coord::ChartAt::Frame];
+    let mut charts = vec![crate::network::nerve::coord::ChartAt::Enclosure];
     for tag in [1u8, 2u8, 3u8] {
         let v = crate::transducer::sentence::Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),

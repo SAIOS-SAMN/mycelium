@@ -177,7 +177,7 @@ impl Form {
         // chart and the Frame at its tag; a citation is at one frame — the
         // cited form's own, frame 0 — so its star is one overlap carrying the
         // placement (AT1: a face exists only at a member pair and its frame).
-        let o = coord::Overlap { from: coord::ChartAt::Frame, to: coord::ChartAt::at(at.clone(), self.vertices.at(&at)?.charts().into_iter().next()?, 0) };
+        let o = coord::Overlap { from: coord::ChartAt::Enclosure, to: coord::ChartAt::at(at.clone(), self.vertices.at(&at)?.charts().into_iter().next()?, 0) };
         let place = self.face_place(&o.from, &o.to, None)?;
         self.faces.put(&o, FormFace::placed(place, Producer::Place));
         self.depth = after;

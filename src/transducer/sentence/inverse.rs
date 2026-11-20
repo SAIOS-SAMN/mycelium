@@ -399,7 +399,7 @@ fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
         let nf = take_key_count(k, p)?;
         let mut frames = Keyed::new();
         for _ in 0..nf {
-            let f = coord::take_frame(k, p)?;
+            let f = coord::take_sample_index(k, p)?;
             frames.insert(frame_key(f), ());
         }
         // THE MEMBER NAMES ITSELF (54.7 R1, law 12): `Acting::key` is the

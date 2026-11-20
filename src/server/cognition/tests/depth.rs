@@ -27,7 +27,7 @@ fn sentence_with(w: Word, tag: u8) -> Element {
         None,
     );
     let c = f.stand_member(&v, 0).expect("a word vertex stands");
-    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("star");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None).expect("star");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")

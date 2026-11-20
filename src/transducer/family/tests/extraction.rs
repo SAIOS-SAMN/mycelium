@@ -197,7 +197,7 @@ assert!(
 let mut star_frames: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>, crate::network::nerve::coord::VertexAt> =
     crate::network::nerve::Keyed::new();
 for (o, _) in rule.form.faces.entries() {
-    let (crate::network::nerve::coord::ChartAt::Frame, Some(k)) = (&o.from, o.to.frame()) else { continue };
+    let (crate::network::nerve::coord::ChartAt::Enclosure, Some(k)) = (&o.from, o.to.frame()) else { continue };
     let v = o.to_vertex();
     match star_frames.at_mut(&v) {
         Some(ks) => {
@@ -893,7 +893,7 @@ for (at, v) in rule.form.vertices.entries() {
         continue;
     }
     // ITS STAR FACE: an overlap between the Frame's chart and a chart of it.
-    let frame = crate::network::nerve::coord::ChartAt::Frame;
+    let frame = crate::network::nerve::coord::ChartAt::Enclosure;
     if rule
         .form
         .faces

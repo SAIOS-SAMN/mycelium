@@ -1220,11 +1220,11 @@ pub(super) fn family_percept(
         };
         for k in frames {
             let chart = |v: &coord::VertexAt, c: &Invariant| match v {
-                coord::VertexAt::Enclosure => ChartAt::Frame,
+                coord::VertexAt::Enclosure => ChartAt::Enclosure,
                 _ => ChartAt::at(v.clone(), c.clone(), k),
             };
             let o = match star_j {
-                true => Overlap { from: ChartAt::Frame, to: chart(&i, &ci) },
+                true => Overlap { from: ChartAt::Enclosure, to: chart(&i, &ci) },
                 false => Overlap { from: chart(&i, &ci), to: chart(&j, &cj) },
             };
             let Some(mut place) = form.face_place(&o.from, &o.to, edge.clone()) else {

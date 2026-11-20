@@ -294,7 +294,7 @@ assert!(
     "a frame vertex is on the form"
 );
 let frame_face = rule.form.faces.entries().any(|(o, _)| {
-    o.from == crate::network::nerve::coord::ChartAt::Frame || o.to == crate::network::nerve::coord::ChartAt::Frame
+    o.from == crate::network::nerve::coord::ChartAt::Enclosure || o.to == crate::network::nerve::coord::ChartAt::Enclosure
 });
 let shifted = rule.form.vertices.scoped().any(|(_, v)| match v {
     // ANY MEMBER placed away from the identity is a family-constant shift:

@@ -7,7 +7,7 @@
 #[cfg(test)]
 pub fn sample_spelling(k: u64) -> Vec<u8> {
     let mut out = Vec::new();
-    crate::network::nerve::coord::put_frame(k, &mut out);
+    crate::network::nerve::coord::put_sample_index(k, &mut out);
     out
 }
 

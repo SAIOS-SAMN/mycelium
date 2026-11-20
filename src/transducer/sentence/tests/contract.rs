@@ -23,7 +23,7 @@ fn contract_turns_still_contact_word_into_demand() {
     let at = At::vertex(word.clone(), chart.clone());
     let remainder = vec![link(0, 1, 1, 2)];
     assert!(
-        f.overlaps_at(&word).iter().any(|o| o.from == crate::network::nerve::coord::ChartAt::Frame),
+        f.overlaps_at(&word).iter().any(|o| o.from == crate::network::nerve::coord::ChartAt::Enclosure),
         "the contact word has its star face"
     );
     assert_eq!(f.contract(RefusalKind::OrbitStill, &at, &remainder), Some(Contracted::Moved));

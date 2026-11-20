@@ -34,7 +34,7 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
     // sensor plane — as `letter_of`'s letter has none — so its star is not
     // put (rule 11). The generator this fixture holds is the vertex, never
     // the face.
-    let _star = f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None);
+    let _star = f.place_overlap(crate::network::nerve::coord::ChartAt::Enclosure, c, None);
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)

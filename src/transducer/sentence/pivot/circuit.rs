@@ -22,7 +22,7 @@ impl Form {
 /// AN OVERLAP THAT TOUCHES THE FRAME, asked of its charts: the Frame's
 /// chart is its tag alone (AT1 Q-B1), so the coordinate says so.
 pub(crate) fn touches_frame(o: &coord::Overlap) -> bool {
-    matches!(o.from, coord::ChartAt::Frame) || matches!(o.to, coord::ChartAt::Frame)
+    matches!(o.from, coord::ChartAt::Enclosure) || matches!(o.to, coord::ChartAt::Enclosure)
 }
 
 

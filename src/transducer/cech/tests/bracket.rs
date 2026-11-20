@@ -22,7 +22,7 @@ pub(crate) fn chamber(holonomies: &[Mv]) -> ChamberAlgebra {
         .iter()
         .zip(0u64..)
         .map(|(h, i)| {
-            let o = Overlap { from: ChartAt::Frame, to: ChartAt::at(VertexAt::Enclosure, crate::transducer::stalk::Invariant::counts(&[i + 1]), 0) };
+            let o = Overlap { from: ChartAt::Enclosure, to: ChartAt::at(VertexAt::Enclosure, crate::transducer::stalk::Invariant::counts(&[i + 1]), 0) };
             ChamberCircuit { ring: ChamberCircuit::ring_of(&[(o, true)]), holonomy: Ok(h.clone()), hue: Some(Vec::new()) }
         })
         .collect();
