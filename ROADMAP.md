@@ -162,7 +162,7 @@ kept.
 2. [#459](https://github.com/SAIOS-SAMN/mycelium/issues/459), **every lane on its own.** Per-lane deferral and pacing (#449, #460), then the court's remaining collapses; PR #447 ready.
 3. [#429](https://github.com/SAIOS-SAMN/mycelium/issues/429), **the body on the sample's manifold.** 78.190 S1–S2 (PR #432), after #457.
 4. [#473](https://github.com/SAIOS-SAMN/mycelium/issues/473), **the atlas on Sⁿ, the chart off the lattice.** #411, #410, #403, #408, #407, #406.
-5. [#428](https://github.com/SAIOS-SAMN/mycelium/issues/428), **the recut.** The carriers at the body's rank (78.190 S3–S5) and motion held whole (#416), under one network contract approval.
+5. [#428](https://github.com/SAIOS-SAMN/mycelium/issues/428), **the recut.** The carriers at the body's rank (78.190 S3–S5) and motion held whole (#416), under one network contract approval. It removes the root defect: cognition's coordinate is a lattice point, not the shared coordinate (78.173), so cohesion is read on the lattice. Its parts are #476, #477, #421, #479, 78.190 S4–S5, #416 and #471, and Stage 6 depends on it.
 6. [#427](https://github.com/SAIOS-SAMN/mycelium/issues/427), **the gauge and the shares.** `(P, τ)` (PR #443), then cohesion per chart (#468, #412).
 7. [#430](https://github.com/SAIOS-SAMN/mycelium/issues/430), **cohesion as fluid physics.** #465, #424, #425, #426.
 
