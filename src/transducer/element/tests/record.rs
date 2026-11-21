@@ -331,11 +331,12 @@ fn from_bytes_round_trips_rotated_connection() {
     );
 }
 
-/// #435 — A RECORD'S NAME IS RE-DERIVED, NEVER TAKEN FROM ITS BYTES (1.5,
-/// 17.7 M7). A residue word whose record carries another word's address is
-/// refused; its honest record reads back with the name its content derives.
+/// A record's name is re-derived, never taken from the bytes (#435;
+/// MU-RECURSION 1.5, 17.7 M7). A residue word whose record carries another
+/// word's address is refused; the unaltered record reads back with the name
+/// the content derives.
 #[test]
-fn record_naming_another_address_is_refused() {
+fn from_bytes_refuses_record_naming_another_address() {
     let a = from_canonical(&crate::transducer::element::canonical_chain(&[link(0, 0, 1, 2), link(0, 1, 1, 2)]).expect("a chain"));
     let b = from_canonical(&crate::transducer::element::canonical_chain(&[link(0, 0, 1, 3)]).expect("a chain"));
     assert_ne!(a.address(), b.address(), "two contents, two names");
