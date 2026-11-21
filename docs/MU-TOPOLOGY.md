@@ -201,6 +201,24 @@ same algebra:
 - **The physics atlas** records, per claim and per universe, where
   universes converge and where they diverge, with the breached laws named
   (MU-SCIENCE §6.2, **Specified**).
+- **The tether is a Hopf link** (MU-RECURSION 78.184 §7, agreed
+  2026-11-16; 78.185 §2). A node's unit motion is read on a Hopf bundle
+  at the node's own rank, which is data, never a fixed menu (MU-RECURSION
+  71). 78.184 §7 states three readings, and F3 leaves the choice to ruling:
+  a 3D node on `S³` (`S³ → S²`), a 4D node on `Spin(4) = S³ × S³`, and a
+  5D node in `Spin(5) = Sp(2)`, its fibre read by the quaternionic Hopf map
+  `S⁷ → S⁴`. The map splits the motion into a base point (which plane turns)
+  and a fibre (that plane's phase, `K` counting its windings). Two nodes are
+  tethered when their relative motion `R̃_i R_n` stands at rest, the phase
+  at the pole's antipole (`forms::cover`,
+  `Tether`, `R_p = −σ_p` on each plane; **Built**). Two fibres link once and
+  never meet: the tether carries the potential across the connection
+  without contact, and phase crosses it never lost or copied. The
+  connection is that rotor, never a scalar; its strength is read per plane
+  as the open and held shares across the link, beside the link's holonomy,
+  and the order of composition around a loop is the bundle's holonomy
+  (planes sharing an axis do not commute). A node linked to none is not
+  attached.
 - **Agreements as complexes.** An agreement's parties are vertices, the
   parties' acceptances edges carrying the transport between the parties'
   references, and its
