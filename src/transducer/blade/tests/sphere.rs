@@ -1,10 +1,10 @@
-//! 78.188 — THE CHART IS READ ON Sⁿ. A body's Betti numbers, read on the
+//! 78.188 — The chart is read on Sⁿ. A body's Betti numbers, read on the
 //! sensor's cover ([`blade::topology`]), close on `S³ = ℝ³ ∪ {∞}` by two
 //! readings that take no boundary rank:
 //!
-//! - **Euler–Poincaré.** `β₀ − β₁ + β₂ = C₀ − C₁ + C₂ − C₃`, the cells of
+//! - Euler–Poincaré: `β₀ − β₁ + β₂ = C₀ − C₁ + C₂ − C₃`, the cells of
 //!   the cover counted by dimension.
-//! - **Alexander duality on S³.** `H̃₂(X) ≅ H̃⁰(S³∖X)`: the cavities are the
+//! - Alexander duality on S³: `H̃₂(X) ≅ H̃⁰(S³∖X)`: the cavities are the
 //!   components of the complement other than the one holding ∞. A complement
 //!   component is a class of empty cells joined across shared faces; the
 //!   cells that reach the edge of a neighbourhood one cell wider than the
@@ -102,8 +102,13 @@ fn closes(name: &str, cells: &[At], betti: [u64; 3]) {
     assert_eq!(usize::try_from(betti[2]).expect("small"), cavities(cells), "{name}: Alexander duality on S³");
 }
 
+/// The Betti numbers `topology` reads close on S³: for a solid, a hollow, a
+/// ring, two handles, two hollows apart, an opened hollow, a core inside a
+/// shell and two cells meeting on an edge or a corner, the alternating sum
+/// is the Euler characteristic of the cover's cells, and β₂ is the count of
+/// complement components other than the one holding ∞.
 #[test]
-fn betti_numbers_close_on_s3() {
+fn topology_betti_numbers_close_on_s3() {
     closes("a solid", &block([2, 2, 2]), [1, 0, 0]);
     let hollow: Vec<At> = block([3, 3, 3]).into_iter().filter(|&c| c != [1, 1, 1]).collect();
     closes("a hollow", &hollow, [1, 0, 1]);
@@ -124,10 +129,10 @@ fn betti_numbers_close_on_s3() {
     closes("two cells on one corner", &[[0, 0, 0], [1, 1, 1]], [1, 0, 0]);
 }
 
-/// A body and its image under a dilation and a reflection of the sensor's
-/// cover file on one chart: on Sⁿ nothing metric of one body is filed.
+/// A ring and the same ring stretched along one axis file on one chart, and
+/// a disc does not: on Sⁿ nothing metric of one body is filed.
 #[test]
-fn chart_holds_only_what_the_sphere_keeps() {
+fn moduli_holds_only_what_the_sphere_keeps() {
     let ring: Vec<At> = block([3, 3, 1]).into_iter().filter(|&c| c != [1, 1, 0]).collect();
     // The same ring, stretched to 5 × 3: a different lattice shape, the
     // same body on S³.

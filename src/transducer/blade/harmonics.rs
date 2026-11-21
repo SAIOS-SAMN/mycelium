@@ -1,7 +1,7 @@
-// 20, 24.4, A6, 51.3, 78.188 — THE HARMONICS of a body: its readings, and
+// 20, 24.4, A6, 51.3, 78.188 — The harmonics of a body: its readings, and
 // the chart it is filed under, which holds only what is invariant on Sⁿ.
 //
-//! Exact in ℚ. THE CHART IS READ ON Sⁿ (78.188; Concordance 1.1, 2.10): the
+//! Exact in ℚ. The chart is read on Sⁿ (78.188; Concordance 1.1, 2.10): the
 //! base is the sphere `Sⁿ = ℝⁿ ∪ {∞}`, whose motions are the conformal
 //! (Möbius) maps the algebra `Cl(n+1, 1)` carries. A single body has no
 //! metric invariant under them: any round can be carried onto any other.
@@ -102,13 +102,13 @@ impl Harmonics {
     }
 }
 
-/// THE CHART ON Sⁿ (78.188), coarsest first: the base's `n`, the `n` Betti
-/// numbers, then the hue spectrum. Each is ONE coordinate carrying its own
-/// exact value (A21 as ruled 2026-09-18). Strata of different `n` are
-/// disjoint by construction, since `n` leads; within one `n` a prefix is a
-/// coarser stratum (A21 §2), and the count axes are not prefix-stable ACROSS
-/// `n` (71.2(6)). The ONE producer of a body's chart (law 12): the body's
-/// harmonics and a section's turns both write it here.
+/// The chart on Sⁿ (78.188), coarsest first: the base's `n`, the `n` Betti
+/// numbers, then the hue spectrum. Each is one coordinate carrying its own
+/// exact value (A21). Strata of different `n` are disjoint by construction,
+/// since `n` leads; within one `n` a prefix is a coarser stratum (A21 §2),
+/// and the count axes are not prefix-stable across `n` (71.2(6)). The one
+/// producer of a body's chart (law 12): the body's harmonics and a section's
+/// turns both write it here.
 pub fn sphere_axes(n: u64, betti: &[u64], gauge: &[BigRational]) -> Vec<crate::transducer::stalk::ChartAxis> {
     use crate::transducer::stalk::ChartAxis;
     let mut axes: Vec<ChartAxis> = std::iter::once(n).chain(betti.iter().copied()).map(ChartAxis::Count).collect();

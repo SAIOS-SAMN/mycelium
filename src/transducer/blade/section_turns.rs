@@ -114,10 +114,9 @@ impl SectionTurns {
             .collect()
     }
 
-    /// THE CHART OF THE SECTION on Sⁿ (78.188; A21 as ruled 2026-09-18),
-    /// read from its turns: the base's `n`, the Betti numbers of the support
-    /// the turns land on, then the one hue fraction a hue-blind section
-    /// carries. `None` where the support's topology is refused or its base
+    /// The chart of the section on Sⁿ (78.188; A21), read from its turns:
+    /// the base's `n`, the Betti numbers of the support the turns land on,
+    /// then the one hue fraction a hue-blind section carries. `None` where the support's topology is refused or its base
     /// holds no plane (the section's plane is what its turns are read on).
     pub fn chart(&self) -> Option<Vec<ChartAxis>> {
         let support = self.support()?;
