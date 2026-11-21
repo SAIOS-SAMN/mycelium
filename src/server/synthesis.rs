@@ -84,9 +84,9 @@ pub struct Quoted {
     pub priced: Vec<crate::cognition::Priced>,
     /// The K-step this quote stands at.
     pub k_step: u64,
-    /// The cohesion reading (C, I): closure work and coverage work, two
+    /// The open demands (C, I): closure work and coverage work, two
     /// lanes of one object, returned exactly and never compared.
-    pub cohesion: (u64, u64),
+    pub open_demands: (u64, u64),
     /// The height the book stands at: the chain's head height (45.2),
     /// never the book generation (I39).
     pub height: u64,
@@ -94,7 +94,7 @@ pub struct Quoted {
 
 /// THE QUOTE, off the lock: incidence of the voice's charts against the
 /// listing atlas. The page width is the body budget. Returns (surface,
-/// priced items with open charts, K, cohesion).
+/// priced items with open charts, K, open demands).
 pub fn quote(
     k: &std::sync::Mutex<crate::cognition::Court>,
     voice: [u8; 32],
@@ -150,12 +150,12 @@ pub fn quote(
             },
         )
     });
-    let cohesion = crate::cognition::cohesion_over(&rank);
+    let open_demands = crate::cognition::open_demand_counts(&rank);
     Some(Quoted {
         surface,
         priced,
         k_step: view.head_k,
-        cohesion,
+        open_demands,
         height: view.head_height,
     })
 }

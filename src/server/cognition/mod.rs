@@ -70,7 +70,7 @@ pub use language::{
     Adoption, ProbedChart, Glue, Language, ListingCoherence, MarketView, NormalForm, OfferStanding,
     Outcome, Priced, Rank,
 };
-pub use reduce::{cohesion_over, normal_form, quote_incidence, rank_over, Ask, BookView};
+pub use reduce::{open_demand_counts, normal_form, quote_incidence, rank_over, Ask, BookView};
 pub use wire::{outcome_code, reperiod_of};
 
 use crate::transducer::address::Address;

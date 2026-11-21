@@ -279,8 +279,10 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
     (*surface, priced)
 }
 
-/// THE COHESION READING — the joint (C, I) state over the open book, both
-/// axes exact and never traded. C counts open demands sitting on held
+/// THE OPEN DEMANDS, BY WHAT THEY STAND ON — the joint (C, I) state over the
+/// open book, both
+/// axes exact and never traded (#419: it was named for cohesion, which is the
+/// held share per plane, GLOSSARY). C counts open demands sitting on held
 /// geometry (closure failing — collapse-side work); I counts open demands on
 /// geometry no thought speaks (coverage failing — expansion-side work).
 ///
@@ -294,7 +296,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
 /// per call, for two numbers the write already knew -- the same shape as
 /// `ListingCoherence::nonflat`, which is kept by `write_field` for exactly
 /// this reason.
-pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
+pub fn open_demand_counts(rank: &Rank) -> (u64, u64) {
     let (c, i) = rank.counts();
     (c as u64, i as u64)
 }
