@@ -157,7 +157,7 @@ kept.
 | Reading the cross-kernel proposals: LAW-WAVEFRONT; the TUniversal point in the signed expression | [#355](https://github.com/SAIOS-SAMN/mycelium/issues/355), [#354](https://github.com/SAIOS-SAMN/mycelium/issues/354) | Open, mirrored from netstratum #9 and #92 |
 | The tube clause: a kernel clause governing one tube, signed by both its universes ([78.186](docs/proposals/78.186-tube-clauses.md)) | — | **Approved 2026-11-17; next to build.** It governs the road toll, tariff, whole-state terms and flow bounds, never a network clause. Its first user is the seed-7/netstratum treaty (xylarium-uplink docs) |
 
-**The Sⁿ phase** ([#431](https://github.com/SAIOS-SAMN/mycelium/issues/431); operator direction 2026-11-20/21). Thoughts become Sⁿ objects in manifolds: no lattice past the sensor, no scalar or dimensional collapse, identity by content. Seven stages, in dependency order: each receives only from the stages before it.
+**The Sⁿ phase** ([#431](https://github.com/SAIOS-SAMN/mycelium/issues/431)). Thoughts become Sⁿ objects in manifolds: no lattice past the sensor, no scalar or dimensional collapse, identity by content. Seven stages, in dependency order: each receives only from the stages before it.
 1. [#442](https://github.com/SAIOS-SAMN/mycelium/issues/442), **identity by content.** Re-derived addresses (PR #445, ready); witness room on every lane (#448); installation only on a witness's re-derivation (PR #446, after #448); the paged digest (PR #400).
 2. [#459](https://github.com/SAIOS-SAMN/mycelium/issues/459), **every lane on its own.** Per-lane deferral and pacing (#449, #460), then the court's remaining collapses; PR #447 ready.
 3. [#429](https://github.com/SAIOS-SAMN/mycelium/issues/429), **the body on the sample's manifold.** 78.190 S1–S2 (PR #432), after #457.
@@ -189,7 +189,7 @@ does not give.
 | The speaker–hearer–court triangle | [#414](https://github.com/SAIOS-SAMN/mycelium/issues/414) |
 | K's sign per plane, with netstratum | [#417](https://github.com/SAIOS-SAMN/mycelium/issues/417) |
 | The 29 lattice-bound test claims rewritten | [#422](https://github.com/SAIOS-SAMN/mycelium/issues/422) |
-| Digest keys in the mind's carriers (MU-CLIENT §4.13 against MU-RECURSION 1355) | [#436](https://github.com/SAIOS-SAMN/mycelium/issues/436) |
+| Digest keys in the mind's carriers (MU-CLIENT §4.13 against MU-RECURSION 1.5) | [#436](https://github.com/SAIOS-SAMN/mycelium/issues/436) |
 | 78.191: terminal node, probability as `(P, τ)` (law 1 amended), the torsion state | PR [#443](https://github.com/SAIOS-SAMN/mycelium/pull/443) |
 | The paged digest, a wire change | PR [#400](https://github.com/SAIOS-SAMN/mycelium/pull/400) |
 | #401's questions 1–9 (the larger manifold, influence, projection, holonomy, the cover, hue) and #408's three | [#401](https://github.com/SAIOS-SAMN/mycelium/issues/401), [#408](https://github.com/SAIOS-SAMN/mycelium/issues/408) |
