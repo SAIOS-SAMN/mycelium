@@ -59,11 +59,12 @@ impl Standing {
 /// a plane (rule 15).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ChartAxis {
-    /// A topological count: components, tunnels, cavities, turns.
+    /// A count: the base's `n`, a Betti number (components, tunnels,
+    /// cavities), a tag, a sign or a cycle length.
     Count(u64),
-    /// A conformal ratio, exact (law 4): the isoperimetric ratio, the frame
-    /// boundary, the anisotropy, the spread, a hue fraction,
-    /// and a rotor's conjugacy invariants (15.3).
+    /// An exact ratio (law 4): a hue fraction, and a rotor's conjugacy
+    /// invariants (15.3). A body's lattice ratios are not chart axes on Sⁿ
+    /// (78.188).
     Ratio(num_rational::BigRational),
 }
 
@@ -232,8 +233,7 @@ impl ChartAxis {
 pub struct Invariant(pub Vec<ChartAxis>);
 
 impl Invariant {
-    /// A chart of topological counts alone — the four a body leads with,
-    /// and what a test names a chart by.
+    /// A chart of counts alone: what a test names a chart by.
     pub fn counts(ns: &[u64]) -> Invariant {
         Invariant(ns.iter().map(|&n| ChartAxis::Count(n)).collect())
     }

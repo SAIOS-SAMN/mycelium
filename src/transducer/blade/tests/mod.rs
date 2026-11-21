@@ -4,6 +4,7 @@
 pub mod fixtures;
 
 mod body;
+mod sphere;
 mod continuous;
 mod harmonics;
 mod moduli;

@@ -7,16 +7,14 @@
 //! The section lifts by enclosure: its span along the plane is its frame,
 //! one phase per plane axis of the span's extent, and a site at offset `s`
 //! from the span's least corner on a phase of period `p` is the turn `s/p`
-//! (`Turn::of`). The chart's readings are taken from the turns: the support
-//! the cube complex reads is the turns landed on their periods
-//! (`Turn::lands`), and each second moment is read in the frame's own gauge,
-//! a turn's offset from the phases' mean turn times the phase's period,
-//! each compartment with its round's extent (A4). No sphere, no `e∞`, no
-//! squared norm of a point and no higher moment is formed: the conformal
-//! blade [`super::lift`] builds is not read by the chart. A chart only
-//! locates (71.2(6)), and its axes are those [`Harmonics::axes`] lays out.
+//! (`Turn::of`). The chart is read on Sⁿ (78.188) from the support the turns
+//! land on (`Turn::lands`): its `n` and its Betti numbers, and the one hue
+//! fraction a hue-blind section carries. The second moments are read in the
+//! frame's own gauge, a turn's offset from the phases' mean turn times the
+//! phase's period, each compartment with its round's extent (A4); they are a
+//! reading, not a chart axis. A chart only locates (71.2(6)), and its axes
+//! are those [`super::harmonics::sphere_axes`] lays out.
 
-use super::harmonics::Harmonics;
 use crate::transducer::base::Site;
 use crate::transducer::family::transduce::{Enclosure, Turn};
 use crate::transducer::spelled::{PaintedSite, SectionSite};
@@ -116,47 +114,17 @@ impl SectionTurns {
             .collect()
     }
 
-    /// THE CHART OF THE SECTION (A21 as ruled 2026-09-18), read from its
-    /// turns: the base's `n`, the Betti numbers of the landed support's cube
-    /// complex and its turning count, then the ratios (the boundary's
-    /// length² and the sides open off the plane, each over the count of
-    /// compartments; the anisotropy `det/tr²` and the spread, the trace over
-    /// every axis over the count²), then the one hue fraction a hue-blind
-    /// section carries. `None` where the support's topology is refused or
-    /// its base holds no plane.
+    /// The chart of the section on Sⁿ (78.188; A21), read from its turns:
+    /// the base's `n`, the Betti numbers of the support the turns land on,
+    /// then the one hue fraction a hue-blind section carries. `None` where the support's topology is refused or its base
+    /// holds no plane (the section's plane is what its turns are read on).
     pub fn chart(&self) -> Option<Vec<ChartAxis>> {
         let support = self.support()?;
         let n = support.iter().map(Site::n).fold(0, usize::max);
-        let plane = crate::transducer::perspective::family_plane(n)?;
-        let count = q(self.sites.len());
-        let m = self.moments(n, plane);
-        // The plane's two phases, in the plane's order.
-        let [along, across] = m.as_slice() else { return None };
-        let ([ixx, ixy], [_, iyy]) = (along.as_slice(), across.as_slice()) else { return None };
-        let tr = ixx + iyy;
-        let det = ixx * iyy - ixy * ixy;
-        // The trace on every axis of the base: the plane's two, and each
-        // other axis, along which a section has no offset and each round
-        // its extent there.
-        let off_plane = (0..n).filter(|&i| i != plane.0 && i != plane.1).fold(Q::zero(), |s, i| s + super::body::round_extent(n, i));
-        let trace = &tr + off_plane * &count;
-        let edges = q(super::boundary_length(&support));
-        let open = q(super::enclosure_faces(&support));
-        let heard = Harmonics {
-            n: u64::try_from(n).ok()?,
-            betti: super::topology(&support)?,
-            turns: u64::try_from(super::turns(&support)).ok()?,
-            isoperimetric: &edges * &edges / &count,
-            enclosure_boundary: &open / &count,
-            anisotropy: match tr.is_zero() {
-                true => Q::zero(),
-                false => &det / (&tr * &tr),
-            },
-            spread: trace / (&count * &count),
-            // One hue covers the whole section: its fraction is the whole.
-            gauge: vec![<Q as num_traits::One>::one()],
-        };
-        Some(heard.axes())
+        crate::transducer::perspective::family_plane(n)?;
+        let betti = super::topology(&support)?;
+        // One hue covers the whole section: its fraction is the whole.
+        Some(super::harmonics::sphere_axes(u64::try_from(n).ok()?, &betti, &[<Q as num_traits::One>::one()]))
     }
 }
 

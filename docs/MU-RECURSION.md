@@ -6025,6 +6025,8 @@ section's pose carries `z` as it carries `k`. No migration.
 
 ### 38.2 B2 Harmonics in dimension up to four
 
+*Superseded in part by [78.188](proposals/78.188-chart-on-the-sphere.md) (ruled 2026-11-20): the chart is read on Sⁿ. Its axes are `d`, the Betti numbers and the hue spectrum. The turns and the moment ratios below remain readings, never chart axes.*
+
 `Harmonics::of` generalises to the cubical complex of the support in `d ∈
 {2, 3, 4}`: components, holes and cavities (Betti numbers by exact integer
 linear algebra over ℤ), turns (boundary faces of each dimension), and the
