@@ -1,7 +1,7 @@
 // 23.8, 26 — ACT_QUOTE: the market view, what this book has open in rank
 // order, for as much of it as one envelope carries.
 //
-//! The view leaves under a brief lock; pricing and the cohesion witness
+//! The view leaves under a brief lock; pricing and the open-demand counts
 //! compute over the snapshot with no lock held. Items ride in rank order
 //! until the next would not fit the body budget.
 
@@ -20,7 +20,7 @@ pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Conte
     let Some(quoted) = mycelium::synthesis::quote(court, qvoice, &charts) else {
         return;
     };
-    let mycelium::synthesis::Quoted { surface, priced, k_step, cohesion, height } = quoted;
+    let mycelium::synthesis::Quoted { surface, priced, k_step, open_demands, height } = quoted;
     // A listing whose record does not write is not quoted (STD1 3c).
     let items: Vec<dialogue::WorkItem> = priced
         .iter()
@@ -64,7 +64,7 @@ pub(crate) fn judge(stream: &mut Channel, delimited: &Delimited, context: &Conte
         qvoice[0], qvoice[1]
     );
     eprintln!(
-        "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); K={k_step}; cohesion {cohesion:?}",
+        "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); K={k_step}; open demands {open_demands:?}",
         qvoice[0],
         items.len(),
         body.len()
