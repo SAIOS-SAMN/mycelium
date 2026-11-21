@@ -4,7 +4,8 @@
 - **GLOSSARY** gains *Tether* and flags the clash with *Tethered*, the agent sense.
 - **Proposal 78.191** derives three things:
   - the exact structure holds shares, superposition and tethers in place of probabilities;
-  - the definition of a **terminal node**, where the potential cannot continue and one thing must be produced;
+  - the definition of a *terminal node*, where the potential cannot continue and one thing must be produced;
   - that a probability enters only as an outside party's reading of an exact share at a terminal node, never inside the engine.
+- **Proposed in 78.191, each needing a ruling:** law 1 amended so that a probability is the exact pair `(P, τ)`, the pressure gauge and its torsion, both motions (§5); and the *torsion state*, the superposition of a composed motion's orders, its observable the torsion (§6).
 
 **Network contract:** none. This change adds documents only.

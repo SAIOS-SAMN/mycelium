@@ -208,8 +208,9 @@ same algebra:
   a 3D node on `S³` (`S³ → S²`), a 4D node on `Spin(4) = S³ × S³`, and a
   5D node in `Spin(5) = Sp(2)`, its fibre read by the quaternionic Hopf map
   `S⁷ → S⁴`. The map splits the motion into a base point (which plane turns)
-  and a fibre (that plane's phase, `K` counting its windings). Two nodes are tethered when their relative motion `R̃_i R_n`
-  stands at rest, the phase at the pole's antipole (`forms::cover`,
+  and a fibre (that plane's phase, `K` counting its windings). Two nodes are
+  tethered when their relative motion `R̃_i R_n` stands at rest, the phase
+  at the pole's antipole (`forms::cover`,
   `Tether`, `R_p = −σ_p` on each plane; **Built**). Two fibres link once and
   never meet: the tether carries the potential across the connection
   without contact, and phase crosses it never lost or copied. The
