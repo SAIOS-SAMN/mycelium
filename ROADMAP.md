@@ -159,9 +159,9 @@ kept.
 
 **The Sⁿ phase** ([#431](https://github.com/SAIOS-SAMN/mycelium/issues/431)). Thoughts become Sⁿ objects in manifolds: no lattice past the sensor, no scalar or dimensional collapse, identity by content. Seven stages, in dependency order: each receives only from the stages before it.
 1. [#442](https://github.com/SAIOS-SAMN/mycelium/issues/442), **identity by content.** Re-derived addresses (PR #445, ready); witness room on every lane (#448); installation only on a witness's re-derivation (PR #446, after #448); the paged digest (PR #400).
-2. [#459](https://github.com/SAIOS-SAMN/mycelium/issues/459), **every lane on its own.** Per-lane deferral and pacing (#449, #460), then the court's remaining collapses; PR #447 ready.
+2. [#459](https://github.com/SAIOS-SAMN/mycelium/issues/459), **every lane on its own.** A lane type admitting only per-lane operations (#484), then per-lane deferral and pacing (#449, #460), then the court's remaining collapses; PR #447 ready.
 3. [#429](https://github.com/SAIOS-SAMN/mycelium/issues/429), **the body on the sample's manifold.** 78.190 S1–S2 (PR #432), after #457.
-4. [#473](https://github.com/SAIOS-SAMN/mycelium/issues/473), **the atlas on Sⁿ, the chart off the lattice.** #411, #410, #403, #408, #407, #406.
+4. [#473](https://github.com/SAIOS-SAMN/mycelium/issues/473), **the atlas on Sⁿ, the chart off the lattice.** #411, #410, #403, #408, #407, #406; the FORMS-FRAME restriction to quarter turns (#483, needs a ruling).
 5. [#428](https://github.com/SAIOS-SAMN/mycelium/issues/428), **the recut.** The carriers at the body's rank (78.190 S3–S5) and motion held whole (#416), under one network contract approval. It removes the root defect: cognition's coordinate is a lattice point, not the shared coordinate (78.173), so cohesion is read on the lattice. Its parts are #476, #477, #421, #479, 78.190 S4–S5, #416 and #471, and Stage 6 depends on it.
 6. [#427](https://github.com/SAIOS-SAMN/mycelium/issues/427), **the gauge and the shares.** `(P, τ)` (PR #443), then cohesion per chart (#468, #412).
 7. [#430](https://github.com/SAIOS-SAMN/mycelium/issues/430), **cohesion as fluid physics.** #465, #424, #425, #426.
@@ -191,6 +191,7 @@ does not give.
 | The 29 lattice-bound test claims rewritten | [#422](https://github.com/SAIOS-SAMN/mycelium/issues/422) |
 | Digest keys in the mind's carriers (MU-CLIENT §4.13 against MU-RECURSION 1.5) | [#436](https://github.com/SAIOS-SAMN/mycelium/issues/436) |
 | 78.191: terminal node, probability as `(P, τ)` (law 1 amended), the torsion state | PR [#443](https://github.com/SAIOS-SAMN/mycelium/pull/443) |
+| FORMS-FRAME's restriction of every frame to quarter turns and axis mirrors, a law version change | [#483](https://github.com/SAIOS-SAMN/mycelium/issues/483) |
 | The paged digest, a wire change | PR [#400](https://github.com/SAIOS-SAMN/mycelium/pull/400) |
 | #401's questions 1–9 (the larger manifold, influence, projection, holonomy, the cover, hue) and #408's three | [#401](https://github.com/SAIOS-SAMN/mycelium/issues/401), [#408](https://github.com/SAIOS-SAMN/mycelium/issues/408) |
 
