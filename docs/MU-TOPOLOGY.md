@@ -122,6 +122,14 @@ Relations are held as simplicial and Čech complexes over covers:
   (`transducer/stalk/`). Each holder measures its words per stratum; the
   strata of two holders glue where they agree, and a discordant one names
   exactly the fibre whose sections differ (`transducer/sheaf.rs`).
+- **The atlas is on Sⁿ** (78.189, ruled 2026-11-20). A chart is the open
+  cap a body's round bounds on `Sⁿ = ℝⁿ ∪ {∞}`. Two charts overlap by the
+  sign of their rounds' inversive product, which every conformal map keeps.
+  On each overlap the physics states the transition carrying one body onto
+  the other, and a triangle of charts glues where its circuit of transitions
+  is a scalar; otherwise the circuit is its holonomy, kept
+  (`transducer/stalk/sphere.rs`). **Built** for the reading; grouping by
+  overlap, the pivots across transitions and the wire are tracked on #401.
 
 ---
 
