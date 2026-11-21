@@ -1,22 +1,22 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 78.189 — THE ATLAS ON Sⁿ: the charts of a field's bodies read as open
+//! 78.189 — The atlas on Sⁿ: the charts of a field's bodies read as open
 //! caps of the sphere `Sⁿ = ℝⁿ ∪ {∞}`, the conformal model `Cl(n+1, 1)`(ℚ)
 //! already carries. A body's cap is bounded by its nucleus (the round
 //! `c + ½(c² − r²)e∞ + e₀`, ruled on #134). Nothing here reads a lattice.
 //!
-//! - **Where two charts meet** is the sign of their inversive product
+//! - Where two charts meet is the sign of their inversive product
 //!   (`cga::containment`, EN1): on each other (cut or tangent), one inside
 //!   the other, or apart. Every conformal map of Sⁿ keeps that reading,
 //!   because it keeps the inversive product's sign; no grid, size or place
 //!   enters it.
-//! - **The transitions.** On each pair of charts that meet, the motion that
+//! - The transitions: on each pair of charts that meet, the motion that
 //!   carries one body's readings onto the other's, `g_ab`, stated by the
 //!   physics (the versor between the bodies' shapes, `blade::versor_between`),
 //!   never chosen here. A pair that meets with no motion stated is held
 //!   unread, never dropped. These transitions are the atlas's connection
 //!   (GLOSSARY, Atlas).
-//! - **The gluing.** On every triangle of charts that pairwise meet, the
+//! - The gluing: on every triangle of charts that pairwise meet, the
 //!   circuit `a → b → c → a` composes to `g̃_ac · g_bc · g_ab`. Where that is
 //!   a scalar, the three charts glue: the coordinates agree wherever the
 //!   charts overlap (the cocycle). Otherwise the composite is the
@@ -30,7 +30,7 @@
 use crate::physics::Budget;
 use crate::transducer::cga::{containment, Containment, Mv};
 
-/// WHERE TWO CHARTS MEET on Sⁿ, by name.
+/// Where two charts meet on Sⁿ, by name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Meeting {
     /// The caps overlap: the reading of the pair's inversive product
@@ -42,7 +42,7 @@ pub enum Meeting {
     Unread,
 }
 
-/// THE MEETING OF TWO CHARTS, read off their rounds alone.
+/// The meeting of two charts, read off their rounds alone.
 pub fn meeting(a: &Mv, b: &Mv) -> Meeting {
     match containment(a, b) {
         Containment::Apart => Meeting::Apart,
@@ -51,7 +51,7 @@ pub fn meeting(a: &Mv, b: &Mv) -> Meeting {
     }
 }
 
-/// ONE EDGE OF THE ATLAS: charts `a < b` that overlap, how they meet, and
+/// One edge of the atlas: charts `a < b` that overlap, how they meet, and
 /// the motion carrying `a`'s readings onto `b`'s where the physics stated
 /// one.
 #[derive(Clone, Debug)]
@@ -62,7 +62,7 @@ pub struct Transition {
     pub g: Option<Mv>,
 }
 
-/// THE ATLAS'S OVERLAPS: the charts held, by index, and an edge per pair
+/// The atlas's overlaps: the charts held, by index, and an edge per pair
 /// that overlaps.
 #[derive(Clone, Debug, Default)]
 pub struct Overlaps {
@@ -77,7 +77,7 @@ impl Overlaps {
     }
 }
 
-/// THE OVERLAPS OF THE CHARTS bounded by `rounds`: one read per pair.
+/// The overlaps of the charts bounded by `rounds`: one read per pair.
 /// `motion(a, b)` states the motion carrying `a`'s readings onto `b`'s; it
 /// is asked only where the two overlap. `None` where the stroke ran out.
 pub fn overlaps(rounds: &[Mv], mut motion: impl FnMut(usize, usize) -> Option<Mv>, budget: &mut Budget) -> Option<Overlaps> {
@@ -95,7 +95,7 @@ pub fn overlaps(rounds: &[Mv], mut motion: impl FnMut(usize, usize) -> Option<Mv
     Some(Overlaps { charts: rounds.len(), edges })
 }
 
-/// HOW A TRIANGLE OF CHARTS GLUES.
+/// How a triangle of charts glues.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Gluing {
     /// The circuit composes to a scalar: the coordinates agree on the
@@ -107,7 +107,7 @@ pub enum Gluing {
     Unread,
 }
 
-/// ONE TRIANGLE: three charts that pairwise overlap, and its gluing.
+/// One triangle: three charts that pairwise overlap, and its gluing.
 #[derive(Clone, Debug)]
 pub struct Triangle {
     pub a: usize,
@@ -116,7 +116,7 @@ pub struct Triangle {
     pub gluing: Gluing,
 }
 
-/// EVERY TRIANGLE OF THE ATLAS and its gluing: one read per triangle.
+/// Every triangle of the atlas and its gluing: one read per triangle.
 /// `None` where the stroke ran out.
 pub fn gluing(atlas: &Overlaps, budget: &mut Budget) -> Option<Vec<Triangle>> {
     let one = Mv::scalar(num_rational::BigRational::from_integer(1.into()));

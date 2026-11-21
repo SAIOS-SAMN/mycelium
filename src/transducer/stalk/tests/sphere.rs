@@ -1,4 +1,4 @@
-//! 78.189 — THE ATLAS ON Sⁿ: charts meet by their rounds' inversive
+//! 78.189 — The atlas on Sⁿ: charts meet by their rounds' inversive
 //! product, every conformal map of Sⁿ keeps the meetings, and a triangle
 //! of charts glues where its circuit of transitions composes to a scalar,
 //! its holonomy kept where it does not.
@@ -24,7 +24,7 @@ fn stroke() -> crate::physics::Budget {
 /// Charts meet by the sign of their rounds' inversive product: cut, nested
 /// either way, or apart.
 #[test]
-fn charts_meet_by_inversive_product() {
+fn meeting_reads_the_inversive_product_sign() {
     let a = round(&[(0, 1), (0, 1), (0, 1)], (4, 1));
     let cut = round(&[(3, 1), (0, 1), (0, 1)], (4, 1));
     let inside = round(&[(1, 2), (0, 1), (0, 1)], (1, 4));
@@ -35,11 +35,11 @@ fn charts_meet_by_inversive_product() {
     assert_eq!(meeting(&a, &apart), Meeting::Apart, "radii 2 and 1 at distance 9 are apart");
 }
 
-/// A CONFORMAL MAP OF Sⁿ KEEPS EVERY MEETING: the charts carried by one
+/// A conformal map of Sⁿ keeps every meeting: the charts carried by one
 /// dilation and one translation meet exactly as before. No grid, size or
 /// place enters the atlas.
 #[test]
-fn every_meeting_survives_a_conformal_map() {
+fn meeting_survives_a_conformal_map() {
     let rounds = [
         round(&[(0, 1), (0, 1), (0, 1)], (4, 1)),
         round(&[(3, 1), (0, 1), (0, 1)], (4, 1)),
@@ -58,7 +58,7 @@ fn every_meeting_survives_a_conformal_map() {
     }
 }
 
-/// THE ATLAS'S EDGES ARE ITS OVERLAPS: a pair apart carries no transition,
+/// The atlas's edges are its overlaps: a pair apart carries no transition,
 /// and the motion is asked only where two charts overlap.
 #[test]
 fn overlaps_hold_an_edge_per_meeting_pair() {
@@ -82,12 +82,12 @@ fn overlaps_hold_an_edge_per_meeting_pair() {
     assert!(overlaps(&rounds, |_, _| None, &mut crate::physics::Physics::default().stroke_n(2)).is_none(), "a stroke of two reads does not cover three pairs");
 }
 
-/// A TRIANGLE GLUES WHERE ITS CIRCUIT IS A SCALAR, and keeps its holonomy
+/// A triangle glues where its circuit is a scalar, and keeps its holonomy
 /// where it is not: translations by `d₁`, `d₂` and `d₁ + d₂` glue; stating
 /// `d₁ + d₂ + e` on the third edge leaves the translation by `−e` as the
 /// triangle's holonomy.
 #[test]
-fn a_triangle_glues_or_keeps_its_holonomy() {
+fn gluing_glues_or_keeps_the_holonomy() {
     let rounds = [
         round(&[(0, 1), (0, 1), (0, 1)], (4, 1)),
         round(&[(1, 1), (0, 1), (0, 1)], (4, 1)),
