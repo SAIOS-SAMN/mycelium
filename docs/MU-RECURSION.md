@@ -6399,8 +6399,7 @@ a test that A2's run reduction shortens and preserves the key.
 **T11 Two independent reconstructions of one tape agree.** `reconstruct_blind` is a
 function of the tape and the ruled cover; two organs holding the same tapes
 reach the same verdict with no exchange of opinion (13.7, 23). Code:
-`verdict::reconstruct_blind`, `confirm_peer_holds`,
-`confirm_peer_holds_addrs`, `home_install`. Proof: trace
+`verdict::reconstruct_blind`, `witness_rederived`, `home_install`. Proof: trace
 `home installed … peer holds the stratum` after two `court section` lines
 for one address on two hyphae.
 

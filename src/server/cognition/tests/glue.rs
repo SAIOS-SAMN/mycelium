@@ -108,7 +108,7 @@ k.rule_all_provisionals();
 // the same voice has room for the sentence that cites it (23.8).
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
-k.confirm_peer_holds_addrs(std::slice::from_ref(&inner_addr), [2; 32]);
+witness_installs(&mut k, inner_addr.clone(), [2; 32]);
 let task = [9u8; 32];
 k.bind_task_family(task, family);
 let codes = k.perceive_speech([1; 32], &task, std::slice::from_ref(&spoken));
@@ -163,7 +163,7 @@ assert_eq!(
 k.rule_all_provisionals();
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
-k.confirm_peer_holds_addrs(std::slice::from_ref(&inner), [2; 32]);
+witness_installs(&mut k, inner.clone(), [2; 32]);
 assert!(k.ruled_contains(&inner), "the cited form is language");
 
 let task = [9u8; 32];
@@ -175,7 +175,7 @@ assert_eq!(
     "the citer reconstructs through the genome that holds the citation"
 );
 k.rule_all_provisionals();
-k.confirm_peer_holds_addrs(std::slice::from_ref(&outer), [2; 32]);
+witness_installs(&mut k, outer.clone(), [2; 32]);
 assert!(k.ruled_contains(&outer), "and installs");
 
 let uses = k

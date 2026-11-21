@@ -486,10 +486,14 @@ impl Court {
         self.mark_persist();
     }
 
-    /// The home installs a word it ruled once a peer's ruled digest holds
-    /// the same stratum, by one root (`sheaf::stratum_root`) — evidence the
-    /// peer glued it; and every heard address under that chart whose
-    /// recorded root is not the peer's is re-opened.
+    /// A peer's digest re-opens and never installs (#434; MU-RECURSION
+    /// 47.3, 17.7 M7 step 6). A root says where the peer stands and decides
+    /// only what to read again: every heard address under a chart whose
+    /// recorded root is not the peer's is re-opened for the glue, which
+    /// reconstructs it. A word installs only when a witness's re-derivation
+    /// reaches the same object (`witness_rederived`, from the offer the
+    /// home makes, `ACT_OFFER`); a root that matches installs nothing and
+    /// pays nothing.
     #[cfg(test)]
     pub(crate) fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest], peer: [u8; 32]) {
         let mut budget = self.physics.stroke();
@@ -523,19 +527,10 @@ impl Court {
                 return;
             }
             self.confirm_cursor.insert(peer, d.inv.key().as_bytes().to_vec());
-            let members = self.ruled.fibre(&d.inv);
-            // ADDRESS SENSE ON A STRATUM (MU-HOSTING §5a.10): this court's
-            // root, recomputed from the members it holds under the chart,
-            // and the root the peer's digest names locate one stratum. It
-            // says where the peer stands, never that a word is admitted: the
-            // words installed on it are this court's own, reconstructed and
-            // ruled here.
-            if crate::transducer::sheaf::stratum_root(&members).locates(&d.root) {
-                let held: Vec<Vec<u8>> = members.into_iter().filter(|a| self.provisional.contains(a)).collect();
-                for address in held {
-                    self.home_install(&address, peer, budget);
-                }
-            }
+            // Address sense on a stratum (MU-HOSTING §5a.10): the peer's root
+            // says where the peer stands, and nothing here is admitted,
+            // installed or paid on it. An install on roots that locate each
+            // other is the byte identity MU-RECURSION 1.5 refuses (#434).
             let drop: Vec<Vec<u8>> = match self.heard_at.get(d.inv.key().as_bytes()) {
                 None => Vec::new(),
                 Some(here) => here
@@ -630,34 +625,6 @@ impl Court {
         crate::observe::count(&mut self.acts.provisional, &crate::observe::PROVISIONAL, name);
     }
 
-    /// A peer's have-list naming a ruled provisional is weaker evidence than
-    /// a witness's re-derivation: a claim about an address, against which
-    /// this court can compare only the form it holds itself.
-    #[cfg(test)]
-    pub(crate) fn confirm_peer_holds_addrs(&mut self, have: &[crate::transducer::address::Address], peer: [u8; 32]) {
-        let mut budget = self.physics.stroke();
-        self.confirm_peer_holds_addrs_on(have, peer, &mut budget);
-    }
-
-    /// [`Court::confirm_peer_holds_addrs`] ON THE HOLD'S STROKE (78.153b):
-    /// one read per provisional the page names, before it is converged. A
-    /// stroke spent leaves the rest provisional — awaiting a vantage, as an
-    /// unanswered offer leaves it — never refused.
-    pub fn confirm_peer_holds_addrs_on(&mut self, have: &[crate::transducer::address::Address], peer: [u8; 32], budget: &mut crate::physics::Budget) {
-        // index: the peer's have-list
-        let held: Vec<&Address> = have.iter().filter(|h| self.provisional.contains(h) && self.ruled_contains(h)).collect();
-        for h in held {
-            if !budget.spend() {
-                return;
-            }
-            let Some(held_form) = self.provisional.get(h).cloned() else { continue };
-            let (k, ht) = (self.k_step(), self.height());
-            match self.converge_witness(h, peer, held_form, k, ht) {
-                crate::court::convergence::Converged::Witnessed { witness, .. } => self.home_install(h, witness, budget),
-                crate::court::convergence::Converged::Inexact { .. } | crate::court::convergence::Converged::AwaitingWitness => {}
-            }
-        }
-    }
 }
 
 /// A WORD'S SECTION COORDINATES (13.10): its carried rotor and carriage; a

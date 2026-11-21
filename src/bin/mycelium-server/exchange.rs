@@ -1003,11 +1003,8 @@ impl Exchange {
                                 // The words this peer's page carried that
                                 // decoded here, each handed to the glue.
                                 mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::replication::FETCH_RECEIVED, named.len() as u64);
-                                if !named.is_empty() {
-                                    if let Ok(mut h) = crate::court_lock::held!(court) {
-                                        h.run(|k, reads| k.confirm_peer_holds_addrs_on(&named, vk_peer, reads));
-                                    }
-                                }
+                                // A have-list naming a word is no re-derivation of it:
+                                // nothing installs on it (#434; 47.3).
                             }
                             None => {
                                 mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::replication::FETCH_UNANSWERED, 1);

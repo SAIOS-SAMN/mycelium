@@ -1,6 +1,7 @@
 // 26, 50.2 step 2 — A CITED GENERATOR IS PAID AT THE INSTALL, and a
 // sentence that does not stand pays nobody.
 
+use super::fixtures::witness_installs;
 use crate::cognition::*;
 use crate::transducer::address::{Address, TAG_FORM};
 use crate::transducer::alphabet::{Derivation, LetterId, Word};
@@ -122,7 +123,7 @@ fn install_on(k: &mut Court, voice: [u8; 32], e: &Element, task: &[u8]) {
     k.rule_all_provisionals();
     let cover = k.genesis_cover().expect("measured");
     k.enroll([9; 32], cover);
-    k.confirm_peer_holds_addrs(std::slice::from_ref(&e.address()), [9; 32]);
+    witness_installs(k, e.address().clone(), [9; 32]);
 }
 
 /// 26 AS RULED 2026-09-10 (L8t) — THE USE OF A CITED GENERATOR IS A SHARE
@@ -336,7 +337,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
         k.rule_all_provisionals();
         let cover = k.genesis_cover().expect("measured");
         k.enroll([9; 32], cover);
-        k.confirm_peer_holds_addrs(std::slice::from_ref(&said.address()), [9; 32]);
+        witness_installs(&mut k, said.address().clone(), [9; 32]);
         assert!(k.ruled_contains(said.address().as_bytes()), "and installs");
 
         assert_eq!(

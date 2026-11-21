@@ -6,6 +6,7 @@
 // court installed. The detector's channels anchor the names (78.56 II): the
 // same colours read the same word for every mind; other colours, another.
 
+use super::fixtures::witness_installs;
 use crate::cognition::*;
 use crate::transducer::element::FibreRelation;
 
@@ -40,7 +41,7 @@ fn perceive_speech_admits_colour_theorem_by_composition() {
         assert_eq!(k.perceive_speech_under([1; 32], &[task; 32], std::slice::from_ref(&word), &[None]), vec![crate::anastome::dialogue::SPEECH_STOOD]);
         k.rule_all_provisionals();
         k.enroll([2; 32], [8, 8, 8, 8]);
-        k.confirm_peer_holds_addrs(std::slice::from_ref(&word.address()), [2; 32]);
+        witness_installs(k, word.address().clone(), [2; 32]);
         word
     };
     let a = install(&mut k, 20, 1, 2);
@@ -59,7 +60,7 @@ fn perceive_speech_admits_colour_theorem_by_composition() {
     assert!(k.treasury().escrow_of(theorem.address().as_bytes()).is_none(), "a theorem holds no claim");
     let minted = k.treasury().minted();
     k.rule_all_provisionals();
-    k.confirm_peer_holds_addrs(std::slice::from_ref(&theorem.address()), [2; 32]);
+    witness_installs(&mut k, theorem.address().clone(), [2; 32]);
     assert_eq!(k.treasury().minted(), minted, "its admission mints nothing");
     // A FORGED CITATION: the same citation on a word it does not compose to.
     let mut forged = colour_word(&FibreRelation::of_rows(&[(3, 1)])).expect("a word");
@@ -163,7 +164,7 @@ fn colour_word_mints_rules_teaches_and_holds() {
     k.rule_all_provisionals();
     let cover = [8u64, 8, 8, 8];
     k.enroll([2; 32], cover);
-    k.confirm_peer_holds_addrs(std::slice::from_ref(&word.address()), [2; 32]);
+    witness_installs(&mut k, word.address().clone(), [2; 32]);
     assert!(k.installed_word(word.address().as_bytes()).is_some(), "installed");
     assert_eq!(k.acts_reading().colours, 1, "one colour word installed");
 

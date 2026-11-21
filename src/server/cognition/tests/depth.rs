@@ -2,6 +2,7 @@
 // organs have committed to an address, counted from the causal poset the
 // chain already is, and stored nowhere.
 
+use super::fixtures::witness_installs;
 use crate::cognition::*;
 use crate::chronometry::ActKind;
 use crate::transducer::alphabet::{Derivation, LetterId, Word};
@@ -53,7 +54,7 @@ fn depth_of_counts_two_signers_as_two() {
     k.rule_all_provisionals();
     let cover = k.genesis_cover().expect("measured");
     k.enroll([9; 32], cover);
-    k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [9; 32]);
+    witness_installs(&mut k, addr.clone(), [9; 32]);
     assert!(k.ruled_contains(addr.as_bytes()), "this court ruled it");
     let here = k.depth_of(addr.as_bytes());
     assert!(here >= 1, "this court's own commitment is one signer: {here}");

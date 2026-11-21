@@ -13,7 +13,7 @@ use crate::transducer::germinate::germinate;
 /// number of voices substitutes for it, and this asserted a two-voice
 /// quorum before convergence replaced consensus.
 #[test]
-fn confirm_peer_holds_mints_only_after_witness_rederives() {
+fn speak_pair_mints_only_after_witness_rederives() {
 let mut home = Court::new();
 let mut peer = Court::new();
 // The whole body recoloured: one hue, one body, one word that closes its
@@ -40,7 +40,7 @@ assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room
 let bond = home.treasury().bond_total().clone();
-home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
+witness_installs_all(&mut home, [2; 32]);
 assert!(home.basis_len() >= 1, "the home installs after the peer glues");
 assert!(home.provisional.is_empty(), "the docket clears on install");
 assert!(home.treasury().escrow_of(&addr).is_none(), "the claim is released");
@@ -53,7 +53,7 @@ assert_eq!(home.treasury().bond_total(), &bond, "mint does not debit the stake b
 
 /// A stood sentence that closes no listing returns its escrow and mints nothing.
 #[test]
-fn confirm_peer_holds_addrs_mints_nothing_for_unclosing_speech() {
+fn witness_rederived_fresh_mints_nothing_for_unclosing_speech() {
 let mut k = Court::new();
 // A restatement that MOVES (one column): motionless, a σ alone is a colour
 // word, which stands only by its family's evidence (78.53).
@@ -73,7 +73,7 @@ k.rule_all_provisionals();
 // 47.3: the witness is a vantage with room. Bond it.
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
-k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+witness_installs(&mut k, addr.clone(), [2; 32]);
 assert!(k.treasury().escrow_of(&addr).is_none(), "escrow returned");
 assert_eq!(
     k.treasury().minted(),
@@ -116,7 +116,7 @@ k.rule_all_provisionals();
 // 47.3: the witness is a vantage with room. Bond it.
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
-k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+witness_installs(&mut k, addr.clone(), [2; 32]);
 assert_eq!(
     k.treasury().minted(),
     [0; 4],
@@ -172,7 +172,7 @@ k.rule_all_provisionals();
 // 47.3: the witness is a vantage with room. Bond it.
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
-k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+witness_installs(&mut k, addr.clone(), [2; 32]);
 // μ IS A SHARE OF THE FRAME (78.170 O1): every frame is 2×4, so S, G and
 // 𝒯 (the flux over the carried mass) are each over 8 sites, and H, the
 // shell count, stands as it is.
@@ -373,7 +373,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     k.rule_all_provisionals();
     let cover = k.genesis_cover().expect("measured");
     k.enroll([2; 32], cover);
-    k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+    witness_installs(&mut k, addr.clone(), [2; 32]);
     // μ IS A SHARE OF THE FRAME (78.170 O1): the frame is 18×12, so the
     // three recolours' S, G and 𝒯 are over 216 sites and H stands.
     assert_eq!(
@@ -405,7 +405,7 @@ crate::transducer::raster::stand_on(0);
     k.rule_all_provisionals();
     let cover = k.genesis_cover().expect("measured");
     k.enroll([2; 32], cover);
-    k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+    witness_installs(&mut k, addr.clone(), [2; 32]);
     let cost = k.installed_word(addr.as_bytes()).expect("installed").magnitude();
     assert!(cost.iter().any(|&c| c > 0), "the sentence carries a cost");
     // A VOICE THAT CANNOT PAY waits, and nothing moves.

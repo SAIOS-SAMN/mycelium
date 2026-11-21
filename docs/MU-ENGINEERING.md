@@ -76,8 +76,12 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   settles when two organs converge on one re-derivation
   (`court::convergence`), never by a count of voices, and convergence
   never installs on its own.
-- A word is language when the home ruled it and a peer's ruled root holds
-  it; the home installs on that evidence and releases escrow.
+- A word is language when the home ruled it and a witness hypha's own
+  reconstruction reaches the same object (MU-RECURSION 47.3): the home
+  offers it (`ACT_OFFER`), the witness re-derives it on its own cover, and
+  the home installs on that convergence and releases escrow. A peer's ruled
+  root, or a have-list naming the address, decides only what to read again,
+  never an install (#434; MU-RECURSION 1.5, 17.7 M7).
 - Signed roots: each hypha signs its cover roots and ruled root; nothing
   installs on a signature alone.
 
