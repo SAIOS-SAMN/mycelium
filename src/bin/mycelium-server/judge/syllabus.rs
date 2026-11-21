@@ -79,16 +79,12 @@ pub(crate) fn fetch(stream: &mut Channel, delimited: &Delimited, context: &Conte
     let read = context.published.take();
     if let Ok(mut h) = crate::court_lock::held!(court) {
         h.run(|k, reads| {
-        // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
-        // which words the voice already holds so the page carries only what
-        // it lacks; it stood here ALSO as evidence for
-        // `confirm_peer_holds_addrs(&have_all, fvoice)`, which recorded the
-        // voice as an organ that re-derived every provisional it named and
-        // installed on it. A voice holds the sentences it spoke, so the
-        // speaker witnessed its own speech — "free identities witnessing
-        // themselves" — and 8 of 8 installs on a5da8d5 came through this
-        // door. A second vantage is a hypha's reconstruction (`judge::offer`) or a
-        // hypha's served page (`exchange`); a mouth is not one.
+        // A voice's have-list is never a vantage (MU-RECURSION 47.3, 1.7).
+        // `have` says which words the voice already holds, so the page
+        // carries only what it lacks. A voice holds the sentences it spoke,
+        // so a have-list is the speaker's own claim and installs nothing. A
+        // second vantage is a hypha's reconstruction (`judge::offer`) or a
+        // hypha's served page (`exchange`).
         // Every page and every class reading spends the hold's one stroke:
         // a stroke spent serves a shorter page and fewer class records, the
         // next fetch resuming the class reading where this one stopped.

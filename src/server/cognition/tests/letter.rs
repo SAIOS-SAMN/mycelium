@@ -618,9 +618,9 @@ fn basis_holds(k: &Court, address: &[u8]) -> bool {
 /// Until this, no test in the tree drove `witness_rederived` at all: the
 /// letter tests reached a ruled letter through `rule_all_provisionals`,
 /// which rules every docket without asking a second vantage for anything,
-/// and through a have-list, which is a claim (deleted, #434) and
-/// says so in its own comment — "not a re-derivation this court can
-/// compare". Both leave the one condition law 6 states untested.
+/// and through `confirm_peer_holds_addrs` (removed, #434), which installed on
+/// a have-list claim, not a re-derivation. Both leave the one condition law 6
+/// states untested.
 #[test]
 fn witness_rederived_fresh_installs_letter_on_second_vantage() {
     const WITNESS: [u8; 32] = [9u8; 32];

@@ -13,7 +13,7 @@ use crate::transducer::germinate::germinate;
 /// number of voices substitutes for it, and this asserted a two-voice
 /// quorum before convergence replaced consensus.
 #[test]
-fn mints_only_after_witness_rederives() {
+fn speak_pair_mints_only_after_witness_rederives() {
 let mut home = Court::new();
 let mut peer = Court::new();
 // The whole body recoloured: one hue, one body, one word that closes its
@@ -53,7 +53,7 @@ assert_eq!(home.treasury().bond_total(), &bond, "mint does not debit the stake b
 
 /// A stood sentence that closes no listing returns its escrow and mints nothing.
 #[test]
-fn witness_rederivation_mints_nothing_for_unclosing_speech() {
+fn witness_rederived_fresh_mints_nothing_for_unclosing_speech() {
 let mut k = Court::new();
 // A restatement that MOVES (one column): motionless, a σ alone is a colour
 // word, which stands only by its family's evidence (78.53).

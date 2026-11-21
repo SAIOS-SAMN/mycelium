@@ -274,10 +274,11 @@ assert!(docket.circuits() >= 1, "the circuit passed the end of the docket: {dock
 assert!(docket.period() >= 1, "the period is measured in strokes: {docket:?}");
 }
 
-/// #434 — A PEER'S MATCHING ROOT INSTALLS NOTHING: the home installs only
-/// when a witness's own re-derivation reaches the same object (47.3).
+/// A peer's matching root installs nothing (#434): the home installs only
+/// when a witness's re-derivation reaches the same object (MU-RECURSION
+/// 47.3).
 #[test]
-fn a_matching_root_installs_nothing_until_a_witness_rederives() {
+fn confirm_peer_holds_installs_nothing_until_witness_rederives() {
 let mut home = Court::new();
 let mut peer = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -300,10 +301,10 @@ assert!(home.basis_len() >= 1, "the witness re-derived the word and the home ins
 assert!(home.provisional.is_empty(), "the provisional leaves the home");
 }
 
-/// 47.3 — THE SECOND ORGAN IS A WITNESS'S RE-DERIVATION, with room: an
-/// unbonded witness converges nothing; a bonded one installs.
+/// The second organ is a witness's re-derivation, with room (MU-RECURSION
+/// 47.3): an unbonded witness converges nothing; a bonded one installs.
 #[test]
-fn a_witness_with_room_rederives_and_installs() {
+fn witness_rederived_fresh_installs_only_for_witness_with_room() {
 let mut home = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];

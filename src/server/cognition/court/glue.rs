@@ -486,14 +486,14 @@ impl Court {
         self.mark_persist();
     }
 
-    /// A PEER'S DIGEST RE-OPENS, AND NEVER INSTALLS (#434; MU-RECURSION
+    /// A peer's digest re-opens and never installs (#434; MU-RECURSION
     /// 47.3, 17.7 M7 step 6). A root says where the peer stands and decides
     /// only what to read again: every heard address under a chart whose
     /// recorded root is not the peer's is re-opened for the glue, which
-    /// reconstructs it. A word installs only when a witness's own
-    /// re-derivation reaches the same object (`witness_rederived`, from the
-    /// offer the home makes, `ACT_OFFER`); a root that matches installs
-    /// nothing and pays nothing.
+    /// reconstructs it. A word installs only when a witness's re-derivation
+    /// reaches the same object (`witness_rederived`, from the offer the
+    /// home makes, `ACT_OFFER`); a root that matches installs nothing and
+    /// pays nothing.
     #[cfg(test)]
     pub(crate) fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest], peer: [u8; 32]) {
         let mut budget = self.physics.stroke();
@@ -527,11 +527,10 @@ impl Court {
                 return;
             }
             self.confirm_cursor.insert(peer, d.inv.key().as_bytes().to_vec());
-            // ADDRESS SENSE ON A STRATUM (MU-HOSTING §5a.10): the peer's root
-            // says where it stands, and nothing here is admitted, installed or
-            // paid on it. The install was here — every provisional member
-            // installed and paid when the roots located each other — and it
-            // was the byte identity 1.5 refuses (#434).
+            // Address sense on a stratum (MU-HOSTING §5a.10): the peer's root
+            // says where the peer stands, and nothing here is admitted,
+            // installed or paid on it. An install on roots that locate each
+            // other is the byte identity MU-RECURSION 1.5 refuses (#434).
             let drop: Vec<Vec<u8>> = match self.heard_at.get(d.inv.key().as_bytes()) {
                 None => Vec::new(),
                 Some(here) => here

@@ -278,12 +278,13 @@ pub fn close_through(k: &mut Court, through: u64) -> Option<crate::chronometry::
     k.close_windows(&reach)
 }
 
-/// 47.3 — A SECOND VANTAGE RE-DERIVES, AND ONLY THEN DOES THE HOME INSTALL
-/// (#434). A witness court of its own reconstructs the home's provisional
-/// form as the exchange glues it (`fetched`, the witness's `witness_vantage`
-/// in the binary), and the form it reached is the vantage the home
-/// converges on (`witness_rederived_fresh`). A witness that slashes the form
-/// reaches nothing and nothing installs. Never a root, never a have-list.
+/// A second vantage re-derives, and only then does the home install
+/// (MU-RECURSION 47.3; #434). A separate witness court reconstructs the
+/// home's provisional form as the exchange glues it (`fetched`; the binary's
+/// `witness_vantage`), and the form the witness reached is the vantage the
+/// home converges on (`witness_rederived_fresh`). A witness that slashes the
+/// form reaches nothing and nothing installs. No root and no have-list
+/// installs.
 pub fn witness_installs(home: &mut Court, addr: impl AsRef<[u8]>, witness: [u8; 32]) {
     let addr = addr.as_ref();
     let Some(spoken) = home.provisional.get(addr).cloned() else { return };

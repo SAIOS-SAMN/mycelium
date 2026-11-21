@@ -81,7 +81,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   offers it (`ACT_OFFER`), the witness re-derives it on its own cover, and
   the home installs on that convergence and releases escrow. A peer's ruled
   root, or a have-list naming the address, decides only what to read again,
-  never an install (#434; 1.5, 17.7 M7).
+  never an install (#434; MU-RECURSION 1.5, 17.7 M7).
 - Signed roots: each hypha signs its cover roots and ruled root; nothing
   installs on a signature alone.
 
