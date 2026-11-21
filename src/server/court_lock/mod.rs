@@ -31,6 +31,10 @@ struct LockCounts {
     took: u64,
     waited: u64,
     blocked: u64,
+    /// 78.183 P2 — the reads this site's holds spent on each lane S, G, T,
+    /// H, and those spent at a site that names no lane yet.
+    lanes: [u64; 4],
+    unnamed: u64,
 }
 
 struct Book {
@@ -148,7 +152,7 @@ fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut LockCounts))
         f(s);
         return;
     }
-    let mut s = LockCounts { at, took: 0, waited: 0, blocked: 0 };
+    let mut s = LockCounts { at, took: 0, waited: 0, blocked: 0, lanes: [0; 4], unnamed: 0 };
     f(&mut s);
     book.sites.push(s);
 }
@@ -163,6 +167,8 @@ pub struct CourtGuard<'a> {
     at: &'static str,
     /// This thread's granted reads at the take (`physics::spent_here`).
     spent_at: u64,
+    /// And per lane (`physics::spent_lanes_here`).
+    lanes_at: [u64; 4],
 }
 
 impl CourtGuard<'_> {
@@ -198,10 +204,38 @@ fn unmetered_bound() -> u64 {
 impl Drop for CourtGuard<'_> {
     fn drop(&mut self) {
         let read = crate::physics::spent_here().checked_sub(self.spent_at);
+        let now = crate::physics::spent_lanes_here();
+        // 78.183 P2 — the hold's spend per lane and the reads beyond the
+        // named lanes' sum; `None` where a count ran backward (another
+        // thread's take never moves this thread's counts, so none does).
+        let spent: Option<([u64; 4], u64)> = (|| {
+            let mut lanes = [0u64; 4];
+            let mut named = 0u64;
+            for l in 0..4 {
+                lanes[l] = now[l].checked_sub(self.lanes_at[l])?;
+                named = named.checked_add(lanes[l])?;
+            }
+            Some((lanes, read?.checked_sub(named)?))
+        })();
         if let Ok(mut b) = BOOK.lock() {
             let blocked = b.blocked_now;
             if read == Some(0) && blocked >= unmetered_bound() {
                 eprintln!("  unmetered hold {} (hold {}, step {}) read nothing and blocked {blocked}", self.at, b.hold, stepping());
+            }
+            if let Some((lanes, unnamed)) = spent {
+                with_site(&mut b, self.at, |s| {
+                    for (t, n) in s.lanes.iter_mut().zip(lanes) {
+                        if let Some(v) = t.checked_add(n) {
+                            *t = v;
+                        }
+                    }
+                    if let Some(v) = s.unnamed.checked_add(unnamed) {
+                        s.unnamed = v;
+                    }
+                    if s.took.is_power_of_two() && s.lanes.iter().chain([&s.unnamed]).any(|n| *n > 0) {
+                        eprintln!("  court hold {} took {} spent S:G:T:H {:?} unnamed {}", s.at, s.took, s.lanes, s.unnamed);
+                    }
+                });
             }
             b.holder = None;
         }
@@ -256,7 +290,7 @@ pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>,
     }
     HOLDS_HERE.with(|h| h.set(h.get().wrapping_add(1)));
     let stroke = guard.stroke();
-    Ok(CourtGuard { guard, stroke, at, spent_at: crate::physics::spent_here() })
+    Ok(CourtGuard { guard, stroke, at, spent_at: crate::physics::spent_here(), lanes_at: crate::physics::spent_lanes_here() })
 }
 
 /// `held!(court)` — `court.lock()` counted at this file and line, with the

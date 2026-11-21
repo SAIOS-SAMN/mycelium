@@ -29,7 +29,7 @@ pub mod equilibrium;
 #[cfg(test)]
 mod tests;
 
-pub use budget::{halt, halted, spent_here, Budget, Depleted, Reserve};
+pub use budget::{halt, halted, spent_here, spent_lanes_here, Budget, Depleted, Reserve};
 #[cfg(test)]
 pub use budget::unhalt_for_test;
 pub use calibration::{

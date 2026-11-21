@@ -183,7 +183,7 @@ impl Court {
     /// 78.153 — ONE FORM WHOSE RE-HEARING WAS UNREAD, heard again on the
     /// court's stroke: the first in key order, one read to find it.
     pub(crate) fn rehear_one_due(&mut self, budget: &mut crate::physics::Budget) {
-        let next = self.rehear_due.cursor(None, budget).next().map(|(k, _)| k);
+        let next = self.rehear_due.cursor_on(None, forms::coordinate::Lane::T, budget).next().map(|(k, _)| k);
         if let Some(form) = next {
             self.rehear_due.remove(&form);
             self.rehear_awaiting(&form, budget);

@@ -185,7 +185,8 @@ pub(crate) fn derivations_compose<'r>(
 ) -> Step {
     use crate::transducer::alphabet::Verified;
     for (i, cite) in env.derivations.iter().enumerate().skip(from) {
-        if !meter.spend() {
+        // 78.183 §8 (a): a derivation cited, read on G.
+        if !meter.spend_on(&forms::coordinate::Lane::G) {
             return Err(Halt::Spent(i));
         }
         // THE VERTEX THE CITE NAMES, in this form. A cite naming a vertex
@@ -338,7 +339,8 @@ pub(crate) fn witnesses_carry_primes(f: &Form, meter: &mut Meter<'_>, from: usiz
             continue;
         };
         // 78.153 — one read per prime factored.
-        if !meter.spend() {
+        // 78.183 §8 (a): a rotor prime factored, read on H.
+        if !meter.spend_on(&forms::coordinate::Lane::H) {
             return Err(Halt::Spent(i));
         }
         let carries = crate::core::gaussian::from_block(witness).is_some_and(|w| {
@@ -521,7 +523,8 @@ fn reconstruct_on_ground<'r>(
             // chart trie's ROOT and naming it would put the refusal at the top
             // of the atlas rather than at the boundary that is open.
             let Vertex::Glued { chart, .. } = v else { continue };
-            if !budget.spend() {
+            // 78.183 §8 (a): a glued vertex's chart, read on G.
+            if !budget.spend_on(&forms::coordinate::Lane::G) {
                 out = Err(Halt::Spent(i));
                 break;
             }
@@ -560,7 +563,8 @@ fn reconstruct_on_ground<'r>(
     stage!(Stage::Phantoms, |from| {
         let mut out: Step = Ok(());
         for (i, e) in cover.iter().enumerate().skip(from) {
-            if !budget.spend() {
+            // 78.183 §8 (a): an edge of the cover, read on G.
+            if !budget.spend_on(&forms::coordinate::Lane::G) {
                 out = Err(Halt::Spent(i));
                 break;
             }
@@ -587,7 +591,8 @@ fn reconstruct_on_ground<'r>(
     stage!(Stage::Citations, |from| {
     let mut out: Step = Ok(());
     for (i, edge) in spoken.stalk().nerve.iter().enumerate().skip(from) {
-        if !budget.spend() {
+        // 78.183 §8 (a): a citation on the nerve, read on G.
+        if !budget.spend_on(&forms::coordinate::Lane::G) {
             out = Err(Halt::Spent(i));
             break;
         }
@@ -671,7 +676,8 @@ fn reconstruct_on_ground<'r>(
         stage!(Stage::Perceive, |from| {
             let mut out: Step = Ok(());
             for (i, (x, y)) in fam.iter().enumerate().skip(from) {
-                if !budget.spend() {
+                // 78.183 §8 (a): a sample of the family, read on S.
+                if !budget.spend_on(&forms::coordinate::Lane::S) {
                     out = Err(Halt::Spent(i));
                     break;
                 }
@@ -736,7 +742,8 @@ fn reconstruct_after_perceiving(
     // 78.153 — ONE READ for the traversal, and the form is BORROWED where the
     // traversal is the forest it already carries (every decoded form): the
     // whole-form clone is taken only where a supplied form's orbits differ.
-    if !budget.spend() {
+    // 78.183 §8 (a): the traversal of the orbits, read on H.
+    if !budget.spend_on(&forms::coordinate::Lane::H) {
         return cursor.unread_here();
     }
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -764,7 +771,8 @@ fn reconstruct_after_perceiving(
     stage!(Stage::Faces, |from| {
         let mut out: Step = Ok(());
         for (i, (o, face)) in f.faces.entries().enumerate().skip(from) {
-            if !budget.spend() {
+            // 78.183 §8 (a): a face of an orbit, read on H.
+            if !budget.spend_on(&forms::coordinate::Lane::H) {
                 out = Err(Halt::Spent(i));
                 break;
             }
@@ -804,7 +812,8 @@ fn reconstruct_after_perceiving(
     stage!(Stage::Coherence, |from| {
         let mut out: Step = Ok(());
         for (i, lp) in traversed.orbits.iter().enumerate().skip(from) {
-            if !budget.spend() {
+            // 78.183 §8 (a): an orbit's coherence, read on H.
+            if !budget.spend_on(&forms::coordinate::Lane::H) {
                 out = Err(Halt::Spent(i));
                 break;
             }
@@ -836,7 +845,8 @@ fn reconstruct_after_perceiving(
         &mut cursor.derived
     ));
     // The rank, one read.
-    stage!(Stage::Rank, |from| match (budget.spend(), traversed.rank()) {
+    // 78.183 §8 (a): the rank, read on G.
+    stage!(Stage::Rank, |from| match (budget.spend_on(&forms::coordinate::Lane::G), traversed.rank()) {
         (false, _) => Err(Halt::Spent(from)),
         (true, None) => Err(Halt::Refused(tape(REFUSE_RANK_LOST))),
         (true, Some(_)) => Ok(()),
@@ -991,7 +1001,8 @@ fn reconstruct_after_perceiving(
     stage!(Stage::Pivots, |from| {
         let mut out: Step = Ok(());
         for (i, (o, face)) in traversed.faces.entries().enumerate().skip(from) {
-            if !budget.spend() {
+            // 78.183 §8 (a): a pivot on a face, read on H.
+            if !budget.spend_on(&forms::coordinate::Lane::H) {
                 out = Err(Halt::Spent(i));
                 break;
             }
@@ -1059,7 +1070,8 @@ fn vertex_moves(
     from: usize,
 ) -> Result<Option<Refusal>, usize> {
     for (i, (vertex, v)) in f.vertices.entries().enumerate().skip(from) {
-        if !meter.spend() {
+        // 78.183 §8 (a): a vertex of the form, read on G.
+        if !meter.spend_on(&forms::coordinate::Lane::G) {
             return Err(i);
         }
         if let Some(r) = vertex_move(f, family, spoken, &vertex, v) {
@@ -1163,7 +1175,8 @@ pub(crate) fn clauses_stated_from(
         return Ok(());
     }
     for (i, ((x, _), seen)) in family.iter().zip(frames).enumerate().skip(from) {
-        if !meter.spend() {
+        // 78.183 §8 (a): a sample's frame, read on S.
+        if !meter.spend_on(&forms::coordinate::Lane::S) {
             return Err(Halt::Spent(i));
         }
         if let Err(why) = speak_elements(&f.elements, x, &seen.bodies) {

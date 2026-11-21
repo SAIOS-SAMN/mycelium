@@ -364,7 +364,7 @@ impl Court {
             // a listing admitted below the cursor is ruled on the next circuit,
             // and the circuit it completes is the docket's.
             let (next, stepped) = {
-                let mut cur = self.open.cursor(self.open_cursor.as_deref(), budget);
+                let mut cur = self.open.cursor_on(self.open_cursor.as_deref(), forms::coordinate::Lane::T, budget);
                 let next = cur.next().map(|(k, _)| k);
                 (next, cur.circuit())
             };

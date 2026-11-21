@@ -83,7 +83,8 @@ fn prove_folded(
     // where the walk stands, its progress kept across hearings, one spend a
     // page; the root is read again as each page lands.
     loop {
-        if !budget.spend() {
+        // 78.183 §8 (a): a page of receipts, read on T.
+        if !budget.spend_on(&forms::coordinate::Lane::T) {
             return Some(false);
         }
         let from = held!(court).ok()?.run(|k, _| k.era_walk_from(p));
@@ -142,7 +143,8 @@ fn close_through_root(
     fetch: &mut impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
 ) -> Option<bool> {
     let floor = held!(court).ok()?.run(|k, _| k.unreached_floor(&who))?;
-    if !budget.spend() {
+    // 78.183 §8 (a): the unreached floor of a line, read on T.
+    if !budget.spend_on(&forms::coordinate::Lane::T) {
         return Some(false);
     }
     match fetch(&who, place_before(floor), upto, Ask::CatchUp) {
@@ -215,7 +217,8 @@ pub fn chase(
         asked.insert(&key, ());
         // The budget ending is not the chase failing: what this pass
         // admitted is kept, and the caller re-admits against it.
-        if !budget.spend() {
+        // 78.183 §8 (a): a receipt chased, read on T.
+        if !budget.spend_on(&forms::coordinate::Lane::T) {
             return short(advanced);
         }
         let receipts = match fetch(&who, held, upto, Ask::CatchUp) {

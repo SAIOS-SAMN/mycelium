@@ -360,7 +360,8 @@ impl Court {
                 continue;
             }
             let owed = || (chart_simplex_key(inv, &key), (inv.clone(), Address::from(key.as_slice())));
-            if !budget.spend() {
+            // 78.183 §8 (a): a chart's simplices, read on G.
+            if !budget.spend_on(&forms::coordinate::Lane::G) {
                 let (k, v) = owed();
                 self.unfilled.insert(k, v);
                 continue;
@@ -519,7 +520,8 @@ impl Court {
         // index: the peer's digest charts, from the cursor round once; members
         // from ruled fibre
         for d in rest.iter().chain(reached) {
-            if !budget.spend() {
+            // 78.183 §8 (a): the peer's digest charts, read on G.
+            if !budget.spend_on(&forms::coordinate::Lane::G) {
                 return;
             }
             self.confirm_cursor.insert(peer, d.inv.key().as_bytes().to_vec());
@@ -647,7 +649,8 @@ impl Court {
         // index: the peer's have-list
         let held: Vec<&Address> = have.iter().filter(|h| self.provisional.contains(h) && self.ruled_contains(h)).collect();
         for h in held {
-            if !budget.spend() {
+            // 78.183 §8 (a): the peer's held words, read on G.
+            if !budget.spend_on(&forms::coordinate::Lane::G) {
                 return;
             }
             let Some(held_form) = self.provisional.get(h).cloned() else { continue };
@@ -702,7 +705,8 @@ impl Court {
         let mut out: Vec<crate::transducer::cech::DegreeCensus> = Vec::new();
         let mut read = 0usize;
         for (_, cx) in self.complexes.scoped() {
-            if !reads.spend() {
+            // 78.183 §8 (a): the nerve's complexes, read on G.
+            if !reads.spend_on(&forms::coordinate::Lane::G) {
                 break;
             }
             read += 1;

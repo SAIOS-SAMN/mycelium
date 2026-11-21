@@ -114,7 +114,8 @@ impl Court {
         let key = solve_key(rule, withheld);
         loop {
             let before = self.reconstruction_cursors.get(&key).map(|c| c.progress());
-            match self.judge_solve_on_stroke(rule, withheld) {
+            let mut stroke = self.physics.stroke();
+            match self.judge_solve_on_stroke(rule, withheld, &mut stroke) {
                 SolveVerdict::Unread if self.reconstruction_cursors.get(&key).map(|c| c.progress()) != before => {}
                 verdict => return verdict,
             }
@@ -125,8 +126,8 @@ impl Court {
     /// where the stroke ran out before the reconstruction ruled, its cursor kept by
     /// the rule and the withheld pairs, so the same solve asked again
     /// resumes.
-    pub fn judge_solve_on_stroke(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
-        let verdict = self.judge_solve_read(rule, withheld);
+    pub fn judge_solve_on_stroke(&mut self, rule: &Element, withheld: &crate::transducer::family::Family, reads: &mut crate::physics::Budget) -> SolveVerdict {
+        let verdict = self.judge_solve_read(rule, withheld, reads);
         // THE ACT, COUNTED WHERE IT HAPPENED: the verdict, a refusal by kind
         // (78.9, `ObstructionKind::ALL`'s order), each on its typed slot
         // (78.153c: "no work" was a name the table lacked, and dropped). A
@@ -145,15 +146,15 @@ impl Court {
         self.acts.judge(verdict);
     }
 
-    fn judge_solve_read(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
+    fn judge_solve_read(&mut self, rule: &Element, withheld: &crate::transducer::family::Family, budget: &mut crate::physics::Budget) -> SolveVerdict {
         if withheld.is_empty() {
             return SolveVerdict::Unverifiable;
         }
         if crate::transducer::sentence::from_element_form(rule).is_none() {
             return SolveVerdict::NotARule;
         }
-        let mut budget = self.physics.stroke();
-        // 78.153 — the reconstruction on the act's one stroke, resumed where the last
+        // 78.183 §4.6 — the reconstruction draws the caller's stroke, never a
+        // stroke of its own. 78.153 — on the act's one stroke, resumed where the last
         // asking of this rule on these pairs stopped.
         let key = solve_key(rule, withheld);
         let mut cursor = match self.reconstruction_cursors.remove(&key) {
@@ -167,7 +168,7 @@ impl Court {
                 &|a| court.resolve_form_ref(a),
                 Some(withheld),
                 court,
-                &mut budget,
+                budget,
                 &mut cursor,
                 true,
             )
