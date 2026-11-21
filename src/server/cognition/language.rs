@@ -232,7 +232,7 @@ pub struct Rank {
     /// with a base point in the language, and listings without one. Kept
     /// by `put_closure` for the same reason `ListingCoherence::nonflat` is
     /// kept by `write_field` — so a read never reads the whole book to count
-    /// what the write already knew (rule 1). `open_demand_counts` read the
+    /// what the write already knew (rule 1). `cohesion_over`, before #419, read the
     /// whole closure map, and `synthesis` read it a second time, with
     /// its own filter, to print one of the two numbers.
     closed: usize,

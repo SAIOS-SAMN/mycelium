@@ -279,10 +279,9 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
     (*surface, priced)
 }
 
-/// THE OPEN DEMANDS, BY WHAT THEY STAND ON — the joint (C, I) state over the
-/// open book, both
-/// axes exact and never traded (#419: it was named for cohesion, which is the
-/// held share per plane, GLOSSARY). C counts open demands sitting on held
+/// The open demands, by what they stand on: the joint (C, I) state over the
+/// open book, both axes exact and never traded (#419; not cohesion, which
+/// is the held share per plane, GLOSSARY). C counts open demands sitting on held
 /// geometry (closure failing — collapse-side work); I counts open demands on
 /// geometry no thought speaks (coverage failing — expansion-side work).
 ///

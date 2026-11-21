@@ -393,7 +393,7 @@ assert_eq!((funded.words.len(), funded.deferred.len()), (1, 0), "the deferred wo
 /// written when a listing's closure is bound (`Rank::put_closure`), for the
 /// same reason `ListingCoherence::nonflat` is written by `write_field`: a read
 /// that counts what the write already knew reads the whole of a carrier that
-/// grows with the book. `open_demand_counts` read the whole closure map per call, and
+/// grows with the book. `cohesion_over`, before #419, read the whole closure map per call, and
 /// `synthesis`'s rank line read it a second time, with its own filter, to
 /// print one of the two numbers.
 ///
