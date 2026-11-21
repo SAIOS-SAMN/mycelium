@@ -277,3 +277,35 @@ pub fn close_through(k: &mut Court, through: u64) -> Option<crate::chronometry::
     let reach = reach_over(k.identity, &lines);
     k.close_windows(&reach)
 }
+
+/// 47.3 — A SECOND VANTAGE RE-DERIVES, AND ONLY THEN DOES THE HOME INSTALL
+/// (#434). A witness court of its own reconstructs the home's provisional
+/// form as the exchange glues it (`fetched`, the witness's `witness_vantage`
+/// in the binary), and the form it reached is the vantage the home
+/// converges on (`witness_rederived_fresh`). A witness that slashes the form
+/// reaches nothing and nothing installs. Never a root, never a have-list.
+pub fn witness_installs(home: &mut Court, addr: impl AsRef<[u8]>, witness: [u8; 32]) {
+    let addr = addr.as_ref();
+    let Some(spoken) = home.provisional.get(addr).cloned() else { return };
+    let mut peer = Court::new();
+    peer.set_court_voice(witness);
+    let mut cover = crate::network::nerve::HomeTrie::new();
+    // The witness holds the language it was taught: the home's installed
+    // words, reconstructed on the witness in the order they stand, so a
+    // citer's citations resolve there as they do on a witness of the mesh.
+    for w in home.basis() {
+        let _ = fetched(&mut peer, w.element(), home.identity, witness, &mut cover);
+    }
+    if matches!(fetched(&mut peer, &spoken, home.identity, witness, &mut cover), Glue::Slashed(_)) {
+        return;
+    }
+    home.witness_rederived_fresh(&crate::transducer::address::Address::from(addr), witness, spoken);
+}
+
+/// Every provisional the home holds, each re-derived by the witness (47.3).
+pub fn witness_installs_all(home: &mut Court, witness: [u8; 32]) {
+    let held: Vec<Vec<u8>> = home.provisional.scoped().map(|(a, _)| a).collect();
+    for a in held {
+        witness_installs(home, &a, witness);
+    }
+}

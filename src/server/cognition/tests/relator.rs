@@ -14,6 +14,7 @@
 //
 // First proof in process, three courts, no corpus (1.9).
 
+use super::fixtures::witness_installs;
 use crate::cognition::*;
 use crate::transducer::alphabet::{LetterId, Order, Word};
 use crate::transducer::element::{self, Element};
@@ -332,7 +333,7 @@ fn install(k: &mut Court, voice: [u8; 32], w: &Element) {
     let ruled: Vec<Vec<u8>> =
         k.ruled_addrs.scoped().map(|(a, _)| a).collect();
     for a in &ruled {
-        k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
+        witness_installs(k, a.clone(), [9; 32]);
     }
 }
 

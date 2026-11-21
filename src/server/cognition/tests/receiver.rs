@@ -27,7 +27,7 @@ fn speak_pair_binds_sentence_to_task_family_and_mints() {
     assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
     let cover = home.genesis_cover().expect("measured");
     home.enroll([2; 32], cover);
-    home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
+    witness_installs_all(&mut home, [2; 32]);
     assert!(home.basis_len() >= 1, "the home installs on the witness");
     assert!(
         !home.treasury().minted().is_zero(),

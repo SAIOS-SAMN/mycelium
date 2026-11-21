@@ -274,9 +274,10 @@ assert!(docket.circuits() >= 1, "the circuit passed the end of the docket: {dock
 assert!(docket.period() >= 1, "the period is measured in strokes: {docket:?}");
 }
 
-/// The home installs when a peer's ruled digest holds the stratum.
+/// #434 — A PEER'S MATCHING ROOT INSTALLS NOTHING: the home installs only
+/// when a witness's own re-derivation reaches the same object (47.3).
 #[test]
-fn confirm_peer_holds_installs_on_peer_ruled_root() {
+fn a_matching_root_installs_nothing_until_a_witness_rederives() {
 let mut home = Court::new();
 let mut peer = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -292,14 +293,17 @@ assert!(peer.basis_len() >= 1);
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room
 home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
-assert!(home.basis_len() >= 1, "the home's own word is language once a peer holds the stratum");
+assert_eq!(home.basis_len(), 0, "a peer's root that holds the stratum installs nothing (1.5)");
+assert!(!home.provisional.is_empty(), "the word stays provisional");
+witness_installs_all(&mut home, [2; 32]);
+assert!(home.basis_len() >= 1, "the witness re-derived the word and the home installs it");
 assert!(home.provisional.is_empty(), "the provisional leaves the home");
 }
 
-/// A peer have-list that names a ruled provisional is the second organ:
-/// the home installs without waiting for a digest-root match.
+/// 47.3 — THE SECOND ORGAN IS A WITNESS'S RE-DERIVATION, with room: an
+/// unbonded witness converges nothing; a bonded one installs.
 #[test]
-fn confirm_peer_holds_addrs_installs_ruled_provisional() {
+fn a_witness_with_room_rederives_and_installs() {
 let mut home = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -310,11 +314,11 @@ home.court_settle();
 assert!(home.provisional.contains(&addr), "still provisional until the second organ");
 // 47.3: a witness is a second VANTAGE with room, not merely a second
 // key. An unbonded peer has none and does not converge the object.
-home.confirm_peer_holds_addrs(&[Address::from(addr.as_slice())], [2; 32]);
+witness_installs(&mut home, addr.as_slice(), [2; 32]);
 assert!(home.basis_len() == 0, "a witness without room is not a vantage");
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover);
-home.confirm_peer_holds_addrs(&[Address::from(addr.as_slice())], [2; 32]);
+witness_installs(&mut home, addr.as_slice(), [2; 32]);
 assert!(home.basis_len() >= 1, "the witness re-derives the address and it installs");
 assert!(home.provisional.is_empty(), "the docket clears on install");
 }

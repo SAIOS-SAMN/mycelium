@@ -3,6 +3,7 @@
 // over ℤ[i], docketed as a provisional generator, and installed when a
 // second organ reaches the same address. The adjoined count leaves zero.
 
+use super::fixtures::witness_installs;
 use crate::cognition::*;
 use crate::transducer::alphabet::Derivation;
 use crate::transducer::element::{self, Element};
@@ -124,7 +125,7 @@ fn perceive_speech_opens_one_letter_on_two_courts() {
         k.rule_all_provisionals();
         let cover = k.genesis_cover().expect("measured");
         k.enroll([9; 32], cover);
-        k.confirm_peer_holds_addrs(&[Address::from(letter.clone())], [9; 32]);
+        witness_installs(&mut k, letter.clone(), [9; 32]);
         assert!(k.ruled_contains(&letter), "arity 2 installs the letter on the ruled cover");
 
         assert_eq!(
@@ -303,7 +304,7 @@ fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
     let ruled: Vec<Vec<u8>> =
         k.ruled_addrs.scoped().map(|(a, _)| a).collect();
     for a in &ruled {
-        k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
+        witness_installs(&mut k, a.clone(), [9; 32]);
     }
     // THE GENERATOR IS STILL THERE, which is the claim. `adjoined()` is a
     // COUNT and it is the pre-X4 one: growth by closure moves what the
@@ -426,7 +427,7 @@ fn serve_ruled_teaches_letter_as_generator() {
     k.enroll([9; 32], cover);
     let ruled: Vec<Vec<u8>> = k.ruled_addrs.scoped().map(|(a, _)| a).collect();
     for a in &ruled {
-        k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
+        witness_installs(&mut k, a.clone(), [9; 32]);
     }
     // As above: the generator, not the count (the count is pre-X4).
     let letter_held = k.basis().iter().any(|w| {
@@ -617,7 +618,7 @@ fn basis_holds(k: &Court, address: &[u8]) -> bool {
 /// Until this, no test in the tree drove `witness_rederived` at all: the
 /// letter tests reached a ruled letter through `rule_all_provisionals`,
 /// which rules every docket without asking a second vantage for anything,
-/// and through `confirm_peer_holds_addrs`, which is a have-list claim and
+/// and through a have-list, which is a claim (deleted, #434) and
 /// says so in its own comment — "not a re-derivation this court can
 /// compare". Both leave the one condition law 6 states untested.
 #[test]
