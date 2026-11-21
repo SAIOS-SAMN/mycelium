@@ -479,7 +479,24 @@ impl Element {
         if address.is_empty() {
             return None;
         }
-        let _ = e.address.set(crate::transducer::address::Address::new(address));
+        // The name is re-derived, never taken from the bytes (#435;
+        // MU-RECURSION 1.5, 17.7 M7: bytes become identities only by
+        // re-derivation). A form's address is the form written out (law 2):
+        // the address is held, the form is read back out of it, and the
+        // form's key must write the same coordinate, a canonical round trip.
+        // Every other word's address is derived from the record's content,
+        // and the name the record carried must be that one. A record whose
+        // name is not the content's is refused, never adopted.
+        let carried = crate::transducer::address::Address::new(address);
+        if crate::transducer::address::tag_of(carried.as_bytes()) == Some(crate::transducer::address::TAG_FORM) {
+            let _ = e.address.set(carried.clone());
+            let form = crate::transducer::sentence::from_element_form(&e)?;
+            if crate::transducer::sentence::form_vertex_key(&form) != carried {
+                return None;
+            }
+        } else if e.address() != carried {
+            return None;
+        }
         Some(e)
     }
 

@@ -330,3 +330,28 @@ fn from_bytes_round_trips_rotated_connection() {
         "equal spoken compartments on a rotated, dilated, translated body"
     );
 }
+
+/// A record's name is re-derived, never taken from the bytes (#435;
+/// MU-RECURSION 1.5, 17.7 M7). A residue word whose record carries another
+/// word's address is refused; the unaltered record reads back with the name
+/// the content derives.
+#[test]
+fn from_bytes_refuses_record_naming_another_address() {
+    let a = from_canonical(&crate::transducer::element::canonical_chain(&[link(0, 0, 1, 2), link(0, 1, 1, 2)]).expect("a chain"));
+    let b = from_canonical(&crate::transducer::element::canonical_chain(&[link(0, 0, 1, 3)]).expect("a chain"));
+    assert_ne!(a.address(), b.address(), "two contents, two names");
+    let honest = a.to_bytes().expect("the record writes");
+    let mut pos = 0;
+    assert_eq!(Element::from_bytes(&honest, &mut pos).expect("an honest record reads").address(), a.address());
+    // The same content carrying b's name.
+    let forged = a.clone();
+    let forged = {
+        let mut f = forged;
+        f.address = std::sync::OnceLock::new();
+        let _ = f.address.set(b.address());
+        f
+    };
+    let bytes = forged.to_bytes().expect("the forged record writes");
+    let mut pos = 0;
+    assert!(Element::from_bytes(&bytes, &mut pos).is_none(), "a record whose name is not its content's is refused");
+}
