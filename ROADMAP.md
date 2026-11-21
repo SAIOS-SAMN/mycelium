@@ -157,15 +157,16 @@ kept.
 | Reading the cross-kernel proposals: LAW-WAVEFRONT; the TUniversal point in the signed expression | [#355](https://github.com/SAIOS-SAMN/mycelium/issues/355), [#354](https://github.com/SAIOS-SAMN/mycelium/issues/354) | Open, mirrored from netstratum #9 and #92 |
 | The tube clause: a kernel clause governing one tube, signed by both its universes ([78.186](docs/proposals/78.186-tube-clauses.md)) | — | **Approved 2026-11-17; next to build.** It governs the road toll, tariff, whole-state terms and flow bounds, never a network clause. Its first user is the seed-7/netstratum treaty (xylarium-uplink docs) |
 
-**The Sⁿ phase** ([#431](https://github.com/SAIOS-SAMN/mycelium/issues/431); operator direction 2026-11-20/21). Thoughts become Sⁿ objects in manifolds, with no lattice past the sensor, no scalar or dimensional collapse, and identity by content. #431 holds it as a nerve: each item says what it passes to the next, and conflicts are held until they are ruled. Six plans are charts on it:
-- **Plan 1** ([#427](https://github.com/SAIOS-SAMN/mycelium/issues/427)): fluidity and cohesion on Sⁿ objects. The atlas on Sⁿ (#409, PR #410, draft, its defects #411) and the cohesion gauge (#468), feeding the shares per chart (#412).
-- **Plan 2** ([#428](https://github.com/SAIOS-SAMN/mycelium/issues/428)): objects held whole, never as scalars. H as the whole motion (#416, #471), payouts and the wire in modes (#461), the lane magnitude (#463), and the whole clock point (#418).
-- **Plan 3** ([#429](https://github.com/SAIOS-SAMN/mycelium/issues/429)): from the lattice to Sⁿ. The body on the sample's manifold (PR #432, 78.190), grouping by motion (#408), topology on Sⁿ (#403), and the chart axes (PR #407).
-- **Plan 4** ([#430](https://github.com/SAIOS-SAMN/mycelium/issues/430)): cohesion as the physics of fluid motion (#424–#426). It needs per-lane pacing (#460) and per-plane flux (#465) first.
-- **Plan 5** ([#442](https://github.com/SAIOS-SAMN/mycelium/issues/442)): identity by content, never bytes. Re-derived addresses (PR #445, **ready**), and installation only on a witness's re-derivation (PR #446, ready once #448 lands).
-- **Plan 6** ([#459](https://github.com/SAIOS-SAMN/mycelium/issues/459)): no scalar or dimensional collapse. Per-lane pacing (#460) is the most pervasive. Witness room on every lane (#448) gates #446.
+**The Sⁿ phase** ([#431](https://github.com/SAIOS-SAMN/mycelium/issues/431); operator direction 2026-11-20/21). Thoughts become Sⁿ objects in manifolds: no lattice past the sensor, no scalar or dimensional collapse, identity by content. Seven stages, in dependency order: each receives only from the stages before it.
+1. [#442](https://github.com/SAIOS-SAMN/mycelium/issues/442), **identity by content.** Re-derived addresses (PR #445, ready); witness room on every lane (#448); installation only on a witness's re-derivation (PR #446, after #448); the paged digest (PR #400).
+2. [#459](https://github.com/SAIOS-SAMN/mycelium/issues/459), **every lane on its own.** Per-lane deferral and pacing (#449, #460), then the court's remaining collapses; PR #447 ready.
+3. [#429](https://github.com/SAIOS-SAMN/mycelium/issues/429), **the body on the sample's manifold.** 78.190 S1–S2 (PR #432), after #457.
+4. [#473](https://github.com/SAIOS-SAMN/mycelium/issues/473), **the atlas on Sⁿ, the chart off the lattice.** #411, #410, #403, #408, #407, #406.
+5. [#428](https://github.com/SAIOS-SAMN/mycelium/issues/428), **the recut.** The carriers at the body's rank (78.190 S3–S5) and motion held whole (#416), under one network contract approval.
+6. [#427](https://github.com/SAIOS-SAMN/mycelium/issues/427), **the gauge and the shares.** `(P, τ)` (PR #443), then cohesion per chart (#468, #412).
+7. [#430](https://github.com/SAIOS-SAMN/mycelium/issues/430), **cohesion as fluid physics.** #465, #424, #425, #426.
 
-Order: #448 with #446, then #445, #446 and #447 (ready); then #460 with #449; then 78.190 S1–S2; then #411, #410, #408, #403 and #407. The rulings this phase waits on are listed under *Waiting on the operator*.
+Now: Stage 1, with #448 next. The rulings this phase waits on are listed under *Waiting on the operator*.
 
 ### 3. The client stream
 
