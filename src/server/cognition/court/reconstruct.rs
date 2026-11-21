@@ -118,9 +118,12 @@ impl Court {
                 if w.is_rewrite() {
                     // Every voice the escrow names is paid; an escrow with
                     // no party is not released and the ruling does not land.
-                    // EC1: POWR stands at the Ruling act sealed above.
+                    // EC1: POWR stands at the Ruling act sealed above. The
+                    // mint carries the modes of the family the rewrite
+                    // absorbs, read before its inputs retire.
+                    let absorbed = self.absorbed_modes(&w);
                     let ruled = self.anchor();
-                    if self.treasury.release_rewrite(address, ruled).is_none() {
+                    if self.treasury.release_rewrite(address, &absorbed, ruled).is_none() {
                         return false;
                     }
                     self.retire_rewrite_inputs(&w, budget);

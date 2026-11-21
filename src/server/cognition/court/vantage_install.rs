@@ -80,23 +80,33 @@ impl Court {
         let installed = self.anchor();
         if let Some(w) = held {
             if w.is_rewrite() {
-                if self.treasury.release_rewrite(address, installed).is_none() {
+                // POWR carries the modes of the family the rewrite absorbs,
+                // read before its inputs retire (MU-ECONOMY §2.5).
+                let absorbed = self.absorbed_modes(&w);
+                if self.treasury.release_rewrite(address, &absorbed, installed).is_none() {
                     return;
                 }
                 self.retire_rewrite_inputs(&w, budget);
             } else {
                 let measured = self.verified_install_deflation(address, &w);
-                // POWV: the base the install releases — the escrow capped at
-                // the measured deflation — pays this court and the witness
-                // whose re-derivation installed it each a verification share
-                // first; the cited forms, taught words and voices divide the
-                // rest.
+                // POWV: the base the install releases — the measured
+                // discharge capped lane-wise by the escrow, keeping the
+                // discharge's modes (78.149 (b), MU-ECONOMY §2.5), as
+                // `release_verified` reads it — pays this court and the
+                // witness whose re-derivation installed it each a
+                // verification share first; the cited forms, taught words
+                // and voices divide the rest, which keeps the same modes.
                 let pay = match self.treasury.escrow_of(address).map(|e| e.mu.clone()) {
                     Some(held) if !measured.is_zero() => {
-                        let base = held.capped(&measured);
+                        let base = measured.capped(&held);
                         let organs = [self.identity, witness];
                         let taken = self.pay_verification(&base, &organs, installed);
-                        base.shortfall(&taken)
+                        // taken ≤ base on every lane: the organs' shares sum
+                        // to at most it.
+                        match base.draw(&taken) {
+                            Ok(rest) => rest,
+                            Err(_) => base.shortfall(&taken),
+                        }
                     }
                     _ => measured,
                 };
@@ -321,7 +331,9 @@ impl Court {
         out
     }
 
-    /// What a cited form closes on the CITER's bound family. The citer's
+    /// What a cited form closes on the CITER's bound family, holding the
+    /// cited form's closure modes there (MU-ECONOMY §2.5: a word's use or
+    /// citation carries the cited word's closure modes). The citer's
     /// task names the family (`verified_install_deflation` reads the same
     /// binding for the citer itself), and the cited form is reconstructed over
     /// it: a generator that closes nothing there is used for nothing
@@ -354,8 +366,23 @@ impl Court {
         // and use shares read it"): what it closes inside the citer at the
         // citer's placement, its section, never the whole-pair closure a
         // cited word inside a sentence rarely meets alone.
+        //
+        // MU-ECONOMY §2.5 — THE SHARE CARRIES THE CITED WORD'S CLOSURE MODES:
+        // each lane of the local discharge set on the modes the cited form's
+        // closure moves on the citer's family at the citer's placement, in
+        // proportion (`Mu::carried_by`); a lane its closure reads no mode on
+        // stays at the founding mode.
         match crate::transducer::sentence::from_element_form(cited) {
-            Some(f) => crate::transducer::family::local::form_local(&f, family, self, placement).mu,
+            Some(f) => {
+                let share = crate::transducer::family::local::form_local(&f, family, self, placement).mu;
+                match share.is_zero() {
+                    true => share,
+                    false => {
+                        let closure = crate::transducer::family::form_deflation_read(&f, family, self, placement);
+                        crate::economy::Mu::carried_by(&share, &closure.modes)
+                    }
+                }
+            }
             None => crate::economy::Mu::zero(),
         }
     }

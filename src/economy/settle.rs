@@ -104,12 +104,22 @@ impl Treasury {
     /// a mint with no party is a mint to nobody, and the escrow stands
     /// rather than being spent into the void. The mint stands at `at`, the
     /// act that released it (EC1), never at the escrow's.
-    pub fn release_rewrite(&mut self, address: &[u8], at: Anchor) -> Option<Mu> {
+    ///
+    /// The mint carries `absorbed`, the modes of the family the reduction
+    /// absorbs (MU-ECONOMY §2.5): each lane of the escrowed yield set on
+    /// that lane's absorbed modes in proportion, a lane they do not reach at
+    /// its founding mode (`Mu::carried_by`). Where nothing absorbed reads a
+    /// mode, the escrow's own modes are released.
+    pub fn release_rewrite(&mut self, address: &[u8], absorbed: &crate::economy::modes::Modes, at: Anchor) -> Option<Mu> {
         let row = self.escrowed.get(address)?;
         if row.voices.is_empty() {
             return None;
         }
-        let (voices, mu) = (row.voices.clone(), row.mu.clone());
+        let mu = match absorbed.is_empty() {
+            true => row.mu.clone(),
+            false => Mu::carried_by(&row.mu, absorbed),
+        };
+        let voices = row.voices.clone();
         self.escrowed.remove(address);
         // THE SPLIT CANNOT EXCEED WHAT IT RELEASES. This read
         // `(mu[l] / n).max(1)`, so a lane holding less than one unit per
@@ -203,11 +213,17 @@ impl Treasury {
                 continue;
             }
             left = rest;
-            self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
+            // MU-ECONOMY §2.5: a use or citation share carries the cited
+            // word's closure modes (`share`'s), each lane at what the mint
+            // had left for it, never the citer's.
+            self.mint_to(*discoverer, Mu::carried_by(&paid, share.modes()), anchor, Some(Arm::Pouw));
         }
         let (taken, composed) = match premium {
             Some(p) => {
-                let p = p.capped(&left);
+                // The gluing is a reading (§2.5): what the voices take is
+                // what is left, capped lane-wise at it, keeping the
+                // closure's modes.
+                let p = left.capped(&p);
                 (p.clone(), p)
             }
             None => (left, Mu::zero()),
@@ -215,7 +231,13 @@ impl Treasury {
         // K3: the converging minds out of the premium; the voices keep the
         // rest of it. `to_minds ≤ composed ≤ taken` on every lane.
         let to_minds = self.pay_converging(escrow, &composed, converged, anchor);
-        self.mint_claim(&voices, taken.shortfall(&to_minds), anchor);
+        // to_minds ≤ taken on every lane: the voices' rest keeps the
+        // closure's modes, drawn in proportion (§2.5), never a reading's.
+        let rest = match taken.draw(&to_minds) {
+            Ok(rest) => rest,
+            Err(_) => taken.shortfall(&to_minds),
+        };
+        self.mint_claim(&voices, rest, anchor);
         taken
     }
 

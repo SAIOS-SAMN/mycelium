@@ -247,6 +247,29 @@ impl Court {
         glued.on_lanes(|l| l != t).add(&whole.on_lanes(|l| l == t))
     }
 
+    /// POWR — THE MODES OF THE FAMILY A REWRITE ABSORBS (MU-ECONOMY §2.5: a
+    /// reduction's mint carries the modes of the family it absorbs): each
+    /// word the rewrite retires, reconstructed on the family it is bound to,
+    /// its closure's modes (`measured_discharge_read`), summed mode by mode.
+    /// A retired word bound to no family, not held here, or not a sentence
+    /// adds none; a rewrite's yield on a lane no absorbed mode reaches stays
+    /// at the founding mode (`Mu::carried_by`).
+    pub(crate) fn absorbed_modes(&self, rewrite: &Element) -> crate::economy::modes::Modes {
+        let mut absorbed = crate::economy::modes::Modes::new();
+        let Some(r) = crate::transducer::rewrite::Rewrite::from_element(rewrite) else { return absorbed };
+        for addr in &r.before {
+            let Some(w) = self.basis.get(addr).map(|e| (**e).clone()) else { continue };
+            if !w.is_sentence() {
+                continue;
+            }
+            let task = self.speech_task.get(addr.as_bytes()).or_else(|| self.listing_task.get(addr.as_bytes()));
+            if let Some(f) = task.and_then(|t| self.task_family.get(t.as_bytes())) {
+                absorbed.add(&self.measured_discharge_read(&w, f).1);
+            }
+        }
+        absorbed
+    }
+
     /// [`Court::discharge_on`] over the family the word is BOUND to — the
     /// task it was spoken for, or the listing it answers — which is the
     /// family its install measures.

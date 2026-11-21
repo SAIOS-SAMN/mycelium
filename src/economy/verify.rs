@@ -36,6 +36,11 @@ use num_bigint::BigInt;
 /// on the lane, or where `y_l + R` is zero. The organs together take
 /// `M_l · y_l / (y_l + R) ≤ M_l`, at most half the lane unless the lane's
 /// entropic excess carries the strain past the reserve.
+///
+/// Under modes the lane's factor scales each mode on the lane (§5.1): the
+/// share holds the mint's own modes, each at the lane's part of it, so the
+/// organs are paid the re-traversed closure's modes and the closer keeps the
+/// same modes (`Mu::carried_by`).
 pub fn verification_share(mint: &Mu, strain: &[u64; 4], capacity: u64, organs: usize) -> Mu {
     let r = BigInt::from(capacity);
     let lanes: [Q; 4] = std::array::from_fn(|l| {
@@ -49,7 +54,7 @@ pub fn verification_share(mint: &Mu, strain: &[u64; 4], capacity: u64, organs: u
     // Every factor is non-negative, so the lanes are.
     let Ok(v) = Mu::of(lanes) else { return Mu::zero() };
     match v.part(organs) {
-        Some(each) => each,
+        Some(each) => Mu::carried_by(&each, mint.modes()),
         None => Mu::zero(),
     }
 }

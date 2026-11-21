@@ -52,3 +52,31 @@ fn verification_share_never_exceeds_mint() {
     }
     assert_eq!(verification_share(&Mu::counts(mint), &strain, 4, 0), [0; 4], "no organ, no share");
 }
+
+/// MU-ECONOMY §5.1 — UNDER MODES THE LANE'S FACTOR SCALES EACH MODE ON IT. A
+/// mint of 6 on S held as a symbol's creation (4) and its erasure (2), at a
+/// strain equal to the reserve with two organs, pays each organ 6·100/200/2
+/// = 3/2 of S as 1 of the creation and 1/2 of the erasure: the re-traversed
+/// closure's modes, never the founding mode. The closer keeps the same
+/// modes in the same proportion, 2 and 1.
+#[test]
+fn verification_share_scales_each_mode_on_its_lane() {
+    use crate::core::q::Q;
+    use crate::economy::modes::{Mode, Modes, S};
+    use num_bigint::BigInt;
+    let q = |n: i64, d: i64| Q::new(BigInt::from(n), BigInt::from(d));
+    let create = Mode::SymbolCreation { from_ground: 0, to_symbol: 4, forward: true };
+    let erase = Mode::SymbolCreation { from_ground: 0, to_symbol: 4, forward: false };
+    let mut held = Modes::new();
+    held.add_mode(create.clone(), q(4, 1));
+    held.add_mode(erase.clone(), q(2, 1));
+    let mint = Mu::of_modes(held);
+    let each = verification_share(&mint, &[100, 0, 0, 0], 100, 2);
+    assert_eq!(each.modes().amount_of(&create), Some(&q(1, 1)), "the creation scaled by the lane's factor");
+    assert_eq!(each.modes().amount_of(&erase), Some(&q(1, 2)), "the erasure scaled by the same factor");
+    let founding = Mode::founding(S).expect("S has a founding mode");
+    assert!(each.modes().amount_of(&founding).is_none(), "never the founding mode");
+    let rest = mint.draw(&each.add(&each)).expect("the shares fit the mint");
+    assert_eq!(rest.modes().amount_of(&create), Some(&q(2, 1)), "the closer keeps the creation's rest");
+    assert_eq!(rest.modes().amount_of(&erase), Some(&q(1, 1)), "and the erasure's");
+}
